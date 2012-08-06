@@ -26,10 +26,10 @@
     
   <script type="text/daml" id="noun_fetcher">
     {begin blerp} {begin fetch | proc | {* (:DATA @data)}}
-      {data find_noun | > :data.nouns}
+      {noun find | > :data.nouns}
     {end fetch}{end blerp}
     
-    {network send string "{data find_noun} " then "{this.#1 | > :nouns}" context {* (:mech_id REQ.mech_id)} }
+    {network send string "{noun find} " then "{this.#1 | > :nouns}" context {* (:mech_id REQ.mech_id)} }
   </script>
   
   
@@ -80,12 +80,13 @@
   
   <pre>
     TODOS:
-    - make {noun add}, find, verb add/find
-    - build CPS interpreter
+    -- make {noun add}, find, verb add/find
     - add D3 support
+    - build CPS interpreter
     - develop content engine
     - connect routes to content
     - allow client-side editing of content
+    - real-time stuffs
   </pre>
   
 </body>

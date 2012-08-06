@@ -82,8 +82,6 @@ db.open(function(err, db) {
 
   console.log('connected!');
   
-  // console.log(DAML.run('hi!{data add_noun name :lalala}{data find_noun}'));
-  
   app.listen(8000);
 });
 
