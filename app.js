@@ -65,7 +65,8 @@ var app = http.createServer(function (req, res) {
 
       setTimeout(function() {
         res.writeHead(200, {"Content-Type": "application/json"});
-        res.end(JSON.stringify(global.output));        
+        res.end(JSON.stringify(global.output));
+        console.log(global.output);
       }, 300); // FIXME!!!
     });
     return;
