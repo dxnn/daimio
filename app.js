@@ -4,10 +4,14 @@ var http = require('http'),
     qs = require('querystring'),
     mongo = require('mongodb');
     
+var DAML = require('daml');
+
 var db = new mongo.Db('figviz', new mongo.Server('localhost', 27017, {auto_reconnect: true}));
 var fileServer = new(static.Server)('./public');
 
 var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8');
+
+DAML.db = db;
 
 
 var onerr = function(err) {
@@ -42,8 +46,6 @@ var app = http.createServer(function (req, res) {
     return;
   }
   
-  res.writeHead(200, {"Content-Type": "text/html"});
-
   if(req.method == 'POST') {
     var body = '';
     req.on('data', function (data) {
@@ -51,11 +53,25 @@ var app = http.createServer(function (req, res) {
       if(body.length > 1e6) req.connection.destroy();
     });
     req.on('end', function () {
-      var POST = qs.parse(body); // no multipart forms      
-      addNode({name:POST["node[name]"], body:POST["node[body]"]});
+      var POST = qs.parse(body); // no multipart forms // POST["node[name]"]
+
+      global.output = [];
+      
+      // if(POST.daml) {
+        // this_html += DAML.run(POST.daml);
+        // TODO: allow text through here, not just json
+      // } 
+      DAML.run(POST.daml);
+
+      setTimeout(function() {
+        res.writeHead(200, {"Content-Type": "application/json"});
+        res.end(JSON.stringify(global.output));        
+      }, 300); // FIXME!!!
     });
+    return;
   }
   
+  res.writeHead(200, {"Content-Type": "text/html"});
   res.end(html);
 });
 
@@ -64,8 +80,39 @@ db.open(function(err, db) {
   if(err) return onerr('DB refused to open');
 
   console.log('connected!');
+  
+  // console.log(DAML.run('hi!{data add_noun name :lalala}{data find_noun}'));
+  
   app.listen(8000);
 });
+
+
+    // // graceful shutdown
+    // process.once('SIGUSR2', function () {
+    //   gracefulShutdown(function () {
+    //     process.kill(process.pid, 'SIGUSR2'); 
+    //   })
+    // });
+
+
+/*
+
+  so... the next thing to do is to get daml working in node. right? that seems to make sense. get it working here on the server.
+  we'll need a way to catch it. maybe a /catch page for now. that seems nice and simple.
+  so we'll route /catch to the DAML parser, and send back whatever it gives us. nice and simple.
+  and then... we'll have to think about routing and content and 'pages'.
+  but first, the parser catcher.
+  and maybe some fancy chat-like things before rooms.
+  
+  OK! now we're gassing with cooks.
+  - add DAML to the clientside
+  - add {network send {"data find_noun"}} to the clientside
+  - 
+
+*/
+
+
+
 
 // var qs = require('querystring');
 // 

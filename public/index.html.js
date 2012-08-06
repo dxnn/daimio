@@ -13,17 +13,8 @@
 <body id="">
   
   <form method="post" accept-charset="utf-8">
-    <label for="node_name">Node name</label>
-    <input type="text" name="node[name]" value="" id="node_name">
-    <label for="node_body">Node body</label>
-    <input type="text" name="node[body]" value="" id="node_body">
-    
-    <input type="submit" name="submit" value="Add">
-    <textarea name="commands" style="display:none">
-      {begin verbatim | process escape}
-        {node add name #node_name}
-      {end verbatim}
-    </textarea>
+    <textarea name="daml" rows="8" cols="40"></textarea>    
+    <input type="submit" name="submit" value="go">
   </form>
   
   <p>Node List</p>
