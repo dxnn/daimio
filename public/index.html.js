@@ -1,9 +1,6 @@
 <!DOCTYPE html> 
 <html> 
-<head> 
-  <!-- <link rel="stylesheet" href="http://sherpa.local/~dann/katsu/nodely/css/styles.css" type="text/css" media="screen" title="no title" charset="utf-8">
-  <link rel="stylesheet" href="http://sherpa.local/~dann/katsu/nodely/css/bootstrap.min.css" type="text/css" media="screen" title="no title" charset="utf-8"> -->
-  
+<head>   
   <title>FigViz</title>
   
   <script type="text/javascript" src="http://sherpa.local/~dann/figviz/public/js/__jquery.js"></script>
@@ -29,24 +26,50 @@
   
   <script type="text/daml" id="preload">
     {// Import any needed commands here //}
-
-    {begin noun_stuff | variable bind path :nouns}
-      {/ddd do action :bubbler params ({* (:name :foo :children nouns)})}
-      {/nouns | each template "{value | > {"@values.{value._id}" | run}}"}
-      {/@values | > :nouns}
+    {// (note that you can't access any other script blocks from here...) //}
+    
+  </script>
+    
+  <script type="text/daml" id="postload">    
+    {begin noun_stuff | variable bind path :@nouns}
+      {/ddd do action :bubbler params ({* (:name :foo :children @nouns)})}
+      {/@nouns | each template "{value | > {"@values.{value._id}" | run}}"}
+      {/@values | > :@nouns}
     {end noun_stuff}
     
-    {begin verb_stuff | variable bind path :verbs}
-      {begin hacking | each data verbs}
+    {begin verb_stuff | variable bind path :@verbs}
+      {begin hacking | each data @verbs}
         {value | > :verb}
+        {-1 | > :i}
         {// get the from and to indices //}
-        {nouns | each template "{value._id | is like verb.from | then "{key | add 0 | > :@source} "}{value._id | is like verb.to | then "{key | add 0 | > :@target} "}"}
-        {@source | > {"verbs.{key}.source" | run}}
-        {@target | > {"verbs.{key}.target" | run}}
+        {@nouns | each template "
+          {i | add 1 | > :i}
+          {value._id | is like verb.from | then "{i | > :@source} "}
+          {value._id | is like verb.to | then "{i | > :@target} "}
+        "}
+        {@source | > {"@verbs.{key}.source" | run}}
+        {@target | > {"@verbs.{key}.target" | run}}
       {end hacking}
-      {/verbs | each template "{value.from | > {"verbs.{key}.source" | run}}{value.to | > {"verbs.{key}.target" | run}}"}
-      {ddd do action :forcer params ({* (:nodes nouns :links verbs)})}
-    {end verb_stuff}
+      
+      {ddd do action :forcer params ({* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})})}
+    {end verb_stuff}    
+    
+    {begin noun_fetcher}
+      {//{begin blerp} {begin fetch | proc | {* (:DATA @data)}}
+        {noun find | > :data.nouns}
+      {end fetch}{end blerp} //}
+
+      {network send string "{noun find}" then "{this.#1 | list rekey path :_id | > :@nouns}"}
+    {end noun_fetcher}
+    
+    {begin verb_fetcher}
+      {network send string "{verb find}" then "{this.#1 | list rekey path :_id | > :@verbs}"}
+    {end verb_fetcher}
+    
+    
+    {// Activate!! //}
+    {noun_fetcher}
+    {process wait for 500 then "{verb_fetcher}"} {// this really stinks //}
     
     {dom on event :submit id :add_noun_form}
     {dom on event :submit id :add_verb_form}
@@ -54,19 +77,9 @@
     {dom on event :click id :nounlistlink daml "{dom toggle id :nounlist}"}
     {dom on event :click id :verblistlink daml "{dom toggle id :verblist}"}
     
+    {dom on event :click id :verblist filter :a daml "{this.dataset.id | dom log}"}
   </script>
-    
-  <script type="text/daml" id="noun_fetcher">
-    {begin blerp} {begin fetch | proc | {* (:DATA @data)}}
-      {noun find | > :data.nouns}
-    {end fetch}{end blerp}
-    
-    {network send string "{noun find}" then "{this.#1 | > :nouns}"}
-  </script>
-  
-  <script type="text/daml" id="verb_fetcher">
-    {network send string "{verb find}" then "{this.#1 | > :verbs}"}
-  </script>
+
   
   <div class="container">
     <div class="page-header">
@@ -111,8 +124,8 @@
 
         <h3><a href="#" id="nounlistlink">Noun List</a></h3>
         <ul id="nounlist" style="display:none">
-          <script type="text/daml" data-var="nouns">
-            {begin list | merge data nouns}
+          <script type="text/daml" data-var="@nouns">
+            {begin list | merge data @nouns}
               <li>
                 {name}, {type}, {data}
               </li>
@@ -148,8 +161,8 @@
 
           <label for="from">From</label>
           <select name="from" id="from_noun_list">
-            <script type="text/daml" data-var="nouns">
-              {begin list | merge data nouns}
+            <script type="text/daml" data-var="@nouns">
+              {begin list | merge data @nouns}
                 <option value="{_id}">{name}</option>
               {end list}
             </script>
@@ -157,8 +170,8 @@
 
           <label for="to">To</label>
           <select name="to" id="to_noun_list">
-            <script type="text/daml" data-var="nouns">
-              {begin list | merge data nouns}
+            <script type="text/daml" data-var="@nouns">
+              {begin list | merge data @nouns}
                 <option value="{_id}">{name}</option>
               {end list}
             </script>
@@ -171,18 +184,20 @@
           <textarea name="commands" style="display:none">
             {* (:type type :from from :to to :strength strength :data data) | > :context}
             {network send string "{verb add type POST.type from POST.from to POST.to strength POST.strength data {POST.data | run}}" then "{verb_fetcher}" context context}
-          </textarea>    
+          </textarea>  
         </form>
 
         <h3><a href="#" id="verblistlink">Verb List</a></h3>
         <ul id="verblist" style="display:none">
-          <script type="text/daml" data-var="verbs">
-            {begin list | merge data verbs}
+          <script type="text/daml" data-var="@verbs">
+            {begin list | merge data @verbs}
               <li>
-                <p><a href="#">edit</a> {type} <em>{strength}</em></p>
-                {from}
-                {to}
-                {data}
+                <p>
+                  <a href="#" data-id="{_id}">edit</a>
+                  <strong>{@nouns.{from}.name}</strong> -> <strong>{@nouns.{to}.name}</strong>
+                  <em>{type}</em> {strength}
+                </p>
+                {/data}
               </li>
             {end list}
           </script>
@@ -220,9 +235,8 @@
           }
         }
       });
-
-      DAML.run(DAML.VARS.noun_fetcher);
-      setTimeout(function() {DAML.run(DAML.VARS.verb_fetcher)}, 500);
+      
+      DAML.run(DAML.VARS.postload);
     });
   </script>
   
@@ -235,8 +249,8 @@
     -- better add support for nouns/verbs
     -- slicker D3 display, with verbs
     -- proper D3 refresh on add
-    - dataset update
-    - edit support
+    -- dataset update
+    - edit support: change add commands to 'just' add, and then require the follow-up 'set's... mark things as 'incomplete'? (immutable fields can be in the add command.) then modify the field to do fancy edit stuff. then add a command to do... something.
     - daggr?
     - build CPS interpreter
     - develop content engine
