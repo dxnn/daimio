@@ -1,0 +1,153 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <title>DAML Tests</title>
+  
+  <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__jquery.js"></script>
+  <script src="../js/get.php?file=daml&x=5"></script>
+  
+  <style type="text/css" media="screen">
+    code {
+      color: #00F;
+    }
+    .good {
+      background-color: #EFE;
+    }
+    .bad {
+      background-color: #FEE;
+    }
+    .actual {
+      color: #F00;
+      background-color: #FEE;
+    }
+  </style>
+
+  <script type="text/javascript" charset="utf-8">
+    // load daml file
+    $.get('daml.daml', function(data) {
+      
+      var win=0, lose=0, lines=data.split(/\n/);
+      var html='', whitespace='', wscount=0, mode='text', 
+          block_name='', code_string='', code_value='';
+      
+      /*
+        There's four modes:
+        - text, which just displays regular text based on whitespace and other factors
+        - code, which is a single line of code
+        - block, which is a big block of code
+        - assert, the value the code should process to
+      */
+      
+      var starttime = new Date().getTime();
+
+      for(var i=0, l=lines.length; i < l; i++) {
+        var line = lines[i];
+        
+        // mode switcher
+        if(mode != 'block') {
+          if(/^\s*\{begin /.test(line)) {
+            code_string = '';
+            block_name = line.match(/^\s*\{begin (\w+)/)[1];
+            mode = 'block'; // begin a block
+          } 
+          else if(mode == 'code') {
+            mode = 'assert'; // switch to assert
+          }
+          else if(/^\s*\{/.test(line)) {
+            code_string = line;
+            mode = 'code'; // begin a line of code
+          } 
+          else if(mode == 'assert') {
+            mode = 'text'; // switch back to text
+          }
+        }
+        
+        // continue the block
+        if(mode == 'block') {
+          code_string += line;
+        }
+        
+        // end the block
+        if(new RegExp("\{end " + block_name + '\}').test(line)) {
+          mode = 'code';
+        }
+        
+        // sort out whitespace
+        whitespace = '';
+        wscount = line.search(/\S/);
+        if(wscount >= 1) {
+          whitespace = new Array( wscount + 1 ).join( '&nbsp;' );
+          // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;');
+        }
+        
+        // handle text
+        if(mode == 'text') {
+          html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>';
+        }
+        
+        // handle code
+        if(mode == 'code') {
+          html += '<code><pre>' + code_string + '</pre></code>';
+          code_value = DAML.run(code_string);
+        }
+        
+        // handle asserts
+        if(mode == 'assert') {
+          if(code_value === false) {
+            code_value = '';
+          }
+          
+          if(typeof(code_value) != 'string') {
+            code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : '';
+          }
+          
+          if(code_value.trim() === line.trim()) {
+            result = 'good';
+            win++;
+          } else {
+            result = 'bad';
+            lose++;
+          }
+          
+          // TODO: convert line and code_value to escaped html
+          
+          html += '<pre class="assert ' + result + '">' + line + '</pre>';
+          if(result == 'bad') {
+            html += '<pre class="actual">Actual: ' + code_value + '</pre>';
+          }
+        }
+      }
+      
+      var endtime = new Date().getTime();
+
+      stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>";
+      stats += '<p><span class="good">Won ' + win + ' tests.</span></p>';
+      
+      if(lose) stats += '<p><span class="bad">Lost ' + lose + ' tests.</span></p>';
+      if(!lose) stats += '<p>You win!!!</p>'
+      
+      $('#stats').html(stats);
+      $('#tests').html(html);
+      
+      // run daml
+      // eat cake.
+    });
+    
+  </script>
+  
+</head>
+<body id="">  
+  <div id="stats"></div>
+  
+  <div id="tests"></div>
+  
+  <form id="commanddiv" style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
+    <div id="desc" style="display: none; bottom: 40px; z-index:10;"></div>
+    <div id="response" style="display: none; bottom: 40px; z-index:11;"></div>
+    <div id="autofill" style="display: none; z-index:12; width: 200px; bottom: 40px; position: fixed; margin: 0px;"></div>
+    <input type="text" id="commander" style="width: 100%; font-size: 20px; margin: 0px;">
+  </form>
+  
+</body>
+</html>
