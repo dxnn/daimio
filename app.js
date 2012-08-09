@@ -12,6 +12,7 @@ var fileServer = new(static.Server)('./public');
 var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8');
 
 DAML.db = db;
+DAML.mongo = mongo;
 
 
 var onerr = function(err) {
@@ -61,12 +62,12 @@ var app = http.createServer(function (req, res) {
         // this_html += DAML.run(POST.daml);
         // TODO: allow text through here, not just json
       // } 
+      DAML.add_global('POST', POST);
       DAML.run(POST.daml);
 
       setTimeout(function() {
         res.writeHead(200, {"Content-Type": "application/json"});
         res.end(JSON.stringify(global.output));
-        console.log(global.output);
       }, 300); // FIXME!!!
     });
     return;
