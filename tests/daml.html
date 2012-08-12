@@ -5,7 +5,7 @@
   
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__jquery.js"></script>
-  <script src="../js/get.php?file=daml&x=5"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/get.php?file=node_modules/daml&x=1"></script>
   
   <style type="text/css" media="screen">
     code {
@@ -26,6 +26,9 @@
   <script type="text/javascript" charset="utf-8">
     // load daml file
     $.get('daml.daml', function(data) {
+      
+      // HACK (slight)
+      daml_data = data;
       
       var win=0, lose=0, lines=data.split(/\n/);
       var html='', whitespace='', wscount=0, mode='text', 

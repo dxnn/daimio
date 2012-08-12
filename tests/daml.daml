@@ -946,11 +946,12 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
 
 
 Depth 2: Maps
+  TODO: this whole section needs changing to conform with the new 'list' data type.
 
   A map (aka hash, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. There's no built-in syntax for creating maps, but fortunately we have a command to do it for us.
   
     Here is the command written out:
-      {array pair value (:one :first :two :second)}
+      {list pair value (:one :first :two :second)}
       {"one":"first","two":"second"}
       
     And in its much more common aliased form:
@@ -982,8 +983,12 @@ Depth 3: Further fun with variables
   AoH
   #vars
 
-    ALL-CAPS variables are also global, and are read-only:
-      {123 | > :MY.id}
+    ALL-CAPS variables are write-once read-many (WORM):
+      {128 | > :MY.id}
+        128
+      {256 | > :MY.id}
+        128
+      // the above also throws an error...
 
       Request variables come from POST and the querystring. Reference them like this:
       {REQUEST.foo}
