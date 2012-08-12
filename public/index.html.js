@@ -15,10 +15,34 @@
   <link href="http://sherpa.local/~dann/euphrates/css/bootstrap.css" rel="stylesheet">
   
   <style type="text/css">
-  line.link {
-    stroke: #999;
-    stroke-opacity: .6;
-  }
+    #grid .background {
+      fill: #eee;
+    }
+    #grid line {
+      stroke: #fff;
+    }
+    #grid text.active {
+      fill: red;
+    }
+  
+    #force svg {
+      background: #efe;
+    }
+    #force .link {
+      stroke: #999;
+      stroke-opacity: .6;
+    }
+
+    #hive svg {
+      background: #fee;
+    }
+    #hive .link {
+      stroke-width: 1.5px;
+    }
+    #hive .axis, #hive .node {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
   </style>
   
 </head>
@@ -35,12 +59,15 @@
       {/ddd do action :bubbler params ({* (:name :foo :children @nouns)})}
       {/@nouns | each template "{value | > {"@values.{value._id}" | run}}"}
       {/@values | > :@nouns}
+      {begin hive_hacking | each data @nouns}
+        {math random max 2 | > {"@nouns.{key}.x" | run}}
+        {math random max 10 | math divide by 10 | > {"@nouns.{key}.y" | run}}
+      {end hive_hacking}
     {end noun_stuff}
     
     {begin verb_stuff | variable bind path :@verbs}
-      {begin hacking | each data @verbs}
-        {value | > :verb}
-        {-1 | > :i}
+      {begin forcer_hacking | each data @verbs}
+        {value | > :verb || -1 | > :i}
         {// get the from and to indices //}
         {@nouns | each template "
           {i | add 1 | > :i}
@@ -49,9 +76,18 @@
         "}
         {@source | > {"@verbs.{key}.source" | run}}
         {@target | > {"@verbs.{key}.target" | run}}
-      {end hacking}
+      {end forcer_hacking}
       
-      {ddd do action :forcer params ({* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})})}
+      {ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey} :charge -800 :distance 50)} options {* (:id :grid)} }
+      
+      {ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey} :charge -800 :distance 50)} options {* (:id :hive)} }
+      
+      {ddd do action :forcer 
+              params {* (:nodes {@nouns | list rekey} 
+                         :links {@verbs | list rekey} 
+                         :charge -800 
+                         :distance 150)} 
+              options {* (:id :force)} }
     {end verb_stuff}    
     
     {begin noun_fetcher}
@@ -207,6 +243,28 @@
     </div>
   </div>
   
+  <!-- Make these into tabs or something -->
+  <div class='gallery' id='grid'> </div>
+  <div class='gallery' id='hive'> </div>
+  <div class='gallery' id='force'> </div>
+  
+  <pre style="display:none">
+    TODOS:
+    -- make {noun add}, find, verb add/find
+    -- add D3 support
+    -- better add support for nouns/verbs
+    -- slicker D3 display, with verbs
+    -- proper D3 refresh on add
+    -- dataset update
+    - edit support: change add commands to 'just' add, and then require the follow-up 'set's... mark things as 'incomplete'? (immutable fields can be in the add command.) then modify the field to do fancy edit stuff. then add a command to do... something.
+    - daggr?
+    - build CPS interpreter
+    - develop content engine
+    - connect routes to content
+    - allow client-side editing of content
+    - real-time stuffs
+  </pre>
+  
   <script type="text/javascript">
     $(document).ready(function() {
       // preload
@@ -238,95 +296,223 @@
       
       DAML.run(DAML.VARS.postload);
     });
+
+
+    // D3 STUFF!!!
+
+
+    DAML.ETC.d3.forcer = function(id, width, height, nodes, links, charge, distance) {    
+      // defaults
+      var width = width || 800,
+          height = height || 600,
+          id = id || 'chart',
+          charge = charge || -800,
+          distance = distance || 150,
+          color = d3.scale.category20();
+      
+      d3.select("#" + id + " svg").remove();
+      var svg = d3.select('#' + id).append("svg")
+          .attr("width", width)
+          .attr("height", height);
+      
+      var force = d3.layout.force()
+          .charge(charge)
+          .linkDistance(distance)
+          .size([width, height]);
+      
+      force.nodes(nodes)
+           .links(links)
+           .start();
+      
+      var link = svg.selectAll("line.link")
+          .data(links)
+        .enter().append("line")
+          .attr("class", "link")
+          .style("stroke-width", function(d) { return Math.sqrt(d.strength*4 || 9); });
+      
+      // link.exit().remove();
+      
+      var node = svg.selectAll("g.node")
+          .data(nodes)
+        .enter().append("g")
+          .attr("class", "node")
+          .call(force.drag);
+
+      node.append("circle")
+          .attr("r", function(d) { return Math.sqrt(d.data.shoes || 8) * 13; })
+          .style("fill", function(d) { return color(d.data.height || 2); });
+
+      node.append("title")
+          .text(function(d) { return d.name; });
+
+      node.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", ".3em")
+          .text(function(d) { return d.name; });
+  
+      // node.exit().remove();
+  
+      force.on("tick", function() {
+        link.attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+  
+        node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+      });
+    };
+
+
+    // hive graphs
+
+    DAML.ETC.d3.hiver = function(id, width, height, nodes, links, charge, distance) {    
+      // defaults
+      var width = width || 800,
+          height = height || 600,
+          id = id || 'chart';
+      
+      var innerRadius = 40,
+          outerRadius = 240;
+
+      var angle = d3.scale.ordinal().domain(d3.range(4)).rangePoints([0, 2 * Math.PI]),
+          radius = d3.scale.linear().range([innerRadius, outerRadius]),
+          color = d3.scale.category10().domain(d3.range(20));
+
+      d3.select("#" + id + " svg").remove();
+      var svg = d3.select('#' + id).append("svg")
+          .attr("width", width)
+          .attr("height", height)
+        .append("g")
+          .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+          
+    // var nodes = [
+    //   {x: 0, y: .1},
+    //   {x: 0, y: .9},
+    //   {x: 1, y: .2},
+    //   {x: 1, y: .3},
+    //   {x: 2, y: .1},
+    //   {x: 2, y: .8}
+    // ];
+    // 
+    // var links = [
+    //   {source: nodes[0], target: nodes[2]},
+    //   {source: nodes[1], target: nodes[3]},
+    //   {source: nodes[2], target: nodes[4]},
+    //   {source: nodes[2], target: nodes[5]},
+    //   {source: nodes[3], target: nodes[5]},
+    //   {source: nodes[4], target: nodes[0]},
+    //   {source: nodes[5], target: nodes[1]}
+    // ];
+
+      svg.selectAll(".axis")
+          .data(d3.range(3))
+        .enter().append("line")
+          .attr("class", "axis")
+          .attr("transform", function(d) { return "rotate(" + degrees(angle(d)) + ")"; })
+          .attr("x1", radius.range()[0])
+          .attr("x2", radius.range()[1]);
+
+      for(var i=0, l=links.length; i < l; i++) {
+        links[i].source = nodes[links[i].source];
+        links[i].target = nodes[links[i].target];
+      }
+
+      svg.selectAll(".link")
+          .data(links)
+        .enter().append("path")
+          .attr("class", "link")
+          .attr("d", link()
+          .angle(function(d) { return angle(d.x); })
+          .radius(function(d) { return radius(d.y); }))
+          .style("stroke", function(d) { return color(d.source.x); });
+
+      svg.selectAll(".node")
+          .data(nodes)
+        .enter().append("circle")
+          .attr("class", "node")
+          .attr("transform", function(d) { return "rotate(" + degrees(angle(d.x)) + ")"; })
+          .attr("cx", function(d) { return radius(d.y); })
+          .attr("r", 5)
+          .style("fill", function(d) { return color(d.x); });
+
+      function degrees(radians) {
+        return radians / Math.PI * 180 - 90;
+      }
+
+      function link() {
+        var source = function(d) { return d.source; },
+            target = function(d) { return d.target; },
+            angle = function(d) { return d.angle; },
+            startRadius = function(d) { return d.radius; },
+            endRadius = startRadius,
+            arcOffset = -Math.PI / 2;
+
+        function link(d, i) {
+          var s = node(source, this, d, i),
+              t = node(target, this, d, i),
+              x;
+          if (t.a < s.a) x = t, t = s, s = x;
+          if (t.a - s.a > Math.PI) s.a += 2 * Math.PI;
+          var a1 = s.a + (t.a - s.a) / 3,
+              a2 = t.a - (t.a - s.a) / 3;
+          return "M" + Math.cos(s.a) * s.r0 + "," + Math.sin(s.a) * s.r0
+              + "L" + Math.cos(s.a) * s.r1 + "," + Math.sin(s.a) * s.r1
+              + "C" + Math.cos(a1) * s.r1 + "," + Math.sin(a1) * s.r1
+              + " " + Math.cos(a2) * t.r1 + "," + Math.sin(a2) * t.r1
+              + " " + Math.cos(t.a) * t.r1 + "," + Math.sin(t.a) * t.r1
+              + "L" + Math.cos(t.a) * t.r0 + "," + Math.sin(t.a) * t.r0
+              + "C" + Math.cos(a2) * t.r0 + "," + Math.sin(a2) * t.r0
+              + " " + Math.cos(a1) * s.r0 + "," + Math.sin(a1) * s.r0
+              + " " + Math.cos(s.a) * s.r0 + "," + Math.sin(s.a) * s.r0;
+        }
+
+        function node(method, thiz, d, i) {
+          var node = method.call(thiz, d, i),
+              a = +(typeof angle === "function" ? angle.call(thiz, node, i) : angle) + arcOffset,
+              r0 = +(typeof startRadius === "function" ? startRadius.call(thiz, node, i) : startRadius),
+              r1 = (startRadius === endRadius ? r0 : +(typeof endRadius === "function" ? endRadius.call(thiz, node, i) : endRadius));
+          return {r0: r0, r1: r1, a: a};
+        }
+
+        link.source = function(_) {
+          if (!arguments.length) return source;
+          source = _;
+          return link;
+        };
+
+        link.target = function(_) {
+          if (!arguments.length) return target;
+          target = _;
+          return link;
+        };
+
+        link.angle = function(_) {
+          if (!arguments.length) return angle;
+          angle = _;
+          return link;
+        };
+
+        link.radius = function(_) {
+          if (!arguments.length) return startRadius;
+          startRadius = endRadius = _;
+          return link;
+        };
+
+        link.startRadius = function(_) {
+          if (!arguments.length) return startRadius;
+          startRadius = _;
+          return link;
+        };
+
+        link.endRadius = function(_) {
+          if (!arguments.length) return endRadius;
+          endRadius = _;
+          return link;
+        };
+
+        return link;
+      }
+    };
   </script>
-  
-  <div class='gallery' id='chart'> </div>
-  
-  <pre>
-    TODOS:
-    -- make {noun add}, find, verb add/find
-    -- add D3 support
-    -- better add support for nouns/verbs
-    -- slicker D3 display, with verbs
-    -- proper D3 refresh on add
-    -- dataset update
-    - edit support: change add commands to 'just' add, and then require the follow-up 'set's... mark things as 'incomplete'? (immutable fields can be in the add command.) then modify the field to do fancy edit stuff. then add a command to do... something.
-    - daggr?
-    - build CPS interpreter
-    - develop content engine
-    - connect routes to content
-    - allow client-side editing of content
-    - real-time stuffs
-  </pre>
-  
-  <script>
-  
-  var width = 960,
-      height = 500;
-  
-  var color = d3.scale.category20();
-  
-  var force = d3.layout.force()
-      .charge(-800)
-      .linkDistance(150)
-      .size([width, height]);
-  
-  var svg;
-
-  var set_svg = function() {
-    d3.select("svg").remove();
-    svg = d3.select("#chart").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-  }
-  
-  var forcer = function(json) {
-    set_svg();
-    
-    force
-        .nodes(json.nodes)
-        .links(json.links)
-        .start();
-  
-    var link = svg.selectAll("line.link")
-        .data(json.links)
-      .enter().append("line")
-        .attr("class", "link")
-        .style("stroke-width", function(d) { return Math.sqrt(d.strength*4 || 9); });
-
-    // link.exit().remove();
-
-    var node = svg.selectAll("g.node")
-        .data(json.nodes)
-      .enter().append("g")
-        .attr("class", "node")
-        .call(force.drag);
-
-    node.append("circle")
-        .attr("r", function(d) { return Math.sqrt(d.data.shoes || 8) * 13; })
-        .style("fill", function(d) { return color(d.data.height || 2); });
-
-    node.append("title")
-        .text(function(d) { return d.name; });
-
-    node.append("text")
-        .attr("text-anchor", "middle")
-        .attr("dy", ".3em")
-        .text(function(d) { return d.name; });
-  
-    // node.exit().remove();
-  
-    force.on("tick", function() {
-      link.attr("x1", function(d) { return d.source.x; })
-          .attr("y1", function(d) { return d.source.y; })
-          .attr("x2", function(d) { return d.target.x; })
-          .attr("y2", function(d) { return d.target.y; });
-  
-      node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-    });
-  };
-  
-  </script>
-  
 </body>
 </html>
