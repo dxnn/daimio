@@ -15,6 +15,9 @@
   <link href="http://sherpa.local/~dann/euphrates/css/bootstrap.css" rel="stylesheet">
   
   <style type="text/css">
+    #grid svg {
+      font: 12px sans-serif;
+    }
     #grid .background {
       fill: #eee;
     }
@@ -34,7 +37,7 @@
     }
 
     #hive svg {
-      background: #fee;
+      background: #eef;
     }
     #hive .link {
       stroke-width: 1.5px;
@@ -54,7 +57,20 @@
     
   </script>
     
-  <script type="text/daml" id="postload">    
+  <script type="text/daml" id="postload">
+    {begin build_viz}
+      {ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :grid)} }
+      
+      {ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :hive)} }
+      
+      {ddd do action :forcer 
+              params {* (:nodes {@nouns | list rekey} 
+                         :links {@verbs | list rekey} 
+                         :charge -800 
+                         :distance 150)} 
+              options {* (:id :force)} }
+    {end build_viz}
+      
     {begin noun_stuff | variable bind path :@nouns}
       {/ddd do action :bubbler params ({* (:name :foo :children @nouns)})}
       {/@nouns | each template "{value | > {"@values.{value._id}" | run}}"}
@@ -63,6 +79,8 @@
         {math random max 2 | > {"@nouns.{key}.x" | run}}
         {math random max 10 | math divide by 10 | > {"@nouns.{key}.y" | run}}
       {end hive_hacking}
+      {@once_through | then "{build_viz}"}
+      {:true | > :@once_through}
     {end noun_stuff}
     
     {begin verb_stuff | variable bind path :@verbs}
@@ -77,17 +95,7 @@
         {@source | > {"@verbs.{key}.source" | run}}
         {@target | > {"@verbs.{key}.target" | run}}
       {end forcer_hacking}
-      
-      {ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey} :charge -800 :distance 50)} options {* (:id :grid)} }
-      
-      {ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey} :charge -800 :distance 50)} options {* (:id :hive)} }
-      
-      {ddd do action :forcer 
-              params {* (:nodes {@nouns | list rekey} 
-                         :links {@verbs | list rekey} 
-                         :charge -800 
-                         :distance 150)} 
-              options {* (:id :force)} }
+      {build_viz}   
     {end verb_stuff}    
     
     {begin noun_fetcher}
@@ -113,7 +121,16 @@
     {dom on event :click id :nounlistlink daml "{dom toggle id :nounlist}"}
     {dom on event :click id :verblistlink daml "{dom toggle id :verblist}"}
     
+    {dom on event :click id :nounlist filter :a daml "{this.dataset.id | > :@selected_noun}"}
     {dom on event :click id :verblist filter :a daml "{this.dataset.id | dom log}"}
+    
+    {dom refresh id :add_noun_form}
+
+    {dom on event :click id :grid_button daml "{dom toggle id :grid}"}
+    {dom on event :click id :hive_button daml "{dom toggle id :hive}"}
+    {dom on event :click id :force_button daml "{dom toggle id :force}"}
+    
+    {dom on event :click id :add_noun_form filter :#add_a_new_noun daml "{"" | > :@selected_noun}"}
   </script>
 
   
@@ -136,26 +153,62 @@
 
 
         <form method="post" accept-charset="utf-8" id="add_noun_form">
-          <h2>Add a new noun</h2>
+          <script type="text/daml" data-var="@selected_noun">
+            {@selected_noun | then @nouns.{@selected_noun} else "" | > :noun ||}
+            {begin editing | if noun}
+              <h2>Editing {noun.name}</h2>
+              <a href="#" id="add_a_new_noun">Add a new noun instead</a>
+            {end editing}
+            {begin adding | if {not noun}}
+              <h2>Add a new noun</h2>
+            {end adding}
 
-          <label for="name">Name</label>
-          <input type="text" name="name" value="" id="name">
+            <label for="name">Name</label>
+            <input type="text" name="name" value="{noun.name}" id="name">
 
-          <label for="type">Type</label>
-          <select name="type" id="type">
-            <option value="instigator">instigator</option>
-            <option value="cluster">cluster</option>
-            <option value="thing">thing</option>
-          </select>
+            <label for="type">Type</label>
+            {* (:instigator (
+                  :individual)
+                :cluster (
+                  :organization 
+                  :community 
+                  :company)
+                :thing (
+                  :exhibition
+                  :engagement
+                  :workshop
+                  :event
+                  :game
+                  :art
+                  :media
+                  :publication)
+            ) | > :types ||}
+            <select name="type" id="type">
+              {begin outer | each data types}
+                <optgroup label="{key}">
+                  {begin inner | each data value}
+                    <option {noun.type | is like value | then :selected} value="{value}">{value}</option>
+                  {end inner}
+                </optgroup>
+              {end outer}
+            </select>
+            
+            {// <label for="data">Data</label>
+            <input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
 
-          <label for="data">Data</label>
-          <input type="text" name="data" value="" id="data">
-
-          <input type="submit" name="submit" value="add">
-          <textarea name="commands" style="display:none">
-            {* (:name name :type type :data data) | > :context}
-            {network send string "{noun add name POST.name type POST.type data {POST.data | run}}" then "{noun_fetcher}" context context}
-          </textarea>    
+            <input type="hidden" name="id" value="{noun._id}" id="id" />
+            <input type="submit" name="submit" value="{noun | then :Edit else :Add}">
+            <textarea name="commands" style="display:none">
+              {begin verbatim | quote}
+                {* (:id id :name name :type type :data data) | > :context}
+                {if
+                  id then "{noun set_name id POST.id value POST.name}{noun set_type id POST.id value POST.type}{noun set_data id POST.id value {POST.data | run}}"
+                  else "{noun add name POST.name type POST.type data {POST.data | run}}"
+                 | > :actions | dom log | ""}
+                {network send string actions then "{noun_fetcher}" context context}
+              {end verbatim}
+            </textarea>
+          </script>
         </form>
 
         <h3><a href="#" id="nounlistlink">Noun List</a></h3>
@@ -163,7 +216,12 @@
           <script type="text/daml" data-var="@nouns">
             {begin list | merge data @nouns}
               <li>
-                {name}, {type}, {data}
+                <p>
+                  <a href="#" data-id="{_id}">edit</a>
+                  <strong>{name}</strong>
+                  <em>{type}</em>
+                </p>
+                {/data}
               </li>
             {end list}
           </script>
@@ -213,13 +271,13 @@
             </script>
           </select>
 
-          <label for="strength">Strength</label>
-          <input type="text" name="strength" value="">
+          <label for="value">Strength</label>
+          <input type="text" name="value" value="">
 
           <input type="submit" name="submit" value="add">
           <textarea name="commands" style="display:none">
-            {* (:type type :from from :to to :strength strength :data data) | > :context}
-            {network send string "{verb add type POST.type from POST.from to POST.to strength POST.strength data {POST.data | run}}" then "{verb_fetcher}" context context}
+            {* (:type type :from from :to to :value value :data data) | > :context}
+            {network send string "{verb add type POST.type from POST.from to POST.to value POST.value data {POST.data | run}}" then "{verb_fetcher}" context context}
           </textarea>  
         </form>
 
@@ -231,7 +289,7 @@
                 <p>
                   <a href="#" data-id="{_id}">edit</a>
                   <strong>{@nouns.{from}.name}</strong> -> <strong>{@nouns.{to}.name}</strong>
-                  <em>{type}</em> {strength}
+                  <em>{type}</em> {value}
                 </p>
                 {/data}
               </li>
@@ -243,19 +301,28 @@
     </div>
   </div>
   
+  
+  <!-- VIZ! -->
+  
+  <select name="grid_order" id="grid_order">
+    <option value="name">name</option>
+    <option value="group">group</option>
+    <option value="count">count</option>
+  </select>
+  
   <!-- Make these into tabs or something -->
-  <div class='gallery' id='grid'> </div>
-  <div class='gallery' id='hive'> </div>
-  <div class='gallery' id='force'> </div>
+  <div>    
+    <button id="grid_button">Grid</button>
+    <button id="hive_button">Hive</button>
+    <button id="force_button">Force</button>
+  </div>
+  
+  <div class='gallery' id='grid' style="display:none"> </div>
+  <div class='gallery' id='hive' style="display:none"> </div>
+  <div class='gallery' id='force' style="display:none"> </div>
   
   <pre style="display:none">
     TODOS:
-    -- make {noun add}, find, verb add/find
-    -- add D3 support
-    -- better add support for nouns/verbs
-    -- slicker D3 display, with verbs
-    -- proper D3 refresh on add
-    -- dataset update
     - edit support: change add commands to 'just' add, and then require the follow-up 'set's... mark things as 'incomplete'? (immutable fields can be in the add command.) then modify the field to do fancy edit stuff. then add a command to do... something.
     - daggr?
     - build CPS interpreter
@@ -263,6 +330,8 @@
     - connect routes to content
     - allow client-side editing of content
     - real-time stuffs
+    - rollbacks and event stuff (and hooks to externals, like ifttt)
+    - rooms
   </pre>
   
   <script type="text/javascript">
@@ -298,14 +367,16 @@
     });
 
 
-    // D3 STUFF!!!
 
+    // FORCE
 
+    // nodes = {name:foo} [also data.shoes & data.height, for now]
+    // links = {source: 1, target: 2}
     DAML.ETC.d3.forcer = function(id, width, height, nodes, links, charge, distance) {    
       // defaults
       var width = width || 800,
           height = height || 600,
-          id = id || 'chart',
+          id = id || 'force',
           charge = charge || -800,
           distance = distance || 150,
           color = d3.scale.category20();
@@ -328,7 +399,7 @@
           .data(links)
         .enter().append("line")
           .attr("class", "link")
-          .style("stroke-width", function(d) { return Math.sqrt(d.strength*4 || 9); });
+          .style("stroke-width", function(d) { return Math.sqrt(d.value*4 || 9); });
       
       // link.exit().remove();
       
@@ -363,13 +434,15 @@
     };
 
 
-    // hive graphs
+    // HIVE
 
-    DAML.ETC.d3.hiver = function(id, width, height, nodes, links, charge, distance) {    
+    // nodes = {x:1, y:0.4}
+    // links = {source: 1, target: 2}
+    DAML.ETC.d3.hiver = function(id, width, height, nodes, links) {    
       // defaults
       var width = width || 800,
           height = height || 600,
-          id = id || 'chart';
+          id = id || 'hive';
       
       var innerRadius = 40,
           outerRadius = 240;
@@ -385,25 +458,6 @@
         .append("g")
           .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
           
-    // var nodes = [
-    //   {x: 0, y: .1},
-    //   {x: 0, y: .9},
-    //   {x: 1, y: .2},
-    //   {x: 1, y: .3},
-    //   {x: 2, y: .1},
-    //   {x: 2, y: .8}
-    // ];
-    // 
-    // var links = [
-    //   {source: nodes[0], target: nodes[2]},
-    //   {source: nodes[1], target: nodes[3]},
-    //   {source: nodes[2], target: nodes[4]},
-    //   {source: nodes[2], target: nodes[5]},
-    //   {source: nodes[3], target: nodes[5]},
-    //   {source: nodes[4], target: nodes[0]},
-    //   {source: nodes[5], target: nodes[1]}
-    // ];
-
       svg.selectAll(".axis")
           .data(d3.range(3))
         .enter().append("line")
@@ -513,6 +567,153 @@
         return link;
       }
     };
+    
+    
+    // GRID
+    
+    
+    // nodes = {name:foo, group:1}
+    // links = {source:3, target:0, value:10}
+    DAML.ETC.d3.grider = function(id, width, height, nodes, links) {
+      // defaults
+      var width = width || 720,
+          height = height || 720,
+          id = id || 'grid';
+      
+      var margin = {top: 120, right: 0, bottom: 10, left: 120};
+
+      var x = d3.scale.ordinal().rangeBands([0, width]),
+          z = d3.scale.linear().domain([0, 4]).clamp(true),
+          c = d3.scale.category10().domain(d3.range(10));
+
+      d3.select("#" + id + " svg").remove();
+      var svg = d3.select('#' + id).append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var matrix = [],
+          n = nodes.length;
+
+      // Compute index per node.
+      nodes.forEach(function(node, i) {
+        node.index = i;
+        node.count = 0;
+        matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+      });
+
+      // Convert links to matrix; count character occurrences.
+      links.forEach(function(link) {
+        matrix[link.source][link.target].z += link.value;
+        matrix[link.target][link.source].z += link.value;
+        matrix[link.source][link.source].z += link.value;
+        matrix[link.target][link.target].z += link.value;
+        nodes[link.source].count += link.value;
+        nodes[link.target].count += link.value;
+      });
+
+      // Precompute the orders.
+      var orders = {
+        name: d3.range(n).sort(function(a, b) { return d3.ascending(nodes[a].name, nodes[b].name); }),
+        count: d3.range(n).sort(function(a, b) { return nodes[b].count - nodes[a].count; }),
+        group: d3.range(n).sort(function(a, b) { return nodes[b].group - nodes[a].group; })
+      };
+
+      // The default sort order.
+      x.domain(orders.name);
+
+      svg.append("rect")
+          .attr("class", "background")
+          .attr("width", width)
+          .attr("height", height);
+
+      var row = svg.selectAll(".row")
+          .data(matrix)
+        .enter().append("g")
+          .attr("class", "row")
+          .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+          .each(row);
+
+      row.append("line")
+          .attr("x2", width);
+
+      row.append("text")
+          .attr("x", -6)
+          .attr("y", x.rangeBand() / 2)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "end")
+          .text(function(d, i) { return nodes[i].name; });
+
+      var column = svg.selectAll(".column")
+          .data(matrix)
+        .enter().append("g")
+          .attr("class", "column")
+          .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+
+      column.append("line")
+          .attr("x1", -width);
+
+      column.append("text")
+          .attr("x", 6)
+          .attr("y", x.rangeBand() / 2)
+          .attr("dy", ".32em")
+          .attr("text-anchor", "start")
+          .text(function(d, i) { return nodes[i].name; });
+
+      function row(row) {
+        var cell = d3.select(this).selectAll(".cell")
+            .data(row.filter(function(d) { return d.z; }))
+          .enter().append("rect")
+            .attr("class", "cell")
+            .attr("x", function(d) { return x(d.x); })
+            .attr("width", x.rangeBand())
+            .attr("height", x.rangeBand())
+            .style("fill-opacity", function(d) { return z(d.z); })
+            .style("fill", function(d) { return nodes[d.x].group == nodes[d.y].group ? c(nodes[d.x].group) : null; })
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout);
+      }
+
+      function mouseover(p) {
+        d3.selectAll(".row text").classed("active", function(d, i) { return i == p.y; });
+        d3.selectAll(".column text").classed("active", function(d, i) { return i == p.x; });
+      }
+
+      function mouseout() {
+        d3.selectAll("text").classed("active", false);
+      }
+
+      d3.select("#order").on("change", function() {
+        clearTimeout(timeout);
+        order(this.value);
+      });
+
+      function order(value) {
+        x.domain(orders[value]);
+
+        var t = svg.transition().duration(2500);
+
+        t.selectAll(".row")
+            .delay(function(d, i) { return x(i) * 4; })
+            .attr("transform", function(d, i) { return "translate(0," + x(i) + ")"; })
+          .selectAll(".cell")
+            .delay(function(d) { return x(d.x) * 4; })
+            .attr("x", function(d) { return x(d.x); });
+
+        t.selectAll(".column")
+            .delay(function(d, i) { return x(i) * 4; })
+            .attr("transform", function(d, i) { return "translate(" + x(i) + ")rotate(-90)"; });
+      }
+
+      // var timeout = setTimeout(function() {
+      //   order("group");
+      //   d3.select("#order").property("selectedIndex", 2).node().focus();
+      // }, 5000);
+      
+      window.order = order;
+    };
+    
   </script>
 </body>
 </html>
