@@ -95,7 +95,8 @@
         {@source | > {"@verbs.{key}.source" | run}}
         {@target | > {"@verbs.{key}.target" | run}}
       {end forcer_hacking}
-      {build_viz}   
+      {build_viz}
+      {dom refresh id :add_verb_form}
     {end verb_stuff}    
     
     {begin noun_fetcher}
@@ -122,7 +123,7 @@
     {dom on event :click id :verblistlink daml "{dom toggle id :verblist}"}
     
     {dom on event :click id :nounlist filter :a daml "{this.dataset.id | > :@selected_noun}"}
-    {dom on event :click id :verblist filter :a daml "{this.dataset.id | dom log}"}
+    {dom on event :click id :verblist filter :a daml "{this.dataset.id | > :@selected_verb}"}
     
     {dom refresh id :add_noun_form}
 
@@ -131,6 +132,7 @@
     {dom on event :click id :force_button daml "{dom toggle id :force}"}
     
     {dom on event :click id :add_noun_form filter :#add_a_new_noun daml "{"" | > :@selected_noun}"}
+    {dom on event :click id :add_verb_form filter :#add_a_new_verb daml "{"" | > :@selected_verb}"}
   </script>
 
   
@@ -196,13 +198,15 @@
             {// <label for="data">Data</label>
             <input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
 
-            <input type="hidden" name="id" value="{noun._id}" id="id" />
+            <input type="hidden" name="id" value="{noun._id}" id="id">
             <input type="submit" name="submit" value="{noun | then :Edit else :Add}">
             <textarea name="commands" style="display:none">
               {begin verbatim | quote}
                 {* (:id id :name name :type type :data data) | > :context}
-                {if
-                  id then "{noun set_name id POST.id value POST.name}{noun set_type id POST.id value POST.type}{noun set_data id POST.id value {POST.data | run}}"
+                {if id 
+                  then "{noun set_name id POST.id value POST.name}
+                        {noun set_type id POST.id value POST.type}
+                        {noun set_data id POST.id value {POST.data | run}}"
                   else "{noun add name POST.name type POST.type data {POST.data | run}}"
                  | > :actions | dom log | ""}
                 {network send string actions then "{noun_fetcher}" context context}
@@ -232,53 +236,79 @@
 
       <div class="span6">
         <form method="post" accept-charset="utf-8" id="add_verb_form">
-          <h2>Add a new verb</h2>
+          <script type="text/daml" data-var="@selected_verb">
+            {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
+            {begin editing | if verb}
+              <h2>Editing {@nouns.{verb.from}.name} -> {@nouns.{verb.to}.name}</h2>
+              <a href="#" id="add_a_new_verb">Add a new verb instead</a>
+            {end editing}
+            {begin adding | if {not verb}}
+              <h2>Add a new verb</h2>
+            {end adding}
 
-          <label for="type">Type</label>
-          <select name="type" id="type">
-            <option>hired</option>
-            <option>participated</option>
-            <option>organized</option>
-            <option>coordinated</option>
-            <option>created</option>
-            <option>influenced</option>
-            <option>originated</option>
-            <option>consulted</option>
-            <option>cited</option>
-            <option>assisted</option>
-            <option>mentored</option>
-            <option>collaborated</option>
-          </select>
+            <label for="type">Type</label>
+            {(:instigator
+              :hired
+              :participated
+              :organized
+              :coordinated
+              :created
+              :influenced
+              :originated
+              :consulted
+              :cited
+              :assisted
+              :mentored
+              :collaborated
+            ) | > :types ||}
+            <select name="type" id="type">
+              {begin loop | each data types}
+                <option {verb.type | is like value | then :selected} value="{value}">{value}</option>
+              {end loop}
+            </select>
 
-          <label for="data">Data</label>
-          <input type="text" name="data" value="" id="data">
+            {// <label for="data">Data</label>
+            <input type="text" name="data" value="{verb.data}" id="data"> //}
 
-          <label for="from">From</label>
-          <select name="from" id="from_noun_list">
-            <script type="text/daml" data-var="@nouns">
-              {begin list | merge data @nouns}
-                <option value="{_id}">{name}</option>
-              {end list}
-            </script>
-          </select>
+            <div style="display:{verb | then :none else :block}">              
+              <label for="from">From</label>
+              <select name="from" id="from_noun_list">
+                {begin list | merge data @nouns}
+                  <option value="{_id}">{name}</option>
+                {end list}
+              </select>
+              {dom set_template id :from_noun_list daml from_noun_list || variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
+            </div>
 
-          <label for="to">To</label>
-          <select name="to" id="to_noun_list">
-            <script type="text/daml" data-var="@nouns">
-              {begin list | merge data @nouns}
-                <option value="{_id}">{name}</option>
-              {end list}
-            </script>
-          </select>
+            <div style="display:{verb | then :none else :block}">              
+              <label for="to">To</label>
+              <select name="to" id="to_noun_list">
+                {begin to_noun_list | merge data @nouns}
+                  <option value="{_id}">{name}</option>
+                {end to_noun_list}
+              </select>
+              {dom set_template id :to_noun_list daml to_noun_list || variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
+            </div>
+            
+            <label for="value">Value (strength of connection)</label>
+            <input type="text" name="value" value="{verb.value}">
 
-          <label for="value">Strength</label>
-          <input type="text" name="value" value="">
-
-          <input type="submit" name="submit" value="add">
-          <textarea name="commands" style="display:none">
-            {* (:type type :from from :to to :value value :data data) | > :context}
-            {network send string "{verb add type POST.type from POST.from to POST.to value POST.value data {POST.data | run}}" then "{verb_fetcher}" context context}
-          </textarea>  
+            <input type="hidden" name="id" value="{verb._id}" id="id">
+            <input type="submit" name="submit" value="{verb | then :Edit else :Add}">
+            <textarea name="commands" style="display:none">
+              {begin verbatim | quote}
+                {* (:id id :type type :from from :to to :value value :data data) | > :context}
+                {if id 
+                  then "{verb set_type id POST.id value POST.type}
+                        {/verb set_from id POST.id value POST.name}
+                        {/verb set_to id POST.id value POST.name}
+                        {verb set_value id POST.id value POST.value}"
+                  else "{verb add type POST.type from POST.from to POST.to value POST.value data {POST.data | run}}"
+                 | > :actions | dom log | ""}
+                {network send string actions then "{verb_fetcher}" context context}
+              {end verbatim}
+            </textarea>
+          </script>
         </form>
 
         <h3><a href="#" id="verblistlink">Verb List</a></h3>
