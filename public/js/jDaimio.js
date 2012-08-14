@@ -56,7 +56,7 @@ jDaimio.process = function(commands, vars, callback) {
     jQuery.extend(post_data, vars);
   }
   
-  $.post('http://sherpa.local:8000', // FIXME: MEGAHACK!!!!
+  $.post('/', // FIXME: MEGAHACK!!!!
     post_data,
     function(response) {
       jDaimio.logStuff(response);
