@@ -334,11 +334,11 @@
   
   <!-- VIZ! -->
   
-  <select name="grid_order" id="grid_order">
+  <!-- <select name="grid_order" id="grid_order">
     <option value="name">name</option>
     <option value="group">group</option>
     <option value="count">count</option>
-  </select>
+  </select> -->
   
   <!-- Make these into tabs or something -->
   <div>    
