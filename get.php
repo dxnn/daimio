@@ -20,12 +20,16 @@ $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), 
 foreach ($iterator as $path) {
   if(!$path->isDir()) {
     if(substr($path->__toString(), -2) == 'js') {
-      echo "//";
-      echo $path->__toString();
-      echo "\n";
-      readfile($path->__toString());
+      // echo "//";
+      // echo $path->__toString();
+      // echo "\n";
+      // readfile($path->__toString());
+      $files[$path->__toString()] = file_get_contents($path->__toString());
     }
   }
 }
+
+ksort($files);
+echo implode('', $files);
 
 // EOF
