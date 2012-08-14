@@ -3,16 +3,16 @@
 <head>   
   <title>FigViz</title>
   
-  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/public/js/__jquery.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/public/js/__underscore.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
-  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/get.php?file=node_modules/daml&x=1"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/public/js/jDaimio.js"></script> 
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=1"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
 
-  <script type="text/javascript" src="http://sherpa.local/~dann/figviz/node_modules/d3/d3.v2.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
   
-  <script src="http://sherpa.local/~dann/euphrates/js/bootstrap.min.js"></script>
-  <link href="http://sherpa.local/~dann/euphrates/css/bootstrap.css" rel="stylesheet">
+  <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
   <style type="text/css">
     #grid svg {
