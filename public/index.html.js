@@ -144,11 +144,11 @@
     <div class="row">
       <div class="span6">
 
-        <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
+        <!-- <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
           <p>Raw DAML (kinda):</p>
           <textarea id="daml" name="daml" rows="1" cols="40"></textarea>    
           <input type="submit" name="submit" value="go">
-        </form>
+        </form> -->
 
 
         <!-- NOUNS -->
