@@ -273,11 +273,11 @@
             <div style="display:{verb | then :none else :block}">              
               <label for="from">From</label>
               <select name="from" id="from_noun_list">
-                {begin list | merge data @nouns}
+                {begin from_noun_list | merge data @nouns}
                   <option value="{_id}">{name}</option>
-                {end list}
+                {end from_noun_list}
               </select>
-              {dom set_template id :from_noun_list daml from_noun_list || variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
+              {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}" || variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
             </div>
 
             <div style="display:{verb | then :none else :block}">              
@@ -287,7 +287,7 @@
                   <option value="{_id}">{name}</option>
                 {end to_noun_list}
               </select>
-              {dom set_template id :to_noun_list daml to_noun_list || variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
+              {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}" || variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
             </div>
             
             <label for="value">Value (strength of connection)</label>
