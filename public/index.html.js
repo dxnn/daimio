@@ -6,7 +6,7 @@
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=1"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=3"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
 
   <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
@@ -195,6 +195,9 @@
               {end outer}
             </select>
             
+            <label for="story">Story</label>
+            <textarea name="story" id="story">{noun.data.story}</textarea>
+
             {// <label for="data">Data</label>
             <input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
 
@@ -202,14 +205,15 @@
             <input type="submit" name="submit" value="{noun | then :Edit else :Add}">
             <textarea name="commands" style="display:none">
               {begin verbatim | quote}
-                {* (:id id :name name :type type :data data) | > :context}
+                {* (:id id :name name :type type :story story) | > :context}
                 {if id 
                   then "{noun set_name id POST.id value POST.name}
                         {noun set_type id POST.id value POST.type}
-                        {noun set_data id POST.id value {POST.data | run}}"
-                  else "{noun add name POST.name type POST.type data {POST.data | run}}"
+                        {noun set_data id POST.id value {* (:story POST.story)}}"
+                  else "{noun add name POST.name type POST.type data {* (:story POST.story)}}"
                  | > :actions | dom log | ""}
                 {network send string actions then "{noun_fetcher}" context context}
+                {false | > :@selected_noun}
               {end verbatim}
             </textarea>
           </script>
@@ -218,12 +222,13 @@
         <h3><a href="#" id="nounlistlink">Noun List</a></h3>
         <ul id="nounlist" style="display:none">
           <script type="text/daml" data-var="@nouns">
-            {begin list | merge data @nouns}
+            {begin list | merge data {@nouns | list sort by :name}}
               <li>
                 <p>
                   <a href="#" data-id="{_id}">edit</a>
                   <strong>{name}</strong>
-                  <em>{type}</em>
+                  {type}
+                  <em>{data.story}</em>
                 </p>
                 {/data}
               </li>
@@ -277,7 +282,8 @@
                   <option value="{_id}">{name}</option>
                 {end from_noun_list}
               </select>
-              {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}" || variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
+              {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
+              {variable bind path :@nouns daml "{dom refresh id :from_noun_block}"}
             </div>
 
             <div style="display:{verb | then :none else :block}">              
@@ -287,7 +293,8 @@
                   <option value="{_id}">{name}</option>
                 {end to_noun_list}
               </select>
-              {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}" || variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
+              {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
+              {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
             </div>
             
             <label for="value">Value (strength of connection)</label>
@@ -306,6 +313,7 @@
                   else "{verb add type POST.type from POST.from to POST.to value POST.value data {POST.data | run}}"
                  | > :actions | dom log | ""}
                 {network send string actions then "{verb_fetcher}" context context}
+                {false | > :@selected_verb}
               {end verbatim}
             </textarea>
           </script>

@@ -64,6 +64,29 @@ Tests for pipes
     {merge data ({* (:a {* (:s 1)} )}) template "{a.s}"} 
       1
     
+Tests for lists
+  Sort and reverse
+    {(3 2 4 1) | list reverse}
+      [1,4,2,3]
+    {(3 2 4 1) | list sort}
+      [1,2,3,4]
+    {(3 2 4 1) | list sort | list reverse}
+      [4,3,2,1]
+    
+    {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | > :klist}
+      [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
+      
+    {klist | list sort by :x | __.x}
+      [1,2,2,3,4]
+
+    {klist | list sort by :y | list reverse | __.y}
+      ["d","d","c","b","a"]
+
+    {klist | list sort by "{(this.x this.y) | string join}" | merge template "{x}{y} "}
+      1d 2c 2d 3a 4b
+
+    {klist | list sort by "{(this.y this.x) | string join}" | map template "{value.y}{value.x}"}
+      ["a3","b4","c2","d1","d2"]
 
 Tests for falseness
   Empty strings, arrays, and hashes are false, as is the number zero and unset vars.
