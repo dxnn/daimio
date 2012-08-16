@@ -28,12 +28,12 @@ Tests for fings
     {"{:foo}x" | > :xxx || 123 | > :xxx.y | xxx.string}
   
   make sure we're not defuncing pre-merge
-    {"{:foo}x" | > :qq.ww.ee || merge data qq template "{ee | quote}"}
+    {"{:foo}x" | > :qq.ww.ee || merge data qq daml "{ee | quote}"}
       {:foo}x
   
 
 Tests for stringification
-  {1 | > :power || each data (1 2 3 4) template "{math pow value 2 exp power | > :power} "}
+  {1 | > :power || each data (1 2 3 4) daml "{math pow value 2 exp power | > :power} "}
     2 4 16 65536
 
 
@@ -61,7 +61,7 @@ Tests for pipes
     {begin walk | merge data ({* (:a {* (:s 1)} )}) }x{a.s}{end walk}
       x1
     
-    {merge data ({* (:a {* (:s 1)} )}) template "{a.s}"} 
+    {merge data ({* (:a {* (:s 1)} )}) daml "{a.s}"} 
       1
     
 Tests for lists
@@ -82,11 +82,37 @@ Tests for lists
     {klist | list sort by :y | list reverse | __.y}
       ["d","d","c","b","a"]
 
-    {klist | list sort by "{(this.x this.y) | string join}" | merge template "{x}{y} "}
+    {klist | list sort by "{(this.x this.y) | string join}" | merge daml "{x}{y} "}
       1d 2c 2d 3a 4b
 
-    {klist | list sort by "{(this.y this.x) | string join}" | map template "{value.y}{value.x}"}
+    {klist | list sort by "{(this.y this.x) | string join}" | map daml "{value.y}{value.x}"}
       ["a3","b4","c2","d1","d2"]
+
+    // extract
+    // THINK: why do we need all the 'then 1's?
+    {klist | list extract daml "{this.x | eq 2 | then 1}"}
+      [{"x":2,"y":"d"},{"x":2,"y":"c"}]
+      
+    {klist | list extract daml "{this | eq :d | then 1}" path "*"}
+      ["d","d"]
+      
+    {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
+    
+    {dlist | list extract daml "{this | less than :4 | then 1}" path "*.*"}
+      [2,3,1,3,3,1,3]
+    
+    {dlist | list extract daml "{parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
+      [2,3,5]
+    
+
+      // // prune
+      // {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+      // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
+      // 
+      // {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | eq :3} path "*.*"}
+      // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
+      // 
+    
 
 Tests for falseness
   Empty strings, arrays, and hashes are false, as is the number zero and unset vars.
@@ -200,25 +226,25 @@ hey dann!
 {:blargh | > :name}
 blargh
 
-{process merge data names template foo}           {/ var get => fing}
+{merge data names daml foo}           {/ var get => fing}
 hey youhoo!         
                     
-{process merge data names template {foo}}         {/ same}
+{merge data names daml {foo}}         {/ same}
 hey youhoo!
            
-{process merge data names template "{foo}"}       {/ new fing => var get => old fing}
+{merge data names daml "{foo}"}       {/ new fing => var get => old fing}
 hey youhoo!
   
-{process merge data names template {"{foo}"}}     {/ same}
+{merge data names daml {"{foo}"}}     {/ same}
 hey youhoo!
   
-{process merge data names template "{foo} x"}     {/ different new fing}
+{merge data names daml "{foo} x"}     {/ different new fing}
 hey youhoo! x
   
-{process merge data names template {"{foo} x"}}   {/ same different new fing}
+{merge data names daml {"{foo} x"}}   {/ same different new fing}
 hey youhoo! x
     
-{process merge data names template {foo | run}}   {/ var get => fing => defunc => string}
+{merge data names daml {foo | run}}   {/ var get => fing => defunc => string}
 hey blargh!
 
 
@@ -227,7 +253,7 @@ hey blargh!
 {* (:one {* (:name :youhoo)} ) | > :names}
   {"one":{"name":"youhoo"}}
 
-{process merge data names template foo}
+{merge data names daml foo}
   hey youhoo!  
 
 
@@ -272,7 +298,7 @@ Here's the use cases, from the user's perspective:
   {string transform value "asdfdd" from "/[d]/g" to "x"}
     asxfxx
 
-- transformations can accept templates, also. the 'this' variable is loaded with matches.
+- transformations can accept daml, also. the 'this' variable is loaded with matches.
   {"food mood wood" | string transform from "/oo/g" to "{this | string uppercase}"}
     fOOd mOOd wOOd
 
@@ -314,21 +340,21 @@ Here's the use cases, from the user's perspective:
 - I put a DAML string in to a variable, then use that variable as a template for merging.
   {variable set path :z value "~{value}~"}
     ~~
-  {process each template z data (1 2 3)}
+  {each daml z data (1 2 3)}
     ~1~~2~~3~
   
 - I pass a DAML string in as a template for merging.
-  {process each template "~{value}~" data (1 2 3)}
+  {each daml "~{value}~" data (1 2 3)}
     ~1~~2~~3~
   
 - I create a DAML string, do substitutions on it, and then pass it in as a template for merging.
 -----> this one is weird, because the inner command should *fully* process the string.
 ---- note the 'unquote' command, which processes the tainted strings.
-  {process each template {string transform value "~{value}~" from "~" to "!" | unquote} data (1 2 3)}
+  {each daml {string transform value "~{value}~" from "~" to "!" | unquote} data (1 2 3)}
     !1!!2!!3!
-  {string transform value "~{value}~" from "~" to "!" | unquote | process each data (1 2 3)}
+  {string transform value "~{value}~" from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
-  {"~{value}~" | string transform from "~" to "!" | unquote | process each data (1 2 3)}
+  {"~{value}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
   
 - I take a DAML string, get its ptree, do some mangling (macros), then get the processed output.
@@ -419,39 +445,39 @@ Here's the use cases, from the user's perspective:
   
 - ensure we can also access it as a function
 
-  {"x{key}y{z}" | process each data (1 2)}
+  {"x{key}y{z}" | each data (1 2)}
     x0yzx1yz
-  {begin block | process each data (1 2)}x{key}y{z}{end block}
+  {begin block | each data (1 2)}x{key}y{z}{end block}
     x0yzx1yz
-  {block | process each data (1 2)}
+  {block | each data (1 2)}
     x0yzx1yz
-  {> :x value "x{key}y{z}" | process each data (1 2)} {// as a var}
+  {> :x value "x{key}y{z}" | each data (1 2)} {// as a var}
     x0yzx1yz
-  {"x{key}y{z}" | > :x1 | process each data (1 2)} {// var via pipe}
+  {"x{key}y{z}" | > :x1 | each data (1 2)} {// var via pipe}
     x0yzx1yz
-  {process each template "x{key}y{z}" data (1 2)}
+  {each daml "x{key}y{z}" data (1 2)}
     x0yzx1yz
-  {process each template {"x{key}y{z}"} data (1 2)}
+  {each daml {"x{key}y{z}"} data (1 2)}
     x0yzx1yz
-  {process each template {{"x{key}y{z}"}} data (1 2)}
+  {each daml {{"x{key}y{z}"}} data (1 2)}
     x0yzx1yz
-  {process each template x data (1 2)}
+  {each daml x data (1 2)}
     x0yzx1yz
-  {process each template {x} data (1 2)}
+  {each daml {x} data (1 2)}
     x0yzx1yz
-  {process each template {{x}} data (1 2)}
+  {each daml {{x}} data (1 2)}
     x0yzx1yz
-  {process each template x1 data (1 2)}
+  {each daml x1 data (1 2)}
     x0yzx1yz
-  {process each template {x1} data (1 2)}
+  {each daml {x1} data (1 2)}
     x0yzx1yz
-  {process each template {{x1}} data (1 2)}
+  {each daml {{x1}} data (1 2)}
     x0yzx1yz
-  {process each template block data (1 2)}
+  {each daml block data (1 2)}
     x0yzx1yz
-  {process each template {block} data (1 2)}
+  {each daml {block} data (1 2)}
     x0yzx1yz
-  {process each template {{block}} data (1 2)}
+  {each daml {{block}} data (1 2)}
     x0yzx1yz
 
 ----- Loading value into the value variable creates a self-referencing fing, which affects us later... 
@@ -768,39 +794,39 @@ Snack 2: Blocks
       {begin foo}x{value}-{end foo}
     
     The each command invokes a DAML string for every element of a list. These are all equivalent:
-      {process each template "x{value}-" data (1 2 3)}
+      {each daml "x{value}-" data (1 2 3)}
       x1-x2-x3-
-      {process each template {"x{value}-"} data (1 2 3)}
+      {each daml {"x{value}-"} data (1 2 3)}
       x1-x2-x3-
-      {process each template {{"x{value}-"}} data (1 2 3)}
+      {each daml {{"x{value}-"}} data (1 2 3)}
       x1-x2-x3-
       
     This one also behaves the same, but the extra quotes slow things down.
-      {process each template {"{"x{value}-"}"} data (1 2 3)}
+      {each daml {"{"x{value}-"}"} data (1 2 3)}
       x1-x2-x3-
       
     These works like you would expect -- each iteration returns an array, which is JSONified internally.
-      {process each template "{(:x {string join value {value}} "-")}" data (1 2 3)}
+      {each daml "{(:x {string join value {value}} "-")}" data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
-      {process each template {"{(:x {string join value {value}} "-")}"} data (1 2 3)}
+      {each daml {"{(:x {string join value {value}} "-")}"} data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
     
     These show the strange, sad results of trying to coerce an array into a template.
       {:hey | > :value}
       hey
-      {process each template (:x value {value} "{value}" {"{value}"}) data (1 2 3)}
+      {each daml (:x value {value} "{value}" {"{value}"}) data (1 2 3)}
       ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
-      {process each template (:x {string join value {value}}) data (1 2 3)}
+      {each daml (:x {string join value {value}}) data (1 2 3)}
       ["x","hey"]["x","hey"]["x","hey"]
-      {process each template {(:x value "-")} data (1 2 3)}
+      {each daml {(:x value "-")} data (1 2 3)}
       ["x","hey","-"]["x","hey","-"]["x","hey","-"]
 
     It pairs nicely with blocks:
-      {process each template foo data (1 2 3)}
+      {each daml foo data (1 2 3)}
       x1-x2-x3-
-      {foo | process each data (1 2 3)}
+      {foo | each data (1 2 3)}
       x1-x2-x3-
-      {begin foo | process each data (1 2 3)}x{value}-{end foo}
+      {begin foo | each data (1 2 3)}x{value}-{end foo}
       x1-x2-x3-
       
       {({:8} {8})}
@@ -852,21 +878,22 @@ Snack 3: Aliases
   
   Some basic math commands are published by default. All the default aliases for math commands are two characters, which saves some single characters for more common aliases.
 
-    Increment:
-      {math increment value 1}
-      2
-      {inc 2}
-      3
-      {3 | inc}
-      4
-    
-    Decrement:
-      {math decrement value 257}
-      256
-      {dec 256}
-      255
-      {255 | dec | dec}
-      253
+     ---> these don't exist any more: use 'add 1' and 'add -1'
+    // Increment:
+    //   {math increment value 1}
+    //   2
+    //   {inc 2}
+    //   3
+    //   {3 | inc}
+    //   4
+    // 
+    // Decrement:
+    //   {math decrement value 257}
+    //   256
+    //   {dec 256}
+    //   255
+    //   {255 | dec | dec}
+    //   253
 
   You can find more math commands and their default aliases in the Common Commands section.
 
@@ -1053,7 +1080,7 @@ Depth 3: Further fun with variables
       ex: using .*. formation
 
       ex: using .{}. notation
-      {@bundle.{@bar.one}.one | is like :1}
+      {@bundle.{@bar.one}.one | eq :1}
 
       //
       // test DAML path setting
@@ -1082,7 +1109,7 @@ Depth 5: Creating aliases
 
 :::Bindings and such:::
 
-    {variable bind path :test daml "{count1 | inc | > :count1}"}
+    {variable bind path :test daml "{count1 | add 1 | > :count1}"}
       
     {:a | > :test}
       a
@@ -1091,7 +1118,7 @@ Depth 5: Creating aliases
       1
     
   The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-    {variable bind path :test daml "{count2 | inc | > :count2}"}
+    {variable bind path :test daml "{count2 | add 1 | > :count2}"}
       
     {:b | > :test}
       b
@@ -1099,7 +1126,7 @@ Depth 5: Creating aliases
     {count1} x {count2}
       2 x 1
       
-    {variable unbind path :test daml "{count1 | inc | > :count1}"}
+    {variable unbind path :test daml "{count1 | add 1 | > :count1}"}
   
     {:c | > :test}
       c
@@ -1146,47 +1173,105 @@ CC 1: Math commands
     {1 | > :x | 2 | > :y | 3 | > :z | (x y z) | add}
       6
       
-    Increment:
-      {math increment value 222}
-      223
-      {inc 222}
-      223
-      {222 | inc}
-      223
-  
-    Decrement:
-      {math decrement value 222}
-      221
-      {dec 222}
-      221
-      {222 | dec}
-      221
+      --> these don't exist anymore
+   //  Increment:
+   //    {math increment value 222}
+   //    223
+   //    {inc 222}
+   //    223
+   //    {222 | inc}
+   //    223
+   // 
+   //  Decrement:
+   //    {math decrement value 222}
+   //    221
+   //    {dec 222}
+   //    221
+   //    {222 | dec}
+   //    221
   
     Add:
       {math add value 123 to 321}
-      444
+        444
       {add 123 to 321}
-      444
+        444
       {321 | add 123}
-      444
+        444
   
     The addition command is fairly versatile:
       {math add value (1 2 3)}
-      6
+        6
       {math add value 1 to (4 5 6)}
-      [5,6,7]
+        [5,6,7]
       {math add value (4 5 6) to 1}
-      [5,6,7]
+        [5,6,7]
       {math add value (3 2 1) to (4 5 6)}
-      [7,7,7]
+        [7,7,7]
       
     Subtract
+      {subtract 4 from :7}
+        3
+      {:7 | subtract 4}
+        3
+      {subtract (:100 :2 3 :4 5)}
+        86
+      {(1 3 5 7) | subtract 3}
+        [-2,0,2,4]
+      {math subtract value (6 5 4) from (1 2 3)}
+        [-5,-3,-1]
+      
     Multiply
-    Divide
+      {multiply 4 by 7}
+        28
+      {:7 | multiply :4}
+        28
+      {multiply (:1 2 :3)}
+        6
+      {(1 :2 3) | multiply 3}
+        [3,6,9]
+      {math multiply value (1 2 3) by (6 5 4)}
+        [6,10,12]
+      
+    Divide // NOTE that this shortcut is different!
+      {divide value 7 by 4}
+        1.75
+      {:7 | divide by :4}
+        1.75
+      {divide value (:1 2 :3) | map daml "{value | round to 2}"}
+        ["0.17"]
+      {(1 2 3) | divide by 3 | map daml "{value | round to 2}"}
+        ["0.33","0.67","1"]
+      {math divide value (1 2 3) by (6 5 4) | map daml "{value | round to 2}"}
+        ["0.17","0.4","0.75"]
+      
+      // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
+      
+      
+    Mod
+      {math mod value 7 by 2}
+        1
+      {:7 | mod :2}
+        1
+      
     Pow
-    Random
+      {math pow value 2 exp 8}
+        256
+      {:5 | math pow exp :3}
+        125
+      {5 | math pow exp 0.5}
+        2.23606797749979
+    
+    Less? // THINK: should less be logic?
+    Random?
+    
     Round
-  
+      {123.456 | math round}
+        123
+      {123.456 | math round to -2}
+        100
+      {123.456 | math round to 2}
+        123.46
+        
   
   
 CC 2: Looping
@@ -1194,11 +1279,11 @@ CC 2: Looping
   There are two primary loop commands in DAML: each and merge. They require a string (the template) and a list or map (the data). Both work by variablizing each element of data in turn and running the template over it.
   
     Foreach pushes each element into a variable called 'value':
-      {process each data (1 2 3) template "{value}x"}
+      {each data (1 2 3) daml "{value}x"}
       1x2x3x
     
     The each command also pushes the value's key into a variable called 'key':
-      {process each data {* (:one 1 :two 2 :three 3)} template "{key}x"}
+      {each data {* (:one 1 :two 2 :three 3)} daml "{key}x"}
       onextwoxthreex
     
     It works on blocks, too, naturally. Here we use the common alias form:
@@ -1566,7 +1651,7 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 {:asdf | is in (:foo :bar) | then "bad" else :great}
   great
 
-{:burgers | is like "urge" | then "uh-oh" else :super}
+{:burgers | eq "urge" | then "uh-oh" else :super}
   super
 
 {:burgers | is like "/urge/" | then :super else "uh-oh"}
@@ -1853,11 +1938,11 @@ hashly and surprise local! and local and bashly and local and surprise local! an
 // hashly x bashly
 // 
 // // each with 'as' param
-// {each template "{one} {two} x " data @hash}
+// {each daml "{one} {two} x " data @hash}
 // hashly surprise local! x local bashly x local surprise local! x 
 // 
 // // each with 'as' param
-// {each template "{peg} x " data @hash as "peg"}
+// {each daml "{peg} x " data @hash as "peg"}
 // hashly x bashly x crashly x 
 
 
