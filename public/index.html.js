@@ -46,6 +46,10 @@
       stroke: #999;
       stroke-opacity: .6;
     }
+    #force .node circle{
+      stroke: #ddd;
+      stroke-width: 1px;
+    }
 
     #hive svg {
       background: #eef;
@@ -82,6 +86,31 @@
               options {* (:id :force)} }
     {end build_viz}
       
+    {begin forcer_hacking}
+      {value | > :verb 
+       || -1 | > :i}
+      {begin source_hacking | each data @nouns}
+        {i 
+          | add 1 
+          | > :i
+          | else "{0 | > {"@nouns.{key}.edgeweight" | run}}"}
+        {value._id 
+          | eq verb.from 
+          | then "{i | > :@source
+           || value.edgeweight
+            | add verb.value
+            | > {"@nouns.{key}.edgeweight" | run}} "}
+        {value._id 
+          | eq verb.to 
+          | then "{i | > :@target
+           || value.edgeweight
+            | add verb.value
+            | > {"@nouns.{key}.edgeweight" | run}} "}
+      {end source_hacking}
+      {@source | > {"@verbs.{key}.source" | run}}
+      {@target | > {"@verbs.{key}.target" | run}}
+    {end forcer_hacking}
+    
     {begin noun_stuff | variable bind path :@nouns}
       {/ddd do action :bubbler params ({* (:name :foo :children @nouns)})}
       {/@nouns | each template "{value | > {"@values.{value._id}" | run}}"}
@@ -90,36 +119,24 @@
         {math random max 2 | > {"@nouns.{key}.x" | run}}
         {math random max 10 | math divide by 10 | > {"@nouns.{key}.y" | run}}
       {end hive_hacking}
+      {if @verbs then "{forcer_hacking | each data @verbs}"}
       {@once_through | then "{build_viz}"}
       {:true | > :@once_through}
     {end noun_stuff}
     
     {begin verb_stuff | variable bind path :@verbs}
-      {begin forcer_hacking | each data @verbs}
-        {value | > :verb || -1 | > :i}
-        {// get the from and to indices //}
-        {@nouns | each template "
-          {i | add 1 | > :i}
-          {value._id | is like verb.from | then "{i | > :@source} "}
-          {value._id | is like verb.to | then "{i | > :@target} "}
-        "}
-        {@source | > {"@verbs.{key}.source" | run}}
-        {@target | > {"@verbs.{key}.target" | run}}
-      {end forcer_hacking}
+      {forcer_hacking | each data @verbs}
       {build_viz}
       {dom refresh id :add_verb_form}
     {end verb_stuff}    
     
     {begin noun_fetcher}
-      {//{begin blerp} {begin fetch | proc | {* (:DATA @data)}}
-        {noun find | > :data.nouns}
-      {end fetch}{end blerp} //}
-
-      {network send string "{noun find}" then "{this.#1 | list rekey path :_id | > :@nouns}"}
+      {network send string "{noun find}" then "{this.#1 | sort by :name | list rekey path :_id | > :@nouns}"}
+      {//{begin blerp} {begin fetch | proc | {* (:DATA @data)}}{noun find | > :data.nouns}{end fetch}{end blerp} //}
     {end noun_fetcher}
     
     {begin verb_fetcher}
-      {network send string "{verb find}" then "{this.#1 | list rekey path :_id | > :@verbs}"}
+      {network send string "{verb find}" then "{this.#1 | sort by "{@nouns.{this.from}.name}" | list rekey path :_id | > :@verbs}"}
     {end verb_fetcher}
     
     
@@ -137,6 +154,7 @@
     {dom on event :click id :verblist filter :a daml "{this.dataset.id | > :@selected_verb}"}
     
     {dom refresh id :add_noun_form}
+    {dom refresh id :add_verb_form}
 
     {dom on event :click id :grid_button daml "{dom toggle id :grid}"}
     {dom on event :click id :hive_button daml "{dom toggle id :hive}"}
@@ -144,6 +162,8 @@
     
     {dom on event :click id :add_noun_form filter :#add_a_new_noun daml "{"" | > :@selected_noun}"}
     {dom on event :click id :add_verb_form filter :#add_a_new_verb daml "{"" | > :@selected_verb}"}
+    
+    {dom on event :click id :force filter ".node" daml "{@nouns.{this.dataset.id} | > :@filter_noun}"}
   </script>
 
   
@@ -168,10 +188,12 @@
         <form method="post" accept-charset="utf-8" id="add_noun_form">
           <script type="text/daml" data-var="@selected_noun">
             {@selected_noun | then @nouns.{@selected_noun} else "" | > :noun ||}
+            
             {begin editing | if noun}
               <h2>Editing {noun.name}</h2>
               <a href="#" id="add_a_new_noun">Add a new noun instead</a>
             {end editing}
+            
             {begin adding | if {not noun}}
               <h2>Add a new noun</h2>
             {end adding}
@@ -200,7 +222,7 @@
               {begin outer | each data types}
                 <optgroup label="{key}">
                   {begin inner | each data value}
-                    <option {noun.type | is like value | then :selected} value="{value}">{value}</option>
+                    <option {noun.type | eq value | then :selected} value="{value}">{value}</option>
                   {end inner}
                 </optgroup>
               {end outer}
@@ -218,11 +240,11 @@
               {begin verbatim | quote}
                 {* (:id id :name name :type type :story story) | > :context}
                 {if id 
-                  then "{noun set_name id POST.id value POST.name}
-                        {noun set_type id POST.id value POST.type}
-                        {noun set_data id POST.id value {* (:story POST.story)}}"
-                  else "{noun add name POST.name type POST.type data {* (:story POST.story)}}"
-                 | > :actions | dom log | ""}
+                    then "{noun set_name id POST.id value POST.name}
+                          {noun set_type id POST.id value POST.type}
+                          {noun set_data id POST.id value {* (:story POST.story)}}"
+                    else "{noun add name POST.name type POST.type data {* (:story POST.story)}}"
+                   | > :actions}
                 {network send string actions then "{noun_fetcher}" context context}
                 {false | > :@selected_noun}
               {end verbatim}
@@ -233,7 +255,7 @@
         <h3><a href="#" id="nounlistlink">Noun List</a></h3>
         <ul id="nounlist" style="display:none">
           <script type="text/daml" data-var="@nouns">
-            {begin list | merge data {@nouns | list sort by :name}}
+            {begin list | merge data @nouns}
               <li>
                 <p>
                   <a href="#" data-id="{_id}">edit</a>
@@ -263,7 +285,7 @@
             {end adding}
 
             <label for="type">Type</label>
-            {(:instigator
+            {(:instigated
               :hired
               :participated
               :organized
@@ -279,7 +301,7 @@
             ) | > :types ||}
             <select name="type" id="type">
               {begin loop | each data types}
-                <option {verb.type | is like value | then :selected} value="{value}">{value}</option>
+                <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
               {end loop}
             </select>
 
@@ -294,7 +316,7 @@
                 {end from_noun_list}
               </select>
               {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
-              {variable bind path :@nouns daml "{dom refresh id :from_noun_block}"}
+              {variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
             </div>
 
             <div style="display:{verb | then :none else :block}">              
@@ -337,8 +359,8 @@
               <li>
                 <p>
                   <a href="#" data-id="{_id}">edit</a>
-                  <strong>{@nouns.{from}.name}</strong> -> <strong>{@nouns.{to}.name}</strong>
-                  <em>{type}</em> {value}
+                  <strong>{@nouns.{from}.name}</strong> <em>type</em> <strong>{@nouns.{to}.name}</strong>
+                  ({value})
                 </p>
                 {/data}
               </li>
@@ -358,6 +380,24 @@
     <option value="group">group</option>
     <option value="count">count</option>
   </select> -->
+  
+  <div id="filter_noun_div">
+    <script type="text/daml" data-var="@filter_noun">
+      <p><strong>{@filter_noun.name}</strong></p>
+      <p>{@filter_noun.data.story}</p>
+      <ul>
+        {begin list 
+          | merge data {@verbs
+            | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+            | sort by :value
+            | list reverse}}
+          <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
+            {@nouns.{to}.name} <em>{type}</em> {@nouns.{from}.name} ({value})
+          </li>
+        {end list}
+      </ul>
+    </script>
+  </div>
   
   <!-- Make these into tabs or something -->
   <div>    
@@ -448,7 +488,8 @@
           .data(links)
         .enter().append("line")
           .attr("class", "link")
-          .style("stroke-width", function(d) { return Math.sqrt(d.value*4 || 9); });
+          .style("stroke-width", function(d) { return Math.sqrt(d.value*4 || 9); })
+          .style("stroke", function(d) { return color(d.type.charCodeAt(7) || 1); });
       
       // link.exit().remove();
       
@@ -456,11 +497,12 @@
           .data(nodes)
         .enter().append("g")
           .attr("class", "node")
+          .attr("data-id", function(d) {return d._id;})
           .call(force.drag);
 
       node.append("circle")
-          .attr("r", function(d) { return Math.sqrt(d.data.shoes || 8) * 13; })
-          .style("fill", function(d) { return color(d.data.height || 2); });
+          .attr("r", function(d) {return Math.sqrt((d.edgeweight || 1) + 20) * 5; })
+          .style("fill", function(d) { return color(d.type.charCodeAt(1) || 1); });
 
       node.append("title")
           .text(function(d) { return d.name; });
