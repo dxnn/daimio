@@ -3,7 +3,7 @@
 <head>   
   <title>FigViz</title>
   
-  <!-- <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
 
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
@@ -12,9 +12,9 @@
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet"> -->
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+<!--   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
   <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=3"></script>
@@ -23,7 +23,7 @@
   <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet"> -->
   
   <style type="text/css">
     #grid svg {
@@ -88,25 +88,22 @@
       
     {begin forcer_hacking}
       {value | > :verb 
-       || -1 | > :i}
+        | -1 | > :i | > :x}
       {begin source_hacking | each data @nouns}
-        {i 
-          | add 1 
-          | > :i
-          | else "{0 | > {"@nouns.{key}.edgeweight" | run}}"}
+        {i | add 1 | > :i}
         {value._id 
           | eq verb.from 
-          | then "{i | > :@source
-           || value.edgeweight
-            | add verb.value
-            | > {"@nouns.{key}.edgeweight" | run}} "}
+          | then "{i | > :@source | > :x}"}
         {value._id 
           | eq verb.to 
-          | then "{i | > :@target
-           || value.edgeweight
+          | then "{i | > :@target | > :x}"}
+        {x | eq i 
+          | then "{value.edgeweight
             | add verb.value
             | > {"@nouns.{key}.edgeweight" | run}} "}
       {end source_hacking}
+      {// THINK: we can probably do the above using extract instead of looping through each noun in DAML //}
+      {// THINK: also, we've rekeyed nouns -- can't we just use that? //}
       {@source | > {"@verbs.{key}.source" | run}}
       {@target | > {"@verbs.{key}.target" | run}}
     {end forcer_hacking}
@@ -125,6 +122,8 @@
     {end noun_stuff}
     
     {begin verb_stuff | variable bind path :@verbs}
+      {// clear edgeweight out of nouns//}
+      {@nouns | each daml "{0 | > {"@nouns.{value._id}.edgeweight" | run}}"}
       {forcer_hacking | each data @verbs}
       {build_viz}
       {dom refresh id :add_verb_form}
@@ -228,7 +227,7 @@
               {end outer}
             </select>
             
-            <label for="story">Story</label>
+            <label for="story">Description</label>
             <textarea name="story" id="story">{noun.data.story}</textarea>
 
             {// <label for="data">Data</label>
@@ -261,7 +260,7 @@
                   <a href="#" data-id="{_id}">edit</a>
                   <strong>{name}</strong>
                   {type}
-                  <em>{data.story}</em>
+                  <em>{data.story | string truncate to 30 add "..."}</em>
                 </p>
                 {/data}
               </li>
@@ -277,36 +276,12 @@
           <script type="text/daml" data-var="@selected_verb">
             {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
             {begin editing | if verb}
-              <h2>Editing {@nouns.{verb.from}.name} -> {@nouns.{verb.to}.name}</h2>
+              <h2>Editing {@nouns.{verb.from}.name} <em>{verb.type}</em> {@nouns.{verb.to}.name}</h2>
               <a href="#" id="add_a_new_verb">Add a new verb instead</a>
             {end editing}
             {begin adding | if {not verb}}
               <h2>Add a new verb</h2>
             {end adding}
-
-            <label for="type">Type</label>
-            {(:instigated
-              :hired
-              :participated
-              :organized
-              :coordinated
-              :created
-              :influenced
-              :originated
-              :consulted
-              :cited
-              :assisted
-              :mentored
-              :collaborated
-            ) | > :types ||}
-            <select name="type" id="type">
-              {begin loop | each data types}
-                <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
-              {end loop}
-            </select>
-
-            {// <label for="data">Data</label>
-            <input type="text" name="data" value="{verb.data}" id="data"> //}
 
             <div style="display:{verb | then :none else :block}">              
               <label for="from">From</label>
@@ -319,6 +294,27 @@
               {variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
             </div>
 
+            <label for="type">Type</label>
+            {(:instigated
+              :coordinated
+              :influenced
+              :originated
+              :consulted
+              :organized
+              :assisted
+              :mentored
+              :created
+              :hired
+              :cited
+              "participated in"
+              "collaborated with"
+            ) | > :types ||}
+            <select name="type" id="type">
+              {begin loop | each data types}
+                <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
+              {end loop}
+            </select>
+
             <div style="display:{verb | then :none else :block}">              
               <label for="to">To</label>
               <select name="to" id="to_noun_list">
@@ -330,21 +326,31 @@
               {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
             </div>
             
+            {// Add start and end dates //}
+            
             <label for="value">Value (strength of connection)</label>
             <input type="text" name="value" value="{verb.value}">
+
+            <label for="story">Story</label>
+            <textarea name="story" id="story">{verb.data.story}</textarea>
 
             <input type="hidden" name="id" value="{verb._id}" id="id">
             <input type="submit" name="submit" value="{verb | then :Edit else :Add}">
             <textarea name="commands" style="display:none">
               {begin verbatim | quote}
-                {* (:id id :type type :from from :to to :value value :data data) | > :context}
+                {* (:id id :type type :from from :to to :value value :story story) | > :context}
                 {if id 
                   then "{verb set_type id POST.id value POST.type}
                         {/verb set_from id POST.id value POST.name}
                         {/verb set_to id POST.id value POST.name}
-                        {verb set_value id POST.id value POST.value}"
-                  else "{verb add type POST.type from POST.from to POST.to value POST.value data {POST.data | run}}"
-                 | > :actions | dom log | ""}
+                        {verb set_value id POST.id value POST.value}
+                        {verb set_data id POST.id value {* (:story POST.story)}}"
+                  else "{verb add type POST.type 
+                                  from POST.from 
+                                  to POST.to 
+                                  value POST.value 
+                                  data {* (:story POST.story)}}"
+                 | > :actions | ""}
                 {network send string actions then "{verb_fetcher}" context context}
                 {false | > :@selected_verb}
               {end verbatim}
@@ -359,10 +365,9 @@
               <li>
                 <p>
                   <a href="#" data-id="{_id}">edit</a>
-                  <strong>{@nouns.{from}.name}</strong> <em>type</em> <strong>{@nouns.{to}.name}</strong>
-                  ({value})
+                  <strong>{@nouns.{from}.name}</strong> <em>{type}</em> <strong>{@nouns.{to}.name}</strong>
+                  ({value}) <em>{data.story | string truncate to 30 add "..."}</em>
                 </p>
-                {/data}
               </li>
             {end list}
           </script>
@@ -392,7 +397,8 @@
             | sort by :value
             | list reverse}}
           <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
-            {@nouns.{to}.name} <em>{type}</em> {@nouns.{from}.name} ({value})
+            <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
+            <p><em>{data.story}</em></p>
           </li>
         {end list}
       </ul>
@@ -401,14 +407,14 @@
   
   <!-- Make these into tabs or something -->
   <div>    
+    <button id="force_button">Force</button>
     <button id="grid_button">Grid</button>
     <button id="hive_button">Hive</button>
-    <button id="force_button">Force</button>
   </div>
   
+  <div class='gallery' id='force'> </div>
   <div class='gallery' id='grid' style="display:none"> </div>
   <div class='gallery' id='hive' style="display:none"> </div>
-  <div class='gallery' id='force' style="display:none"> </div>
   
   <pre style="display:none">
     TODOS:

@@ -36,7 +36,22 @@ Tests for stringification
   {1 | > :power || each data (1 2 3 4) daml "{math pow value 2 exp power | > :power} "}
     2 4 16 65536
 
-
+Tests for strings
+  truncate
+    {"four sixsix four" | string truncate to 10}
+      four
+    {"four sixsix four" | string truncate to 11}
+      four sixsix
+    {"foursixsixfour" | string truncate to 10}
+      foursixsix
+    {"four sixsix four" | string truncate to 10 add "..."}
+      four...
+    {"four sixsix four" | string truncate to 11 add "..."}
+      four sixsix...
+    {"foursixsixfour" | string truncate to 10 add "..."}
+      foursixsix...
+    
+    
 Tests for pipes
   ensure we're not front-piping: the initial command segment shouldn't get pipe vars
     {math pow value 5 exp 0}
