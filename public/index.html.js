@@ -74,9 +74,9 @@
     
   <script type="text/daml" id="postload">
     {begin build_viz}
-      {ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :grid)} }
+      {/ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :grid)} }
       
-      {ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :hive)} }
+      {/ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :hive)} }
       
       {ddd do action :forcer 
               params {* (:nodes {@nouns | list rekey} 
@@ -183,6 +183,9 @@
 
         <!-- NOUNS -->
 
+        <!-- REMOVE TO EDIT!!!
+
+
 
         <form method="post" accept-charset="utf-8" id="add_noun_form">
           <script type="text/daml" data-var="@selected_noun">
@@ -269,7 +272,11 @@
         </ul>
       </div>
 
+      REMOVE TO EDIT!! -->
+
       <!-- VERBS -->
+
+      <!-- REMOVE TO EDIT!!
 
       <div class="span6">
         <form method="post" accept-charset="utf-8" id="add_verb_form">
@@ -373,6 +380,7 @@
           </script>
         </ul>
 
+        REMOVE TO EDIT!! -->
       </div>
     </div>
   </div>
@@ -406,11 +414,11 @@
   </div>
   
   <!-- Make these into tabs or something -->
-  <div>    
+  <!-- <div>    
     <button id="force_button">Force</button>
     <button id="grid_button">Grid</button>
     <button id="hive_button">Hive</button>
-  </div>
+  </div> -->
   
   <div class='gallery' id='force'> </div>
   <div class='gallery' id='grid' style="display:none"> </div>
