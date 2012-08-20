@@ -23,6 +23,14 @@ At one point in the development of DAML I managed to reduce the entire language 
 
 SOME STUFF THAT'S HERE FOR NOW
 
+Tests for switch
+  ham?
+    {logic switch on 2 value (1 :one 2 :two 3 :three)}
+      two
+    
+    {logic switch on {:asdf | string slice start 2} value (:as 1 :sd 2 :df 3)}
+      3
+
 Tests for fings
   this should return nothing, because we should cancel the fing's status when trying to add to it
     {"{:foo}x" | > :xxx || 123 | > :xxx.y | xxx.string}
