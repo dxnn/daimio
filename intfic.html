@@ -1,0 +1,222 @@
+<!DOCTYPE html> 
+<html> 
+<head>   
+  <title>IntFicWordDrag</title>
+  
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
+
+  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  
+  <meta charset="utf-8">
+  
+  <style type="text/css">
+    
+  </style>
+  
+</head>
+<body id="">
+  
+  <script type="text/daml" id="preload">
+    {// Import any needed commands here //}
+    {// (note that you can't access any other script blocks from here...) //}
+    
+    {/begin time_command | daml import into :game as :greet params :name}{/end time_command}
+    {daml alias string "logic switch on @time value" as :time}
+    
+    {// time -alias-> logic switch on @state.time value //}
+    {// verbing a noun changes state, then you rerun the page //}
+    {// [:snacks: -give- snacks > Sidney.inv] //}
+    {// :snacks | onclick do "{:snacks | > :sidney.inv || inv | prune }"}
+
+  </script>
+    
+  <script type="text/daml" id="postload">
+    
+    
+    {// (
+      {// Page 1 //}
+      {* (
+        :verbs {* (
+          :examine {* (
+            "plastic kitchen" "{1 | > :kitchen_examined}"
+            "swings" "{1 | > :swings_examined}"
+            "tree" "{1 | > :tree_examined}"
+            :pit "{1 | > :dark_pit_examined}"
+          )}
+          :call {* (
+            :Sidney "{// ??? //}"
+          )}
+          :snacks {* (
+            :Sidney "{"Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”" | > :sidney_reply}"
+          )}
+          :juice {* (
+            :Sidney "{"Sidney gratefully gulps down the juice box." | > :sidney_reply}"
+          )}
+        )}
+      )}
+      
+      {// Page 2 //}
+      
+    ) | > :pages}
+    
+    
+    {* (
+      :examine {* (
+        "plastic kitchen" "{1 | > :@s.kitchen_examined}"
+        "swings" "{1 | > :@s.swings_examined}"
+        "tree" "{1 | > :@s.tree_examined}"
+        :pit "{1 | > :@s.dark_pit_examined}"
+      )}
+      
+      :call {* (
+        :Sidney "{// ??? //}"
+      )}
+      
+      :snacks {* (
+        :Sidney "{"Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”" | > :@s.sidney_reply}"
+      )}
+      
+      :juice {* (
+        :Sidney "{"Sidney gratefully gulps down the juice box." | > :@s.sidney_reply}"
+      )}
+    ) | > :verbs}
+    
+    {// Arg. Make fings work correctly! //}
+    {1 | > :@s}
+    {1 | > :@time}
+    
+    {1 | > :@action}
+    
+    // do something awesome with verbs... when you 'mousedown' on one, examine the output of the story and replace it with a modified version that wraps matching words with anchor tags or something. 
+    // why is this so hard to focus on?
+    
+  </script>
+  
+  
+  <div class="container">
+    <div class="page-header">
+      <h1>IntFicWordDrag</h1>
+    </div>
+    
+    <div id="story">
+      <script type="text/daml" data-var="@action">
+        <p>
+          Twilight. The playground is quiet. The swings are tangled up and someone’s put the 
+          {if @s.kitchen_examined
+            then "sunbleached plastic kitchen on its side in the sandbox — judging by the butts scattered around it, some homeless guy catching some shade."
+            else "plastic kitchen on its side in the sandbox."
+          }
+        </p>
+
+        <p>
+          It’s weird that there’s no other families around. 
+          {time (
+            1 "You wonder if there’s some kind of weather warning you missed."
+            2 "Lightning slices the sky, but the thunder never comes."
+            3 "The storm feels like it’ll hit at any time."
+            4 "The rain starts, big wet drops patterning the concrete."
+            5 "The rain continues, big wet drops patterning the concrete."
+          )}
+        </p>
+
+        <p>
+          {time (
+            1 "You hear Sidney giggle from somewhere. She loves hide and seek."
+            2 "You hear Sidney giggle from somewhere, but now it’s the forced kind that is meant to help you find her."
+            3 "“You have to find me...” Her voice comes from behind a tree, the one you often put your picnic blanket under."
+            4 "Behind the tree, Sidney hides in a little ball, her back to you. You tap her and she springs up and hugs your legs. “Daddy, I’m so thirsty. Can I have some water?”"
+            5 {@s.sidney_reply | else "Sidney glares at you. “I'm still thirsty. I'm going home!”"}
+            6 "Sidney starts to stalk off towards home."
+          )}
+        </p>
+        
+        {// give_snacks "Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”"
+            give_juice "Sidney gratefully gulps down the juice box." //}
+        
+        <p>
+          {cond (
+            @s.dark_pit_examined "As you look at her, a dark pit, equal parts regret and resentment, sits in your gut."
+            @s.dark_pit "As you look at her, a dark pit settles into your gut."
+          )}
+        </p>
+        
+        <p>
+          {time (
+            6 "(turn the page to continue)"
+          )}
+        </p>
+        
+        <pre>
+          state: {@s}
+        </pre>
+
+      </script>
+    </div>
+    
+    <div id="verbs">
+      <ul id="verblist">
+        <script type="text/daml" data-var="verbs">
+          {begin list | each data verbs}
+            <li>
+              <a href="#">{key}</a>
+            </li>
+          {end list}
+        </script>
+      </ul>
+    </div>
+  </div>
+
+    
+    <!-- <div id="inv">
+      <ul id="invlist">
+        <script type="text/daml" data-var="@state.inv">
+          {begin list | each data @state.inv}
+            <li>
+              <a href="#" data-id="{id}">{value}</a>
+            </li>
+          {end list}
+        </script>
+      </ul>
+    </div> -->
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // preload
+      DAML.run($('#preload').text());
+
+      // compile & bind the text/daml templates
+      $("script[type*=daml]").each(function() {
+        // id it
+        var begin, end, block, id, el, pid = $(this).parent()[0].id;
+        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo");
+      
+        if(id == 'preload') return;
+      
+        // block it
+        begin = '{begin ' + id + '}';
+        end = '{end ' + id + '}';
+        block = begin + this.innerHTML + end;
+        DAML.run(block);
+      
+        // attach it
+        el = this.dataset.el || (id == pid) ? pid : false;
+        if(el) {
+          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}');
+          if(this.dataset.var) {
+            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}');
+          }
+        }
+      });
+      
+      DAML.run(DAML.VARS.postload);
+    });
+  </script>
+</body>
+</html>
