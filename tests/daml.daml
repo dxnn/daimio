@@ -1634,6 +1634,29 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 
 
 // logic commands
+  One valued 'or' looks at each item in the list
+    {(false 1 2 3) | or}
+      1
+
+    {or (false 1 2 3)}
+      1
+
+    {or (false 0 "" :true)}
+      true
+
+  With two values it just considers each in toto
+    {5 | or 10}
+      5
+  
+    {false | or :true}
+      true
+
+    {(0 0) | or 1}
+      [0,0]
+
+    {false | or (0 0)}
+      [0,0]
+
 {if :true then :awesome}
   awesome
 
@@ -1641,7 +1664,6 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
   
 {if false then "not awesome"}
   
-
 {if {not ""} then :awesome}
   awesome
 
