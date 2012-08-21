@@ -69,34 +69,40 @@
     
     {* (
       :examine {* (
-        "plastic kitchen" "{1 | > :@s.kitchen_examined}"
-        "swings" "{1 | > :@s.swings_examined}"
-        "tree" "{1 | > :@s.tree_examined}"
-        :pit "{1 | > :@s.dark_pit_examined}"
+        "plastic kitchen" :kitchen_examined
+        "swings" :swings_examined
+        "tree" :tree_examined
+        :pit :dark_pit_examined
       )}
       
       :call {* (
         :Sidney "{// ??? //}"
+        :tree "tree_called"
       )}
       
       :snacks {* (
-        :Sidney "{"Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”" | > :@s.sidney_reply}"
+        :Sidney :dark_pit
+      )}
+ 
+      :eat {* (
+        :families :cannibalized
       )}
       
       :juice {* (
-        :Sidney "{"Sidney gratefully gulps down the juice box." | > :@s.sidney_reply}"
+        :Sidney :sidney_juice
       )}
     ) | > :verbs}
     
     {// Arg. Make fings work correctly! //}
-    {1 | > :@s}
+    {* (:start 1) | > :@s}
     {1 | > :@time}
     
     {1 | > :@action}
     
     // do something awesome with verbs... when you 'mousedown' on one, examine the output of the story and replace it with a modified version that wraps matching words with anchor tags or something. 
     // why is this so hard to focus on?
-    
+    // most verbs will just set a state flag... can we do something with that?
+    // 
   </script>
   
   
@@ -107,56 +113,61 @@
     
     <div id="story">
       <script type="text/daml" data-var="@action">
-        <p>
-          Twilight. The playground is quiet. The swings are tangled up and someone’s put the 
-          {if @s.kitchen_examined
-            then "sunbleached plastic kitchen on its side in the sandbox — judging by the butts scattered around it, some homeless guy catching some shade."
-            else "plastic kitchen on its side in the sandbox."
-          }
-        </p>
+        {begin wrapper | merge data (@s) }
+          <p>
+            Twilight. The playground is quiet. The swings are tangled up and someone’s put the 
+            {if kitchen_examined
+              then "sunbleached plastic kitchen on its side in the sandbox — judging by the butts scattered around it, some homeless guy catching some shade."
+              else "plastic kitchen on its side in the sandbox."
+            }
+          </p>
 
-        <p>
-          It’s weird that there’s no other families around. 
-          {time (
-            1 "You wonder if there’s some kind of weather warning you missed."
-            2 "Lightning slices the sky, but the thunder never comes."
-            3 "The storm feels like it’ll hit at any time."
-            4 "The rain starts, big wet drops patterning the concrete."
-            5 "The rain continues, big wet drops patterning the concrete."
-          )}
-        </p>
+          <p>
+            It’s weird that there’s no other families around. 
+            {time (
+              1 "You wonder if there’s some kind of weather warning you missed."
+              2 "Lightning slices the sky, but the thunder never comes."
+              3 "The storm feels like it’ll hit at any time."
+              4 "The rain starts, big wet drops patterning the concrete."
+              5 "The rain continues, big wet drops patterning the concrete."
+            )}
+          </p>
 
-        <p>
-          {time (
-            1 "You hear Sidney giggle from somewhere. She loves hide and seek."
-            2 "You hear Sidney giggle from somewhere, but now it’s the forced kind that is meant to help you find her."
-            3 "“You have to find me...” Her voice comes from behind a tree, the one you often put your picnic blanket under."
-            4 "Behind the tree, Sidney hides in a little ball, her back to you. You tap her and she springs up and hugs your legs. “Daddy, I’m so thirsty. Can I have some water?”"
-            5 {@s.sidney_reply | else "Sidney glares at you. “I'm still thirsty. I'm going home!”"}
-            6 "Sidney starts to stalk off towards home."
-          )}
-        </p>
+          <p>
+            {time (
+              1 "You hear Sidney giggle from somewhere. She loves hide and seek."
+              2 "You hear Sidney giggle from somewhere, but now it’s the forced kind that is meant to help you find her."
+              3 "“You have to find me...” Her voice comes from behind a tree, the one you often put your picnic blanket under."
+              4 "Behind the tree, Sidney hides in a little ball, her back to you. You tap her and she springs up and hugs your legs. “Daddy, I’m so thirsty. Can I have some water?”"
+              5 {cond (
+                  dark_pit
+                    "Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”"
+                  sidney_juice
+                    "Sidney gratefully gulps down the juice box."
+                  :default 
+                    "Sidney glares at you. “I'm still thirsty. I'm going home!”"
+                )}
+              6 "Sidney starts to stalk off towards home."
+            )}
+          </p>
         
-        {// give_snacks "Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”"
-            give_juice "Sidney gratefully gulps down the juice box." //}
+          <p>
+            {cond (
+              dark_pit_examined "As you look at her, a dark pit, equal parts regret and resentment, sits in your gut."
+              dark_pit "As you look at her, a dark pit settles into your gut."
+            )}
+          </p>
         
-        <p>
-          {cond (
-            @s.dark_pit_examined "As you look at her, a dark pit, equal parts regret and resentment, sits in your gut."
-            @s.dark_pit "As you look at her, a dark pit settles into your gut."
-          )}
-        </p>
+          <p>
+            {time (
+              6 "(turn the page to continue)"
+            )}
+          </p>
         
-        <p>
-          {time (
-            6 "(turn the page to continue)"
-          )}
-        </p>
-        
-        <pre>
-          state: {@s}
-        </pre>
-
+          <pre>
+            state: {@s}
+          </pre>
+        {end wrapper}
       </script>
     </div>
     
@@ -165,7 +176,7 @@
         <script type="text/daml" data-var="verbs">
           {begin list | each data verbs}
             <li>
-              <a href="#">{key}</a>
+              <span style="cursor:pointer">{key}</span>
             </li>
           {end list}
         </script>
@@ -189,34 +200,145 @@
   <script type="text/javascript">
     $(document).ready(function() {
       // preload
-      DAML.run($('#preload').text());
+      DAML.run($('#preload').text())
 
       // compile & bind the text/daml templates
       $("script[type*=daml]").each(function() {
         // id it
-        var begin, end, block, id, el, pid = $(this).parent()[0].id;
-        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo");
+        var begin, end, block, id, el, pid = $(this).parent()[0].id
+        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo")
       
-        if(id == 'preload') return;
+        if(id == 'preload') return
       
         // block it
-        begin = '{begin ' + id + '}';
-        end = '{end ' + id + '}';
-        block = begin + this.innerHTML + end;
-        DAML.run(block);
+        begin = '{begin ' + id + '}'
+        end = '{end ' + id + '}'
+        block = begin + this.innerHTML + end
+        DAML.run(block)
       
         // attach it
-        el = this.dataset.el || (id == pid) ? pid : false;
+        el = this.dataset.el || (id == pid) ? pid : false
         if(el) {
-          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}');
+          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}')
           if(this.dataset.var) {
-            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}');
+            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}')
           }
         }
-      });
+      })
       
-      DAML.run(DAML.VARS.postload);
-    });
+      DAML.run(DAML.VARS.postload)
+      
+      
+      var move = function(ev) {
+        target.css('left', (event.clientX - 10) + 'px')
+        target.css('top', (event.clientY - 30) + 'px')
+      }
+      
+      var up = function(ev) {
+        $(document).off('mousemove')
+        $(document).off('mouseup')
+        target.css('position', 'relative')
+        target.css('left', 'auto')
+        target.css('top', 'auto')
+        dragging = false
+        enableDocumentSelection(true);
+        
+        $('#story').off('mouseover')
+        $('#story').off('mouseout')
+        
+        var good_spot, max_distance = 4900
+            
+        $('#story a').each(function(index, el) {
+          el = $(el)
+          var px = el.position().left,
+              py = el.position().top,
+              dx = px - ev.pageX,
+              dy = py - ev.pageY
+              
+          var distance = dx * dx + dy * dy
+          
+          if(distance < max_distance) {
+            good_spot = el
+          }
+        })
+        
+        if(good_spot) {
+          var key = good_spot.text()
+          var verb = DAML.VARS.verbs[target.text()]
+          DAML.run('{1 | > :@s.{"' + verb[key] + '"} || @time | add 1 | > :@time}')
+          console.log(key, verb, verb[key]);
+        }
+        
+        DAML.run('{1 | > :@action}')
+      }
+      
+      var down = function(ev) {
+        var el = $(ev.target)
+        target = el // this is slightly evil
+        $(document).on('mousemove', move)
+        $(document).on('mouseup', up)
+        el.css('position', 'absolute')
+        dragging = true // this is totally evil
+        enableDocumentSelection(false);
+        
+        // now add some awesome stuff that picks out verb words and activates them when dropped, and progresses tick and whatnot.
+        var verb = DAML.VARS.verbs[target.text()]
+        if(!verb) return false
+        html = $('#story').html()
+        for(var key in verb) {
+          html = html.replace(key, '<a href="#">' + key + '</a>') // regexify
+        }
+        $('#story').html(html)
+
+        // $('#story').on('mouseover', 'a', function(event) {landing = $(event.target)})
+        // $('#story').on('mouseout', 'a', function(event) {landing = null})
+      }
+      
+      $('#verblist').on('mousedown', 'span', down)
+    })
+    
+
+    // like butter. http://stackoverflow.com/questions/5186441/javascript-drag-and-drop-for-touch-devices
+    function touchHandler(event)
+    {
+      var touches = event.changedTouches,
+      first = touches[0],
+      type = "";
+
+      switch(event.type) {
+        case "touchstart": type = "mousedown"; break;
+        case "touchmove":  type="mousemove"; break;        
+        case "touchend":   type="mouseup"; break;
+        default: return;
+      }
+      var simulatedEvent = document.createEvent("MouseEvent");
+      simulatedEvent.initMouseEvent(type, true, true, window, 1,
+        first.screenX, first.screenY,
+        first.clientX, first.clientY, false,
+        false, false, false, 0/*left*/, null
+      );
+      
+      first.target.dispatchEvent(simulatedEvent);
+      if(dragging) event.preventDefault();
+    }
+
+    function init() {
+      document.addEventListener("touchstart", touchHandler, true);
+      document.addEventListener("touchmove", touchHandler, true);
+      document.addEventListener("touchend", touchHandler, true);
+      document.addEventListener("touchcancel", touchHandler, true);    
+    }
+    init();
+    
+    enableDocumentSelection = function(enable) {
+      if(enable) {
+        document.onselectstart = _original_onselectstart;
+      } else {
+        _original_onselectstart = document.onselectstart;
+        document.onselectstart = function() { return false; };
+      }
+    };
+    
   </script>
 </body>
 </html>
