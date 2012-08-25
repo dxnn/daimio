@@ -1,0 +1,81 @@
+<!DOCTYPE html> 
+<html> 
+<head>   
+  <title>IntFicWordDrag</title>
+  
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
+
+  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  
+  <style type="text/css">
+  </style>
+  
+</head>
+<body id="">
+  
+  <script type="text/daml" id="preload">
+    {// Import any needed commands here //}
+    {// (note that you can't access any other script blocks from here...) //}
+    
+  </script>
+    
+  <script type="text/daml" id="postload">
+  </script>
+  
+  <div class="container">
+    <div class="page-header">
+      <h1>IntFicWordPinch</h1>
+    </div>
+    
+    <div id="story">
+      <script type="text/daml" data-var="@action">
+        <p>Twilight. The playground is quiet. The swings are tangled up and someone’s put the [sunbleached [* <a href="#" data-id="pkitchen">plastic kitchen</a> on its side in the [ [*old] but sturdy] sandbox] — judging by the butts scattered around it, some homeless guy catching some shade]. </p>
+
+      </script>
+    </div>
+    
+  </div>
+  
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // preload
+      DAML.run($('#preload').text());
+
+      // compile & bind the text/daml templates
+      $("script[type*=daml]").each(function() {
+        // id it
+        var begin, end, block, id, el, pid = $(this).parent()[0].id;
+        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo");
+      
+        if(id == 'preload') return;
+      
+        // block it
+        begin = '{begin ' + id + '}';
+        end = '{end ' + id + '}';
+        block = begin + this.innerHTML + end;
+        DAML.run(block);
+      
+        // attach it
+        el = this.dataset.el || (id == pid) ? pid : false;
+        if(el) {
+          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}');
+          if(this.dataset.var) {
+            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}');
+          }
+        }
+      });
+      
+      DAML.run(DAML.VARS.postload);
+    });
+    
+  </script>
+</body>
+</html>
