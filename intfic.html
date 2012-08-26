@@ -3,14 +3,14 @@
 <head>   
   <title>IntFicWordDrag</title>
   
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=3"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
 
-  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -410,25 +410,25 @@
     
     
     
-    var delay;
-    // Initialize CodeMirror editor with a nice html5 canvas demo.
-    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-      mode: 'text/html',
-      tabMode: 'indent',
-      onChange: function() {
-        clearTimeout(delay);
-        delay = setTimeout(updatePreview, 300);
-      }
-    });
-    
-    function updatePreview() {
-      var previewFrame = document.getElementById('preview');
-      var preview =  previewFrame.contentDocument ||  previewFrame.contentWindow.document;
-      preview.open();
-      preview.write(editor.getValue());
-      preview.close();
-    }
-    setTimeout(updatePreview, 300);
+    // var delay;
+    // // Initialize CodeMirror editor with a nice html5 canvas demo.
+    // var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+    //   mode: 'text/html',
+    //   tabMode: 'indent',
+    //   onChange: function() {
+    //     clearTimeout(delay);
+    //     delay = setTimeout(updatePreview, 300);
+    //   }
+    // });
+    // 
+    // function updatePreview() {
+    //   var previewFrame = document.getElementById('preview');
+    //   var preview =  previewFrame.contentDocument ||  previewFrame.contentWindow.document;
+    //   preview.open();
+    //   preview.write(editor.getValue());
+    //   preview.close();
+    // }
+    // setTimeout(updatePreview, 300);
     
   </script>
   
