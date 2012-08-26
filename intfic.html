@@ -7,7 +7,7 @@
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
 
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
 
   <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
   <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
@@ -63,14 +63,24 @@
 
     {dom on event :submit id :edit_verbs_form}
     {dom on event :submit id :edit_words_form}
-
+    
+    {dom on event :keyup id :edit_verbs_form filter :#verb_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_verbs_form}" 
+      | process debounce time 200}"}
+        
+    {dom on event :keyup id :edit_words_form filter :#word_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_words_form}" 
+      | process debounce time 200}"}
+    
     {network send 
       string "{story find}" 
       then "{this.#1.#1 | > :@story}"}
     
     {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verbs 
                                       | @story.pages.#1.words | > :words
-                                      | 1 | > :@action}"}
+                                      | 1 | > :@new_page
+                                      | 1 | > :@action
+                                      }"}
     
 {* (
   :examine {* (
@@ -167,38 +177,59 @@
     
     <div class="span">
       <form method="post" accept-charset="utf-8" id="edit_verbs_form">
-        <script type="text/daml" data-var="verbs">
+        <script type="text/daml" data-var="@new_page">
           <h2>Edit verbs</h2>
+          <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
+          {// <div contentEditable="true" name="verb_string" id="verb_string">{verbs | quote} //}
           <div>
-            <textarea name="verb_string" id="verb_string">{verbs | quote}</textarea>
+            <textarea name="verb_string" id="verb_string" rows="15" style="width:350px">{verbs | quote}</textarea>
           </div>
 
           <input type="hidden" name="page_index" value="1">
           <input type="hidden" name="story_id" value="{@story._id}">
-          <input type="submit" name="submit" value="Edit">
+          {// <input type="submit" name="submit" value="Edit"> //}
           <textarea name="commands" style="display:none">
             {begin verbatim | quote}
-              {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
-              {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "{verb_string | > :verbs}" context context}
+              {verb_string 
+              | run 
+              | list from_json 
+              | > :list 
+              | count 
+              | eq 
+                {list 
+                | extract "
+                  {and (
+                    this 
+                    {this 
+                      | count} )}" 
+                | count} 
+              | > :valid}
+              {begin check | if valid else "{dom show id :verb_error}"}                
+                {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
+                {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "" context context}
+                {verb_string | > :verbs}
+                {dom hide id :verb_error}
+              {end check}
             {end verbatim}
           </textarea>
         </script>
       </form>
 
       <form method="post" accept-charset="utf-8" id="edit_words_form">
-        <script type="text/daml" data-var="words">
+        <script type="text/daml" data-var="@new_page">
           <h2>Edit words</h2>
           <div>
-            <textarea name="word_string" id="word_string">{words | quote}</textarea>
+            <textarea name="word_string" id="word_string" rows="15" style="width:350px">{words | quote}</textarea>
           </div>
 
           <input type="hidden" name="page_index" value="1">
           <input type="hidden" name="story_id" value="{@story._id}">
-          <input type="submit" name="submit" value="Edit">
+          {// <input type="submit" name="submit" value="Edit"> //}
           <textarea name="commands" style="display:none">
             {begin verbatim | quote}
               {* (:story_id story_id :page_index page_index :word_string {word_string | quote}) | > :context}
-              {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "{word_string | > :words | 1 | > :@action}" context context}
+              {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "" context context}
+              {word_string | > :words | 1 | > :@action}
             {end verbatim}
           </textarea>
         </script>
@@ -381,6 +412,29 @@
       }
     };
     
+    
+    
+    var delay;
+    // Initialize CodeMirror editor with a nice html5 canvas demo.
+    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+      mode: 'text/html',
+      tabMode: 'indent',
+      onChange: function() {
+        clearTimeout(delay);
+        delay = setTimeout(updatePreview, 300);
+      }
+    });
+    
+    function updatePreview() {
+      var previewFrame = document.getElementById('preview');
+      var preview =  previewFrame.contentDocument ||  previewFrame.contentWindow.document;
+      preview.open();
+      preview.write(editor.getValue());
+      preview.close();
+    }
+    setTimeout(updatePreview, 300);
+    
   </script>
+  
 </body>
 </html>

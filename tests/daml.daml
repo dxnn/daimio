@@ -23,6 +23,14 @@ At one point in the development of DAML I managed to reduce the entire language 
 
 SOME STUFF THAT'S HERE FOR NOW
 
+fing problem:
+  { ((1 2 3) 2 3) | extract "{and (1 1)}"}
+    [[1,2,3],2,3]
+
+counting problem (should count non-lists as 0):
+  { ((1 2 3) 2 3) | extract "{this | count}"}
+    [[1,2,3]]
+
 Tests for switch
   ham?
     {logic switch on 2 value (1 :one 2 :two 3 :three)}
