@@ -66,11 +66,11 @@
     
     {dom on event :keyup id :edit_verbs_form filter :#verb_string continue 1 daml "{
       "{dom trigger event :submit id :edit_verbs_form}" 
-      | process debounce time 200}"}
+      | process debounce time 350}"}
         
     {dom on event :keyup id :edit_words_form filter :#word_string continue 1 daml "{
       "{dom trigger event :submit id :edit_words_form}" 
-      | process debounce time 200}"}
+      | process debounce time 350}"}
     
     {network send 
       string "{story find}" 
