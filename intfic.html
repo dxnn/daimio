@@ -197,11 +197,7 @@
               | count 
               | eq 
                 {list 
-                | extract "
-                  {and (
-                    this 
-                    {this 
-                      | count} )}" 
+                | extract "{this}" 
                 | count} 
               | > :valid}
               {begin check | if valid else "{dom show id :verb_error}"}                
