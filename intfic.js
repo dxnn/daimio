@@ -14,7 +14,7 @@ var html = fs.readFileSync(__dirname+'/intfic.html', 'utf8')
 DAML.db = db
 DAML.mongo = mongo
 
-var onerr = function(err) {
+var onerror = function(err) {
   return console.log(err)
 };
 
@@ -63,7 +63,7 @@ var app = http.createServer(function (req, res) {
 
 
 db.open(function(err, db) {
-  if(err) return onerr('DB refused to open')
+  if(err) return onerror('DB refused to open')
 
   console.log('connected!')
   
