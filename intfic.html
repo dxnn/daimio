@@ -3,14 +3,17 @@
 <head>   
   <title>IntFicWordDrag</title>
   
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
 
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml&x=3"></script>
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
 
-  <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.css>
+  </link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/doc/docs.css>
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -21,6 +24,10 @@
     #storycol {
       font-size: 1.6em;
     }
+/*    .CodeMirror {
+      width: 25%;
+    }
+*/  
   </style>
   
 </head>
@@ -64,11 +71,11 @@
     {dom on event :submit id :edit_verbs_form}
     {dom on event :submit id :edit_words_form}
     
-    {dom on event :keyup id :edit_verbs_form filter :#verb_string continue 1 daml "{
+    {dom on event :change id :edit_verbs_form filter :#verb_string continue 1 daml "{
       "{dom trigger event :submit id :edit_verbs_form}" 
       | process debounce time 350}"}
         
-    {dom on event :keyup id :edit_words_form filter :#word_string continue 1 daml "{
+    {dom on event :change id :edit_words_form filter :#word_string continue 1 daml "{
       "{dom trigger event :submit id :edit_words_form}" 
       | process debounce time 350}"}
     
@@ -175,7 +182,7 @@
       <h1>IntFicWordDrag</h1>
     </div>
     
-    <div class="span">
+    <div class="span5">
       <form method="post" accept-charset="utf-8" id="edit_verbs_form">
         <script type="text/daml" data-var="@new_page">
           <h2>Edit verbs</h2>
@@ -232,7 +239,7 @@
       </form>
     </div>
     
-    <div class="span7" id="storycol">
+    <div class="span6" id="storycol">
       <div id="story">
         <script type="text/daml" data-var="@action">
           {words | unquote | merge data (@s)}
@@ -409,18 +416,34 @@
     };
     
     
+  </script>
+  
+  
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.js></script>
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/mode/daml/daml.js></script>
+
+  <script>
+    setTimeout(function() {      
+      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_string'), {
+        tabMode: 'indent',
+        onChange: function() {
+          $('#verb_string').val(verb_editor.getValue())
+          $('#verb_string').trigger('change')
+        }
+      });
+     }, 1000)
+   
+    setTimeout(function() {      
+      var word_editor = CodeMirror.fromTextArea(document.getElementById('word_string'), {
+        tabMode: 'indent',
+        onChange: function() {
+          $('#word_string').val(word_editor.getValue())
+          $('#word_string').trigger('change')
+        }
+      });
+     }, 1000)
+   
     
-    // var delay;
-    // // Initialize CodeMirror editor with a nice html5 canvas demo.
-    // var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-    //   mode: 'text/html',
-    //   tabMode: 'indent',
-    //   onChange: function() {
-    //     clearTimeout(delay);
-    //     delay = setTimeout(updatePreview, 300);
-    //   }
-    // });
-    // 
     // function updatePreview() {
     //   var previewFrame = document.getElementById('preview');
     //   var preview =  previewFrame.contentDocument ||  previewFrame.contentWindow.document;
