@@ -18,26 +18,14 @@ CodeMirror.defineMode("daml", function() {
   var tests = {
     digit: /\d/,
     sign: /[+-]/,
-    exponent: /[eE]/,
-    basic: /[\w\$_\-]/,
+    exponent: /e/i,
+    word: /[\w_\-]/,
     lang_keyword: /[\w*+!\-_?:\/]/,
     terminal: /[\s+)}]/,
     not_terminal: /[^\s)}]/,
+    not_brace: /[^{]/
   };
 
-  function stateStack(indent, type, prev) { // represents a state stack object
-    this.indent = indent;
-    this.type = type;
-    this.prev = prev;
-  }
-
-  function pushStack(state, indent, type) {
-    state.indentStack = new stateStack(indent, type, state.indentStack);
-  }
-
-  function popStack(state) {
-    state.indentStack = state.indentStack.prev;
-  }
 
   function likeNumber(ch, stream) {
     if(ch == '+' || ch == '-') { // leading sign
@@ -74,44 +62,115 @@ CodeMirror.defineMode("daml", function() {
     stream.eatWhile(tests.not_terminal)
     return ERROR
   }
+  
+  
+  function Stately(oldState) { // represents a state stack object
+    this.handler = ''
+    this.model = ''
+    this.usedPs = []
+    this.currently = oldState.currently ? 'bracing' : 'outside'
+    this.quoteLevel = oldState.quoteLevel || 0
+    this.indentation = oldState.indentation || null
+    this.oldState = oldState || {};
+    // return this // remind me again why we don't need this?
+  }
+
+  function pushState(state) {
+    return new Stately(state)
+    
+    // var stack = state.stateStack.concat([]) // copy of old stateStack
+    // stack.push(state);
+    // if(!state) state = {quoteLevel: 0, indentation: 0}
+    // state = new stateStack(state, indent, type, state.stateStack);
+  }
+
+  function popState(state) {
+    state = state.oldState;
+  }
+
+  
 
   return {
-    startState: function () {
-      return {
-        indentStack: null,
-        indentation: 0,
-        mode: 'inside',        // 'outside' is raw string, 'inside' is within a daml command block
-        commandStack: [],
-      };
+    startState: function(baseIndent) {
+      var quasistate = {indentation: baseIndent}
+      return new Stately(quasistate)
     },
 
     token: function (stream, state) {
-      if(state.indentStack == null && stream.sol()) {
+      if(state.indentation == null && stream.sol()) {
         // update indentation, but only if indentStack is empty
         state.indentation = stream.indentation();
       }
 
       if(stream.eatSpace()) return null  // skip spaces
-      var returnType = null;
+      var returnType = null, ch = null
 
-      switch(state.mode) {
-        case "outside": // multi-line string parsing mode
-          var next, escaped = false;
-          while ((next = stream.next()) != null) {
-            if (next == "\"" && !escaped) {
-
-              state.mode = 'inside';
-              break;
-            }
-            escaped = !escaped && next == "\\";
+      switch(state.currently) {
+        
+        case 'outside': // outside all DAML commands
+        case 'blocking': // inside a block, but outside commands
+          stream.eatWhile(tests.not_brace)
+          if(stream.peek() = '{') state.mode = 'bracing'
+          
+          // var next;
+          // while((next = stream.next()) != null) {
+          //   if (next == "{") {
+          //     state.mode = 'inside'
+          //     stream.backUp(1)
+          //     break;
+          //   }
+          // }
+          returnType = null
+          break
+          
+        case 'bracing': // detected an opening brace
+          stream.next() 
+          pushState(state)
+          state.mode = 'detecting'
+          state.indentation += 2
+          returnType = BRACE
+          break
+          
+        case 'detecting': // detects comments, handlers, pvals and aliases
+          ch = stream.next()
+          
+          if(ch == '/') {
+            state.mode = 'commenting'
+            returnType = COMMENT
           }
-          returnType = STRING; // continue on in string mode
-          break;
-        default: // default parsing mode
-          var ch = stream.next()
+          else if(ch == '(') {
+            state.mode = 'listing'
+            returnType = PAREN
+          }
+          else {
+            // get word
+            var word = '', letter
+            while((letter = stream.eat(tests.word)) != null) {
+              keyWord += letter;
+            }
 
-          if (ch == "\"") {
-            state.mode = "outside";
+            //  {
+            // if in DAML handlers
+              state.mode = 'handling'
+            // if in DAML aliases
+              state.mode = 'aliasing'
+            // if(tests.word.test(ch))
+              state.mode = 'variabling'
+            // otherwise
+              state.mode = 'pvaling' // it's a quote or list or something weird
+            
+            stream.backup(1)
+          }
+          
+          
+          returnType = null
+          break
+          
+        default: // default parsing mode
+          ch = stream.next()
+
+          if (ch == '}') {
+            state.mode = 'outside';
             returnType = STRING;
           } 
           else if (ch == ";") { // comment
@@ -135,7 +194,7 @@ CodeMirror.defineMode("daml", function() {
             return SYMBOL;
           } 
           else {
-            stream.eatWhile(tests.basic);
+            stream.eatWhile(tests.word);
 
             if (commands && commands.propertyIsEnumerable(stream.current())) {
               returnType = HANDLER;
