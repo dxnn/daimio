@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <title>CodeMirror: DAML mode</title>
     <link rel="stylesheet" href="../../lib/codemirror.css">
+    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
     <script src="../../lib/codemirror.js"></script>
     <script src="daml.js"></script>
     <style>.CodeMirror {background: #f8f8f8;}</style>
@@ -15,10 +18,16 @@
 
 Some external strings. Someday, a <em>test</em> of mixed mode editing.
 
-{:foo}
+{list pair value :asdf}
+{list pair value :asdf vvvv 123}
+{list pair x 123}
 
+{:foo} asdf {asdf asdf} {/asdf asdf} {/asdf 
+    asdf}
 
-{snode fetch
+Also external.
+
+{story find
  ^ sort by :date | slice 10
  ^ sort by :tags
    ^^ extract "{:foo | is in this.tags}"
@@ -26,9 +35,11 @@ Some external strings. Someday, a <em>test</em> of mixed mode editing.
    ^^ extract "{:xyz | is in this.tags}"
    ^__^ (^.1 ^.2 ^-3) {// you could skip this line w/o change //}
  ^ prune "{(:foo :baz :xyz) | intersect this.tags | not}"
- ^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala  <=>  >=<  >=>  <=^=<  *>> >^^< [=]  {=}  }={  ]=[
+ ^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala
 }
 
+  <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
+    
     </textarea></form>
 
     <script>
