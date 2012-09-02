@@ -23,16 +23,39 @@ CodeMirror.defineMode("daml", function() {
     exponent: /e/i,
     word: /[\w_\-]/,
     alpha: /[a-z]/i,
+    not_space: /[^\s]/,
     lang_keyword: /[\w*+!\-_?:\/]/,
     breaking: /[\s+|^)}]/,
     not_breaking: /[^\s|^)}]/,
     not_open_brace: /[^{]/,
-    not_brace: /[^}{]/
+    not_brace: /[^}{]/,
+    not_brace_or_quote: /[^}{"]/,
   };
 
 
   function likeSegue(ch, stream, state) {
-    if(ch == '}') {
+    var closing = false, erroring = false
+    
+    if(state.now.type == 'commander' && ch == '}') {
+      closing = true
+    } 
+    if(state.now.type == 'lister' && ch == ')') {
+      closing = true
+    }
+    
+    // if(state.now.type == 'commander' && ch == ')') {
+    //   erroring = true
+    // } 
+    // if(state.now.type == 'lister' && ch == '}') {
+    //   erroring = true
+    // }
+    // 
+    // if(erroring) {
+    //   state.now.mode = 'erroring'
+    //   return true
+    // }
+    
+    if(closing) {
       state.now.mode = 'closing'
       return true
     }
@@ -81,10 +104,11 @@ CodeMirror.defineMode("daml", function() {
   
   
   function Stately(oldNow, type, mode) { // represents a state stack object
-    this.handler = null
-    this.method = null
+    this.handler = ''
+    this.method = ''
     this.pname = ''
-    this.usedPs = []
+    this.tainted = ''
+    this.pnames = []
     this.type = type || 'outsider'
     this.mode = mode || 'outside'
     this.indentation = oldNow.indentation || 0
@@ -108,12 +132,27 @@ CodeMirror.defineMode("daml", function() {
   }
   
   function openCommand(state) {
-    pushState(state)
-    state.now.mode = 'opening'
+    pushState(state, 'commander', 'opening')
   }
 
 
   return {
+    indent: function (state, textAfter) {
+      if (state.now.indentStack == null) return state.now.indentation;
+      return state.now.indentStack.indent;
+    },
+
+    copyState: function(state) {
+      var nstate = {}
+      nstate.now = new Stately({})
+      for(var key in state.now) {
+        nstate.now[key] = state.now[key];
+      }
+      
+      nstate.stack = state.stack.concat([])
+      return nstate;
+    },
+
     startState: function(baseIndent) {
       var quasistate = {indentation: baseIndent}
       return {
@@ -135,7 +174,6 @@ CodeMirror.defineMode("daml", function() {
         
         case 'opening': // eat opening brace
           stream.next()
-          // pushState(state)
           state.now.type = 'commander'
           state.now.indentation += 2
           returnType = BRACE
@@ -155,22 +193,16 @@ CodeMirror.defineMode("daml", function() {
         
         case 'commenting': // eat comments, up to first brace
           stream.eatWhile(tests.not_brace)
-          if(stream.peek() == '{') {
+          var pch = stream.peek()
+          
+          if(pch == '{') {
             openCommand(state)
-            // state.now.mode = 'opening'
-          } else {
+          } 
+          else if(pch == '}'){
             state.now.mode = 'closing'
           }
+
           returnType = COMMENT
-        break
-        
-        case 'erroring': // eat errors, up to first terminator
-          stream.eatWhile(function(ch) {return !likeSegue(ch, stream, state)})
-          
-          // TODO: also catch open brace here
-          
-          // state.now.mode = likeSegue(stream.peek(), stream, state) || 'erroring'
-          returnType = ERROR
         break
         
         case 'entering': // no eating
@@ -189,7 +221,8 @@ CodeMirror.defineMode("daml", function() {
           state.handler = ''
           state.method = ''
           state.pname = ''
-          state.usedPs = []
+          state.tainted = ''
+          state.pnames = []
           returnType = BRACE // THINK: something else?
         break
         
@@ -197,27 +230,18 @@ CodeMirror.defineMode("daml", function() {
           var pos = stream.pos,
               word = getNextWord(stream)
           
-          if(DAML) {
-            if(DAML.aliases[word]) { // FIXME!
-              state.now.mode = 'aliasing' // depr!!!
-              state.now.alias = word // derp!!!!
-            }
-          
-            if(DAML.models[word]) {
-              state.now.handler = DAML.models[word]
-              returnType = HANDLER
-              state.now.mode = 'methoding'
-            }
+          if(DAML.aliases[word]) { // FIXME!
+            state.now.mode = 'aliasing' // depr!!!
+            state.now.alias = word // derp!!!!
           }
-          else { // no DAML... /QQ
-            var next_word = getNextWord(stream)
-            if(next_word) { // check the next word
-              returnType = HANDLER
-              state.now.mode = 'methoding'
-            }
-          }
+        
+          if(DAML.models[word]) {
+            state.now.handler = word
+            returnType = HANDLER
+            state.now.mode = 'methoding'
+          } else {
           
-          if(state.now.mode != 'methoding') { // fallback to pvaling
+          // if(state.now.mode != 'methoding') { // fallback to pvaling
             stream.pos = pos; // retreat!
             state.now.mode = 'pvaling'             
           }
@@ -225,23 +249,23 @@ CodeMirror.defineMode("daml", function() {
         
         case 'methoding': // eat a method or pyuukk
           var word = getNextWord(stream)
+          var handler = DAML.models[state.now.handler]
           
-          if(DAML) {
-            if(state.now.handler.methods[word]) {
-              state.now.method = state.now.handler.methods[word]
-              state.now.mode = 'pnaming'
-              returnType = METHOD
-            } else {
-              state.now.mode = 'erroring'
-              returnType = ERROR
-            }            
-          } else {
-            state.now.mode = 'pnaming'
+          if(handler.methods[word]) {
+            var method = handler.methods[word]
+            state.now.method = word
             returnType = METHOD
-          }
+            for(var i=0, l = method.params.length; i < l; i++) {
+              state.now.pnames.push(method.params[i].key)
+            }
+          } else {
+            returnType = ERROR
+          }            
+
+          state.now.mode = 'pnaming'
         break
         
-        case 'pnaming': // eat a pname or a segue
+        case 'pnaming': // eat a pname or switch to segue
           ch = stream.peek()
           var segue = likeSegue(ch, stream, state) // close command or start a new one
 
@@ -249,27 +273,37 @@ CodeMirror.defineMode("daml", function() {
             returnType = segue
           } else {
             var word = getNextWord(stream)
+            var index = state.now.pnames.indexOf(word)
             
-            if(DAML) {
-              state.now.pname = ''
-              for(var i=0, l=state.now.method.params.length; i < l; i++) {
-                if(state.now.method.params[i].key == word) {
-                  state.now.pname = word
-                  state.now.usedPs.push(word)
-                  state.now.mode = 'pvaling' // TODO: use type system
-                  returnType = PARAMNAME
-                  break
-                }
-              }
+            state.now.pname = ''
             
-              if(!state.now.pname) {
-                state.now.mode = 'erroring'
-                returnType = ERROR
-              }
-            } else {
-              state.now.mode = 'pvaling'
+            if(index) {
+              state.now.pname = word
+              state.now.pnames.splice(index, 1)
               returnType = PARAMNAME
             }
+              
+            //   && state.now.method.params) {
+            //   if(state.now.pnames)
+            //   for(var i=0, l=state.now.method.params.length; i < l; i++) {
+            //     if(state.now.method.params[i].key == word) {
+            //       state.now.pname = word
+            //       state.now.usedPs.push(word)
+            //       returnType = PARAMNAME
+            //       break
+            //     }
+            //   }
+            // }
+            
+            // two issues: 
+            // 1. glitch with {(}
+            // 2. pname-pval wrt HMP: {* (1 2 3)}
+              
+            if(!state.now.pname) {
+              returnType = ERROR
+            }
+
+            state.now.mode = 'pvaling'
           }
         break
         
@@ -278,25 +312,25 @@ CodeMirror.defineMode("daml", function() {
           
           if(ch == '{') {
             openCommand(state)
-            // state.now.mode = 'opening'
             stream.backUp(1)
           }
           else if(ch == '(') {
-            pushState(state)
-            state.now.type = 'lister' // I think this is the only place to open a list
+            pushState(state, 'lister', 'pvaling') // I think this is the only place to open a list
             state.now.indentation += 2
             returnType = PAREN
           }
           else if (ch == ')') {
-            if(state.now.type = 'lister') {
+            if(state.now.type == 'lister') {
               popState(state) // and this is the only place to close one
               returnType = PAREN              
             } else {
               returnType = ERROR
             }
+            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
           }
           else if(likeNumber(ch, stream)) {
             returnType = eatNumber(ch, stream);
+            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
           }
           else if(ch == '"') {
             state.now.mode = 'quoting'
@@ -306,25 +340,45 @@ CodeMirror.defineMode("daml", function() {
             state.now.mode = 'fancy'
             stream.backUp(1)
           }
+        break
+        
+        case 'quoting': // eat quotes, up to first brace or quote
+          stream.eatWhile(tests.not_brace_or_quote)
+          var pch = stream.peek()
           
-          returnType = state.now.type == 'lister' ? 'pvaling' : 'pnaming'
+          if(pch == '{') {
+            openCommand(state)
+          } 
+          else if(pch == '}') {
+            state.now.mode = 'closing'
+          } 
+          else if(pch == '"') {
+            stream.next()
+            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
+          }
+          
+          returnType = STRING
         break
         
         case 'fancy': 
-          ch = stream.peek()
-          var word = getNextWord(stream)
+          ch = stream.next()
+          var word = ch
+          while((letter = stream.eat(tests.not_space)) != null) {word += letter}
           
           if(ch == ':') {
             // THINK: should limit this in some fashion, but also allow :{ & :} ?
             // state.now.mode = 'symboling'
             returnType = SYMBOL
           }
-          else {
+          else if(ch == '@' || tests.alpha.test(ch)) {
             // TODO: lots to fix here....
             returnType = VARIABLE
           }
+          else {
+            returnType = ERROR
+          }
           
-          state.now.mode = 'pval'
+          state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
         break
                 
         case 'outside': // outside all DAML commands
@@ -333,7 +387,6 @@ CodeMirror.defineMode("daml", function() {
           stream.eatWhile(tests.not_open_brace)
           if(stream.peek() == '{') {
             openCommand(state)
-            // state.now.mode = 'opening'
           }
           returnType = null
         break
@@ -341,11 +394,6 @@ CodeMirror.defineMode("daml", function() {
 
       return returnType;
     },
-
-    indent: function (state, textAfter) {
-      if (state.now.indentStack == null) return state.now.indentation;
-      return state.now.indentStack.indent;
-    }
   };
 });
 

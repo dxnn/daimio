@@ -17,30 +17,57 @@
     <form><textarea id="code" name="code">
 
 Some external strings. Someday, a <em>test</em> of mixed mode editing.
+{mfoo foo}
+{math foo x 123}
+{math round value 101.01}
+{math round value 101.01 x :foo}
+{math round value 101.01 to 2}
+{math round value 101.01 x :foo to 2}
 
-{list pair value :asdf}
-{list pair value :asdf vvvv 123}
-{list pair x 123}
+</textarea></form>
+  
 
-{:foo} asdf {asdf asdf} {/asdf asdf} {/asdf 
-    asdf}
+{math round 
+  value 101.01 to 2}
+
+{:xyzzy}
+{"xyzzy"}
+{"xyzzy
+  xyx"}
+
+1 {2} 3
+1 {/asdf asdf} 3
+1 {/asdf 
+    asdf} 3
 
 Also external.
 
+{(1 2 3)}
+{(1 2 (3))}
+{(1 2 {list pair value (1 2 3 4)} )}
+{(1 2 {list pair value (1 2 3 4)} ) | list union}
+{(1 2 
+  {list pair value (1 2 3 4) 
+  | list union} 
+  5 6) 
+| list union}
+
+{(1 3 "asdf)} asdf")}
+
+{* (1 2 3 :foo :baz)}
+
 {story find
- ^ sort by :date | slice 10
- ^ sort by :tags
-   ^^ extract "{:foo | is in this.tags}"
-   ^^ extract "{:baz | is in this.tags}"
-   ^^ extract "{:xyz | is in this.tags}"
-   ^__^ (^.1 ^.2 ^-3) {// you could skip this line w/o change //}
- ^ prune "{(:foo :baz :xyz) | intersect this.tags | not}"
- ^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala
+^ sort by :date | slice 10
+^ sort by :tags
+  ^^ extract "{:foo | is in this.tags}"
+  ^^ extract "{:baz | is in this.tags}"
+  ^^ extract "{:xyz | is in this.tags}"
+  ^__^ (^.1 ^.2 ^-3) {// you could skip this line w/o change //}
+^ prune "{(:foo :baz :xyz) | intersect this.tags | not}"
+^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala
 }
 
   <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
-    
-    </textarea></form>
 
     <script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {});
