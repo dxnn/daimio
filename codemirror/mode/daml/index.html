@@ -24,9 +24,6 @@ Some external strings. Someday, a <em>test</em> of mixed mode editing.
 {math round value 101.01 to 2}
 {math round value 101.01 x :foo to 2}
 
-</textarea></form>
-  
-
 {math round 
   value 101.01 to 2}
 
@@ -52,6 +49,10 @@ Also external.
   5 6) 
 | list union}
 
+{"oh hi"}
+{"oh hi, {name}"}
+{"oh hi, {"name"}"}
+{"oh hi, {"my good " | if friendly}{name}"}
 {(1 3 "asdf)} asdf")}
 
 {* (1 2 3 :foo :baz)}
@@ -68,6 +69,8 @@ Also external.
 }
 
   <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
+
+    </textarea></form>
 
     <script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {});

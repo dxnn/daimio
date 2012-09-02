@@ -32,6 +32,13 @@ CodeMirror.defineMode("daml", function() {
     not_brace_or_quote: /[^}{"]/,
   };
 
+  function setPvalMode(state) {
+    state.now.mode = 
+      (state.now.type == 'commander'
+        && !state.now.tainted) 
+          ? 'pnaming' 
+          : 'pvaling'
+  }
 
   function likeSegue(ch, stream, state) {
     var closing = false, erroring = false
@@ -108,6 +115,7 @@ CodeMirror.defineMode("daml", function() {
     this.method = ''
     this.pname = ''
     this.tainted = ''
+    this.pvals = 0
     this.pnames = []
     this.type = type || 'outsider'
     this.mode = mode || 'outside'
@@ -221,7 +229,8 @@ CodeMirror.defineMode("daml", function() {
           state.handler = ''
           state.method = ''
           state.pname = ''
-          state.tainted = ''
+          state.tainted = false
+          state.pvals = 0
           state.pnames = []
           returnType = BRACE // THINK: something else?
         break
@@ -240,8 +249,7 @@ CodeMirror.defineMode("daml", function() {
             returnType = HANDLER
             state.now.mode = 'methoding'
           } else {
-          
-          // if(state.now.mode != 'methoding') { // fallback to pvaling
+            state.now.tainted = true
             stream.pos = pos; // retreat!
             state.now.mode = 'pvaling'             
           }
@@ -254,65 +262,58 @@ CodeMirror.defineMode("daml", function() {
           if(handler.methods[word]) {
             var method = handler.methods[word]
             state.now.method = word
+            state.now.mode = 'pnaming'
             returnType = METHOD
             for(var i=0, l = method.params.length; i < l; i++) {
               state.now.pnames.push(method.params[i].key)
             }
           } else {
-            returnType = ERROR
+            state.now.pvals++
+            state.now.tainted = true
+            state.now.mode = 'pvaling'
+            stream.backUp(word.length)
           }            
 
-          state.now.mode = 'pnaming'
         break
         
         case 'pnaming': // eat a pname or switch to segue
-          ch = stream.peek()
-          var segue = likeSegue(ch, stream, state) // close command or start a new one
+          if(likeSegue(stream.peek(), stream, state)) { // close command or start a new one
+            return null
+          } 
 
-          if(segue) {
-            returnType = segue
+          var word = getNextWord(stream)
+          var index = state.now.pnames.indexOf(word)
+          state.now.pname = ''
+          
+          if(index >= 0) { // good word
+            state.now.pname = word
+            state.now.pnames.splice(index, 1)
+            returnType = PARAMNAME
           } else {
-            var word = getNextWord(stream)
-            var index = state.now.pnames.indexOf(word)
-            
-            state.now.pname = ''
-            
-            if(index) {
-              state.now.pname = word
-              state.now.pnames.splice(index, 1)
-              returnType = PARAMNAME
-            }
-              
-            //   && state.now.method.params) {
-            //   if(state.now.pnames)
-            //   for(var i=0, l=state.now.method.params.length; i < l; i++) {
-            //     if(state.now.method.params[i].key == word) {
-            //       state.now.pname = word
-            //       state.now.usedPs.push(word)
-            //       returnType = PARAMNAME
-            //       break
-            //     }
-            //   }
-            // }
-            
-            // two issues: 
-            // 1. glitch with {(}
-            // 2. pname-pval wrt HMP: {* (1 2 3)}
-              
-            if(!state.now.pname) {
+            if(word && tests.alpha.test(word[0]) && tests.word.test(word)) { // bad pname
               returnType = ERROR
+            } else { // try again as pval
+              state.now.tainted = true
+              stream.backUp(word.length)
             }
-
-            state.now.mode = 'pvaling'
           }
+          
+          state.now.mode = 'pvaling'
         break
         
         case 'pvaling': // treat as a param // TODO: use type system
           ch = stream.next()
           
+          if(likeSegue(ch, stream, state)) { // close command or start a new one
+            stream.backUp(1) // no eat
+            return null
+          } 
+          
+          state.now.pvals++
+              
           if(ch == '{') {
+            stream.backUp(1) // no eat
             openCommand(state)
-            stream.backUp(1)
           }
           else if(ch == '(') {
             pushState(state, 'lister', 'pvaling') // I think this is the only place to open a list
@@ -326,19 +327,23 @@ CodeMirror.defineMode("daml", function() {
             } else {
               returnType = ERROR
             }
-            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
+            setPvalMode(state)
           }
           else if(likeNumber(ch, stream)) {
             returnType = eatNumber(ch, stream);
-            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
+            setPvalMode(state)
           }
           else if(ch == '"') {
             state.now.mode = 'quoting'
             returnType = STRING
           }
           else {
+            stream.backUp(1) // no eat
             state.now.mode = 'fancy'
-            stream.backUp(1)
+          }
+          
+          if(state.now.tainted && state.now.pvals > 1) {
+            returnType = ERROR
           }
         break
         
@@ -354,16 +359,20 @@ CodeMirror.defineMode("daml", function() {
           } 
           else if(pch == '"') {
             stream.next()
-            state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
+            setPvalMode(state)
           }
           
           returnType = STRING
+          
+          if(state.now.tainted && state.now.pvals > 1) {
+            returnType = ERROR
+          }
         break
         
         case 'fancy': 
           ch = stream.next()
           var word = ch
-          while((letter = stream.eat(tests.not_space)) != null) {word += letter}
+          while((letter = stream.eat(tests.not_breaking)) != null) {word += letter}
           
           if(ch == ':') {
             // THINK: should limit this in some fashion, but also allow :{ & :} ?
@@ -378,7 +387,11 @@ CodeMirror.defineMode("daml", function() {
             returnType = ERROR
           }
           
-          state.now.mode = (state.now.type == 'lister') ? 'pvaling' : 'pnaming'
+          if(state.now.tainted && state.now.pvals > 1) {
+            returnType = ERROR
+          }
+          
+          setPvalMode(state)
         break
                 
         case 'outside': // outside all DAML commands
