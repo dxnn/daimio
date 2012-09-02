@@ -64,7 +64,7 @@ Also external.
   ^^ extract "{:baz | is in this.tags}"
   ^^ extract "{:xyz | is in this.tags}"
   ^__^ (^.1 ^.2 ^-3) {// you could skip this line w/o change //}
-^ prune "{(:foo :baz :xyz) | intersect this.tags | not}"
+^ extract "{(:foo :baz :xyz) | intersect this.tags | not}"
 ^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala
 }
 

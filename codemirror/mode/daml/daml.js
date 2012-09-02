@@ -7,15 +7,13 @@
  */
 CodeMirror.defineMode("daml", function() {
   
+  // TODO: make a stub DAML with some standard commands and aliases and stick it in here just in case
   // this parser doesn't work without a live DAML install, because we need aliases n' stuff
   if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}};
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
       PAREN = "hr", PARAMNAME = "qualifier", PARAM = "attribute", HANDLER = "builtin", METHOD = "keyword",
-      VARIABLE = "variable", ERROR = "error";
-
-  var commands = {"list pair":1, "if":1, "time":1, "cond":1};
-  var aliases = {"*": "list pair"};
+      ALIAS = "def", VARIABLE = "variable", ERROR = "error";
 
   var tests = {
     digit: /\d/,
@@ -29,7 +27,7 @@ CodeMirror.defineMode("daml", function() {
     not_breaking: /[^\s|^)}]/,
     not_open_brace: /[^{]/,
     not_brace: /[^}{]/,
-    not_brace_or_quote: /[^}{"]/,
+    not_brace_or_quote: /[^{"]/,
   };
 
   function setPvalMode(state) {
@@ -226,12 +224,12 @@ CodeMirror.defineMode("daml", function() {
         case 'terminating': // eats terminal chars -- should hand off to terminal parser fun
           stream.next()
           state.now.mode = 'entering'
-          state.handler = ''
-          state.method = ''
-          state.pname = ''
-          state.tainted = false
-          state.pvals = 0
-          state.pnames = []
+          state.now.handler = ''
+          state.now.method = ''
+          state.now.pname = ''
+          state.now.tainted = false
+          state.now.pvals = 0
+          state.now.pnames = []
           returnType = BRACE // THINK: something else?
         break
         
@@ -239,19 +237,42 @@ CodeMirror.defineMode("daml", function() {
           var pos = stream.pos,
               word = getNextWord(stream)
           
-          if(DAML.aliases[word]) { // FIXME!
-            state.now.mode = 'aliasing' // depr!!!
-            state.now.alias = word // derp!!!!
-          }
-        
-          if(DAML.models[word]) {
+          // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
+          if(DAML.aliases[word]) { 
+            returnType = ALIAS
+            var words = DAML.aliases[word].split(' ').reverse() 
+            word = words.pop()
             state.now.handler = word
-            returnType = HANDLER
             state.now.mode = 'methoding'
-          } else {
-            state.now.tainted = true
-            stream.pos = pos; // retreat!
-            state.now.mode = 'pvaling'             
+            if(words.length) {
+              word = words.pop()
+              for(var i=0, l = DAML.models[state.now.handler].methods[word].params.length; i < l; i++) {
+                state.now.pnames.push(DAML.models[state.now.handler].methods[word].params[i].key)
+              }
+              state.now.method = word
+              state.now.mode = 'pnaming'
+              while(words.length) {
+                word = words.pop()
+                state.now.pname = word
+                state.now.mode = 'pvaling'
+                state.now.pnames.splice(state.now.pnames.indexOf(word), 1)
+                if(words.length) {
+                  word = words.pop()
+                  state.now.mode = 'pnaming'
+                }
+              }
+            }
+          }
+          else {
+            if(DAML.models[word]) {
+              state.now.handler = word
+              returnType = HANDLER
+              state.now.mode = 'methoding'
+            } else {
+              state.now.tainted = true
+              stream.pos = pos; // retreat!
+              state.now.mode = 'pvaling'             
+            }
           }
         break
         
