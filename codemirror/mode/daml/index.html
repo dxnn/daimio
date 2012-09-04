@@ -7,8 +7,13 @@
     <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
     <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
     <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
+    
     <script src="../../lib/codemirror.js"></script>
     <script src="daml.js"></script>
+    
+    <link rel="stylesheet" href="../../lib/util/simple-hint.css">
+    <script src="../../lib/util/daml-hint.js"></script>
+    
     <style>.CodeMirror {background: #f8f8f8;}</style>
     <link rel="stylesheet" href="../../doc/docs.css">
   </head>
@@ -52,7 +57,7 @@ Also external.
 {"oh hi"}
 {"oh hi, {name}"}
 {"oh hi, {"name"}"}
-{"oh hi, {"my good " | if friendly}{name}"}
+{"oh hi, {"my good {:sir | if male else :ma'am}" | if friendly else name}"}
 {(1 3 "asdf)} asdf")}
 
 {* (1 2 3 :foo :baz)}
@@ -73,7 +78,10 @@ Also external.
     </textarea></form>
 
     <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {});
+      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {})
+      
+      CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
+      editor.setOption('extraKeys', {"Esc": "autocomplete"})
     </script>
 
     <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>

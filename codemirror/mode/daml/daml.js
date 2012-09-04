@@ -12,7 +12,7 @@ CodeMirror.defineMode("daml", function() {
   if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}};
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
-      PAREN = "hr", PARAMNAME = "qualifier", PARAM = "attribute", HANDLER = "builtin", METHOD = "keyword",
+      PAREN = "hr", PARAMNAME = "attribute", HANDLER = "builtin", METHOD = "keyword",
       ALIAS = "def", VARIABLE = "variable", ERROR = "error";
 
   var tests = {
@@ -140,7 +140,7 @@ CodeMirror.defineMode("daml", function() {
   function openCommand(state) {
     pushState(state, 'commander', 'opening')
   }
-
+  
 
   return {
     indent: function (state, textAfter) {
@@ -149,14 +149,7 @@ CodeMirror.defineMode("daml", function() {
     },
 
     copyState: function(state) {
-      var nstate = {}
-      nstate.now = new Stately({})
-      for(var key in state.now) {
-        nstate.now[key] = state.now[key];
-      }
-      
-      nstate.stack = state.stack.concat([])
-      return nstate;
+      return JSON.parse(JSON.stringify(state)) // stinky, but terribly effective
     },
 
     startState: function(baseIndent) {
@@ -284,9 +277,11 @@ CodeMirror.defineMode("daml", function() {
             var method = handler.methods[word]
             state.now.method = word
             state.now.mode = 'pnaming'
-            returnType = METHOD
-            for(var i=0, l = method.params.length; i < l; i++) {
-              state.now.pnames.push(method.params[i].key)
+            returnType = METHOD 
+            if(method.params) {
+              for(var i=0, l = method.params.length; i < l; i++) {
+                state.now.pnames.push(method.params[i].key)
+              }
             }
           } else {
             state.now.pvals++
@@ -312,6 +307,7 @@ CodeMirror.defineMode("daml", function() {
             returnType = PARAMNAME
           } else {
             if(word && tests.alpha.test(word[0]) && tests.word.test(word)) { // bad pname
+              state.now.pname = word // derp?
               returnType = ERROR
             } else { // try again as pval
               state.now.tainted = true

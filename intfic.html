@@ -6,14 +6,14 @@
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
 
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
 
   <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
   <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
   <link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.css>
-  </link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/doc/docs.css>
+  <link rel="stylesheet" href="http://sherpa.local/~dann/thingviz/codemirror/lib/util/simple-hint.css">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -421,15 +421,19 @@
   
   <script src=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.js></script>
   <script src=http://sherpa.local/~dann/thingviz/codemirror/mode/daml/daml.js></script>
+  <script src="http://sherpa.local/~dann/thingviz/codemirror/lib/util/daml-hint.js"></script>
 
   <script>
+    CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
+    
     setTimeout(function() {      
       var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_string'), {
         tabMode: 'indent',
         onChange: function() {
           $('#verb_string').val(verb_editor.getValue())
           $('#verb_string').trigger('change')
-        }
+        },
+        extraKeys: {"Esc": "autocomplete"}
       });
      }, 1000)
    
@@ -439,7 +443,8 @@
         onChange: function() {
           $('#word_string').val(word_editor.getValue())
           $('#word_string').trigger('change')
-        }
+        },
+        extraKeys: {"Esc": "autocomplete"}
       });
      }, 1000)
    
