@@ -24,10 +24,6 @@
     #storycol {
       font-size: 1.6em;
     }
-/*    .CodeMirror {
-      width: 25%;
-    }
-*/  
   </style>
   
 </head>
@@ -37,7 +33,7 @@
     {// Import any needed commands here //}
     {// (note that you can't access any other script blocks from here...) //}
 
-    {daml alias string "logic switch on @time value" as :time}
+    {daml alias string "logic switch on state.time value" as :time}
   </script>
     
   <script type="text/daml" id="postload">
@@ -63,161 +59,120 @@
       
     //}
     
-    
-    
     {/network send string "{/story add}"}
     {/network send string "{story add_page id @story._id name :sidney}"}
 
     {dom on event :submit id :edit_verbs_form}
     {dom on event :submit id :edit_words_form}
+
+    {dom on event :change id :edit_verbs_form filter :#verb_stringy continue 1 
+      daml "{"{dom trigger event :submit id :edit_verbs_form}" 
+            | process debounce time 350}"}
+
+    {dom on event :change id :edit_words_form filter :#word_string continue 1 
+      daml "{"{dom trigger event :submit id :edit_words_form}" 
+            | process debounce time 350}"}
+
+    {begin fix_verbs}
+      {union (verbs {verb_string | run | list from_json}) | > :verbs}
+    {end fix_verbs}
     
-    {dom on event :change id :edit_verbs_form filter :#verb_string continue 1 daml "{
-      "{dom trigger event :submit id :edit_verbs_form}" 
-      | process debounce time 350}"}
-        
-    {dom on event :change id :edit_words_form filter :#word_string continue 1 daml "{
-      "{dom trigger event :submit id :edit_words_form}" 
-      | process debounce time 350}"}
-    
-    {network send 
-      string "{story find}" 
-      then "{this.#1.#1 | > :@story}"}
-    
-    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verbs 
+    {begin punch_words}
+      {"{verb}_{noun}" | run | string transform from "/\W/" to "_" | > :verb_noun}
+      {verbs.{verb}.{noun} | > :val | run | > :output 
+      | eq val | > :notfing
+      | val | is like "/^\d+$/"
+      | and notfing
+      | then "{variable get path verb_noun | add val}"
+      | else output
+      | run
+      | > {"state.{verb_noun}" | run}
+      }
+      {state.time | add 1 | > :state.time}
+    {end punch_words}
+
+    {variable bind path :verb_string daml fix_verbs}
+
+    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verb_string 
                                       | @story.pages.#1.words | > :words
                                       | 1 | > :@new_page
                                       | 1 | > :@action
                                       }"}
-    
-{* (
-  :examine {* (
-    "plastic kitchen" :kitchen_examined
-    "swings" :swings_examined
-    "tree" :tree_examined
-    :pit :dark_pit_examined
-  )}
-  
-  :call {* (
-    :Sidney :sidney_called
-    :tree :tree_called
-  )}
-  
-  :snacks {* (
-    :Sidney :dark_pit
-  )}
 
-  :eat {* (
-    :families :cannibalized
-  )}
-  
-  :juice {* (
-    :Sidney :sidney_juice
-  )}
-)}
+    {network send 
+      string "{story find}" 
+      then "{this.#1.#1 | > :@story}"}
 
-    
-{begin wrapper}
-  <p>
-    Twilight. The playground is quiet. The swings are tangled up and someone’s put the 
-    {if kitchen_examined
-      then "sunbleached plastic kitchen on its side in the sandbox — judging by the butts scattered around it, some homeless guy catching some shade."
-      else "plastic kitchen on its side in the sandbox."
-    }
-  </p>
-
-  <p>
-    It’s weird that there’s no other families around. 
-    {time (
-      1 "You wonder if there’s some kind of weather warning you missed."
-      2 "Lightning slices the sky, but the thunder never comes."
-      3 "The storm feels like it’ll hit at any time."
-      4 "The rain starts, big wet drops patterning the concrete."
-      5 "The rain continues, big wet drops patterning the concrete."
-    )}
-  </p>
-
-  <p>
-    {time (
-      1 "You hear Sidney giggle from somewhere. She loves hide and seek."
-      2 "You hear Sidney giggle from somewhere, but now it’s the forced kind that is meant to help you find her."
-      3 "“You have to find me...” Her voice comes from behind a tree, the one you often put your picnic blanket under."
-      4 "Behind the tree, Sidney hides in a little ball, her back to you. You tap her and she springs up and hugs your legs. “Daddy, I’m so thirsty. Can I have some water?”"
-      5 {cond (
-          dark_pit
-            "Sidney pushes the snacks away. “I’m not hungry, I’m thirsty!” she whines. “You forgot. You always forget!”"
-          sidney_juice
-            "Sidney gratefully gulps down the juice box."
-          :default 
-            "Sidney glares at you. “I'm still thirsty. I'm going home!”"
-        )}
-      6 "Sidney starts to stalk off towards home."
-    )}
-  </p>
-
-  <p>
-    {cond (
-      dark_pit_examined "As you look at her, a dark pit, equal parts regret and resentment, sits in your gut."
-      dark_pit "As you look at her, a dark pit settles into your gut."
-    )}
-  </p>
-
-  <p>
-    {time (
-      6 "(turn the page to continue)"
-    )}
-  </p>
-
-  <pre>
-    state: {@s}
-  </pre>
-{end wrapper}
-    
-    {* (:state :good) | > :@s}
-    {1 | > :@time}
+    {* (:page :1) | > :state}
+    {1 | > :state.time}
   </script>
-  
-  
+
+
   <div class="container">
     <div class="page-header">
       <h1>IntFicWordDrag</h1>
     </div>
-    
+
     <div class="span5">
       <form method="post" accept-charset="utf-8" id="edit_verbs_form">
         <script type="text/daml" data-var="@new_page">
           <h2>Edit verbs</h2>
           <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
-          {// <div contentEditable="true" name="verb_string" id="verb_string">{verbs | quote} //}
           <div>
-            <textarea name="verb_string" id="verb_string" rows="15" style="width:350px">{verbs | quote}</textarea>
+            <textarea name="verb_stringy" id="verb_stringy" rows="15" style="width:350px">{verb_string | quote}</textarea>
           </div>
 
           <input type="hidden" name="page_index" value="1">
           <input type="hidden" name="story_id" value="{@story._id}">
-          {// <input type="submit" name="submit" value="Edit"> //}
           <textarea name="commands" style="display:none">
             {begin verbatim | quote}
-              {verb_string 
+              {verb_stringy 
               | run 
               | list from_json 
-              | > :list 
+              | > :vlist 
               | count 
               | eq 
-                {list 
+                {vlist 
                 | extract "{this}" 
                 | count} 
               | > :valid}
               {begin check | if valid else "{dom show id :verb_error}"}                
-                {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
-                {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "" context context}
-                {verb_string | > :verbs}
+                {* (:story_id story_id :page_index page_index :verb_string {verb_stringy | quote}) 
+                | > :context}
+                {network send 
+                  string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" 
+                  then "" context context}
+                {verb_stringy | > :verb_string
+                | 1 | > :@action}
                 {dom hide id :verb_error}
               {end check}
             {end verbatim}
           </textarea>
         </script>
       </form>
-
+    </div>
+    
+    <div class="span6" id="storycol">
+      <div id="story">
+        <script type="text/daml" data-var="@action">
+          {words | unquote | merge data (state)}
+        </script>
+      </div>
+    
+      <div id="verbs">
+        <ul id="verblist">
+          <script type="text/daml" data-var="@action">
+            {begin list | each data verbs}
+              <li>
+                <span style="cursor:pointer">{key}</span>
+              </li>
+            {end list}
+          </script>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="span12">
       <form method="post" accept-charset="utf-8" id="edit_words_form">
         <script type="text/daml" data-var="@new_page">
           <h2>Edit words</h2>
@@ -232,31 +187,14 @@
             {begin verbatim | quote}
               {* (:story_id story_id :page_index page_index :word_string {word_string | quote}) | > :context}
               {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "" context context}
-              {word_string | > :words | 1 | > :@action}
+              {word_string 
+              | > :words 
+              | 1 
+              | > :@action}
             {end verbatim}
           </textarea>
         </script>
       </form>
-    </div>
-    
-    <div class="span6" id="storycol">
-      <div id="story">
-        <script type="text/daml" data-var="@action">
-          {words | unquote | merge data (@s)}
-        </script>
-      </div>
-    
-      <div id="verbs">
-        <ul id="verblist">
-          <script type="text/daml" data-var="verbs">
-            {begin list | each data {verbs | run | list from_json}}
-              <li>
-                <span style="cursor:pointer">{key}</span>
-              </li>
-            {end list}
-          </script>
-        </ul>
-      </div>
     </div>
   </div>
 
@@ -339,10 +277,14 @@
         })
         
         if(good_spot) {
-          var key = good_spot.text()
-          var verb = DAML.run('{verbs | run | list from_json}')[target.text()]
-          DAML.run('{1 | > :@s.{"' + verb[key] + '"} || @time | add 1 | > :@time}')
-          console.log(key, verb, verb[key]);
+          // var noun = good_spot.text()
+          // var verb = DAML.run('{verbs}')[target.text()]
+          // DAML.run('{1 | > :state.{"' + verb[noun] + '"} || state.time | add 1 | > :state.time}')
+          // console.log(noun, verb, verb[noun]);
+          
+          DAML.import_var('noun', good_spot.text())
+          DAML.import_var('verb', target.text())
+          DAML.run('{punch_words}')
         }
         
         DAML.run('{1 | > :@action}')
@@ -358,7 +300,7 @@
         enableDocumentSelection(false);
         
         // now add some awesome stuff that picks out verb words and activates them when dropped, and progresses tick and whatnot.
-        var verb = DAML.run('{verbs | run | list from_json}')[target.text()]
+        var verb = DAML.run('{verbs}')[target.text()]
         if(!verb) return false
         html = $('#story').html()
         for(var key in verb) {
@@ -375,8 +317,7 @@
     
 
     // like butter. http://stackoverflow.com/questions/5186441/javascript-drag-and-drop-for-touch-devices
-    function touchHandler(event)
-    {
+    function touchHandler(event) {
       var touches = event.changedTouches,
       first = touches[0],
       type = "";
@@ -427,11 +368,11 @@
     CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
     
     setTimeout(function() {      
-      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_string'), {
+      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_stringy'), {
         tabMode: 'indent',
         onChange: function() {
-          $('#verb_string').val(verb_editor.getValue())
-          $('#verb_string').trigger('change')
+          $('#verb_stringy').val(verb_editor.getValue())
+          $('#verb_stringy').trigger('change')
         },
         extraKeys: {"Esc": "autocomplete"}
       });
@@ -448,16 +389,6 @@
       });
      }, 1000)
    
-    
-    // function updatePreview() {
-    //   var previewFrame = document.getElementById('preview');
-    //   var preview =  previewFrame.contentDocument ||  previewFrame.contentWindow.document;
-    //   preview.open();
-    //   preview.write(editor.getValue());
-    //   preview.close();
-    // }
-    // setTimeout(updatePreview, 300);
-    
   </script>
   
 </body>

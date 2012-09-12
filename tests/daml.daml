@@ -23,6 +23,17 @@ At one point in the development of DAML I managed to reduce the entire language 
 
 SOME STUFF THAT'S HERE FOR NOW
 
+unionizer: 
+  {(1 2 3) | union (4 5 6)}
+  [1,2,3,4,5,6]
+  
+  {union ((1 2 3) (4 5 6))}
+  [1,2,3,4,5,6]
+  
+  {* (:x 1 :y 2) | union {* (:z 3 :a 4)} }
+  {"x":1,"y":2,"z":3,"a":4}
+  
+
 fing problem:
   { ((1 2 3) 2 3) | extract "{and (1 1)}"}
     [[1,2,3],2,3]
@@ -137,10 +148,10 @@ Tests for lists
     
 
       // // prune
-      // {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
       // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
       // 
-      // {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | eq :3} path "*.*"}
+      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | eq :3} path "*.*"}
       // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
       // 
     
@@ -1538,97 +1549,97 @@ $GLOBALS['X']['VARS']['STATIC']['data'] =
         '3' => array('one' => 'third', 'two' => array('hinterlands', 'yellow', 'mishmash'), 'three' => 'even'));
 
 
-// // collection commands
-// {@data | collection count}
+// // list commands
+// {@data | list count}
 // 3
 // 
-// {((:one :row) (:second :row)) | collection to_csv}
+// {((:one :row) (:second :row)) | list to_csv}
 // one,row\nsecond,row
 // 
-// {((:one :row) (:second :row)) | collection to_json}
+// {((:one :row) (:second :row)) | list to_json}
 // [["one","row"],["second","row"]]
 // 
 // // otherwise the {...} gets proc'd
-// {{* (:one :row :second :row)} | collection to_json | quote}
+// {{* (:one :row :second :row)} | list to_json | quote}
 // {"one":"row","second":"row"}
 // 
 // // intersection
-// {collection intersect values (@data.1.two (:hi :hello :gogo))}
+// {list intersect values (@data.1.two (:hi :hello :gogo))}
 // ["hi","hello"]
 // 
-// {collection intersect values (@data.1 {* (:one :first :four :nothing)})}
+// {list intersect values (@data.1 {* (:one :first :four :nothing)})}
 // {"one":"first"}
 // 
 // // keys
-// {@data | collection keys}
+// {@data | list keys}
 // [2,1,3]
 // 
 // // organize
-// {@data | collection organize command "sort:one,desc;"}
+// {@data | list organize command "sort:one,desc;"}
 // {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 // 
-// {@data | collection organize command "stack:three;"}
+// {@data | list organize command "stack:three;"}
 // {"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
 // 
-// {@data | collection organize command "sort:one,desc;stack:three;"}
+// {@data | list organize command "sort:one,desc;stack:three;"}
 // {"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
 // 
 // // rekey
-// {@data | collection rekey key_by :one}
+// {@data | list rekey key_by :one}
 // {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
 // 
-// {@data | collection rekey key_by :three}
+// {@data | list rekey key_by :three}
 // {"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
 // 
 // // remove
-// {@data | collection remove path :2}
+// {@data | list remove path :2}
 // {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 // 
-// {@data | collection remove path "*.two"}
+// {@data | list remove path "*.two"}
 // {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 // 
-// {(:one :two :three) | collection remove path :one}
+// {(:one :two :three) | list remove path :one}
 // ["two","three"] 
 // 
 // // union
-// {collection union values (@data (:1 :2 :four))}
+// {list union value (@data (:1 :2 :four))}
 // [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
 // 
-// {collection union values (@data {*(:1 {* (:one :lovely :four :goodness)})})}
+// {list union value (@data {*(:1 {* (:one :lovely :four :goodness)})})}
 // [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 // 
 // // unique
-// {(:hi :hi :puffy :ami :yumi) | collection unique}
+// {(:hi :hi :puffy :ami :yumi) | list unique}
 // {"0":"hi","2":"puffy","3":"ami","4":"yumi"}
 // 
 // // prune
-// {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+// {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
 // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
 // 
-// {collection prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
+// {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
 // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
 // 
 // // extract
-// {collection extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+// {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
 // ["2","3","1","3","3","1","3"]
 // 
-// {collection extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
+// {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
 // ["2","3","5"]
 // 
 // // sort
-// {@data | collection sort by :one}
+// {@data | list sort by :one}
 // [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 // 
-// {@data | collection sort by {* (:three :desc :one :asc)} | __.one}
+// {@data | list sort by {* (:three :desc :one :asc)} | __.one}
 // ["second","first","third"]
 // 
-// {@data | collection sort by {* (:three :desc :one :desc)} | __.one}
+// {@data | list sort by {* (:three :desc :one :desc)} | __.one}
 // ["second","third","first"]
 // 
-// {@data | collection sort by {* (:two.#2 :desc :one :desc)} | __.one}
+// {@data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
 // ["third","second","first"]
 // 
-// {@data | collection sort by {* (:two.#2 :desc :one :asc)} | __.one}
+// {@data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
 // ["second","third","first"]
 
 
@@ -1642,6 +1653,8 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 
 
 // logic commands
+  ~~~ OR returns the first true value it finds ~~~
+  
   One valued 'or' looks at each item in the list
     {(false 1 2 3) | or}
       1
@@ -1664,6 +1677,42 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 
     {false | or (0 0)}
       [0,0]
+
+  ~~~ AND only returns true or false ~~~
+
+  One valued 'and' looks at each item in the list
+    {(false 1 2 3) | and | then :true else :false}
+      false
+      
+    {and (false 1 2 3) | then :true else :false}
+      false
+      
+    {and (false 0 "" :true) | then :true else :false}
+      false
+      
+    {(1 2 3) | and | then :true else :false}
+      true
+
+    // NOTE: the below fail due to faulty piping that sets 'also' to 'false'. 
+
+    {and (1 2 3) | then :true else :false}
+      true
+
+    {and ("asdf" :true) | then :true else :false}
+      true
+
+  With two values it just considers each in toto
+    {5 | and 10 | then :true else :false}
+      true
+  
+    {false | and :true | then :true else :false}
+      false
+
+    {(0 0) | and 10 | then :true else :false}
+      true
+
+    {false | and (0 0) | then :true else :false}
+      false
 
 {if :true then :awesome}
   awesome

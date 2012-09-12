@@ -65,13 +65,19 @@ Also external.
 {story find
 ^ sort by :date | slice 10
 ^ sort by :tags
+  // A comment terminator
   ^^ extract "{:foo | is in this.tags}"
   ^^ extract "{:baz | is in this.tags}"
   ^^ extract "{:xyz | is in this.tags}"
-  ^__^ (^.1 ^.2 ^-3) {// you could skip this line w/o change //}
+  ^__^ (^_1 ^_2 ^_3) // you could skip this line w/o change
 ^ extract "{(:foo :baz :xyz) | intersect this.tags | not}"
-^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala
-}
+^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala}
+
+{story find by_ids #id
+^ sort by :date | reverse | slice 10
+^ sort by :tags | slice 20
+^_^ if #sort | is like :tags | then ^_2 else ^_1
+} {// note laziness -- the lifted pipelines are actually fings //}
 
   <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
 
