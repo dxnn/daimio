@@ -81,7 +81,7 @@
       {ddd do action :forcer 
               params {* (:nodes {@nouns | list rekey} 
                          :links {@verbs | list rekey} 
-                         :charge -800 
+                         :charge -800
                          :distance 150)} 
               options {* (:id :force)} }
     {end build_viz}
@@ -187,7 +187,7 @@
 
 
 
-        <form method="post" accept-charset="utf-8" id="add_noun_form">
+        <form method="post" accept-charset="utf-8" id="add_noun_form" class="form-vertical">
           <script type="text/daml" data-var="@selected_noun">
             {@selected_noun | then @nouns.{@selected_noun} else "" | > :noun ||}
             
@@ -237,7 +237,9 @@
             <input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
 
             <input type="hidden" name="id" value="{noun._id}" id="id">
-            <input type="submit" name="submit" value="{noun | then :Edit else :Add}">
+            <div class="form-actions">
+              <input type="submit" name="submit" class="btn" value="{noun | then :Edit else :Add}">
+            </div>                
             <textarea name="commands" style="display:none">
               {begin verbatim | quote}
                 {* (:id id :name name :type type :story story) | > :context}
@@ -278,8 +280,9 @@
 
       <!-- REMOVE TO EDIT!! -->
 
+
       <div class="span6">
-        <form method="post" accept-charset="utf-8" id="add_verb_form">
+        <form method="post" accept-charset="utf-8" id="add_verb_form" class="form-vertical">
           <script type="text/daml" data-var="@selected_verb">
             {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
             {begin editing | if verb}
@@ -332,9 +335,9 @@
               {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
               {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
             </div>
-            
+
             {// Add start and end dates //}
-            
+
             <label for="value">Value (strength of connection)</label>
             <input type="text" name="value" value="{verb.value}">
 
@@ -342,88 +345,101 @@
             <textarea name="story" id="story">{verb.data.story}</textarea>
 
             <input type="hidden" name="id" value="{verb._id}" id="id">
-            <input type="submit" name="submit" value="{verb | then :Edit else :Add}">
+
+            <div class="form-actions">
+              <input type="submit" name="submit" class="btn" value="{verb | then :Edit else :Add}">
+            </div>            
             <textarea name="commands" style="display:none">
               {begin verbatim | quote}
                 {* (:id id :type type :from from :to to :value value :story story) | > :context}
                 {if id 
                   then "{verb set_type id POST.id value POST.type}
-                        {/verb set_from id POST.id value POST.name}
-                        {/verb set_to id POST.id value POST.name}
-                        {verb set_value id POST.id value POST.value}
-                        {verb set_data id POST.id value {* (:story POST.story)}}"
+                  {/verb set_from id POST.id value POST.name}
+                  {/verb set_to id POST.id value POST.name}
+                  {verb set_value id POST.id value POST.value}
+                  {verb set_data id POST.id value {* (:story POST.story)}}"
                   else "{verb add type POST.type 
-                                  from POST.from 
-                                  to POST.to 
-                                  value POST.value 
-                                  data {* (:story POST.story)}}"
-                 | > :actions | ""}
-                {network send string actions then "{verb_fetcher}" context context}
-                {false | > :@selected_verb}
-              {end verbatim}
-            </textarea>
-          </script>
-        </form>
+                    from POST.from 
+                    to POST.to 
+                    value POST.value 
+                    data {* (:story POST.story)}}"
+                  | > :actions | ""}
+                  {network send string actions then "{verb_fetcher}" context context}
+                  {false | > :@selected_verb}
+                {end verbatim}
+              </textarea>
+            </script>
+          </form>
 
-        <h3><a href="#" id="verblistlink">Verb List</a></h3>
-        <ul id="verblist" style="display:none">
-          <script type="text/daml" data-var="@verbs">
-            {begin list | merge data @verbs}
-              <li>
-                <p>
-                  <a href="#" data-id="{_id}">edit</a>
-                  <strong>{@nouns.{from}.name}</strong> <em>{type}</em> <strong>{@nouns.{to}.name}</strong>
-                  ({value}) <em>{data.story | string truncate to 30 add "..."}</em>
-                </p>
-              </li>
-            {end list}
-          </script>
-        </ul>
+          <h3><a href="#" id="verblistlink">Verb List</a></h3>
+          <ul id="verblist" style="display:none">
+            <script type="text/daml" data-var="@verbs">
+              {begin list | merge data @verbs}
+                <li>
+                  <p>
+                    <a href="#" data-id="{_id}">edit</a>
+                    <strong>{@nouns.{from}.name}</strong> <em>{type}</em> <strong>{@nouns.{to}.name}</strong>
+                    ({value}) <em>{data.story | string truncate to 30 add "..."}</em>
+                  </p>
+                </li>
+              {end list}
+            </script>
+          </ul>
 
-        <!-- REMOVE TO EDIT!! --> 
+          <!-- REMOVE TO EDIT!! --> 
+        </div>
       </div>
-    </div>
-  </div>
-  
-  
-  <!-- VIZ! -->
-  
-  <!--<select name="grid_order" id="grid_order">
-    <option value="name">name</option>
-    <option value="group">group</option>
-    <option value="count">count</option>
-  </select> -->
-  
-  <div id="filter_noun_div">
-    <script type="text/daml" data-var="@filter_noun">
-      <p><strong>{@filter_noun.name}</strong></p>
-      <p>{@filter_noun.data.story}</p>
-      <ul>
-        {begin list 
-          | merge data {@verbs
-            | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
-            | sort by :value
-            | list reverse}}
-          <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
-            <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
-            <p><em>{data.story}</em></p>
-          </li>
-        {end list}
-      </ul>
-    </script>
-  </div>
-  
-  <!-- Make these into tabs or something -->
-  <div>    
-    <button id="force_button">Force</button>
-    <button id="grid_button">Grid</button>
-    <button id="hive_button">Hive</button>
-  </div>
-  
-  <div class='gallery' id='force'> </div>
-  <div class='gallery' id='grid' style="display:none"> </div>
-  <div class='gallery' id='hive' style="display:none"> </div>
-  
+
+
+
+      <!-- VIZ! -->
+
+      <!--<select name="grid_order" id="grid_order">
+        <option value="name">name</option>
+        <option value="group">group</option>
+        <option value="count">count</option>
+      </select> -->
+
+
+      <div class="row">
+
+        <!-- Make these into tabs or something -->
+
+
+        <div class="span8">
+          <div class="btn-group">
+            <button id="force_button" class="btn">Force</button>
+            <button id="grid_button" class="btn">Grid</button>
+            <button id="hive_button" class="btn">Hive</button>
+          </div>
+
+          <div class='gallery' id='force' style="width: 620px;"> </div>
+          <div class='gallery' id='grid' style="display:none"> </div>
+          <div class='gallery' id='hive' style="display:none"> </div>
+        </div>
+
+
+        <div id="filter_noun_div" class="span4">
+          <script type="text/daml" data-var="@filter_noun">
+            <p><strong>{@filter_noun.name}</strong></p>
+            <p>{@filter_noun.data.story}</p>
+            <ul>
+              {begin list 
+                | merge data {@verbs
+                  | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+                  | sort by :value
+                | list reverse}}
+                <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
+                  <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
+                  <p><em>{data.story}</em></p>
+                </li>
+              {end list}
+            </ul>
+          </script>
+        </div>
+
+      </div>
+
   <pre style="display:none">
     TODOS:
     - edit support: change add commands to 'just' add, and then require the follow-up 'set's... mark things as 'incomplete'? (immutable fields can be in the add command.) then modify the field to do fancy edit stuff. then add a command to do... something.
@@ -477,7 +493,7 @@
     // links = {source: 1, target: 2}
     DAML.ETC.d3.forcer = function(id, width, height, nodes, links, charge, distance) {    
       // defaults
-      var width = width || 800,
+      var width = width || 620,
           height = height || 600,
           id = id || 'force',
           charge = charge || -800,
