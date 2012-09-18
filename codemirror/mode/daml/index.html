@@ -88,6 +88,8 @@ Also external.
       
       CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
       editor.setOption('extraKeys', {"Esc": "autocomplete"})
+      editor.setOption('lineNumbers', true)
+      editor.setOption('matchBrackets', true)
     </script>
 
     <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>

@@ -9,143 +9,323 @@ CodeMirror.defineMode("daml", function() {
   
   // TODO: make a stub DAML with some standard commands and aliases and stick it in here just in case
   // this parser doesn't work without a live DAML install, because we need aliases n' stuff
-  if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}};
+  if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
       PAREN = "hr", PARAMNAME = "attribute", HANDLER = "builtin", METHOD = "keyword",
-      ALIAS = "def", VARIABLE = "variable", ERROR = "error";
+      ALIAS = "def", VARIABLE = "variable", ERROR = "error"
 
   var tests = {
-    digit: /\d/,
-    sign: /[+-]/,
-    exponent: /e/i,
+    digit_or_sign: /[0-9+-]/,
     word: /[\w_\-]/,
-    alpha: /[a-z]/i,
-    not_space: /[^\s]/,
-    lang_keyword: /[\w*+!\-_?:\/]/,
-    breaking: /[\s+|^)}]/,
+    pname: /^[a-z][\w_\-]*$/i,
     not_breaking: /[^\s|^)}]/,
     not_open_brace: /[^{]/,
-    not_brace: /[^}{]/,
-    not_brace_or_quote: /[^{"]/,
-  };
-
-  function setPvalMode(state) {
-    state.now.mode = 
-      (state.now.type == 'commander'
-        && !state.now.tainted) 
-          ? 'pnaming' 
-          : 'pvaling'
+    not_quote_or_open_brace: /[^{"]/,
   }
 
-  function likeSegue(ch, stream, state) {
-    var closing = false, erroring = false
-    
-    if(state.now.type == 'commander' && ch == '}') {
-      closing = true
-    } 
-    if(state.now.type == 'lister' && ch == ')') {
-      closing = true
-    }
-    
-    // if(state.now.type == 'commander' && ch == ')') {
-    //   erroring = true
-    // } 
-    // if(state.now.type == 'lister' && ch == '}') {
-    //   erroring = true
-    // }
-    // 
-    // if(erroring) {
-    //   state.now.mode = 'erroring'
-    //   return true
-    // }
-    
-    if(closing) {
-      state.now.mode = 'closing'
-      return true
-    }
-    
-    if(ch == '|' || ch == '^') { // terminators
-      state.now.mode = 'terminating'
-      return true
-    }
+  function likeNumber(stream) {
+    var ch = stream.peek()
+    return tests.digit_or_sign.test(ch)
   }
 
-  function likeNumber(ch, stream) {
-    if(ch == '+' || ch == '-') { // leading sign
-      ch = stream.peek()
-    }
-
-    return tests.digit.test(ch)
-  }
-
-  function eatNumber(ch, stream) {
-    if(ch == '+' || ch == '-') { // leading sign
-      stream.eat(tests.sign)
-      ch = stream.peek()
-    }
-    
-    stream.eatWhile(tests.digit)
-    ch = stream.peek()
-    
-    if(ch == '.') {
-      stream.eat(ch)
-      stream.eatWhile(tests.digit)
-      ch = stream.peek()
-    }
-
-    if(tests.exponent.test(ch)) {
-      stream.eat(tests.exponent)
-      stream.eat(tests.sign)
-      stream.eatWhile(tests.digit)
-      ch = stream.peek()
-    }
-    
-    if(tests.breaking.test(ch) || !ch) return NUMBER   
-    
-    stream.eatWhile(tests.not_breaking)
-    return ERROR
+  function eatNumber(stream) {
+    var word = getNextWord(stream)
+    return (+word >= 0) ? NUMBER : ERROR
   }
   
+  function eatFancy(stream, state) {
+    returnType = ERROR
+    
+    var ch = stream.next(), // ensure we always eat something
+        word = getNextWord(stream, true)
+
+    if(ch == ':') {
+      // THINK: should limit this in some fashion, but also allow :{ & :} & :" ?
+      returnType = SYMBOL
+    }
+    else if(ch == '@' || tests.word.test(word)) {
+      // TODO: lots to fix here....
+      returnType = VARIABLE
+    }
+    
+    return returnType
+  }
   
-  function Stately(oldNow, type, mode) { // represents a state stack object
-    this.handler = ''
-    this.method = ''
-    this.pname = ''
-    this.tainted = ''
-    this.pvals = 0
-    this.pnames = []
-    this.type = type || 'outsider'
-    this.mode = mode || 'outside'
+  function Stately(oldNow, where) { // represents a state stack object
+    this.data = {}
+    this.verb = 'open'
+    this.where = where || 'outside'
     this.indentation = oldNow.indentation || 0
-    // return this // remind me again why we don't need this?
   }
 
-  function pushState(state, type, mode) {
+  function goThere(state, where) {
     state.stack.push(state.now)
-    state.now = new Stately(state.now, type, mode);
+    state.now = new Stately(state.now, where)
   }
 
-  function popState(state) {
-    state.now = state.stack.pop();
+  function comeBack(state) {
+    state.now = state.stack.pop()
   }
 
-  function getNextWord(stream) {
+  function getNextWord(stream, nospace) {
     var word = '', letter
-    stream.eatSpace()
-    while((letter = stream.eat(tests.not_breaking)) != null) {word += letter}
-    return word;
+    if(!nospace) stream.eatSpace()
+    while((letter = stream.eat(tests.not_breaking)) != null) word += letter
+    return word
   }
   
-  function openCommand(state) {
-    pushState(state, 'commander', 'opening')
+  function inCommand(stream, state) {
+    var returnType = null, now = state.now, data = now.data
+    
+    if(now.verb != 'close') {
+      var segue = false, peek = stream.peek()
+      if(peek == '}') {
+        now.verb = 'close'
+        segue = true
+      }
+      else if(DAML.terminators[peek]) {
+        now.verb = 'handle'
+        goThere(state, 'terminator')
+        segue = true
+      }
+      
+      if(segue) {
+        // TODO: if verb == methodize backpedal to pval mode for handler to gracefully handle e.g. {list}
+        return null
+      }
+    }
+    
+    switch(now.verb) {
+      case 'open': // eat opening brace
+        stream.next()
+        now.indentation += 2
+        now.verb = 'handle'
+        data.pnames = []
+        
+        returnType = BRACE
+      break
+
+      case 'handle': // eat a handler or fall back to pval
+        var word = getNextWord(stream)
+
+        // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
+        if(DAML.aliases[word]) { 
+          returnType = ALIAS
+          var words = DAML.aliases[word].split(' ').reverse() 
+          word = words.pop()
+          data.handler = word
+          now.verb = 'methodize'
+          if(words.length) {
+            word = words.pop()
+            for(var i=0, l = DAML.models[data.handler].methods[word].params.length; i < l; i++) {
+              data.pnames.push(DAML.models[data.handler].methods[word].params[i].key)
+            }
+            data.method = word
+            now.verb = 'parametrize'
+            
+            var after
+            while(words.length) {
+              word = words.pop()
+              data.pname = word
+              after = 'pval'
+              data.pnames.splice(data.pnames.indexOf(word), 1)
+              if(words.length) {
+                word = words.pop()
+                after = 'parametrize'
+              }
+            }
+            if(after == 'pval') goThere(state, 'pval')
+            else now.verb = 'parametrize'
+          }
+        } 
+        else if(DAML.models[word]) {
+          data.handler = word
+          returnType = HANDLER
+          now.verb = 'methodize'
+        } 
+        else {
+          stream.backUp(word.length)
+          goThere(state, 'pval')             
+        }
+        
+        // NOTE: handler and method have to be on the same line!
+        // TODO: combine handler and method to make pvaling of handler-named-pvals easier
+      break
+
+      case 'methodize': // eat a method or pyuukk
+        var word = getNextWord(stream)
+        var handler = DAML.models[data.handler]
+
+        if(handler.methods[word]) {
+          var method = handler.methods[word]
+          data.method = word
+          now.verb = 'parametrize'
+          returnType = METHOD 
+          if(method.params) {
+            for(var i=0, l = method.params.length; i < l; i++) {
+              data.pnames.push(method.params[i].key)
+            }
+          }
+        } else {
+          // ERROR!
+          stream.backUp(word.length)
+          goThere(state, 'pval')
+        }
+      break
+
+      case 'parametrize': // eat a pname
+        var word = getNextWord(stream)
+        var index = data.pnames.indexOf(word)
+        data.pname = ''
+
+        if(index >= 0) { // available pname
+          data.pname = word
+          data.pnames.splice(index, 1)
+          returnType = PARAMNAME
+        } else {
+          if(tests.pname.test(word)) { // valid but unavailable pname
+            data.pname = word // derp?
+            returnType = ERROR
+          } else { // try again as pval
+            // ERROR!
+            stream.backUp(word.length)
+          }
+        }
+
+        goThere(state, 'pval')
+      break
+      
+      case 'close': // eat closing brace
+      default:
+        stream.next()
+        comeBack(state)
+        
+        returnType = BRACE
+      break
+
+    }
+    
+    return returnType
+  }
+  
+  function inList(stream, state) {
+    var returnType = null, now = state.now, data = now.data
+
+    switch(now.verb) {
+      case 'open': // eat opening paren
+        stream.next()
+        now.indentation += 2
+        now.verb = 'consume'
+        
+        returnType = PAREN
+      break
+      
+      case 'consume': // close list or pval
+        if(stream.peek() == ')') now.verb = 'close'
+        else goThere(state, 'pval')
+      break
+
+      case 'close': // eat closing paren
+      default:
+        stream.next()
+        comeBack(state)
+
+        returnType = PAREN
+      break
+    }
+    
+    return returnType
+  }
+   
+  function inQuote(stream, state) {
+    var returnType = null, now = state.now, data = now.data
+
+    switch(now.verb) {
+      case 'open': // eat opening quote
+        stream.next()
+        now.indentation += 2
+        now.verb = 'consume'
+        
+        returnType = STRING
+      break
+      
+      case 'consume': // close quote, open command, or all you can eat
+        stream.eatWhile(tests.not_quote_or_open_brace)
+
+        var peek = stream.peek()
+        if(peek == '"') now.verb = 'close'
+        if(peek == '{') goThere(state, 'command')
+        
+        returnType = STRING
+      break
+
+      case 'close': // eat closing quote
+      default:
+        stream.next()
+        comeBack(state)
+
+        returnType = STRING
+      break
+    }
+    
+    return returnType
+  }
+  
+  function inPval(stream, state) {
+    var returnType = null, now = state.now, data = now.data
+
+    switch(now.verb) {
+      case 'open': // eats numbers or fancy
+        now.verb = 'close'
+        peek = stream.peek()
+        
+        if(likeNumber(stream)) returnType = eatNumber(stream)
+        else if(peek == '{') goThere(state, 'command')
+        else if(peek == '(') goThere(state, 'list')
+        else if(peek == '"') goThere(state, 'quote')
+        else returnType = eatFancy(stream)
+      break
+
+      case 'close': // go back to whence you came
+      default:
+        comeBack(state)
+      break
+    }
+    
+    return returnType
+  }
+  
+  function inBlock(stream, state) {
+    stream.eatWhile(tests.not_open_brace)
+    if(stream.peek() == '{') goThere(state, 'command')
+  }
+   
+  function inTerminator(stream, state) {
+    var returnType = null, now = state.now, data = now.data
+    
+    switch(now.verb) {
+      case 'open': // eat a terminator
+        peek = stream.peek()
+        returnType = DAML.terminators[peek].eat(stream)
+        // TODO: this needs to return the terminator type, but also mark the ptree for further parsing
+        now.verb = 'close'
+      break
+
+      case 'close': // go back to whence you came
+      default:
+        comeBack(state)
+      break
+    }
+    
+    return returnType
   }
   
 
   return {
     indent: function (state, textAfter) {
-      if (state.now.indentStack == null) return state.now.indentation;
-      return state.now.indentStack.indent;
+      if (state.now.indentStack == null) return state.now.indentation
+      return state.now.indentStack.indent
     },
 
     copyState: function(state) {
@@ -155,7 +335,7 @@ CodeMirror.defineMode("daml", function() {
     startState: function(baseIndent) {
       var quasistate = {indentation: baseIndent}
       return {
-        stack: [],
+        stack: [], // previous states
         now: new Stately(quasistate)
       }
     },
@@ -163,268 +343,49 @@ CodeMirror.defineMode("daml", function() {
     token: function (stream, state) {
       if(state.now.indentation == null && stream.sol()) {
         // update indentation, but only if indentStack is empty
-        state.now.indentation = stream.indentation();
+        state.now.indentation = stream.indentation()
       }
 
       if(stream.eatSpace()) return null  // skip spaces
       var returnType = null, ch = null
       
-      switch(state.now.mode) {
-        
-        case 'opening': // eat opening brace
-          stream.next()
-          state.now.type = 'commander'
-          state.now.indentation += 2
-          returnType = BRACE
-          
-          if(stream.peek() == '/') {
-            state.now.mode = 'commenting'
-          } else {
-            state.now.mode = 'entering'
-          }
+      switch(state.now.where) {
+        case 'command': // inside a command
+          returnType = inCommand(stream, state)
         break
         
-        case 'closing': // eat closing brace
-          stream.next()
-          popState(state)
-          returnType = BRACE
+        case 'pval': 
+          returnType = inPval(stream, state)
         break
         
-        case 'commenting': // eat comments, up to first brace
-          stream.eatWhile(tests.not_brace)
-          var pch = stream.peek()
-          
-          if(pch == '{') {
-            openCommand(state)
-          } 
-          else if(pch == '}'){
-            state.now.mode = 'closing'
-          }
-
-          returnType = COMMENT
+        case 'list':
+          returnType = inList(stream, state)
         break
         
-        case 'entering': // no eating
-          ch = stream.peek()
-          
-          var segue = likeSegue(ch, stream, state)
-          
-          if(!segue) {
-            state.now.mode = 'handling'
-          }
+        case 'quote':
+          returnType = inQuote(stream, state)
         break
         
-        case 'terminating': // eats terminal chars -- should hand off to terminal parser fun
-          stream.next()
-          state.now.mode = 'entering'
-          state.now.handler = ''
-          state.now.method = ''
-          state.now.pname = ''
-          state.now.tainted = false
-          state.now.pvals = 0
-          state.now.pnames = []
-          returnType = BRACE // THINK: something else?
+        case 'block': 
+          returnType = inBlock(stream, state)
         break
         
-        case 'handling': // eat a handler or fall back to param
-          var pos = stream.pos,
-              word = getNextWord(stream)
-          
-          // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
-          if(DAML.aliases[word]) { 
-            returnType = ALIAS
-            var words = DAML.aliases[word].split(' ').reverse() 
-            word = words.pop()
-            state.now.handler = word
-            state.now.mode = 'methoding'
-            if(words.length) {
-              word = words.pop()
-              for(var i=0, l = DAML.models[state.now.handler].methods[word].params.length; i < l; i++) {
-                state.now.pnames.push(DAML.models[state.now.handler].methods[word].params[i].key)
-              }
-              state.now.method = word
-              state.now.mode = 'pnaming'
-              while(words.length) {
-                word = words.pop()
-                state.now.pname = word
-                state.now.mode = 'pvaling'
-                state.now.pnames.splice(state.now.pnames.indexOf(word), 1)
-                if(words.length) {
-                  word = words.pop()
-                  state.now.mode = 'pnaming'
-                }
-              }
-            }
-          }
-          else {
-            if(DAML.models[word]) {
-              state.now.handler = word
-              returnType = HANDLER
-              state.now.mode = 'methoding'
-            } else {
-              state.now.tainted = true
-              stream.pos = pos; // retreat!
-              state.now.mode = 'pvaling'             
-            }
-          }
+        case 'terminator': 
+          returnType = inTerminator(stream, state)
         break
         
-        case 'methoding': // eat a method or pyuukk
-          var word = getNextWord(stream)
-          var handler = DAML.models[state.now.handler]
-          
-          if(handler.methods[word]) {
-            var method = handler.methods[word]
-            state.now.method = word
-            state.now.mode = 'pnaming'
-            returnType = METHOD 
-            if(method.params) {
-              for(var i=0, l = method.params.length; i < l; i++) {
-                state.now.pnames.push(method.params[i].key)
-              }
-            }
-          } else {
-            state.now.pvals++
-            state.now.tainted = true
-            state.now.mode = 'pvaling'
-            stream.backUp(word.length)
-          }            
-
-        break
-        
-        case 'pnaming': // eat a pname or switch to segue
-          if(likeSegue(stream.peek(), stream, state)) { // close command or start a new one
-            return null
-          } 
-
-          var word = getNextWord(stream)
-          var index = state.now.pnames.indexOf(word)
-          state.now.pname = ''
-          
-          if(index >= 0) { // good word
-            state.now.pname = word
-            state.now.pnames.splice(index, 1)
-            returnType = PARAMNAME
-          } else {
-            if(word && tests.alpha.test(word[0]) && tests.word.test(word)) { // bad pname
-              state.now.pname = word // derp?
-              returnType = ERROR
-            } else { // try again as pval
-              state.now.tainted = true
-              stream.backUp(word.length)
-            }
-          }
-          
-          state.now.mode = 'pvaling'
-        break
-        
-        case 'pvaling': // treat as a param // TODO: use type system
-          ch = stream.next()
-          
-          if(likeSegue(ch, stream, state)) { // close command or start a new one
-            stream.backUp(1) // no eat
-            return null
-          } 
-          
-          state.now.pvals++
-              
-          if(ch == '{') {
-            stream.backUp(1) // no eat
-            openCommand(state)
-          }
-          else if(ch == '(') {
-            pushState(state, 'lister', 'pvaling') // I think this is the only place to open a list
-            state.now.indentation += 2
-            returnType = PAREN
-          }
-          else if (ch == ')') {
-            if(state.now.type == 'lister') {
-              popState(state) // and this is the only place to close one
-              returnType = PAREN              
-            } else {
-              returnType = ERROR
-            }
-            setPvalMode(state)
-          }
-          else if(likeNumber(ch, stream)) {
-            returnType = eatNumber(ch, stream);
-            setPvalMode(state)
-          }
-          else if(ch == '"') {
-            state.now.mode = 'quoting'
-            returnType = STRING
-          }
-          else {
-            stream.backUp(1) // no eat
-            state.now.mode = 'fancy'
-          }
-          
-          if(state.now.tainted && state.now.pvals > 1) {
-            returnType = ERROR
-          }
-        break
-        
-        case 'quoting': // eat quotes, up to first brace or quote
-          stream.eatWhile(tests.not_brace_or_quote)
-          var pch = stream.peek()
-          
-          if(pch == '{') {
-            openCommand(state)
-          } 
-          else if(pch == '}') {
-            state.now.mode = 'closing'
-          } 
-          else if(pch == '"') {
-            stream.next()
-            setPvalMode(state)
-          }
-          
-          returnType = STRING
-          
-          if(state.now.tainted && state.now.pvals > 1) {
-            returnType = ERROR
-          }
-        break
-        
-        case 'fancy': 
-          ch = stream.next()
-          var word = ch
-          while((letter = stream.eat(tests.not_breaking)) != null) {word += letter}
-          
-          if(ch == ':') {
-            // THINK: should limit this in some fashion, but also allow :{ & :} ?
-            // state.now.mode = 'symboling'
-            returnType = SYMBOL
-          }
-          else if(ch == '@' || tests.alpha.test(ch)) {
-            // TODO: lots to fix here....
-            returnType = VARIABLE
-          }
-          else {
-            returnType = ERROR
-          }
-          
-          if(state.now.tainted && state.now.pvals > 1) {
-            returnType = ERROR
-          }
-          
-          setPvalMode(state)
-        break
-                
         case 'outside': // outside all DAML commands
-        case 'blocking': // inside a block, but outside commands
         default:
           stream.eatWhile(tests.not_open_brace)
           if(stream.peek() == '{') {
-            openCommand(state)
+            goThere(state, 'command')
           }
-          returnType = null
         break
       }
-
-      return returnType;
+      
+      return returnType
     },
-  };
-});
+  }
+})
 
-CodeMirror.defineMIME("text/x-daml", "daml");
+CodeMirror.defineMIME("text/x-daml", "daml")

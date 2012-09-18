@@ -3,6 +3,20 @@
 <head>   
   <title>IntFicWordDrag</title>
   
+  <!-- local -->
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
+
+  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.css>
+  <link rel="stylesheet" href="http://sherpa.local/~dann/thingviz/codemirror/lib/util/simple-hint.css">
+  
+  <!-- bentodojo -->
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
@@ -14,6 +28,7 @@
   
   <link rel=stylesheet href=http://bentodojo.com/thingviz/codemirror/lib/codemirror.css>
   <link rel="stylesheet" href="http://bentodojo.com/thingviz/codemirror/lib/util/simple-hint.css">
+  <!-- okay -->
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -359,10 +374,15 @@
     
   </script>
   
-  
+  <!-- local -->
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.js></script>
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/mode/daml/daml.js></script>
+  <script src="http://sherpa.local/~dann/thingviz/codemirror/lib/util/daml-hint.js"></script>
+  <!-- bentodojo -->
   <script src=http://bentodojo.com/thingviz/codemirror/lib/codemirror.js></script>
   <script src=http://bentodojo.com/thingviz/codemirror/mode/daml/daml.js></script>
   <script src="http://bentodojo.com/thingviz/codemirror/lib/util/daml-hint.js"></script>
+  <!-- okay -->
 
   <script>
     CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
