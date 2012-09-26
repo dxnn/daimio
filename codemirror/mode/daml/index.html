@@ -79,6 +79,26 @@ Also external.
 ^_^ if #sort | is like :tags | then ^_2 else ^_1
 } {// note laziness -- the lifted pipelines are actually fings //}
 
+
+{my set for @user_id in :profiles path :firstname value #firstname}
+{my set for @user_id in :profiles path :lastname value #lastname}
+{my set for @user_id in :profiles path :activity.registered value #registered}
+{my set for @user_id in :profiles path :activity.plan value :cohort}
+{my set for @user_id in :profiles path :signup.intent value :cohort}          
+
+// can we curry over this, like:
+{"{my set for @user_id in :profiles}"
+| apply values (
+    {* (:page :firstname value #firstname)}
+    {* (:page :lastname value #lastname)}
+    etc...
+  )}
+
+or maybe 
+{process apply over fing on (:path :value) values (:firstname #firstname :lastname #lastname)}
+
+
+
   <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
 
     </textarea></form>
