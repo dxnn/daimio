@@ -48,7 +48,7 @@
     {// Import any needed commands here //}
     {// (note that you can't access any other script blocks from here...) //}
 
-    {daml alias string "logic switch on state.time value" as :time}
+    {daml alias string "logic switch on @time value" as :time}
   </script>
     
   <script type="text/daml" id="postload">
@@ -80,46 +80,26 @@
     {dom on event :submit id :edit_verbs_form}
     {dom on event :submit id :edit_words_form}
 
-    {dom on event :change id :edit_verbs_form filter :#verb_stringy continue 1 
-      daml "{"{dom trigger event :submit id :edit_verbs_form}" 
+    {dom on event :change id :edit_verbs_form filter :#verb_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_verbs_form}" 
             | process debounce time 350}"}
 
-    {dom on event :change id :edit_words_form filter :#word_string continue 1 
-      daml "{"{dom trigger event :submit id :edit_words_form}" 
+    {dom on event :change id :edit_words_form filter :#word_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_words_form}" 
             | process debounce time 350}"}
-
-    {begin fix_verbs}
-      {union (verbs {verb_string | run | list from_json}) | > :verbs}
-    {end fix_verbs}
-    
-    {begin punch_words}
-      {"{verb}_{noun}" | run | string transform from "/\W/" to "_" | > :verb_noun}
-      {verbs.{verb}.{noun} | > :val | run | > :output 
-      | eq val | > :notfing
-      | val | is like "/^\d+$/"
-      | and notfing
-      | then "{variable get path verb_noun | add val}"
-      | else output
-      | run
-      | > {"state.{verb_noun}" | run}
-      }
-      {state.time | add 1 | > :state.time}
-    {end punch_words}
-
-    {variable bind path :verb_string daml fix_verbs}
-
-    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verb_string 
-                                      | @story.pages.#1.words | > :words
-                                      | 1 | > :@new_page
-                                      | 1 | > :@action
-                                      }"}
 
     {network send 
       string "{story find}" 
       then "{this.#1.#1 | > :@story}"}
 
-    {* (:page :1) | > :state}
-    {1 | > :state.time}
+    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verbs
+                                      | @story.pages.#1.words | > :words
+                                      | 1 | > :@new_page
+                                      | 1 | > :@action
+                                      }"}
+
+    {* (:state :good) | > :@s}
+    {1 | > :@time}
   </script>
 
 
@@ -134,31 +114,27 @@
           <h2>Edit verbs</h2>
           <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
           <div>
-            <textarea name="verb_stringy" id="verb_stringy" rows="15" style="width:350px">{verb_string | quote}</textarea>
+            <textarea name="verb_string" id="verb_string" rows="15" style="width:350px">{verbs | quote}</textarea>
           </div>
 
           <input type="hidden" name="page_index" value="1">
           <input type="hidden" name="story_id" value="{@story._id}">
           <textarea name="commands" style="display:none">
             {begin verbatim | quote}
-              {verb_stringy 
+              {verb_string 
               | run 
               | list from_json 
-              | > :vlist 
+              | > :list 
               | count 
               | eq 
-                {vlist 
+                {list 
                 | extract "{this}" 
                 | count} 
               | > :valid}
               {begin check | if valid else "{dom show id :verb_error}"}                
-                {* (:story_id story_id :page_index page_index :verb_string {verb_stringy | quote}) 
-                | > :context}
-                {network send 
-                  string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" 
-                  then "" context context}
-                {verb_stringy | > :verb_string
-                | 1 | > :@action}
+                {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
+                {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "" context context}
+                {verb_string | > :verbs}
                 {dom hide id :verb_error}
               {end check}
             {end verbatim}
@@ -170,14 +146,14 @@
     <div class="span6" id="storycol">
       <div id="story">
         <script type="text/daml" data-var="@action">
-          {words | unquote | merge data (state)}
+          {words | unquote | merge data (@s)}
         </script>
       </div>
     
       <div id="verbs">
         <ul id="verblist">
-          <script type="text/daml" data-var="@action">
-            {begin list | each data verbs}
+          <script type="text/daml" data-var="verbs">
+            {begin list | each data {verbs | run | list from_json}}
               <li>
                 <span style="cursor:pointer">{key}</span>
               </li>
@@ -292,14 +268,10 @@
         })
         
         if(good_spot) {
-          // var noun = good_spot.text()
-          // var verb = DAML.run('{verbs}')[target.text()]
-          // DAML.run('{1 | > :state.{"' + verb[noun] + '"} || state.time | add 1 | > :state.time}')
-          // console.log(noun, verb, verb[noun]);
-          
-          DAML.import_var('noun', good_spot.text())
-          DAML.import_var('verb', target.text())
-          DAML.run('{punch_words}')
+          var key = good_spot.text()
+          var verb = DAML.run('{verbs | run | list from_json}')[target.text()]
+          DAML.run('{1 | > :@s.{"' + verb[key] + '"} || @time | add 1 | > :@time}')
+          console.log(key, verb, verb[key]);
         }
         
         DAML.run('{1 | > :@action}')
@@ -315,7 +287,7 @@
         enableDocumentSelection(false);
         
         // now add some awesome stuff that picks out verb words and activates them when dropped, and progresses tick and whatnot.
-        var verb = DAML.run('{verbs}')[target.text()]
+        var verb = DAML.run('{verbs | run | list from_json}')[target.text()]
         if(!verb) return false
         html = $('#story').html()
         for(var key in verb) {
@@ -388,11 +360,11 @@
     CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
     
     setTimeout(function() {      
-      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_stringy'), {
+      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_string'), {
         tabMode: 'indent',
         onChange: function() {
-          $('#verb_stringy').val(verb_editor.getValue())
-          $('#verb_stringy').trigger('change')
+          $('#verb_string').val(verb_editor.getValue())
+          $('#verb_string').trigger('change')
         },
         extraKeys: {"Esc": "autocomplete"}
       });
