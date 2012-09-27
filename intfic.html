@@ -2,22 +2,30 @@
 <html> 
 <head>   
   <title>IntFicWordDrag</title>
+    
+  <script type="text/javascript" src="//use.typekit.net/esr7eea.js"></script>
+  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
   
+
   <!-- local -->
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+  <link href="http://redfish.local/~jennie/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <!-- <link href="http://redfish.local/~jennie/thingviz/public/css/responsive.css" rel="stylesheet"> -->
+  <link href="http://redfish.local/~jennie/thingviz/public/css/styles.css" rel="stylesheet">
+  <link href="http://redfish.local/~jennie/thingviz/public/css/animate.css" rel="stylesheet">
 
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
+  <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/public/js/__underscore.js"></script>
 
-  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/public/js/jDaimio.js"></script> 
+
+  <script src="http://redfish.local/~jennie/thingviz/public/js/bootstrap.min.js"></script>
   
-  <link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.css>
-  <link rel="stylesheet" href="http://sherpa.local/~dann/thingviz/codemirror/lib/util/simple-hint.css">
+  <link rel=stylesheet href=http://redfish.local/~jennie/thingviz/codemirror/lib/codemirror.css>
+  <link rel="stylesheet" href="http://redfish.local/~jennie/thingviz/codemirror/lib/util/simple-hint.css">
   
   <!-- bentodojo -->
-  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <!-- <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
   <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml"></script>
@@ -27,7 +35,7 @@
   <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
   <link rel=stylesheet href=http://bentodojo.com/thingviz/codemirror/lib/codemirror.css>
-  <link rel="stylesheet" href="http://bentodojo.com/thingviz/codemirror/lib/util/simple-hint.css">
+  <link rel="stylesheet" href="http://bentodojo.com/thingviz/codemirror/lib/util/simple-hint.css"> -->
   <!-- okay -->
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -35,11 +43,6 @@
   
   <meta charset="utf-8">
   
-  <style type="text/css">
-    #storycol {
-      font-size: 1.6em;
-    }
-  </style>
   
 </head>
 <body id="">
@@ -103,93 +106,102 @@
   </script>
 
 
-  <div class="container">
-    <div class="page-header">
-      <h1>IntFicWordDrag</h1>
-    </div>
-
-    <div class="span5">
-      <form method="post" accept-charset="utf-8" id="edit_verbs_form">
-        <script type="text/daml" data-var="@new_page">
-          <h2>Edit verbs</h2>
-          <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
-          <div>
-            <textarea name="verb_string" id="verb_string" rows="15" style="width:350px">{verbs | quote}</textarea>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span12">
+        <div id="storycol">
+          <div id="story">
+            <script type="text/daml" data-var="@action">
+              {words | unquote | merge data (@s)}
+            </script>
           </div>
-
-          <input type="hidden" name="page_index" value="1">
-          <input type="hidden" name="story_id" value="{@story._id}">
-          <textarea name="commands" style="display:none">
-            {begin verbatim | quote}
-              {verb_string 
-              | run 
-              | list from_json 
-              | > :list 
-              | count 
-              | eq 
-                {list 
-                | extract "{this}" 
-                | count} 
-              | > :valid}
-              {begin check | if valid else "{dom show id :verb_error}"}                
-                {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
-                {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "" context context}
-                {verb_string | > :verbs}
-                {dom hide id :verb_error}
-              {end check}
-            {end verbatim}
-          </textarea>
-        </script>
-      </form>
-    </div>
-    
-    <div class="span6" id="storycol">
-      <div id="story">
-        <script type="text/daml" data-var="@action">
-          {words | unquote | merge data (@s)}
-        </script>
+          <div id="page2" class="hide">
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. </p>
+          </div>
+        </div>
       </div>
-    
-      <div id="verbs">
-        <ul id="verblist">
+    </div>
+
+    <div class="navbar navbar-fixed-bottom" id="verbs">
+      <div class="navbar-inner">
+        <ul class="nav nav-pills" id="verblist">
           <script type="text/daml" data-var="verbs">
             {begin list | each data {verbs | run | list from_json}}
               <li>
-                <span style="cursor:pointer">{key}</span>
+                <span>{key}</span>
               </li>
             {end list}
           </script>
         </ul>
       </div>
     </div>
-    
-    <div class="span12">
-      <form method="post" accept-charset="utf-8" id="edit_words_form">
-        <script type="text/daml" data-var="@new_page">
-          <h2>Edit words</h2>
-          <div>
-            <textarea name="word_string" id="word_string" rows="15" style="width:350px">{words | quote}</textarea>
-          </div>
-
-          <input type="hidden" name="page_index" value="1">
-          <input type="hidden" name="story_id" value="{@story._id}">
-          {// <input type="submit" name="submit" value="Edit"> //}
-          <textarea name="commands" style="display:none">
-            {begin verbatim | quote}
-              {* (:story_id story_id :page_index page_index :word_string {word_string | quote}) | > :context}
-              {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "" context context}
-              {word_string 
-              | > :words 
-              | 1 
-              | > :@action}
-            {end verbatim}
-          </textarea>
-        </script>
-      </form>
-    </div>
   </div>
 
-    
+
+
+     <div class="hide">
+        <form method="post" accept-charset="utf-8" id="edit_verbs_form">
+          <script type="text/daml" data-var="@new_page">
+            <h2>Edit verbs</h2>
+            <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
+            <div>
+              <textarea name="verb_string" id="verb_string">
+                {verbs | quote}
+                </textarea>
+            </div>
+
+            <input type="hidden" name="page_index" value="1">
+            <input type="hidden" name="story_id" value="{@story._id}">
+            <textarea name="commands" style="display:none">
+              {begin verbatim | quote}
+                {verb_string 
+                  | run 
+                  | list from_json 
+                  | > :list 
+                  | count 
+                  | eq 
+                  {list 
+                    | extract "{this}" 
+                  | count} 
+                | > :valid}
+                {begin check | if valid else "{dom show id :verb_error}"}                
+                  {* (:story_id story_id :page_index page_index :verb_string {verb_string | quote}) | > :context}
+                  {network send string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" then "" context context}
+                  {verb_string | > :verbs}
+                  {dom hide id :verb_error}
+                {end check}
+              {end verbatim}
+            </textarea>
+          </script>
+        </form>
+
+        <form method="post" accept-charset="utf-8" id="edit_words_form">
+          <script type="text/daml" data-var="@new_page">
+            <h2>Edit words</h2>
+            <div>
+              <textarea name="word_string" id="word_string" rows="15" style="width:350px">{words | quote}</textarea>
+            </div>
+
+            <input type="hidden" name="page_index" value="1">
+            <input type="hidden" name="story_id" value="{@story._id}">
+            {// <input type="submit" name="submit" value="Edit"> //}
+            <textarea name="commands" style="display:none">
+              {begin verbatim | quote}
+                {* (:story_id story_id :page_index page_index :word_string {word_string | quote}) | > :context}
+                {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "" context context}
+                {word_string 
+                  | > :words 
+                  | 1 
+                | > :@action}
+              {end verbatim}
+            </textarea>
+          </script>
+        </form>
+      </div>
+
+
+
+
     <!-- <div id="inv">
       <ul id="invlist">
         <script type="text/daml" data-var="@state.inv">
@@ -204,6 +216,10 @@
   
   <script type="text/javascript">
     $(document).ready(function() {
+      $('body').on('click','#turn-page',function(){
+        $('#story').hide().addClass('animated fadeOutLeft');
+        $('#page2').show().addClass('animated fadeInRight');
+      });
       // preload
       DAML.run($('#preload').text())
 
@@ -235,8 +251,33 @@
       
       
       var move = function(ev) {
-        target.css('left', (event.clientX - 10) + 'px')
-        target.css('top', (event.clientY - 30) + 'px')
+        target.css('left', (event.clientX - 40) + 'px')
+        target.css('top', (event.clientY - 60) + 'px')
+        
+        var good_spot, max_distance = 4900
+        
+        $('#story .addwiggle').each(function(index, el) {
+          el = $(el)
+          el.removeClass('animated wiggle')
+          
+          var pos = el.position(),
+              width = el.width(),
+              height = el.height(),
+              cx = pos.left + (width / 2),
+              cy = pos.top + (height / 2),
+              dx = cx - ev.pageX,
+              dy = cy - ev.pageY
+              
+          var distance = dx * dx + dy * dy
+          
+          if(distance < max_distance) {
+            good_spot = el
+          }          
+        })
+        
+        if(good_spot) {
+          good_spot.addClass('animated wiggle')
+        }
       }
       
       var up = function(ev) {
@@ -253,12 +294,17 @@
         
         var good_spot, max_distance = 4900
             
-        $('#story a').each(function(index, el) {
+        $('#story .addwiggle').each(function(index, el) {
           el = $(el)
-          var px = el.position().left,
-              py = el.position().top,
-              dx = px - ev.pageX,
-              dy = py - ev.pageY
+          el.removeClass('animated wiggle')
+
+          var pos = el.position(),
+              width = el.width(),
+              height = el.height(),
+              cx = pos.left + (width / 2),
+              cy = pos.top + (height / 2),
+              dx = cx - ev.pageX,
+              dy = cy - ev.pageY
               
           var distance = dx * dx + dy * dy
           
@@ -271,7 +317,7 @@
           var key = good_spot.text()
           var verb = DAML.run('{verbs | run | list from_json}')[target.text()]
           DAML.run('{1 | > :@s.{"' + verb[key] + '"} || @time | add 1 | > :@time}')
-          console.log(key, verb, verb[key]);
+          // console.log(key, verb, verb[key]);
         }
         
         DAML.run('{1 | > :@action}')
@@ -282,7 +328,7 @@
         target = el // this is slightly evil
         $(document).on('mousemove', move)
         $(document).on('mouseup', up)
-        el.css('position', 'absolute')
+        el.css('position', 'fixed')
         dragging = true // this is totally evil
         enableDocumentSelection(false);
         
@@ -291,7 +337,7 @@
         if(!verb) return false
         html = $('#story').html()
         for(var key in verb) {
-          html = html.replace(key, '<a href="#">' + key + '</a>') // regexify
+          html = html.replace(key, '<span class="addwiggle">' + key + '</span>') // regexify
         }
         $('#story').html(html)
 
@@ -346,11 +392,12 @@
     
   </script>
   
-  <!-- local -->
-  <script src=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.js></script>
-  <script src=http://sherpa.local/~dann/thingviz/codemirror/mode/daml/daml.js></script>
-  <script src="http://sherpa.local/~dann/thingviz/codemirror/lib/util/daml-hint.js"></script>
-  <!-- bentodojo -->
+<!-- local -->
+  <script src=http://redfish.local/~jennie/thingviz/codemirror/lib/codemirror.js></script>
+  <script src=http://redfish.local/~jennie/thingviz/codemirror/mode/daml/daml.js></script>
+  <script src="http://redfish.local/~jennie/thingviz/codemirror/lib/util/daml-hint.js"></script>
+
+<!-- bentodojo -->
   <script src=http://bentodojo.com/thingviz/codemirror/lib/codemirror.js></script>
   <script src=http://bentodojo.com/thingviz/codemirror/mode/daml/daml.js></script>
   <script src="http://bentodojo.com/thingviz/codemirror/lib/util/daml-hint.js"></script>
