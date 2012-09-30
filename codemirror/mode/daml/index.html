@@ -112,63 +112,6 @@ maybe ^_^ keeps lifted sections as fings, and ^_- runs each once in 'parallel' a
       editor.setOption('lineNumbers', true)
       editor.setOption('matchBrackets', true)
       
-      
-      
-      
-      // ok some new experimental stuff that doesn't really belong here at all
-      
-      DAML.Stacker = function(fing, when_done) {
-        this.last_val = null
-        this.current_index = 0
-        this.size = fing.stack.length
-        this.fing = fing
-        this.when_done = when_done
-      }
-      
-      DAML.Stacker.prototype.next = function(cb) {
-        var self = this
-        this.current_index++
-        if(this.current_index == this.size) return this.when_done(this.last_val)
-        
-        var funitem = this.fing.stack[current_index]
-        
-        // ... param fiddling
-        var params = funitem.params
-        for(var i=0, l=params.length; i < l; i++) {
-          if(typeof params[i] == 'function') params[i] = params[i]()
-          // or something to that effect...
-        }
-        
-        // async case
-        if(funitem.flags.async) { 
-          var new_cb = function(val) {self.last_val = val; cb(val)}
-          params.push(new_cb)
-          // return funitem.fun.apply(funitem.model, params)
-        }
-        
-        // normal case
-        return funitem.fun.apply(funitem.model, params)
-      }
-      
-      DAML.Stacker.prototype.bound_next = function() {
-        return this.next.bind(this)
-      } 
-      
-      
-      // er...
-      // A Fing has a command stack, that's part of it.
-      // the Stacker takes a fing and a cb, runs the fing, then calls the cb with its value
-      // stacker needs last_val, current_index, next function... maybe that's it
-      // cb will usually be another stacker's bound next fun, but at the top level it's run or something.
-      
-      
-      
-      
-      
-      
-      
-      
-      
     </script>
 
     <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>
