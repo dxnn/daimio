@@ -21,6 +21,17 @@
     <h1>CodeMirror: DAML mode</h1>
     <form><textarea id="code" name="code">
 
+Problems:
+{// comments //}  --- fix terminators
+{begin x}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
+
+Fixed:
+{mfoo foo baz}  --- foo and baz should be errors
+{"<a href="malarky">foo</a>"}  --- quotes in angle brackets don't count
+
+
+
+
 Some external strings. Someday, a <em>test</em> of mixed mode editing.
 {mfoo foo}
 {math foo x 123}
@@ -89,8 +100,8 @@ Also external.
 // can we curry over this, like:
 {"{my set for @user_id in :profiles}"
 | apply values (
-    {* (:page :firstname value #firstname)}
-    {* (:page :lastname value #lastname)}
+    {* (:path :firstname value #firstname)}
+    {* (:path :lastname value #lastname)}
     etc...
   )}
 

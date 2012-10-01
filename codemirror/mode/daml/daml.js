@@ -7,8 +7,7 @@
  */
 CodeMirror.defineMode("daml", function() {
   
-  // TODO: make a stub DAML with some standard commands and aliases and stick it in here just in case
-  // this parser doesn't work without a live DAML install, because we need aliases n' stuff
+  // this parser doesn't work without a live DAML install. We use the internal DAML parser directly, and the local dialect of DAML commands, aliases, terminators, etc.
   if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
@@ -21,7 +20,7 @@ CodeMirror.defineMode("daml", function() {
     pname: /^[a-z][\w_\-]*$/i,
     not_breaking: /[^\s|^)}]/,
     not_open_brace: /[^{]/,
-    not_quote_or_open_brace: /[^{"]/,
+    not_quote_or_open_brace_or_angle: /[^{"><]/,
   }
 
   function likeNumber(stream) {
@@ -41,11 +40,14 @@ CodeMirror.defineMode("daml", function() {
         word = getNextWord(stream, true)
 
     if(ch == ':') {
-      // THINK: should limit this in some fashion, but also allow :{ & :} & :" ?
+      // THINK: should limit this in some fashion, but also allow :{ & :} & :" ? no, no. only lowercase alpha
       returnType = SYMBOL
     }
     else if(ch == '@' || tests.word.test(word)) {
       // TODO: lots to fix here....
+      returnType = VARIABLE
+    }
+    else if(!word && tests.word.test(ch)) {
       returnType = VARIABLE
     }
     
@@ -75,9 +77,26 @@ CodeMirror.defineMode("daml", function() {
     return word
   }
   
+  function upError(state) {
+    if(!state.now.data.error_level) {
+      state.now.data.error_level = true
+      state.error_level++
+    }
+  }
+  
+  function downError(state) {
+    if(state.now.data.error_level) {
+      state.now.data.error_level = false
+      state.error_level--
+    }
+  }
+  
   function inCommand(stream, state) {
     var returnType = null, now = state.now, data = now.data
     
+    /*
+      closing brace or terminator
+    */
     if(now.verb != 'close') {
       var segue = false, peek = stream.peek()
       if(peek == '}') {
@@ -85,6 +104,7 @@ CodeMirror.defineMode("daml", function() {
         segue = true
       }
       else if(DAML.terminators[peek]) {
+        downError(state)
         now.verb = 'handle'
         goThere(state, 'terminator')
         segue = true
@@ -97,7 +117,11 @@ CodeMirror.defineMode("daml", function() {
     }
     
     switch(now.verb) {
-      case 'open': // eat opening brace
+
+      /*
+        eat opening brace
+      */
+      case 'open': 
         stream.next()
         now.indentation += 2
         now.verb = 'handle'
@@ -106,16 +130,23 @@ CodeMirror.defineMode("daml", function() {
         returnType = BRACE
       break
 
-      case 'handle': // eat a handler or fall back to pval
+      /*
+        eat an alias or
+        eat a handler or
+        pass to pval, but return to error loop
+      */
+      case 'handle': 
         var word = getNextWord(stream)
 
         // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
+        // good alias
         if(DAML.aliases[word]) { 
           returnType = ALIAS
           var words = DAML.aliases[word].split(' ').reverse() 
           word = words.pop()
           data.handler = word
           now.verb = 'methodize'
+          
           if(words.length) {
             word = words.pop()
             for(var i=0, l = DAML.models[data.handler].methods[word].params.length; i < l; i++) {
@@ -139,25 +170,32 @@ CodeMirror.defineMode("daml", function() {
             else now.verb = 'parametrize'
           }
         } 
-        else if(DAML.models[word]) {
+        
+        // good handler
+        else if(DAML.models[word]) { 
           data.handler = word
           returnType = HANDLER
           now.verb = 'methodize'
         } 
-        else {
+        
+        // try as param, but goto errorloop on return
+        else {  
+          now.verb = 'errorloop'
           stream.backUp(word.length)
           goThere(state, 'pval')             
         }
-        
-        // NOTE: handler and method have to be on the same line!
-        // TODO: combine handler and method to make pvaling of handler-named-pvals easier
       break
 
-      case 'methodize': // eat a method or pyuukk
+      /*
+        eat a method
+        or goto errorloop
+      */
+      case 'methodize':
         var word = getNextWord(stream)
         var handler = DAML.models[data.handler]
 
-        if(handler.methods[word]) {
+        // good method
+        if(handler.methods[word]) { 
           var method = handler.methods[word]
           data.method = word
           now.verb = 'parametrize'
@@ -167,28 +205,36 @@ CodeMirror.defineMode("daml", function() {
               data.pnames.push(method.params[i].key)
             }
           }
-        } else {
-          // ERROR!
+        } 
+        // bad method
+        else { 
+          now.verb = 'errorloop'
           stream.backUp(word.length)
-          goThere(state, 'pval')
         }
       break
 
+      /*
+        eat pname then goto pval
+      */
       case 'parametrize': // eat a pname
         var word = getNextWord(stream)
         var index = data.pnames.indexOf(word)
         data.pname = ''
 
-        if(index >= 0) { // available pname
+        if(index >= 0) { 
+          // pname exists!
           data.pname = word
           data.pnames.splice(index, 1)
           returnType = PARAMNAME
         } else {
-          if(tests.pname.test(word)) { // valid but unavailable pname
+          if(tests.pname.test(word)) { 
+            // valid but non-existent pname
             data.pname = word // derp?
             returnType = ERROR
-          } else { // try again as pval
-            // ERROR!
+          } else {                     
+            // invalid pname
+            upError(state) // ensures first pval is an error
+            now.verb = 'errorloop'
             stream.backUp(word.length)
           }
         }
@@ -196,8 +242,20 @@ CodeMirror.defineMode("daml", function() {
         goThere(state, 'pval')
       break
       
-      case 'close': // eat closing brace
+      /*
+        set error and goto pval
+      */
+      case 'errorloop':
+        upError(state)
+        goThere(state, 'pval')
+      break
+      
+      /*
+        eat closing brace
+      */
+      case 'close':
       default:
+        downError(state)
         stream.next()
         comeBack(state)
         
@@ -213,7 +271,10 @@ CodeMirror.defineMode("daml", function() {
     var returnType = null, now = state.now, data = now.data
 
     switch(now.verb) {
-      case 'open': // eat opening paren
+      /*
+        eat opening paren
+      */
+      case 'open': 
         stream.next()
         now.indentation += 2
         now.verb = 'consume'
@@ -221,12 +282,20 @@ CodeMirror.defineMode("daml", function() {
         returnType = PAREN
       break
       
-      case 'consume': // close list or pval
+      /*
+        goto close or
+        goto pval
+      */
+      case 'consume': 
         if(stream.peek() == ')') now.verb = 'close'
+        else if(stream.peek() == '}') comeBack(state) // just in case {(}  -- :(
         else goThere(state, 'pval')
       break
 
-      case 'close': // eat closing paren
+      /*
+        eat closing paren
+      */
+      case 'close':
       default:
         stream.next()
         comeBack(state)
@@ -242,29 +311,52 @@ CodeMirror.defineMode("daml", function() {
     var returnType = null, now = state.now, data = now.data
 
     switch(now.verb) {
-      case 'open': // eat opening quote
+      /*
+        eat opening quote
+      */
+      case 'open':
         stream.next()
         now.indentation += 2
         now.verb = 'consume'
-        
         returnType = STRING
       break
       
-      case 'consume': // close quote, open command, or all you can eat
-        stream.eatWhile(tests.not_quote_or_open_brace)
-
+      /*
+        goto close or
+        goto command or
+        continue eating
+      */
+      case 'consume': 
+        stream.eatWhile(tests.not_quote_or_open_brace_or_angle)
         var peek = stream.peek()
-        if(peek == '"') now.verb = 'close'
+        
+        if(peek == '<') {
+          data.angled = true
+          stream.next()
+        }
+        
+        if(peek == '>') {
+          data.angled = false
+          stream.next()
+        }
+        
+        if(peek == '"') {
+          if(data.angled) stream.next()
+          else now.verb = 'close'
+        }
+        
         if(peek == '{') goThere(state, 'command')
         
         returnType = STRING
       break
 
-      case 'close': // eat closing quote
+      /*
+        eat closing quote
+      */
+      case 'close':
       default:
         stream.next()
         comeBack(state)
-
         returnType = STRING
       break
     }
@@ -276,18 +368,28 @@ CodeMirror.defineMode("daml", function() {
     var returnType = null, now = state.now, data = now.data
 
     switch(now.verb) {
-      case 'open': // eats numbers or fancy
+      /*
+        eat numbers or
+        close command or
+        open command, list, quote or
+        eat fancy
+      */
+      case 'open': 
         now.verb = 'close'
         peek = stream.peek()
         
         if(likeNumber(stream)) returnType = eatNumber(stream)
+        else if(peek == '}') comeBack(state) // THINK: can this leak?
         else if(peek == '{') goThere(state, 'command')
         else if(peek == '(') goThere(state, 'list')
         else if(peek == '"') goThere(state, 'quote')
         else returnType = eatFancy(stream)
       break
 
-      case 'close': // go back to whence you came
+      /*
+        go home
+      */
+      case 'close':
       default:
         comeBack(state)
       break
@@ -305,14 +407,20 @@ CodeMirror.defineMode("daml", function() {
     var returnType = null, now = state.now, data = now.data
     
     switch(now.verb) {
-      case 'open': // eat a terminator
+      /*
+        eat a terminator
+      */
+      case 'open':
         peek = stream.peek()
         returnType = DAML.terminators[peek].eat(stream)
         // TODO: this needs to return the terminator type, but also mark the ptree for further parsing
         now.verb = 'close'
       break
 
-      case 'close': // go back to whence you came
+      /*
+        go home
+      */
+      case 'close': 
       default:
         comeBack(state)
       break
@@ -336,6 +444,7 @@ CodeMirror.defineMode("daml", function() {
       var quasistate = {indentation: baseIndent}
       return {
         stack: [], // previous states
+        error_level: 0, // dig deeper
         now: new Stately(quasistate)
       }
     },
@@ -383,7 +492,7 @@ CodeMirror.defineMode("daml", function() {
         break
       }
       
-      return returnType
+      return state.error_level ? ERROR : returnType
     },
   }
 })
