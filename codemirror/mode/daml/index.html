@@ -22,13 +22,13 @@
     <form><textarea id="code" name="code">
 
 Problems:
-{// comments //}  --- fix terminators
 {begin x}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
 
 Fixed:
+{// comments | hey now //}  --- fix terminators n' comments
 {mfoo foo baz}  --- foo and baz should be errors
 {"<a href="malarky">foo</a>"}  --- quotes in angle brackets don't count
-
+{()} {(} outside {)}  --- broken lists bork lights
 
 
 

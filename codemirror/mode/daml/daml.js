@@ -59,6 +59,8 @@ CodeMirror.defineMode("daml", function() {
     this.verb = 'open'
     this.where = where || 'outside'
     this.indentation = oldNow.indentation || 0
+    this.onTerminate = {errorLevel: 0, commentLevel: 0}
+    this.onClose = {errorLevel: 0, commentLevel: 0}
   }
 
   function goThere(state, where) {
@@ -78,18 +80,33 @@ CodeMirror.defineMode("daml", function() {
   }
   
   function upError(state) {
-    if(!state.now.data.error_level) {
-      state.now.data.error_level = true
-      state.error_level++
-    }
+    state.now.onTerminate.errorLevel--
+    state.errorLevel++
   }
   
-  function downError(state) {
-    if(state.now.data.error_level) {
-      state.now.data.error_level = false
-      state.error_level--
-    }
+  function onClose(state) {
+    var item = state.now.onClose
+
+    state.errorLevel += item.errorLevel
+    item.errorLevel = 0
+
+    state.commentLevel += item.commentLevel
+    item.commentLevel = 0
+    
+    // closing also clears terminators
+    onTerminate(state)
   }
+  
+  function onTerminate(state) {
+    var item = state.now.onTerminate
+
+    state.errorLevel += item.errorLevel
+    item.errorLevel = 0
+
+    state.commentLevel += item.commentLevel
+    item.commentLevel = 0
+  }
+  
   
   function inCommand(stream, state) {
     var returnType = null, now = state.now, data = now.data
@@ -104,7 +121,7 @@ CodeMirror.defineMode("daml", function() {
         segue = true
       }
       else if(DAML.terminators[peek]) {
-        downError(state)
+        onTerminate(state)
         now.verb = 'handle'
         goThere(state, 'terminator')
         segue = true
@@ -126,8 +143,12 @@ CodeMirror.defineMode("daml", function() {
         now.indentation += 2
         now.verb = 'handle'
         data.pnames = []
-        
         returnType = BRACE
+        
+        if(stream.peek() == '/') {
+          state.commentLevel++
+          now.onClose.commentLevel--
+        }
       break
 
       /*
@@ -255,7 +276,7 @@ CodeMirror.defineMode("daml", function() {
       */
       case 'close':
       default:
-        downError(state)
+        onClose(state)
         stream.next()
         comeBack(state)
         
@@ -412,8 +433,9 @@ CodeMirror.defineMode("daml", function() {
       */
       case 'open':
         peek = stream.peek()
-        returnType = DAML.terminators[peek].eat(stream)
-        // TODO: this needs to return the terminator type, but also mark the ptree for further parsing
+        returnType = DAML.terminate(peek, 'eat', [stream, state])
+        // terminators take the previous stack and the next stack and merge them together, 
+        // but here they just return a type and modify 'state'. we need to put these two things together somehow...
         now.verb = 'close'
       break
 
@@ -444,7 +466,8 @@ CodeMirror.defineMode("daml", function() {
       var quasistate = {indentation: baseIndent}
       return {
         stack: [], // previous states
-        error_level: 0, // dig deeper
+        errorLevel: 0,
+        commentLevel: 0, 
         now: new Stately(quasistate)
       }
     },
@@ -492,7 +515,9 @@ CodeMirror.defineMode("daml", function() {
         break
       }
       
-      return state.error_level ? ERROR : returnType
+      if(state.commentLevel) return COMMENT
+      if(state.errorLevel) return ERROR
+      return returnType
     },
   }
 })
