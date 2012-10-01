@@ -17,11 +17,11 @@ div#page2 {
 .addwiggle {
   display: inline-block;
   position: relative;
-  color: #03b76c;
 }
 .animated.wiggle {
   -webkit-animation-iteration-count: infinite;
   animation-iteration-count: infinite;
+  color: #03b76c;
 }
 #verblist {
   position: inherit;
