@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html> 
+<head>   
+  <title>Model Eggs</title>
+    
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/styles.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/animate.css" rel="stylesheet">
+
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
+
+  <style>
+    .editable {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+
+  <meta charset="utf-8">
+</head>
+<body id="">
+
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span11">
+        <div id="generator" class="editable" contentEditable>
+          memo=0;_.range(17,3,-1).map(function(n) {memo+=n;return memo-2})
+        </div>
+      </div>
+      <div class="span1">
+        <button id="generate">Go</button>
+      </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span12">
+        <div id="sequence" class="editable" contentEditable>
+          17,33,47,60,73,85,96,106,115,123,130,136,144
+          15,31,46,60,73,85,96,104,114,122,130,136,141,145
+        </div>
+      </div>
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span3">
+        <canvas id="floorchart" width="144" height="432"></canvas>
+      </div>
+      <div class="span9">
+        <div id="outputs">
+          <p>Best seq: <span id="best_seq"></span></p>
+          <p>Best drops: <span id="best_drops"></span></p>
+          <p>Best height: <span id="best_height"></span></p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="navbar navbar-fixed-bottom" id="verbs">
+      <div class="navbar-inner" id="output_string">
+        Current drops: <span id="current_drops"></span>
+        Current height: <span id="current_height"></span>
+      </div>
+    </div>
+  </div>
+
+  
+  <script type="text/javascript">
+    EGGS = {}
+    EGGS.seqs = {}
+    EGGS.stories = 144
+  
+    function dropall(seq) {      
+      var stats, drops=0, height=0, cases = []
+      for(var i=0, l=EGGS.stories; i < l; i++) {
+        stats = dropone(i, seq)
+        drops += stats.drops
+        height += stats.height
+        cases.push(stats)
+      }
+      
+      EGGS.seqs[seq.toString()] = {
+        seq: seq,
+        drops: drops,
+        height: height,
+        cases: cases
+      }
+      
+      render(EGGS.seqs[seq.toString()])
+    }
+    
+    function render(thing) {
+      // floorchart
+      var context = document.getElementById('floorchart').getContext("2d");
+      context.fillStyle = '#00f';
+      context.clearRect (0, 0, 144, 432);
+
+      for(var i=0, l=thing.cases.length; i < l; i++) {
+        for(var j=0, k=thing.cases[i].floorset.length; j < k; j++) {
+          var floor = thing.cases[i].floorset[j]
+          context.fillRect(i, 432 - floor*3, 1, 3);
+        }
+      }
+      
+      // current stats
+      $('#current_drops').text(thing.drops)
+      $('#current_height').text(thing.height)
+      
+      // best stats
+      var best = {drops: 1000000000}
+      for(var i in EGGS.seqs) {
+        if(EGGS.seqs[i].drops < best.drops) best = EGGS.seqs[i]
+      }
+      $('#best_seq').text(best.seq.toString())
+      $('#best_drops').text(best.drops)
+      $('#best_height').text(best.height)
+    }
+
+    function dropone(story, seq) {
+      var drops=0, height=0, floorset = []
+      
+      seq = _.filter(seq, function(n) {return n <= EGGS.stories})
+      
+      for(var i=0, l=seq.length; i < l; i++) {
+        if(seq[i] > EGGS.stories) break
+        drops++
+        height += seq[i]
+        floorset.push(seq[i])
+        if(seq[i] >= story) break
+      }
+      
+      // if story & story-1 are in seq, skip
+      if(floorset.indexOf(story - 1) == -1 || floorset.indexOf(story) == -1) {
+        var index = floorset.length == seq.length ? 1 : 2,
+            from = (floorset[floorset.length - index] || 0) + 1,
+            to = seq.indexOf(story) == -1 ? story : story - 1  // if story is in seq, skip it
+        for(i = from; i <= to; i++) {
+          drops++
+          height += i
+          floorset.push(i)
+        }
+      }
+      
+      return {drops: drops, height: height, floorset: floorset}
+    }
+    
+    function dwrapper (ev) {
+      var seq = ev.target.innerText.split(/\D+/).map(Math.abs)
+      dropall(seq)
+    }
+    
+    $(document).ready(function() {
+      $('#generate').on('click', function(ev) {
+        var seq = eval($('#generator').text())
+        $('#sequence').text(seq.toString())
+        dropall(seq)
+      })
+      
+      $('#sequence').on('DOMCharacterDataModified', dwrapper)
+    })
+  </script>
+
+</body>
+</html>

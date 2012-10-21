@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html> 
+<head>   
+  <title>IntFicWordDrag</title>
+    
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/styles.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/animate.css" rel="stylesheet">
+
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
+
+  <meta charset="utf-8">
+</head>
+<body id="">
+
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span12">
+        <div id="storycol">
+          <div id="story" contentEditable>
+            1 + 2 * 3 * 4 + 5 * 6 + 7
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar navbar-fixed-bottom" id="verbs">
+      <div class="navbar-inner" id="output_string">
+        xyz
+      </div>
+    </div>
+  </div>
+
+  
+  <script type="text/javascript">
+    function listsmack(list, operators) {
+      var insert='', tail=[], i = 0
+      while(i++ < list.length) {
+        if(list[i] && (operators.indexOf(list[i]) >= 0)) {
+          insert = "(" + list[i - 1] + " " + list[i] + " " + list[i+1] + ")"
+          tail = list.splice(i + 2)
+          list.splice(i - 1)
+          list = list.concat([insert], tail)
+          i = 0
+        }
+      }
+      
+      return list
+    }
+  
+    function parser (string) {
+      var list = string.split(/ /)
+      list = listsmack(list, '*/')
+      list = listsmack(list, '+-')
+      return list.join(' ').slice(1, -1)
+    }
+    
+    function pwrapper (ev) {
+      var value = ev.target.innerText
+      $('#output_string').text(parser(value))
+    }
+    
+    $(document).ready(function() {
+      $('#story').on('DOMCharacterDataModified', pwrapper)
+      $('#output_string').text(parser($('#story').text().trim()))
+    })
+  </script>
+
+</body>
+</html>

@@ -515,6 +515,7 @@ CodeMirror.defineMode("daml", function() {
         break
       }
       
+      if(returnType == BRACE) return BRACE
       if(state.commentLevel) return COMMENT
       if(state.errorLevel) return ERROR
       return returnType

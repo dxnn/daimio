@@ -15,6 +15,8 @@ At one point in the development of DAML I managed to reduce the entire language 
  
  To notebook: use space+key as meta, pointless programming (no variables), help dictionary for keybindings (emacs), more recursive combinators in daml, monads in daml for guarding variables etc?, virtual edge when you click a port that tracks your mouse, ...
  
+Keyed lists: the position of an item in the list is not a key. Items can always be retrieved by positional index. Items can also be keyed. Sorting, grouping, and other such operations preserve keys. Remember to use #N to access by position. @foo.{"#{pos}"} works also. @foo.(:#2 :#4 :alpha 7) also works, though this also means you can never key an array with '#N' where N is an integer, so... actually, that's probably fine.
+
 
 {begin add_edge | daml import into : in (:v1 :v2) out :1}
   

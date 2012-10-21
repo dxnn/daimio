@@ -28,7 +28,7 @@ Fixed:
 {// comments | hey now //}  --- fix terminators n' comments
 {mfoo foo baz}  --- foo and baz should be errors
 {"<a href="malarky">foo</a>"}  --- quotes in angle brackets don't count
-{()} {(} outside {)}  --- broken lists bork lights
+{/()} {/(} outside {/)}  --- broken lists bork lights
 
 
 
@@ -90,6 +90,65 @@ Also external.
 ^_^ if #sort | is like :tags | then ^_2 else ^_1
 } {// note laziness -- the lifted pipelines are actually fings //}
 
+Destructuring:
+{(1 2 3) | > (:a :b :c)}
+
+these are equal:
+{* (:k1 2 :k2 4 :k3 8) | > (:a :b :c)}
+{* (:k1 2 :k2 4 :k3 8) | > {* (:k2 :b :k1 :a :k3 :c)}}
+
+Also:
+{({* (:k1 2 :k2 4 :k3 8)} {* (:k1 14 :k2 18 :k3 116)}) | __.(:k2 :k3)}
+  ((4 8) (18 116))... er. no, not quite.
+
+
+maybe lifts can do this:
+{verb find
+^ sort by :name | group by "{__.name | string truncate length 1}"
+^ __._id | sort order :desc
+^_^ merge}
+And the ^1 is piped as merge's first param, and ^2 is piped as the second.
+
+{rule change_ham id @mech_rr ham {
+  @pf.primerule.#1
+  ^double __
+    ^^ __.#1
+      ^^^ is like "*" | then @pq_st_ids
+      ^^^ array filter value @pq_st_ids
+      ^___^ ^1 | else ^2 | else ()
+    ^^ __.#2
+      ^^^ is like "*" | then @rule_st_ids
+      ^^^ array filter value @rule_st_ids
+      ^___^ ^1 | else ^2 | else ()
+    // alternate take below. could munge above like 'each (@pq_st_ids @rule_st_ids)' etc. 
+    // using lifts this way requires copy on lift entry, since the incoming value is ref'd multiple times.
+    // this does not really read or write simpler than using temp vars... 
+    // but maybe the control flow read is nicer? like right-to-left on the graph?
+    // oy. really, this is not seeming to help. redo?
+    ^^ __.#2 | is like "*" | then @rule_st_ids 
+    | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+    | else ()
+    ^__^ (^1 ^2) | array union
+  ^bigstar @rule_st_ids | else @pq_st_ids
+  ^self __
+  ^_^ ^self | is like "*" | then ^bigstar else ^double}
+| then "" else "Invalid ham "}
+
+{rule change_ham id @mech_rr 
+  ham {@pf.primerule.#1 | is like "*" | then "{@rule_st_ids | else @pq_st_ids}"
+      | else "
+        (
+          {@pf.primerule.#1.#1 | is like "*" | then @pq_st_ids 
+          | else "{@pf.primerule.#1.#1 | array filter value @pq_st_ids}" 
+          | else ()
+          }
+          {@pf.primerule.#1.#2 | is like "*" | then @rule_st_ids 
+          | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+          | else ()
+          }
+        ) | array union"}
+| then "" else "Invalid ham "}
+
 
 {my set for @user_id in :profiles path :firstname value #firstname}
 {my set for @user_id in :profiles path :lastname value #lastname}
@@ -103,7 +162,7 @@ Also external.
     {* (:path :firstname value #firstname)}
     {* (:path :lastname value #lastname)}
     etc...
-  )}
+)}
 
 or maybe 
 {process apply over fing on (:path :value) values (:firstname #firstname :lastname #lastname)}
