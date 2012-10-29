@@ -35,6 +35,7 @@
     <div class="row-fluid">
       <div class="span12">
         <div id="sequence" class="editable" contentEditable>
+          17,33,48,62,75,87,98,108,116,124,131,137,144
           17,33,47,60,73,85,96,106,115,123,130,136,144
           15,31,46,60,73,85,96,104,114,122,130,136,141,145
         </div>
@@ -50,12 +51,14 @@
           <p>Best seq: <span id="best_seq"></span></p>
           <p>Best drops: <span id="best_drops"></span></p>
           <p>Best height: <span id="best_height"></span></p>
+          <p>Best worst drop: <span id="best_worst"></span></p>
         </div>
       </div>
     </div>
     
     <div class="navbar navbar-fixed-bottom" id="verbs">
       <div class="navbar-inner" id="output_string">
+        Worst drop: <span id="current_worst"></span>
         Current drops: <span id="current_drops"></span>
         Current height: <span id="current_height"></span>
       </div>
@@ -69,11 +72,12 @@
     EGGS.stories = 144
   
     function dropall(seq) {      
-      var stats, drops=0, height=0, cases = []
+      var stats, drops=0, height=0, worst=0, cases = []
       for(var i=0, l=EGGS.stories; i < l; i++) {
         stats = dropone(i, seq)
         drops += stats.drops
         height += stats.height
+        worst = stats.drops > worst ? stats.drops : worst;
         cases.push(stats)
       }
       
@@ -81,6 +85,7 @@
         seq: seq,
         drops: drops,
         height: height,
+        worst: worst,
         cases: cases
       }
       
@@ -101,6 +106,7 @@
       }
       
       // current stats
+      $('#current_worst').text(thing.worst)
       $('#current_drops').text(thing.drops)
       $('#current_height').text(thing.height)
       
@@ -110,6 +116,7 @@
         if(EGGS.seqs[i].drops < best.drops) best = EGGS.seqs[i]
       }
       $('#best_seq').text(best.seq.toString())
+      $('#best_worst').text(best.worst)
       $('#best_drops').text(best.drops)
       $('#best_height').text(best.height)
     }

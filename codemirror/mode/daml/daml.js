@@ -12,7 +12,7 @@ CodeMirror.defineMode("daml", function() {
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
       PAREN = "hr", PARAMNAME = "attribute", HANDLER = "builtin", METHOD = "keyword",
-      ALIAS = "def", VARIABLE = "variable", ERROR = "error"
+      ALIAS = "def", VARIABLE = "variable", ERROR = "error", BLOCK = "hr"
 
   var tests = {
     digit_or_sign: /[0-9+-]/,
@@ -152,6 +152,7 @@ CodeMirror.defineMode("daml", function() {
       break
 
       /*
+        switch to block or
         eat an alias or
         eat a handler or
         pass to pval, but return to error loop
@@ -159,9 +160,14 @@ CodeMirror.defineMode("daml", function() {
       case 'handle': 
         var word = getNextWord(stream)
 
+        if(word == 'begin' || word == 'end') {
+          goThere(state, 'block')
+          returnType = BLOCK
+        }
+
         // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
         // good alias
-        if(DAML.aliases[word]) { 
+        else if(DAML.aliases[word]) { 
           returnType = ALIAS
           var words = DAML.aliases[word].split(' ').reverse() 
           word = words.pop()
@@ -420,8 +426,13 @@ CodeMirror.defineMode("daml", function() {
   }
   
   function inBlock(stream, state) {
-    stream.eatWhile(tests.not_open_brace)
-    if(stream.peek() == '{') goThere(state, 'command')
+    var word = getNextWord(stream)
+    returnType = BLOCK
+    
+    // TODO: make bad ends errors; make bad names errors; anon blocks?
+    
+    comeBack(state)
+    return returnType
   }
    
   function inTerminator(stream, state) {
