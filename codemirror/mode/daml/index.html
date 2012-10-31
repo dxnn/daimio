@@ -22,13 +22,40 @@
     <form><textarea id="code" name="code">
 
 Problems:
-{begin x}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
+ugh local vars and aliases can collide ugh ugh
+this is actually quite bad, potentially. should we mark all variables with glyphs? leave it to the IDE to prompt users when they make mistakes? we have @channels for communicating between processes. we have __ etc for unsettable references. CONSTs for immutable values. but we're going to need temp vars for linking pipelines and storing "mutable" state in a var space. 
+
+I think AT tests would be a lot easier if I could import commands right now. having some encapsulation (and param binding) would be really nice. param binding because then the names inside the function are generic, and the names outside are specific, and the two don't have to be the same (because conceptually they aren't). 
+
+
+{noun find
+^ _this.out-edges | add _this.in-edges
+^_^ ^0 | map daml ^1}
+
+{^ _memo | add _this ^_^ range 100 | reduce daml ^1}
+{range 100 | reduce daml "{_memo | add _this}"}
 
 Fixed:
+{begin x | sort}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
 {// comments | hey now //}  --- fix terminators n' comments
 {mfoo foo baz}  --- foo and baz should be errors
 {"<a href="malarky">foo</a>"}  --- quotes in angle brackets don't count
 {/()} {/(} outside {/)}  --- broken lists bork lights
+
+
+{... | @> :foo.x} write to channel (pub)
+{... | !@> :foo.x} bind to channel pre-write (guard)
+{... | <@ :foo.x} bind to channel post-write (sub)
+{... | <@! :foo.x} bind to channel pre-read (generator)
+{@foo.x} read from channel
+
+^0 gives lift input?
+
+client-side gui 'walk-back' control... like, ^b goes backward through windows and examples and selections and whatnot. not really undoing, more like redoing the gui operations in reverse. unwinding, maybe. ^z would still properly undo things (but might not have the gui unwinding effects, since ^z only walks the event log, which is only for persistent actions). (also, how does ^b avoid undoing actions? maybe it's a short-term queue that only stores recent things -- a selection doesn't make sense once that bit of code changes.)
+anyway, we record these events (even soft ones like unwinding the gui, although that doesn't persist). and when we go backward and then forward again, overwriting our earlier changes, you can think of that as creating a new branch, but you could also think of it as creating a 'loop', where we connect the last non-undone event and the first post-undoing event: a tesseract, or code folding trick to skip those intermediate steps. they're still there on the event log, and we can walk into them if we want, but in general we 'fold over' and skip the do/undo steps.
+[it makes kind of a boomerang shape, the doing/undoing, since the undos are the reverse of the dos. hence code folding. can we detect this and do it at the interface layer, or does it have to be stored in the log? i think it can be detected, maybe... although marking the undos could be good anyway.]
+
+lack of dynamic dispatch (or any type of dispatch, really) means you need unique aliases for verbs for e.g. list, string and numeric commands. which really means you should use unique verbs in those handlers to begin with, because those in particular will almost always be aliased. which is ok -- i think the simplicity of the model is worth the cost of uniqueness (harder to find good verb words, but easier to reason about since there's no polymorphism). 
 
 
 
@@ -174,6 +201,9 @@ maybe ^_^ keeps lifted sections as fings, and ^_- runs each once in 'parallel' a
 
     </textarea></form>
 
+    <h3>Results</h3>
+    <div id="results"></div>
+
     <script>
       var editor = CodeMirror.fromTextArea(document.getElementById("code"), {})
       
@@ -182,6 +212,7 @@ maybe ^_^ keeps lifted sections as fings, and ^_- runs each once in 'parallel' a
       editor.setOption('lineNumbers', true)
       editor.setOption('matchBrackets', true)
       
+      $('#results').html(DAML.run($('#code').val()))
     </script>
 
     <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>

@@ -67,5 +67,5 @@ db.open(function(err, db) {
 
   console.log('connected!')
   
-  app.listen(8008)
+  app.listen(8080)
 })
