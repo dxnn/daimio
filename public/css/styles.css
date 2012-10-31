@@ -21,6 +21,7 @@ div#page2 {
 .animated.wiggle {
   -webkit-animation-iteration-count: infinite;
   animation-iteration-count: infinite;
+  color: #03b76c;
 }
 #verblist {
   position: inherit;
