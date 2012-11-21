@@ -27,6 +27,7 @@ this is actually quite bad, potentially. should we mark all variables with glyph
 
 I think AT tests would be a lot easier if I could import commands right now. having some encapsulation (and param binding) would be really nice. param binding because then the names inside the function are generic, and the names outside are specific, and the two don't have to be the same (because conceptually they aren't). 
 
+Special vars that can only be set once in the context of a pipeline and disappear after -- to help make chaining simpler.
 
 {noun find
 ^ _this.out-edges | add _this.in-edges

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html> 
+<head>   
+  <title>Model Cabs</title>
+
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+
+  <meta charset="utf-8">
+</head>
+<body id="">
+
+  <button id="beginjourney">Begin your journey</button>
+
+  <canvas id="taxicabs" width="800" height="400"></canvas>
+
+  <script type="text/javascript">
+    // constants
+    var WIDTH = 200
+      , HEIGHT = 100
+      , VIZ_STRETCH = 4
+      , LOWNM = 480
+      , HIGHNM = 750
+  
+    var active_cells = []
+      , new_active_cells = []
+      , edges = []
+      , cells = []
+    
+    $(document).ready(function() {
+      $('#generate').on('click', function(ev) {
+        var seq = eval($('#generator').text())
+        $('#sequence').text(seq.toString())
+        dropall(seq)
+      })
+      
+      $('#beginjourney').on('click', function() {
+        journey()
+      })
+    })
+    
+    
+    function journey() {
+      clear_cells()
+      clear_canvas()
+      active_cells = [cells[0][0]]
+      
+      var looper = function() {
+        edges = take_steps()
+        render(edges)
+        if(active_cells.length) {
+          setTimeout(looper, 0)
+        }
+      }
+      
+      looper()
+    }
+
+    function clear_cells() {
+      for(var x=0; x < WIDTH; x++) {
+        cells[x] = []
+        for(var y=0; y < HEIGHT; y++) {
+          cells[x][y] = {nm: false, weight: false, x: x, y: y}
+        }
+      }
+      
+      cells[0][0].weight = 1
+      new_active_cells = []
+      active_cells = []
+      edges = []
+    }
+    
+    function clear_canvas() {
+      var context = document.getElementById('taxicabs').getContext("2d");
+      context.clearRect (0, 0, WIDTH * VIZ_STRETCH, HEIGHT * VIZ_STRETCH);
+    }
+    
+    function take_steps() {
+      new_active_cells = []
+      
+      for(var i=0, l=active_cells.length; i < l; i++) {
+        var cell = active_cells[i]
+        
+        if((cell.x < WIDTH - 1) && (cell.y < HEIGHT - 1)) cell.weight = cell.weight / 2
+        
+        if(cell.x < WIDTH - 1) {
+          if(!cell.x && !cell.y) cells[0][0].nm = LOWNM
+          var right_cell = cells[cell.x + 1][cell.y]
+          take_step(right_cell, cell)
+        }
+        if(cell.y < HEIGHT - 1) {
+          if(!cell.x && !cell.y) cells[0][0].nm = HIGHNM
+          var top_cell = cells[cell.x][cell.y + 1]
+          take_step(top_cell, cell)
+        }
+      }
+      
+      active_cells = new_active_cells
+      return edges
+    }
+    
+    function take_step(new_cell, old_cell) {
+      new_cell = modulate_cell(new_cell, old_cell)
+      add_new_active_cell(new_cell)
+      edges.push({
+        from_x: old_cell.x,
+        from_y: old_cell.y,
+        to_x: new_cell.x,
+        to_y: new_cell.y,
+        nm: old_cell.nm,
+        weight: old_cell.weight,
+      })
+    }
+    
+    function add_new_active_cell(new_cell) {
+      for(var x=0, l=new_active_cells.length; x < l; x++) {
+        var this_cell = new_active_cells[x]
+        if(new_cell.x == this_cell.x && new_cell.y == this_cell.y) return;
+      }
+      
+      new_active_cells.push(new_cell)
+    }
+    
+    function modulate_cell(new_cell, old_cell) {
+      
+      // if(!new_val.nm) return old_val.nm
+      // return (new_val.nm + old_val.nm) / 2
+      //proportion_or_all(new_cell.weight, old_cell.weight)
+      
+      if(new_cell.nm) {
+        new_cell.nm = (old_cell.nm * old_cell.weight + new_cell.nm * new_cell.weight) / (old_cell.weight + new_cell.weight)
+      } else {
+        new_cell.nm = old_cell.nm
+      }
+      
+      new_cell.weight = new_cell.weight + old_cell.weight;
+      
+      return new_cell
+    }
+    
+    // function proportion_or_all(new_val, old_val) {
+    //   if(!new_val) return old_val / REDUCE_EXPONENT
+    //   
+    //   var old_inverse = 1 - old_val
+    //     , new_inverse = 1 - new_val
+    //     , average = (old_inverse + new_inverse) / 2
+    //     , proportional = average * REDUCE_EXPONENT
+    //     
+    //   return new_val + (old_val / REDUCE_EXPONENT)
+    //     
+    //   return (1 - average) * REDUCE_EXPONENT
+    // }
+    
+    function render(edges) {
+      var context = document.getElementById('taxicabs').getContext("2d");
+      context.fillStyle = '#00f';
+      
+      for(var i=0, l=edges.length; i < l; i++) {
+        var edge = edges[i]
+          , weight = edge.weight < 0.01 ? 0.01 : edge.weight
+          , line_height = edge.to_y - edge.from_y ? VIZ_STRETCH : 1
+          , line_width = edge.to_x - edge.from_x ? VIZ_STRETCH : 1
+          , color = Math.nmToRGB(edge.nm)
+        
+        context.globalAlpha = 1;
+        context.fillStyle = 'rgba(' + color.red + ', ' + color.green + ', ' + color.blue + ', ' + weight + ")";
+        context.fillRect(edge.from_x * VIZ_STRETCH, edge.from_y * VIZ_STRETCH, line_width, line_height);
+      }
+    }
+    
+    function render_points(edges, step) {
+      // setTimeout(begin_render_loop, 0) // give a little pause between steps
+    }
+    
+    
+    
+    
+    
+    
+    (function (namespace, methodName) {
+        window[namespace][methodName] = function (wavelength) {
+            var w = parseInt(wavelength, 10),
+                SSS,
+    			R,
+    			G,
+    			B;
+
+            if (w >= 380 && w < 440) {
+                R = -(w - 440.0) / (440.0 - 350.0);
+                G = 0.0;
+                B = 1.0;
+            } else if (w >= 440 && w < 490) {
+                R = 0.0;
+                G = (w - 440.0) / (490.0 - 440.0);
+                B = 1.0;
+            } else if (w >= 490 && w < 510) {
+                R = 0.0;
+                G = 1.0;
+                B = -(w - 510.0) / (510.0 - 490.0);
+            } else if (w >= 510 && w < 580) {
+                R = (w - 510.0) / (580.0 - 510.0);
+                G = 1.0;
+                B = 0.0;
+            } else if (w >= 580 && w < 645) {
+                R = 1.0;
+                G = -(w - 645.0) / (645.0 - 580.0);
+                B = 0.0;
+            } else if (w >= 645 && w <= 780) {
+                R = 1.0;
+                G = 0.0;
+                B = 0.0;
+            } else {
+                R = 0.0;
+                G = 0.0;
+                B = 0.0;
+            }
+
+            if (w >= 380 && w < 420) {
+                SSS = 0.3 + 0.7 * (w - 350) / (420 - 350);
+            } else if (w >= 420 && w <= 700) {
+                SSS = 1.0;
+            } else if (w > 700 && w <= 780) {
+                SSS = 0.3 + 0.7 * (780 - w) / (780 - 700);
+            } else {
+                SSS = 0.0;
+            }
+
+            SSS *= 255;
+
+            return {
+    			red: parseInt(SSS * R, 10),
+    			green: parseInt(SSS * G, 10),
+    			blue: parseInt(SSS * B, 10)
+    		};
+        };
+    }("Math", "nmToRGB"));
+
+  </script>
+
+</body>
+</html>

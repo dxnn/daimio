@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html> 
+<head>   
+  <title>DMG NoJam</title>
+  
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/responsive.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/styles.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/animate.css" rel="stylesheet">
+
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
+
+  <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  
+  <style>
+    body {font-size: 14pt;}
+  </style>
+  
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    $(document).ready(function() {
+      var socket = io.connect('http://sherpa.local:8008');
+      socket.on('connect', function () {
+        $('#ok').text('connect ok!')
+      });
+    
+      socket.on('bounced', function (data) {
+        console.log(data)
+        var output = DAML.run(data.daml, data.context)
+        // var new_span = $('<span></span>').text(output)
+        // $('#stuff').append($('<p>' + data.context.name + ': </p>').append(new_span))
+      });
+    
+      $('#speakerduck').on('submit', function() {
+        socket.emit('bounce', {
+          daml: '{@chatter | union ({* (:name this.name :words this.words)}) | > :@chatter}', 
+          context: {
+            words: $('#say').val(),
+            name: $('#name').val(),
+            table: $('#table').val()}})
+        $('#say').val('')
+        return false
+      })
+      $('#say').focus()
+      
+      
+      // request a thing
+      $('#requestform').on('submit', function() {
+        socket.emit('bounce', {
+          daml: '{@requests | union ({* (:name this.name :table this.table :ineed this.ineed)}) | > :@requests}', 
+          context: {
+            ineed: $('#ineed').val(),
+            name: $('#name').val(),
+            table: $('#table').val()}})
+        $('#ineed').val('')
+        return false
+      })
+      
+      
+      
+      
+      // preload
+      DAML.run($('#preload').text())
+
+      // compile & bind the text/daml templates
+      $("script[type*=daml]").each(function() {
+        // id it
+        var begin, end, block, id, el, pid = $(this).parent()[0].id
+        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo")
+      
+        if(id == 'preload') return
+      
+        // block it
+        begin = '{begin ' + id + '}'
+        end = '{end ' + id + '}'
+        block = begin + this.innerHTML + end
+        DAML.run(block)
+      
+        // attach it
+        el = this.dataset.el || (id == pid) ? pid : false
+        if(el) {
+          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}')
+          if(this.dataset.var) {
+            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}')
+          }
+        }
+      })
+      
+      DAML.run(DAML.VARS.postload)
+      
+      
+    })
+  </script>
+  
+  <meta charset="utf-8">
+</head>
+<body id="">
+  
+  <script type="text/daml" id="preload">
+    {// Import any needed commands here //}
+    {// (note that you can't access any other script blocks from here...) //}
+
+    {// {daml alias string "logic switch on @time value" as :time} //}
+    
+    {() | > :@chatter}    
+    {() | > :@requests}
+  </script>
+    
+  <script type="text/daml" id="postload">
+    {// {network send string "{foo la la}"} //}
+
+    {dom on event :submit id :edit_words_form}
+
+    {dom on event :change id :edit_verbs_form filter :#verb_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_verbs_form}" 
+            | process debounce time 350}"}
+
+    {dom on event :change id :edit_words_form filter :#word_string continue 1 daml "{
+      "{dom trigger event :submit id :edit_words_form}" 
+            | process debounce time 350}"}
+
+    {network send 
+      string "{story find}" 
+      then "{this.#1.#1 | > :@story}"}
+
+    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verbs
+                                      | @story.pages.#1.words | > :words
+                                      | 1 | > :@new_page
+                                      | 1 | > :@action
+                                      }"}
+
+    {* (:state :good) | > :@s}
+    {1 | > :@time}
+  </script>
+
+
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div id="ok">Bad connection ok</div>
+      <input type="text" name="name" placeholder="name" id="name">
+      <input type="text" name="table" placeholder="table" id="table">
+    </div>
+    <div class="row-fluid">
+      <div class="span8">
+        <div id="storycol">
+          <form id="requestform">
+            <input type="text" name="ineed" placeholder="make a request" id="ineed">
+          </form>
+          
+          <div id="story">
+            <script type="text/daml" data-var="@requests">
+              {begin chatlist | merge data @requests}
+                <p>{name} at {table}: <span>{ineed}</span></p>
+              {end chatlist}
+            </script>
+          </div>
+        </div>
+      </div>
+
+      <div class="span4">
+        <div id="chatstuff" style="background-color:white; overflow:auto; height:500px; width:300px;">
+          <script type="text/daml" data-var="@chatter">
+            {begin chatlist | merge data @chatter}
+              <p>{name}: <span>{words}</span></p>
+            {end chatlist}
+          </script>
+        </div>
+
+        <form method="post" accept-charset="utf-8" id="speakerduck">
+          <input type="text" name="say" placeholder="Say something clever!" style="width:300px" id="say">
+        </form>    
+      </div>
+    </div>
+  </div>
+  
+</body>
+</html>
