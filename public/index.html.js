@@ -1,9 +1,9 @@
 <!DOCTYPE html> 
 <html> 
 <head>   
-  <title>FigViz</title>
+  <title>ThingViz</title>
   
-  <!-- <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
 
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml&x=3"></script>
@@ -12,8 +12,9 @@
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet"> -->
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
   
+<!--
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
@@ -24,6 +25,8 @@
   
   <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
   <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+-->
   
   <style type="text/css">
     #grid svg {

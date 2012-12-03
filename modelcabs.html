@@ -16,11 +16,11 @@
 
   <script type="text/javascript">
     // constants
-    var WIDTH = 200
-      , HEIGHT = 100
-      , VIZ_STRETCH = 4
-      , LOWNM = 480
-      , HIGHNM = 750
+    var WIDTH = 40
+      , HEIGHT = 120
+      , VIZ_STRETCH = 3
+      , LOWNM = 400
+      , HIGHNM = 500
   
     var active_cells = []
       , new_active_cells = []
@@ -81,7 +81,11 @@
       for(var i=0, l=active_cells.length; i < l; i++) {
         var cell = active_cells[i]
         
-        if((cell.x < WIDTH - 1) && (cell.y < HEIGHT - 1)) cell.weight = cell.weight / 2
+        if((cell.x < WIDTH - 1) && (cell.y < HEIGHT - 1)) {
+          cell.send = cell.weight / 2
+        } else {
+          cell.send = cell.weight
+        }
         
         if(cell.x < WIDTH - 1) {
           if(!cell.x && !cell.y) cells[0][0].nm = LOWNM
@@ -108,7 +112,7 @@
         to_x: new_cell.x,
         to_y: new_cell.y,
         nm: old_cell.nm,
-        weight: old_cell.weight,
+        weight: old_cell.send,
       })
     }
     
@@ -128,12 +132,12 @@
       //proportion_or_all(new_cell.weight, old_cell.weight)
       
       if(new_cell.nm) {
-        new_cell.nm = (old_cell.nm * old_cell.weight + new_cell.nm * new_cell.weight) / (old_cell.weight + new_cell.weight)
+        new_cell.nm = (old_cell.nm * old_cell.send + new_cell.nm * new_cell.weight) / (old_cell.send + new_cell.weight)
       } else {
         new_cell.nm = old_cell.nm
       }
       
-      new_cell.weight = new_cell.weight + old_cell.weight;
+      new_cell.weight = new_cell.weight + old_cell.send;
       
       return new_cell
     }
@@ -157,13 +161,13 @@
       
       for(var i=0, l=edges.length; i < l; i++) {
         var edge = edges[i]
-          , weight = edge.weight < 0.01 ? 0.01 : edge.weight
+          , this_weight = -1 / (Math.log(edge.weight) * 4) // < 0.01 ? 0.01 : edge.weight
           , line_height = edge.to_y - edge.from_y ? VIZ_STRETCH : 1
           , line_width = edge.to_x - edge.from_x ? VIZ_STRETCH : 1
           , color = Math.nmToRGB(edge.nm)
         
         context.globalAlpha = 1;
-        context.fillStyle = 'rgba(' + color.red + ', ' + color.green + ', ' + color.blue + ', ' + weight + ")";
+        context.fillStyle = 'rgba(' + color.red + ', ' + color.green + ', ' + color.blue + ', ' + this_weight + ")";
         context.fillRect(edge.from_x * VIZ_STRETCH, edge.from_y * VIZ_STRETCH, line_width, line_height);
       }
     }

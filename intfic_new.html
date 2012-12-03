@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html> 
+<head>   
+  <title>IntFicWordDrag</title>
+  
+  <!-- local -->
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/jDaimio.js"></script> 
+
+  <script src="http://sherpa.local/~dann/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://sherpa.local/~dann/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <link rel=stylesheet href=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.css>
+  <link rel="stylesheet" href="http://sherpa.local/~dann/thingviz/codemirror/lib/util/simple-hint.css">
+  
+  <!-- bentodojo -->
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
+
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/jDaimio.js"></script> 
+
+  <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+  <link rel=stylesheet href=http://bentodojo.com/thingviz/codemirror/lib/codemirror.css>
+  <link rel="stylesheet" href="http://bentodojo.com/thingviz/codemirror/lib/util/simple-hint.css">
+  <!-- okay -->
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  
+  <meta charset="utf-8">
+  
+  <style type="text/css">
+    #storycol {
+      font-size: 1.6em;
+    }
+  </style>
+  
+</head>
+<body id="">
+  
+  <script type="text/daml" id="preload">
+    {// Import any needed commands here //}
+    {// (note that you can't access any other script blocks from here...) //}
+
+    {daml alias string "logic switch on state.time value" as :time}
+  </script>
+    
+  <script type="text/daml" id="postload">
+    {// 
+        THOUGHTS ON VERBS
+        - could allow a number as the verb-noun value, in which case the verb_noun would be set to that number
+        - :+ could inc the verb_noun
+        - a single word would set the verb_noun to that word
+        - likewise any non-plussed string
+        - 
+    //}
+    
+    {// 
+      TODOS:
+      - Add time to state
+      - Record set_* events on server
+      - Real content
+      - syntax highlighting
+      - bigger boxes
+      - background graphics
+      - page control
+      - track game events/state
+      
+    //}
+    
+    {/network send string "{/story add}"}
+    {/network send string "{story add_page id @story._id name :sidney}"}
+
+    {dom on event :submit id :edit_verbs_form}
+    {dom on event :submit id :edit_words_form}
+
+    {dom on event :change id :edit_verbs_form filter :#verb_stringy continue 1 
+      daml "{"{dom trigger event :submit id :edit_verbs_form}" 
+            | process debounce time 350}"}
+
+    {dom on event :change id :edit_words_form filter :#word_string continue 1 
+      daml "{"{dom trigger event :submit id :edit_words_form}" 
+            | process debounce time 350}"}
+
+    {begin fix_verbs}
+      {union (verbs {verb_string | run | list from_json}) | > :verbs}
+    {end fix_verbs}
+    
+    {begin punch_words}
+      {"{verb}_{noun}" | run | string transform from "/\W/" to "_" | > :verb_noun}
+      {verbs.{verb}.{noun} | > :val | run | > :output 
+      | eq val | > :notfing
+      | val | is like "/^\d+$/"
+      | and notfing
+      | then "{variable get path verb_noun | add val}"
+      | else output
+      | run
+      | > {"state.{verb_noun}" | run}
+      }
+      {state.time | add 1 | > :state.time}
+    {end punch_words}
+
+    {variable bind path :verb_string daml fix_verbs}
+
+    {variable bind path :@story daml "{ @story.pages.#1.verbs | > :verb_string 
+                                      | @story.pages.#1.words | > :words
+                                      | 1 | > :@new_page
+                                      | 1 | > :@action
+                                      }"}
+
+    {network send 
+      string "{story find}" 
+      then "{this.#1.#1 | > :@story}"}
+
+    {* (:page :1) | > :state}
+    {1 | > :state.time}
+  </script>
+
+
+  <div class="container">
+    <div class="page-header">
+      <h1>IntFicWordDrag</h1>
+    </div>
+
+    <div class="span5">
+      <form method="post" accept-charset="utf-8" id="edit_verbs_form">
+        <script type="text/daml" data-var="@new_page">
+          <h2>Edit verbs</h2>
+          <p class="error" id="verb_error" style="display:none">Your verbs are invalid! Work will not be saved!</p>
+          <div>
+            <textarea name="verb_stringy" id="verb_stringy" rows="15" style="width:350px">{verb_string | quote}</textarea>
+          </div>
+
+          <input type="hidden" name="page_index" value="1">
+          <input type="hidden" name="story_id" value="{@story._id}">
+          <textarea name="commands" style="display:none">
+            {begin verbatim | quote}
+              {verb_stringy 
+              | run 
+              | list from_json 
+              | > :vlist 
+              | count 
+              | eq 
+                {vlist 
+                | extract "{this}" 
+                | count} 
+              | > :valid}
+              {begin check | if valid else "{dom show id :verb_error}"}                
+                {* (:story_id story_id :page_index page_index :verb_string {verb_stringy | quote}) 
+                | > :context}
+                {network send 
+                  string "{story set_verbs id POST.story_id page POST.page_index value POST.verb_string}" 
+                  then "" context context}
+                {verb_stringy | > :verb_string
+                | 1 | > :@action}
+                {dom hide id :verb_error}
+              {end check}
+            {end verbatim}
+          </textarea>
+        </script>
+      </form>
+    </div>
+    
+    <div class="span6" id="storycol">
+      <div id="story">
+        <script type="text/daml" data-var="@action">
+          {words | unquote | merge data (state)}
+        </script>
+      </div>
+    
+      <div id="verbs">
+        <ul id="verblist">
+          <script type="text/daml" data-var="@action">
+            {begin list | each data verbs}
+              <li>
+                <span style="cursor:pointer">{key}</span>
+              </li>
+            {end list}
+          </script>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="span12">
+      <form method="post" accept-charset="utf-8" id="edit_words_form">
+        <script type="text/daml" data-var="@new_page">
+          <h2>Edit words</h2>
+          <div>
+            <textarea name="word_string" id="word_string" rows="15" style="width:350px">{words | quote}</textarea>
+          </div>
+
+          <input type="hidden" name="page_index" value="1">
+          <input type="hidden" name="story_id" value="{@story._id}">
+          {// <input type="submit" name="submit" value="Edit"> //}
+          <textarea name="commands" style="display:none">
+            {begin verbatim | quote}
+              {* (:story_id story_id :page_index page_index :word_string {word_string | quote}) | > :context}
+              {network send string "{story set_words id POST.story_id page POST.page_index value POST.word_string}" then "" context context}
+              {word_string 
+              | > :words 
+              | 1 
+              | > :@action}
+            {end verbatim}
+          </textarea>
+        </script>
+      </form>
+    </div>
+  </div>
+
+    
+    <!-- <div id="inv">
+      <ul id="invlist">
+        <script type="text/daml" data-var="@state.inv">
+          {begin list | each data @state.inv}
+            <li>
+              <a href="#" data-id="{id}">{value}</a>
+            </li>
+          {end list}
+        </script>
+      </ul>
+    </div> -->
+  
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // preload
+      DAML.run($('#preload').text())
+
+      // compile & bind the text/daml templates
+      $("script[type*=daml]").each(function() {
+        // id it
+        var begin, end, block, id, el, pid = $(this).parent()[0].id
+        id = this.id || pid || (DAML.onerror("Can't find a block id for the script tag") && "foo")
+      
+        if(id == 'preload') return
+      
+        // block it
+        begin = '{begin ' + id + '}'
+        end = '{end ' + id + '}'
+        block = begin + this.innerHTML + end
+        DAML.run(block)
+      
+        // attach it
+        el = this.dataset.el || (id == pid) ? pid : false
+        if(el) {
+          DAML.run('{dom set_template id :' + el + ' daml ' + id + '}')
+          if(this.dataset.var) {
+            DAML.run('{variable bind path :' + this.dataset.var + ' daml "{dom refresh id :' + el + '}"}')
+          }
+        }
+      })
+      
+      DAML.run(DAML.VARS.postload)
+      
+      
+      var move = function(ev) {
+        target.css('left', (event.clientX - 10) + 'px')
+        target.css('top', (event.clientY - 30) + 'px')
+      }
+      
+      var up = function(ev) {
+        $(document).off('mousemove')
+        $(document).off('mouseup')
+        target.css('position', 'relative')
+        target.css('left', 'auto')
+        target.css('top', 'auto')
+        dragging = false
+        enableDocumentSelection(true);
+        
+        $('#story').off('mouseover')
+        $('#story').off('mouseout')
+        
+        var good_spot, max_distance = 4900
+            
+        $('#story a').each(function(index, el) {
+          el = $(el)
+          var px = el.position().left,
+              py = el.position().top,
+              dx = px - ev.pageX,
+              dy = py - ev.pageY
+              
+          var distance = dx * dx + dy * dy
+          
+          if(distance < max_distance) {
+            good_spot = el
+          }
+        })
+        
+        if(good_spot) {
+          // var noun = good_spot.text()
+          // var verb = DAML.run('{verbs}')[target.text()]
+          // DAML.run('{1 | > :state.{"' + verb[noun] + '"} || state.time | add 1 | > :state.time}')
+          // console.log(noun, verb, verb[noun]);
+          
+          DAML.import_var('noun', good_spot.text())
+          DAML.import_var('verb', target.text())
+          DAML.run('{punch_words}')
+        }
+        
+        DAML.run('{1 | > :@action}')
+      }
+      
+      var down = function(ev) {
+        var el = $(ev.target)
+        target = el // this is slightly evil
+        $(document).on('mousemove', move)
+        $(document).on('mouseup', up)
+        el.css('position', 'absolute')
+        dragging = true // this is totally evil
+        enableDocumentSelection(false);
+        
+        // now add some awesome stuff that picks out verb words and activates them when dropped, and progresses tick and whatnot.
+        var verb = DAML.run('{verbs}')[target.text()]
+        if(!verb) return false
+        html = $('#story').html()
+        for(var key in verb) {
+          html = html.replace(key, '<a href="#">' + key + '</a>') // regexify
+        }
+        $('#story').html(html)
+
+        // $('#story').on('mouseover', 'a', function(event) {landing = $(event.target)})
+        // $('#story').on('mouseout', 'a', function(event) {landing = null})
+      }
+      
+      $('#verblist').on('mousedown', 'span', down)
+    })
+    
+
+    // like butter. http://stackoverflow.com/questions/5186441/javascript-drag-and-drop-for-touch-devices
+    function touchHandler(event) {
+      var touches = event.changedTouches,
+      first = touches[0],
+      type = "";
+
+      switch(event.type) {
+        case "touchstart": type = "mousedown"; break;
+        case "touchmove":  type="mousemove"; break;        
+        case "touchend":   type="mouseup"; break;
+        default: return;
+      }
+      var simulatedEvent = document.createEvent("MouseEvent");
+      simulatedEvent.initMouseEvent(type, true, true, window, 1,
+        first.screenX, first.screenY,
+        first.clientX, first.clientY, false,
+        false, false, false, 0/*left*/, null
+      );
+      
+      first.target.dispatchEvent(simulatedEvent);
+      if(dragging) event.preventDefault();
+    }
+
+    function init() {
+      document.addEventListener("touchstart", touchHandler, true);
+      document.addEventListener("touchmove", touchHandler, true);
+      document.addEventListener("touchend", touchHandler, true);
+      document.addEventListener("touchcancel", touchHandler, true);    
+    }
+    init();
+    
+    enableDocumentSelection = function(enable) {
+      if(enable) {
+        document.onselectstart = _original_onselectstart;
+      } else {
+        _original_onselectstart = document.onselectstart;
+        document.onselectstart = function() { return false; };
+      }
+    };
+    
+    
+  </script>
+  
+  <!-- local -->
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/lib/codemirror.js></script>
+  <script src=http://sherpa.local/~dann/thingviz/codemirror/mode/daml/daml.js></script>
+  <script src="http://sherpa.local/~dann/thingviz/codemirror/lib/util/daml-hint.js"></script>
+  <!-- bentodojo -->
+  <script src=http://bentodojo.com/thingviz/codemirror/lib/codemirror.js></script>
+  <script src=http://bentodojo.com/thingviz/codemirror/mode/daml/daml.js></script>
+  <script src="http://bentodojo.com/thingviz/codemirror/lib/util/daml-hint.js"></script>
+  <!-- okay -->
+
+  <script>
+    CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
+    
+    setTimeout(function() {      
+      var verb_editor = CodeMirror.fromTextArea(document.getElementById('verb_stringy'), {
+        tabMode: 'indent',
+        onChange: function() {
+          $('#verb_stringy').val(verb_editor.getValue())
+          $('#verb_stringy').trigger('change')
+        },
+        extraKeys: {"Esc": "autocomplete"}
+      });
+     }, 1000)
+   
+    setTimeout(function() {      
+      var word_editor = CodeMirror.fromTextArea(document.getElementById('word_string'), {
+        tabMode: 'indent',
+        onChange: function() {
+          $('#word_string').val(word_editor.getValue())
+          $('#word_string').trigger('change')
+        },
+        extraKeys: {"Esc": "autocomplete"}
+      });
+     }, 1000)
+   
+  </script>
+  
+</body>
+</html>
