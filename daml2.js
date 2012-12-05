@@ -14,7 +14,7 @@
         
 
 
-*/
+*/ 
 
 DAML = {}
 
@@ -54,22 +54,6 @@ DAML = {}
  
 */
 
-
-DAML.terminators = {}
-DAML.import_terminator = function(ch, obj) {
-  if(typeof ch != 'string') return DAML.onerror('Terminator character must be a string')
-  ch = ch[0]
-  
-  DAML.terminators[ch] = obj;
-}
-
-var obj = {eat: function(stream) {stream.next(); return 'bracket'}} // ew
-DAML.import_terminator('|', obj)
-DAML.import_terminator('/', obj)
-DAML.import_terminator('^', obj)
-
-
-
 if (typeof exports !== 'undefined') {
   var _ = require('underscore')
   //     mmh = require('murmurhash3')
@@ -81,6 +65,55 @@ if (typeof exports !== 'undefined') {
   }
   exports.DAML = DAML
 }
+
+
+
+DAML.terminators = {}
+DAML.import_terminator = function(ch, obj) {
+  if(typeof ch != 'string') return DAML.onerror('Terminator character must be a string')
+  ch = ch[0] // only first char matters
+  if(!DAML.terminators[ch]) DAML.terminators[ch] = []
+  DAML.terminators[ch].push(obj)
+}
+
+// TODO: these should do more than just return a fancy parser...
+
+DAML.terminate = function(ch, verb, params) {
+  if(!DAML.terminators[ch]) return false
+  var fun, terminators = DAML.terminators[ch]
+  
+  for(var i=0, l=terminators.length; i < l; i++) {
+    fun = terminators[i][verb]
+    if(typeof fun != 'function') continue
+    fun.apply(terminators[i], params)
+  }
+}
+
+DAML.import_terminator('|', { // pipe
+  eat: function(stream, state) {
+    stream.next()
+    return 'bracket'
+  }
+})
+
+DAML.import_terminator('^', { // lift
+  eat: function(stream, state) {
+    stream.next()
+    return 'bracket'
+  }
+})
+
+DAML.import_terminator('/', { // comment
+  eat: function(stream, state) {
+    while(stream.peek() === '/') stream.next()
+    state.commentLevel++
+    state.stack[state.stack.length-1].onTerminate.commentLevel-- // set parent's onTerminate
+    // state.stack[state.stack.length-1].onClose.commentLevel-- // set parent's onClose
+    return 'comment'
+  }
+})
+
+
 
 function murmurhash(key, seed) {
 	var remainder, bytes, h1, h1b, c1, c1b, c2, c2b, k1, i;
@@ -206,7 +239,7 @@ DAML.import_aliases({
   'each': 'list each',
   'map': 'list map',
   'sort': 'list sort',
-  'group': 'list group',
+  'ZZZgroup': 'list group',
   'prune': 'list prune daml',
   'extract': 'list extract daml',
   'count': 'list count value',
@@ -705,11 +738,6 @@ DAML.flatten = function(daml) {
 DAML.parse = function(string, fing_flag) {
   var thing, temp, output=[];
   
-  // check fings first
-  // var hash = murmurhash(string);
-  // var fing = DAML.fingify(string);
-  // if(fing.ptree) return fing.toPtree(); // already parsed
-
   if(typeof string == 'number') return string;
   if(typeof string != 'string') return '';
   
@@ -1702,7 +1730,7 @@ DAML.mean_defunctionize = function(values, seen) {
 
 DAML.isFing = function(value) {
   if(typeof value != 'object') return false;
-  return !!value && !!value.toPtree;
+  return !!value // && !!value.toPtree;
 };
 
 DAML.fingify = function(string, ptree, fun) {
@@ -1739,10 +1767,19 @@ DAML.fun_run = function(value) {
     Make a new Fing:
     DAML.Fing.spawn({}, string);
     
-    A fing is run when:
-    - coerced by a type function
-    - explicitly 'run' via command
-    - end of command reached (== string join type coercion)
+    // A fing is run when:
+    // - coerced by a type function [does this really happen?]
+    // - executed inside e.g. {process each}
+    // - explicitly 'run' via {process run}
+    // - end of command reached 
+    //   - (== string join type coercion) [this is explicit in {string join} ... ??]
+    
+    when are fings run?
+    - when explicitly {process run}'d
+    - {process each} as a template eg -- ie inside commands
+    - at the end of a pipeline, like the trivial one {fing} -- but if you do anything to it, like {fing | string transform old " " new "_"} then you have to {process run} or {process unquote} it, because the transformed value is dead. 
+      - also, {fing | (__)} is converted into json, with the fing as an unprocessed string. You'd have to explicitly use {run} on the items in the aray, or use a command that processes everything in an array -- otherwise your nested fings just end up in string form via JSON conversion.
+      - but, for reference, {fing | (__) | __.#1} is run, as is {fing | > :var} and {(fing 2) | > :var | __.#1}
     
     Fings contained in a list will be coerced to the fing's string form, instead of being run prior to stringification. To explicitly run all fings in a list use the 'run' command.
     
@@ -1751,9 +1788,20 @@ DAML.fun_run = function(value) {
     Importing a fing into a DAML command wraps it in a protective blanket -- the only inputs available are the parameters it takes, and the only output is stdout. [make stdout better]
     
     
+    
+    
+  our 'string -> ptree -> compiled' might not apply anymore. the string is still parsed, but what comes out of that isn't really a tree, it's a stack. and it might as well be a full-fledged function stack. what good is a ptree? if we unroll everything as we parse, we don't really need one, since our end goal isn't a tree but a stack.
+  is this reasonable? it's going to require a lot of fiddly array splicing. would it be better to make a tree and then flatten that?
+  i currently see no disadvantage in pushing the flattening straight into the parse return. lets do that for now.
+    
+    
 */
 DAML.Fing = {
-  init: function(string, ptree, fun) {
+  init: function(string, flags) {
+    // parse and compile to stack 
+    var ptree = DAML.parse(string),
+        stack = DAML.compile(ptree)
+    
     // add immutable props
     Object.defineProperties(this, {
       hash: {
@@ -1763,16 +1811,20 @@ DAML.Fing = {
       string: {
         value: string, 
         enumerable:true
+      },
+      flags: {
+        value: flags ? flags : {}, 
+        enumerable:true
+      },
+      ptree: {
+        value: ptree, 
+        enumerable:true
+      },
+      stack: {
+        value: stack, 
+        enumerable:true
       }
     });
-    
-    
-
-    // THINK: allow fingization of ptrees? [requires ptree->string, which is not injective -- hence weird.]
-    
-    // placeholders...
-    this.ptree = ptree ? ptree : false;
-    this.fun = fun ? fun : false;
     
     return this;
   },
@@ -1783,23 +1835,7 @@ DAML.Fing = {
   },
   
   toJSON: function() {
-    return this.string;
-  },
-  
-  toPtree: function() {
-    if(!this.ptree) 
-      this.ptree = DAML.parse(this.string);
-    return this.ptree;
-  },
-  
-  toFun: function() {
-    if(!this.fun) 
-      this.fun = DAML.compile(this.toPtree());
-    return this.fun;
-  },
-  
-  run: function() {
-    return DAML.defunctionize(this.toFun())
+    return this.string; // because nested fings are jsonified in escaped form [oh, but not transfered that way through vars. shucks.] meaning, on output the fing is quoted, not run. but in/out of vars, the fing needs to retain its finginess. if we use JSON.stringify for both, this gives troubles.
   },
   
   spawn: function(overwriter) {
@@ -1817,20 +1853,110 @@ DAML.Fing = {
 }
 
 
+// ok some new experimental stuff 
+// var stack = new Stacker(fing, function (val) {console.log(val)})
+// stack.run()
 
-// Object.defineProperty(Object.prototype, "spawn", {value: function (overwriter) {
-//   var key,
-//       newobj = Object.create(this);
-// 
-//   for(key in overwriter)
-//     if(overwriter.hasOwnProperty(key)) 
-//       newobj[key] = overwriter[key];
-// 
-//   if(newobj.init) 
-//     newobj = newobj.init.apply(newobj, Array.prototype.slice.call(arguments, 1));
-// 
-//   return newobj;
-// }});
+DAML.Stacker = function(fing, when_done) {
+  this.last_value = null
+  this.pcounter = 0
+  this.size = fing.stack.length
+  this.fing = fing
+  this.when_done = when_done
+  
+  // before, amidst, after? maybe we don't need those...
+}
+
+DAML.Stacker.prototype.next = function(cb) {
+  var self = this
+
+  if(this.pcounter > this.size) return false  // TODO: self-destruct, somehow? this stacker is D-U-N.
+  
+  if(this.pcounter == this.size) {
+    this.when_done(this.last_value) 
+    this.pcounter++
+    // this can't return anything interesting, right? i mean, our callstack is shot. there's nothing to return to.
+    return false
+  }
+  
+  var funitem = this.fing.stack[this.pcounter]
+  this.pcounter++
+  
+  // ... param fiddling
+  var params = funitem.params
+  for(var i=0, l=params.length; i < l; i++) {
+    if(typeof params[i] == 'function') params[i] = params[i](self)
+    // or something to that effect...
+    // __?: param[1] = function() {return self.last_value}
+    // these functions are only for type system dealings with static values and grabbing out past values.
+    // and it turns out we need all the values for this stack recorded, because if we have a command with a lot of params that are functions (e.g. vars or fings) we'll need to reference each of those lines
+    
+  }
+  
+  // async case
+  if(funitem.flags.async) { 
+    var new_cb = function(val) {
+      self.last_value = val 
+      cb(val)
+    }
+    params.push(new_cb)
+    // return funitem.fun.apply(funitem.model, params)
+  }
+  
+  // either way
+  // this last_value assignment is overridden in new_cb by async
+  self.last_value = funitem.fun.apply(funitem.model, params)
+  
+  return !!funitem.flags.async
+}
+
+DAML.Stacker.prototype.bound_next = function() {
+  return this.next.bind(this)
+} 
+
+DAML.Stacker.prototype.reset = function() {
+  // THINK: this is probably a bad idea, but it makes debugging easier... can we reuse stacks?
+  this.last_value = null
+  this.pcounter = 0
+} 
+
+DAML.Stacker.prototype.run = function() {
+  var self = this
+  var my_cb = function() {self.run()}
+  while(this.pcounter <= this.size) {
+    this.next(my_cb)
+  }
+  return this.last_value
+} 
+
+function asdf() {
+  ding = {flags: [], stack: []}
+  ding.stack[0] = {params: [100, function(stacker) {return 1}], flags: {}, fun: function(p, q) {console.log(p, q, 100); return p + q} }
+  ding.stack[1] = {params: [200, function(stacker) {return stacker.last_value}], flags: {}, fun: function(p, q) {console.log(p, q, 111); return p + q} }
+  ding.stack[2] = {params: [300, function(stacker) {return stacker.last_value}], flags: {}, fun: function(p, q) {console.log(p, q, 222); return p + q} }
+
+  stack = new DAML.Stacker(ding, function (val) {console.log(val, 12345)})
+  
+  
+  fing = {flags: [], stack: []}
+  fing.stack[0] = {params: [], flags: {async: true}, fun: function(cb) {
+    var x = new DAML.Stacker(ding, function (val) {cb(val)}) 
+    x.run()
+  }}
+  fing.stack[1] = {params: [7200, function(stacker) {return stacker.last_value}], flags: {}, fun: function(p, q) {console.log(p, q, 111); return p + q} }
+  fing.stack[2] = {params: [7300, function(stacker) {return stacker.last_value}], flags: {}, fun: function(p, q) {console.log(p, q, 222); return p + q} }
+
+  fstack = new DAML.Stacker(fing, function (val) {console.log(val, 777)})
+}
+
+
+// er...
+// A Fing has a command stack, that's part of it.
+// the Stacker takes a fing and a cb, runs the fing, then calls the cb with its value
+// stacker needs last_value, pcounter, next function... maybe that's it
+// cb will usually be another stacker's bound next fun, but at the top level it's run or something.
+
+
 
 
 /////// SOME HELPER METHODS PUUKE ///////////
@@ -1843,7 +1969,7 @@ DAML.ETC.toNumeric = function(value) {
   if(value === '0') return 0
   if(typeof value == 'number') return value
   if(typeof value == 'string') return +value ? +value : 0
-  return 0 // THINK: why false instead of 0?
+  return 0
 }
 
 DAML.ETC.first = function(value) {
@@ -1873,7 +1999,7 @@ DAML.ETC.string_to_regex = function(string, global) {
 
 DAML.ETC.is_false = function(value) {
   if(!value) return true // '', 0, false, NaN, null, undefined
-  if(typeof value == 'object' && _.isEmpty(value)) return true
+  if(typeof value == 'object' && _.isEmpty(value)) return true // empty lists too
 }
 
 

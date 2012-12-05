@@ -73,17 +73,19 @@
     {// Import any needed commands here //}
     {// (note that you can't access any other script blocks from here...) //}
     
+    {"{this.type | eq :media | then 1}" | > :@the_filter}
+    
   </script>
     
   <script type="text/daml" id="postload">
     {begin build_viz}
-      {ddd do action :grider params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :grid)} }
+      {ddd do action :grider params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :grid)} }
       
-      {ddd do action :hiver params {* (:nodes {@nouns | list rekey} :links {@verbs | list rekey})} options {* (:id :hive)} }
+      {ddd do action :hiver params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :hive)} }
       
       {ddd do action :forcer 
-              params {* (:nodes {@nouns | list rekey} 
-                         :links {@verbs | list rekey} 
+              params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} 
+                         :links {@verbs | list extract daml @the_filter | list rekey} 
                          :charge -800
                          :distance 150)} 
               options {* (:id :force)} }
