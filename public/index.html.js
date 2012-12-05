@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html> 
 <head>   
-  <title>FigViz</title>
+  <title>HAMMM!</title>
   
   <!-- <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
@@ -23,45 +23,8 @@
   <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  <link href="http://redfish.local/~jennie/thingviz/public/css/tv.bootstrap.css" rel="stylesheet">
   
-  <style type="text/css">
-    #grid svg {
-      font: 12px sans-serif;
-    }
-    #grid .background {
-      fill: #eee;
-    }
-    #grid line {
-      stroke: #fff;
-    }
-    #grid text.active {
-      fill: red;
-    }
-  
-    #force svg {
-      background: #efe;
-    }
-    #force .link {
-      stroke: #999;
-      stroke-opacity: .6;
-    }
-    #force .node circle{
-      stroke: #ddd;
-      stroke-width: 1px;
-    }
-
-    #hive svg {
-      background: #eef;
-    }
-    #hive .link {
-      stroke-width: 1.5px;
-    }
-    #hive .axis, #hive .node {
-      stroke: #000;
-      stroke-width: 1.5px;
-    }
-  </style>
   
 </head>
 <body id="">
@@ -165,22 +128,59 @@
     {dom on event :click id :force filter ".node" daml "{@nouns.{this.dataset.id} | > :@filter_noun}"}
   </script>
 
+
   
   <div class="container">
     <div class="page-header">
       <h1>ThingViz</h1>
     </div>
 
-    <div class="row">
-      <div class="span6">
+ 
 
-        <!-- <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
-          <p>Raw DAML (kinda):</p>
-          <textarea id="daml" name="daml" rows="1" cols="40"></textarea>    
-          <input type="submit" name="submit" value="go">
-        </form> -->
+		<ul class="nav nav-tabs" id="myTab">
+		  <li class="active"><a href="#home">Viz</a></li>
+		  <li><a data-toggle="tab" href="#nouns">Nouns</a></li>
+		  <li><a href="#verbs">Verbs</a></li>
+		</ul>
+
+		<div class="tab-content">
+		  <div class="tab-pane active" id="home">
+		
+
+          <div class="btn-group">
+            <button id="force_button" class="btn">Force</button>
+            <button id="grid_button" class="btn">Grid</button>
+            <button id="hive_button" class="btn">Hive</button>
+          </div>
+
+          <div class='gallery' id='force' style="width: 620px;"> </div>
+          <div class='gallery' id='grid' style="display:none"> </div>
+          <div class='gallery' id='hive' style="display:none"> </div>
 
 
+
+        <div id="filter_noun_div" class="span4">
+          <script type="text/daml" data-var="@filter_noun">
+            <p><strong>{@filter_noun.name}</strong></p>
+            <p>{@filter_noun.data.story}</p>
+            <ul>
+              {begin list 
+                | merge data {@verbs
+                  | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+                  | sort by :value
+                | list reverse}}
+                <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
+                  <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
+                  <p><em>{data.story}</em></p>
+                </li>
+              {end list}
+            </ul>
+          </script>
+        </div>  	
+		
+		  </div>
+		  <div class="tab-pane" id="nouns">
+		
         <!-- NOUNS -->
 
         <!-- REMOVE TO EDIT!!!  -->
@@ -271,125 +271,131 @@
               </li>
             {end list}
           </script>
-        </ul>
-      </div>
+        </ul>  	
+		
+		  </div>
+		  <div class="tab-pane" id="verbs">
+		  	 <!-- VERBS -->
 
-      <!-- REMOVE TO EDIT!! -->
+		      <!-- REMOVE TO EDIT!! -->
 
-      <!-- VERBS -->
+		        <form method="post" accept-charset="utf-8" id="add_verb_form" class="form-vertical">
+		          <script type="text/daml" data-var="@selected_verb">
+		            {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
+		            {begin editing | if verb}
+		              <h2>Editing {@nouns.{verb.from}.name} <em>{verb.type}</em> {@nouns.{verb.to}.name}</h2>
+		              <a href="#" id="add_a_new_verb">Add a new verb instead</a>
+		            {end editing}
+		            {begin adding | if {not verb}}
+		              <h2>Add a new verb</h2>
+		            {end adding}
 
-      <!-- REMOVE TO EDIT!! -->
+		            <div style="display:{verb | then :none else :block}">              
+		              <label for="from">From</label>
+		              <select name="from" id="from_noun_list">
+		                {begin from_noun_list | merge data @nouns}
+		                  <option value="{_id}">{name}</option>
+		                {end from_noun_list}
+		              </select>
+		              {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
+		              {variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
+		            </div>
 
+		            <label for="type">Type</label>
+		            {(:instigated
+		              :coordinated
+		              :influenced
+		              :originated
+		              :consulted
+		              :organized
+		              :assisted
+		              :mentored
+		              :created
+		              :hired
+		              :cited
+		              "participated in"
+		              "collaborated with"
+		            ) | > :types ||}
+		            <select name="type" id="type">
+		              {begin loop | each data types}
+		                <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
+		              {end loop}
+		            </select>
 
-      <div class="span6">
-        <form method="post" accept-charset="utf-8" id="add_verb_form" class="form-vertical">
-          <script type="text/daml" data-var="@selected_verb">
-            {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
-            {begin editing | if verb}
-              <h2>Editing {@nouns.{verb.from}.name} <em>{verb.type}</em> {@nouns.{verb.to}.name}</h2>
-              <a href="#" id="add_a_new_verb">Add a new verb instead</a>
-            {end editing}
-            {begin adding | if {not verb}}
-              <h2>Add a new verb</h2>
-            {end adding}
+		            <div style="display:{verb | then :none else :block}">              
+		              <label for="to">To</label>
+		              <select name="to" id="to_noun_list">
+		                {begin to_noun_list | merge data @nouns}
+		                  <option value="{_id}">{name}</option>
+		                {end to_noun_list}
+		              </select>
+		              {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
+		              {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
+		            </div>
 
-            <div style="display:{verb | then :none else :block}">              
-              <label for="from">From</label>
-              <select name="from" id="from_noun_list">
-                {begin from_noun_list | merge data @nouns}
-                  <option value="{_id}">{name}</option>
-                {end from_noun_list}
-              </select>
-              {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
-              {variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
-            </div>
+		            {// Add start and end dates //}
 
-            <label for="type">Type</label>
-            {(:instigated
-              :coordinated
-              :influenced
-              :originated
-              :consulted
-              :organized
-              :assisted
-              :mentored
-              :created
-              :hired
-              :cited
-              "participated in"
-              "collaborated with"
-            ) | > :types ||}
-            <select name="type" id="type">
-              {begin loop | each data types}
-                <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
-              {end loop}
-            </select>
+		            <label for="value">Value (strength of connection)</label>
+		            <input type="text" name="value" value="{verb.value}">
 
-            <div style="display:{verb | then :none else :block}">              
-              <label for="to">To</label>
-              <select name="to" id="to_noun_list">
-                {begin to_noun_list | merge data @nouns}
-                  <option value="{_id}">{name}</option>
-                {end to_noun_list}
-              </select>
-              {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
-              {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
-            </div>
+		            <label for="story">Story</label>
+		            <textarea name="story" id="story">{verb.data.story}</textarea>
 
-            {// Add start and end dates //}
+		            <input type="hidden" name="id" value="{verb._id}" id="id">
 
-            <label for="value">Value (strength of connection)</label>
-            <input type="text" name="value" value="{verb.value}">
+		            <div class="form-actions">
+		              <input type="submit" name="submit" class="btn" value="{verb | then :Edit else :Add}">
+		            </div>            
+		            <textarea name="commands" style="display:none">
+		              {begin verbatim | quote}
+		                {* (:id id :type type :from from :to to :value value :story story) | > :context}
+		                {if id 
+		                  then "{verb set_type id POST.id value POST.type}
+		                  {/verb set_from id POST.id value POST.name}
+		                  {/verb set_to id POST.id value POST.name}
+		                  {verb set_value id POST.id value POST.value}
+		                  {verb set_data id POST.id value {* (:story POST.story)}}"
+		                  else "{verb add type POST.type 
+		                    from POST.from 
+		                    to POST.to 
+		                    value POST.value 
+		                    data {* (:story POST.story)}}"
+		                  | > :actions | ""}
+		                  {network send string actions then "{verb_fetcher}" context context}
+		                  {false | > :@selected_verb}
+		                {end verbatim}
+		              </textarea>
+		            </script>
+		          </form>
 
-            <label for="story">Story</label>
-            <textarea name="story" id="story">{verb.data.story}</textarea>
+		          <h3><a href="#" id="verblistlink">Verb List</a></h3>
+		          <ul id="verblist" style="display:none">
+		            <script type="text/daml" data-var="@verbs">
+		              {begin list | merge data @verbs}
+		                <li>
+		                  <p>
+		                    <a href="#" data-id="{_id}">edit</a>
+		                    <strong>{@nouns.{from}.name}</strong> <em>{type}</em> <strong>{@nouns.{to}.name}</strong>
+		                    ({value}) <em>{data.story | string truncate to 30 add "..."}</em>
+		                  </p>
+		                </li>
+		              {end list}
+		            </script>
+		          </ul>
+		
+		  </div>
+		</div>
+		
+		
+	</div>
+</body>	
+	
 
-            <input type="hidden" name="id" value="{verb._id}" id="id">
-
-            <div class="form-actions">
-              <input type="submit" name="submit" class="btn" value="{verb | then :Edit else :Add}">
-            </div>            
-            <textarea name="commands" style="display:none">
-              {begin verbatim | quote}
-                {* (:id id :type type :from from :to to :value value :story story) | > :context}
-                {if id 
-                  then "{verb set_type id POST.id value POST.type}
-                  {/verb set_from id POST.id value POST.name}
-                  {/verb set_to id POST.id value POST.name}
-                  {verb set_value id POST.id value POST.value}
-                  {verb set_data id POST.id value {* (:story POST.story)}}"
-                  else "{verb add type POST.type 
-                    from POST.from 
-                    to POST.to 
-                    value POST.value 
-                    data {* (:story POST.story)}}"
-                  | > :actions | ""}
-                  {network send string actions then "{verb_fetcher}" context context}
-                  {false | > :@selected_verb}
-                {end verbatim}
-              </textarea>
-            </script>
-          </form>
-
-          <h3><a href="#" id="verblistlink">Verb List</a></h3>
-          <ul id="verblist" style="display:none">
-            <script type="text/daml" data-var="@verbs">
-              {begin list | merge data @verbs}
-                <li>
-                  <p>
-                    <a href="#" data-id="{_id}">edit</a>
-                    <strong>{@nouns.{from}.name}</strong> <em>{type}</em> <strong>{@nouns.{to}.name}</strong>
-                    ({value}) <em>{data.story | string truncate to 30 add "..."}</em>
-                  </p>
-                </li>
-              {end list}
-            </script>
-          </ul>
-
-          <!-- REMOVE TO EDIT!! --> 
-        </div>
-      </div>
-
+        <!-- <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
+          <p>Raw DAML (kinda):</p>
+          <textarea id="daml" name="daml" rows="1" cols="40"></textarea>    
+          <input type="submit" name="submit" value="go">
+        </form> -->
 
 
       <!-- VIZ! -->
@@ -401,44 +407,6 @@
       </select> -->
 
 
-      <div class="row">
-
-        <!-- Make these into tabs or something -->
-
-
-        <div class="span8">
-          <div class="btn-group">
-            <button id="force_button" class="btn">Force</button>
-            <button id="grid_button" class="btn">Grid</button>
-            <button id="hive_button" class="btn">Hive</button>
-          </div>
-
-          <div class='gallery' id='force' style="width: 620px;"> </div>
-          <div class='gallery' id='grid' style="display:none"> </div>
-          <div class='gallery' id='hive' style="display:none"> </div>
-        </div>
-
-
-        <div id="filter_noun_div" class="span4">
-          <script type="text/daml" data-var="@filter_noun">
-            <p><strong>{@filter_noun.name}</strong></p>
-            <p>{@filter_noun.data.story}</p>
-            <ul>
-              {begin list 
-                | merge data {@verbs
-                  | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
-                  | sort by :value
-                | list reverse}}
-                <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
-                  <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
-                  <p><em>{data.story}</em></p>
-                </li>
-              {end list}
-            </ul>
-          </script>
-        </div>
-
-      </div>
 
   <pre style="display:none">
     TODOS:
