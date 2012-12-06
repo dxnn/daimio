@@ -75,18 +75,20 @@
       {// THINK: also, we've rekeyed nouns -- can't we just use that? //}
       {@source | > {"@verbs.{key}.source" | run}}
       {@target | > {"@verbs.{key}.target" | run}}
-      {log {(@source @target key @verbs.{key} 123) | list reverse} }
+      {/log {(@source @target key @verbs.{key} 123) | list reverse} }
     {end forcer_hacking}
     
     {begin noun_stuff | variable bind path :@nouns}
       {/ddd do action :bubbler params ({* (:name :foo :children @nouns)})}
       {/@nouns | each template "{value | > {"@values.{value._id}" | run}}"}
       {/@values | > :@nouns}
+    {//
       {begin hive_hacking | each data @nouns}
         {math random max 2 | > {"@nouns.{key}.x" | run}}
         {math random max 10 | math divide by 10 | > {"@nouns.{key}.y" | run}}
       {end hive_hacking}
-      {if @verbs then "{forcer_hacking | each data @verbs}"}
+    //}
+      {if @verbs then "{/forcer_hacking | each data @verbs}"}
       {@once_through | then "{build_viz}"}
       {:true | > :@once_through}
     {end noun_stuff}
@@ -94,7 +96,7 @@
     {begin verb_stuff | variable bind path :@verbs}
       {// clear edgeweight out of nouns//}
       {@nouns | each daml "{0 | > {"@nouns.{value._id}.edgeweight" | run}}"}
-      {forcer_hacking | each data @verbs}
+      {/forcer_hacking | each data @verbs}
       {build_viz}
       {dom refresh id :add_verb_form}
     {end verb_stuff}    
@@ -585,11 +587,31 @@
         
         if(!source_node || !target_node) return false
         
+        source_node.edgeweight = (source_node.edgeweight || 0) + link.value
+        target_node.edgeweight = (target_node.edgeweight || 0) + link.value
+        
         link.source = source_node
         link.target = target_node
         new_links.push(link)
       })
       links = new_links
+      
+      // {value | > :verb 
+      //   | -1 | > :i | > :x}
+      // {begin source_hacking | each data @nouns}
+      //   {i | add 1 | > :i}
+      //   {value._id 
+      //     | eq verb.from 
+      //     | then "{i | > :@source | > :x}"}
+      //   {value._id 
+      //     | eq verb.to 
+      //     | then "{i | > :@target | > :x}"}
+      //   {x | eq i 
+      //     | then "{value.edgeweight
+      //       | add verb.value
+      //       | > {"@nouns.{key}.edgeweight" | run}} "}
+      // {end source_hacking}
+      
       
       // chomp = nodes
       // chomp_links = links
@@ -639,7 +661,7 @@
           .call(force.drag);
 
       node.append("circle")
-          .attr("r", function(d) {return Math.sqrt((d.edgeweight || 1) + 20) * 5; })
+          .attr("r", function(d) {return Math.sqrt((d.edgeweight || 1) + 20) * 6; })
           .style("fill", function(d) { return color(d.type.charCodeAt(1) || 1); });
 
       node.append("title")
