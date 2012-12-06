@@ -43,9 +43,9 @@
     
   <script type="text/daml" id="postload">
     {begin build_viz}
-      {ddd do action :grider params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :grid)} }
+      {/ddd do action :grider params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :grid)} }
       
-      {ddd do action :hiver params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :hive)} }
+      {/ddd do action :hiver params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} :links {@verbs | list extract daml @the_filter | list rekey})} options {* (:id :hive)} }
       
       {ddd do action :forcer 
               params {* (:nodes {@nouns | list extract daml @the_filter | list rekey} 
@@ -661,7 +661,7 @@
           .call(force.drag);
 
       node.append("circle")
-          .attr("r", function(d) {return Math.sqrt((d.edgeweight || 1) + 20) * 6; })
+          .attr("r", function(d) {return Math.sqrt((d.edgeweight || 1) + 20) * 5; })
           .style("fill", function(d) { return color(d.type.charCodeAt(1) || 1); });
 
       node.append("title")
