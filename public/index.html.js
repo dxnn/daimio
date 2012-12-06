@@ -30,44 +30,6 @@
   <link href="http://bentodojo.com/thingviz/public/css/thingviz.css" rel="stylesheet">
   
   
-  <style type="text/css">
-    #grid svg {
-      font: 12px sans-serif;
-    }
-    #grid .background {
-      fill: #eee;
-    }
-    #grid line {
-      stroke: #fff;
-    }
-    #grid text.active {
-      fill: red;
-    }
-  
-    #force svg {
-      background: #efe;
-    }
-    #force .link {
-      stroke: #999;
-      stroke-opacity: .6;
-    }
-    #force .node circle{
-      stroke: #ddd;
-      stroke-width: 1px;
-    }
-
-    #hive svg {
-      background: #eef;
-    }
-    #hive .link {
-      stroke-width: 1.5px;
-    }
-    #hive .axis, #hive .node {
-      stroke: #000;
-      stroke-width: 1.5px;
-    }
-  </style>
-  
 </head>
 <body id="">
   
@@ -187,6 +149,13 @@
           <li><a data-toggle="tab" href="#nouns">Nouns</a></li>
           <li><a data-toggle="tab" href="#verbs">Verbs</a></li>
         </ul>
+				<hr>
+				<div class="btn-group">
+					<button class="btn" id="april">April</button>
+					<button class="btn" id="july">July</button>
+					<button class="btn" id="nov">November</button>
+				</div>
+				<hr>
 
         <div id="filter_noun_div">
           <script type="text/daml" data-var="@filter_noun">
@@ -213,16 +182,8 @@
       
       <div class="span10">
         <div class="tab-content">
-          <div class="tab-pane active" id="home">
-            <div class="row">
-              <button id="april">April</button>
-              <button id="july">July</button>
-              <button id="nov">November</button>
-            </div>
-            
-            <div class="row">
+          <div class="tab-pane active" id="home">            
               <div class='gallery' id='force' class="span8"> </div>
-            </div>
           </div>
           
           <div class="tab-pane" id="nouns">
@@ -522,15 +483,7 @@
         <!-- Make these into tabs or something -->
 
         <div class="span8">
-          <div class="btn-group">
-            <button id="force_button" class="btn">Force</button>
-            <button id="grid_button" class="btn">Grid</button>
-            <button id="hive_button" class="btn">Hive</button>
-          </div>
-
-          <div class='gallery' id='force' style="width: 920px;"> </div>
-          <div class='gallery' id='grid' style="display:none"> </div>
-          <div class='gallery' id='hive' style="display:none"> </div>
+          <div class='gallery' id='force'> </div>
         </div>
 
         <div id="filter_noun_div" class="span4">
