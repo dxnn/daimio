@@ -3,6 +3,7 @@
 <head>   
   <title>ThingViz</title>
 
+<!--
   <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://redfish.local/~jennie/thingviz/public/js/__underscore.js"></script>
 
@@ -14,8 +15,8 @@
   <script src="http://redfish.local/~jennie/thingviz/public/js/bootstrap.min.js"></script>
   <link href="http://redfish.local/~jennie/thingviz/public/css/tv.bootstrap.css" rel="stylesheet">
   <link href="http://redfish.local/~jennie/thingviz/public/css/thingviz.css" rel="stylesheet">
-  
-<!--
+-->
+
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__jquery.js"></script>
   <script type="text/javascript" src="http://bentodojo.com/thingviz/public/js/__underscore.js"></script>
 
@@ -25,9 +26,48 @@
   <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://redfish.local/~jennie/thingviz/public/css/tv.bootstrap.css" rel="stylesheet">
--->  
+  <link href="http://bentodojo.com/thingviz/public/css/tv.bootstrap.css" rel="stylesheet">
+  <link href="http://bentodojo.com/thingviz/public/css/thingviz.css" rel="stylesheet">
+  
+  
+  <style type="text/css">
+    #grid svg {
+      font: 12px sans-serif;
+    }
+    #grid .background {
+      fill: #eee;
+    }
+    #grid line {
+      stroke: #fff;
+    }
+    #grid text.active {
+      fill: red;
+    }
+  
+    #force svg {
+      background: #efe;
+    }
+    #force .link {
+      stroke: #999;
+      stroke-opacity: .6;
+    }
+    #force .node circle{
+      stroke: #ddd;
+      stroke-width: 1px;
+    }
 
+    #hive svg {
+      background: #eef;
+    }
+    #hive .link {
+      stroke-width: 1.5px;
+    }
+    #hive .axis, #hive .node {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+  </style>
+  
 </head>
 <body id="">
   
@@ -35,7 +75,7 @@
     {// Import any needed commands here //}
     {// (note that you can't access any other script blocks from here...) //}
     
-    {:true | > :@the_filter}
+    {"{this.data.date | less than 1 | then 1}" | > :@the_filter}
     
   </script>
     
@@ -110,12 +150,16 @@
     {noun_fetcher}
     {process wait for 500 then "{verb_fetcher}"} {// this really stinks //}
     
+    {dom on event :click id :april daml "{"{this.data.date | less than 1 | then 1}" | > :@the_filter | build_viz}"}
+    {dom on event :click id :july daml "{"{this.data.date | less than 2 | then 1}" | > :@the_filter | build_viz}"}
+    {dom on event :click id :nov daml "{"{this.data.date | less than 3 | then 1}" | > :@the_filter | build_viz}"}
+    
     {dom on event :submit id :add_noun_form}
     {dom on event :submit id :add_verb_form}
     
     {dom on event :click id :nounlistlink daml "{dom toggle id :nounlist}"}
     {dom on event :click id :verblistlink daml "{dom toggle id :verblist}"}
-    
+
     {dom on event :click id :nounlist filter :a daml "{this.dataset.id | > :@selected_noun}"}
     {dom on event :click id :verblist filter :a daml "{this.dataset.id | > :@selected_verb}"}
     
@@ -132,331 +176,335 @@
     {dom on event :click id :force filter ".node" daml "{@nouns.{this.dataset.id} | > :@filter_noun}"}
   </script>
 
-
   
-	<div class="container-fluid">
-		<div class="row-fluid">
-			<div class="span2">
-				
-				<ul class="nav nav-pills nav-stacked" data-spy="affix" data-offset-top="200">
-					<li class="active"><a data-toggle="tab" href="#home">Viz</a></li>
-					<li><a data-toggle="tab" href="#nouns">Nouns</a></li>
-					<li><a data-toggle="tab" href="#verbs">Verbs</a></li>
-				</ul>
+  <div class="container-fluid">
+    <div class="row-fluid">
+      <div class="span2">
+        
+        <ul class="nav nav-pills nav-stacked" data-spy="affix" data-offset-top="200">
+          <li class="active"><a data-toggle="tab" href="#home">Viz</a></li>
+          <li><a data-toggle="tab" href="#nouns">Nouns</a></li>
+          <li><a data-toggle="tab" href="#verbs">Verbs</a></li>
+        </ul>
+
+        <div id="filter_noun_div">
+          <script type="text/daml" data-var="@filter_noun">
+            <p><strong>{@filter_noun.name}</strong></p>
+            <p>{@filter_noun.data.story}</p>
+            <dl>
+              {begin list 
+                | merge data {@verbs
+                  | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+                  | sort by :value
+                | list reverse}}
+
+                  <dt>
+                    {@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name}
+                    <span class="badge" style="background-color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">{value}</span>
+                  
+                  <dd>{data.story}</dd>
+
+              {end list}
+            </dl>
+          </script>
+        </div>
+      </div>
+      
+      <div class="span10">
+        <div class="tab-content">
+          <div class="tab-pane active" id="home">
+            <div class="row">
+              <button id="april">April</button>
+              <button id="july">July</button>
+              <button id="nov">November</button>
+            </div>
+            
+            <div class="row">
+              <div class='gallery' id='force' class="span8"> </div>
+            </div>
+          </div>
+          
+          <div class="tab-pane" id="nouns">
+
+            <!-- NOUNS -->
+
+            <!-- REMOVE TO EDIT!!!  -->
+
+            <div class="row-fluid">
+              <div class="span5">
+                <h3><a href="#" id="nounlistlink">Noun List</a></h3>
+                <ul id="nounlist" style="display:none" class="unstyled">
+                  <script type="text/daml" data-var="@nouns">
+                    {begin list | merge data @nouns}
+                      <li>                  
+                          <a href="#" data-id="{_id}">{name}</a>
+                          {type}
+                          <em>{data.story | string truncate to 30 add "..."}</em>
+
+                        {/data}
+                      </li>
+                    {end list}
+                  </script>
+                </ul>
+              </div>
+              <div class="span5">
+                <form method="post" accept-charset="utf-8" id="add_noun_form" class="form-horizontal" data-spy="affix" data-offset-top="200">
+                  <script type="text/daml" data-var="@selected_noun">
+                    {@selected_noun | then @nouns.{@selected_noun} else "" | > :noun ||}
+
+                    {begin editing | if noun}
+                      <h3>Editing {noun.name}</h3>
+                      <a href="#" id="add_a_new_noun">Add a new noun instead</a>
+                    {end editing}
+
+                    {begin adding | if {not noun}}
+                      <h3>Add a new noun</h3>
+                    {end adding}
+
+                    <div class="control-group">
+                      <label class="control-label" for="name">Name</label>
+                      <div class="controls">
+                        <input type="text" class="input-xlarge" id="name" name="name" value="{noun.name}">
+                      </div>
+                    </div>
+
+                    <div class="control-group">
+                      <label class="control-label" for="type">Type</label>
+                      <div class="controls">
+                        {* (:instigator (
+                          :individual)
+                          :cluster (
+                          :organization 
+                          :community 
+                          :company)
+                          :thing (
+                          :exhibition
+                          :engagement
+                          :workshop
+                          :event
+                          :game
+                          :art
+                          :media
+                          :publication)
+                        ) | > :types ||}
+                        <select name="type" id="type" class="input-xlarge">
+                          {begin outer | each data types}
+                            <optgroup label="{key}">
+                              {begin inner | each data value}
+                                <option {noun.type | eq value | then :selected} value="{value}">{value}</option>
+                              {end inner}
+                            </optgroup>
+                          {end outer}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="control-group">
+                      <label class="control-label" for="story">Description</label>
+                      <div class="controls">
+                        <textarea name="story" id="story" class="input-xlarge" rows="7">{noun.data.story}</textarea>
+                      </div>
+                    </div>
+
+                    <div class="control-group">
+                      <label class="control-label" for="date">Date (0,1,2)</label>
+                      <div class="controls">
+                        <textarea name="date" id="date" class="input-xlarge" rows="7">{noun.data.date}</textarea>
+                      </div>
+                    </div>
+
+                    {// <label for="data">Data</label>
+                    <input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
+
+                    <input type="hidden" name="id" value="{noun._id}" id="id">
+                    <div class="form-actions">
+                      <input type="submit" name="submit" class="btn" value="{noun | then :Edit else :Add}">
+                    </div>                
+                    <textarea name="commands" style="display:none">
+                      {begin verbatim | quote}
+                        {* (:id id :name name :type type :story story :date date) | > :context}
+                        {if id 
+                            then "{noun set_name id POST.id value POST.name}
+                                  {noun set_type id POST.id value POST.type}
+                                  {noun set_data id POST.id value {* (:story POST.story :date POST.date)}}"
+                            else "{noun add name POST.name type POST.type data {* (:story POST.story :date POST.date)}}"
+                           | > :actions}
+                        {network send string actions then "{noun_fetcher}" context context}
+                        {false | > :@selected_noun}
+                      {end verbatim}
+                    </textarea>
+                  </script>
+                </form>
+
+
+              </div>
+            </div>  
+
+          </div>
+          <div class="tab-pane" id="verbs">
+            <!-- VERBS -->
+
+            <!-- REMOVE TO EDIT!! -->
+
+            <div class="row-fluid">
+              <div class="span5">
+                <h3><a href="#" id="verblistlink">Verb List</a></h3>
+                <dl id="verblist" style="display:none" >
+                  <script type="text/daml" data-var="@verbs">
+                    {begin list | merge data @verbs}
+
+                      <dt>
+                        <a href="#" data-id="{_id}">
+                          <strong>{@nouns.{from}.name}</strong> <em>{type}</em> {@nouns.{to}.name}
+                        </a>
+                      </dt>
+                      <dd><em>{data.story | string truncate to 30 add "..."}</em>
+                        <span class="badge pull-right">{value}</span> 
+                      </dd>
+
+                    {end list}
+                  </script>
+                </dl>
+              </div>
+              <div class="span5">
+                <form method="post" accept-charset="utf-8" id="add_verb_form" class="form-horizontal" data-spy="affix" data-offset-top="200">
+                  <script type="text/daml" data-var="@selected_verb">
+                    {@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
+                    {begin editing | if verb}
+                      <h3>Editing {@nouns.{verb.from}.name} <em>{verb.type}</em> {@nouns.{verb.to}.name}</h3>
+                      <a href="#" id="add_a_new_verb">Add a new verb instead</a>
+                    {end editing}
+                    {begin adding | if {not verb}}
+                      <h3>Add a new verb</h3>
+                    {end adding}
+
+                    <div style="display:{verb | then :none else :block}">              
+
+                      <div class="control-group">
+                        <label class="control-label" for="from_noun_list">From</label>
+                        <div class="controls">
+                          <select name="from" id="from_noun_list">
+                            {begin from_noun_list | merge data @nouns}
+                              <option value="{_id}">{name}</option>
+                            {end from_noun_list}
+                          </select>
+                          {dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
+                          {variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
+
+                        </div>
+                      </div>
+
+                    </div>
+
+
+                    <div class="control-group">
+                      <label class="control-label" for="type">Type</label>
+                      <div class="controls">
+                        {(:instigated
+                          :coordinated
+                          :influenced
+                          :originated
+                          :consulted
+                          :organized
+                          :assisted
+                          :mentored
+                          :created
+                          :hired
+                          :cited
+                          "participated in"
+                          "collaborated with"
+                        ) | > :types ||}
+                        <select name="type" id="type">
+                          {begin loop | each data types}
+                            <option {verb.type | eq value | then :selected} value="{value}">{value}</option>
+                          {end loop}
+                        </select>
+                      </div>
+                    </div>
 
 
 
-				<div id="filter_noun_div">
-					<script type="text/daml" data-var="@filter_noun">
-						<p><strong>{@filter_noun.name}</strong></p>
-						<p>{@filter_noun.data.story}</p>
-						<dl>
-							{begin list 
-								| merge data {@verbs
-									| extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
-									| sort by :value
-								| list reverse}}
+                    <div style="display:{verb | then :none else :block}">              
 
-									<dt>
-										{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name}
-										<span class="badge" style="background-color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">{value}</span>
-									
-									<dd>{data.story}</dd>
-
-							{end list}
-						</dl>
-					</script>
-				</div>
-				
-				
-				
-			</div>
-			<div class="span10">
-				<div class="tab-content">
-					<div class="tab-pane active" id="home">
-
-						<div class="row">
-							<div class='gallery' id='force' class="span8"> </div>
- 	
-						</div>
-					</div>
-				  <div class="tab-pane" id="nouns">
-
-		        <!-- NOUNS -->
-
-		        <!-- REMOVE TO EDIT!!!  -->
-
-						<div class="row-fluid">
-							<div class="span5">
-								<h3><a href="#" id="nounlistlink">Noun List</a></h3>
-								<ul id="nounlist" style="display:none" class="unstyled">
-									<script type="text/daml" data-var="@nouns">
-										{begin list | merge data @nouns}
-											<li>									
-													<a href="#" data-id="{_id}">{name}</a>
-													{type}
-													<em>{data.story | string truncate to 30 add "..."}</em>
-
-												{/data}
-											</li>
-										{end list}
-									</script>
-								</ul>
-							</div>
-							<div class="span5">
-								<form method="post" accept-charset="utf-8" id="add_noun_form" class="form-horizontal" data-spy="affix" data-offset-top="200">
-									<script type="text/daml" data-var="@selected_noun">
-										{@selected_noun | then @nouns.{@selected_noun} else "" | > :noun ||}
-
-										{begin editing | if noun}
-											<h3>Editing {noun.name}</h3>
-											<a href="#" id="add_a_new_noun">Add a new noun instead</a>
-										{end editing}
-
-										{begin adding | if {not noun}}
-											<h3>Add a new noun</h3>
-										{end adding}
-
-										<div class="control-group">
-											<label class="control-label" for="name">Name</label>
-											<div class="controls">
-												<input type="text" class="input-xlarge" id="name" name="name" value="{noun.name}">
-											</div>
-										</div>
-
-										<div class="control-group">
-											<label class="control-label" for="type">Type</label>
-											<div class="controls">
-												{* (:instigator (
-													:individual)
-													:cluster (
-													:organization 
-													:community 
-													:company)
-													:thing (
-													:exhibition
-													:engagement
-													:workshop
-													:event
-													:game
-													:art
-													:media
-													:publication)
-												) | > :types ||}
-												<select name="type" id="type" class="input-xlarge">
-													{begin outer | each data types}
-														<optgroup label="{key}">
-															{begin inner | each data value}
-																<option {noun.type | eq value | then :selected} value="{value}">{value}</option>
-															{end inner}
-														</optgroup>
-													{end outer}
-												</select>
+                      <div class="control-group">
+                        <label class="control-label" for="to">To</label>
+                        <div class="controls">
+                          <select name="to" id="to_noun_list" class="input-xlarge">
+                            {begin to_noun_list | merge data @nouns}
+                              <option value="{_id}">{name}</option>
+                            {end to_noun_list}
+                          </select>
+                        </div>
+                      </div>
 
 
-											</div>
-										</div>
+                      {dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
+                      {variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
+                    </div>
 
-												
-
-								    <div class="control-group">
-								      <label class="control-label" for="story">Description</label>
-								      <div class="controls">
-												<textarea name="story" id="story" class="input-xlarge" rows="7">{noun.data.story}</textarea>
-								      </div>
-								    </div>
-
-										{// <label for="data">Data</label>
-										<input type="text" name="data" value="{noun.data | list to_daml}" id="data"> //}
-
-										<input type="hidden" name="id" value="{noun._id}" id="id">
-										<div class="form-actions">
-											<input type="submit" name="submit" class="btn" value="{noun | then :Edit else :Add}">
-										</div>                
-										<textarea name="commands" style="display:none">
-											{begin verbatim | quote}
-												{* (:id id :name name :type type :story story) | > :context}
-												{if id 
-													then "{noun set_name id POST.id value POST.name}
-													{noun set_type id POST.id value POST.type}
-													{noun set_data id POST.id value {* (:story POST.story)}}"
-													else "{noun add name POST.name type POST.type data {* (:story POST.story)}}"
-												| > :actions}
-												{network send string actions then "{noun_fetcher}" context context}
-												{false | > :@selected_noun}
-											{end verbatim}
-										</textarea>
-									</script>
-								</form>
+                    {// Add start and end dates //}
 
 
-							</div>
-						</div>	
+                    <div class="control-group">
+                      <label class="control-label" for="value">Strength</label>
+                      <div class="controls">
+                        <input type="text" class="input-xlarge" id="value" name="value" value="{verb.value}">
+                        <p class="help-block">Relative strength of connection (1-10)</p>      
+                      </div>
+                    </div>
 
-					</div>
-					<div class="tab-pane" id="verbs">
-						<!-- VERBS -->
+                    <div class="control-group">
+                      <label class="control-label" for="story">Description</label>
+                      <div class="controls">
+                        <textarea name="story" id="story" class="input-xlarge" rows="7">{verb.data.story}</textarea>
+                      </div>
+                    </div>
 
-						<!-- REMOVE TO EDIT!! -->
-
-						<div class="row-fluid">
-							<div class="span5">
-								<h3><a href="#" id="verblistlink">Verb List</a></h3>
-								<dl id="verblist" style="display:none" >
-									<script type="text/daml" data-var="@verbs">
-										{begin list | merge data @verbs}
-
-											<dt>
-												<a href="#" data-id="{_id}">
-													<strong>{@nouns.{from}.name}</strong> <em>{type}</em> {@nouns.{to}.name}
-												</a>
-											</dt>
-											<dd><em>{data.story | string truncate to 30 add "..."}</em>
-												<span class="badge pull-right">{value}</span> 
-											</dd>
-
-										{end list}
-									</script>
-								</dl>
-							</div>
-							<div class="span5">
-								<form method="post" accept-charset="utf-8" id="add_verb_form" class="form-horizontal" data-spy="affix" data-offset-top="200">
-									<script type="text/daml" data-var="@selected_verb">
-										{@selected_verb | then @verbs.{@selected_verb} else "" | > :verb ||}
-										{begin editing | if verb}
-											<h3>Editing {@nouns.{verb.from}.name} <em>{verb.type}</em> {@nouns.{verb.to}.name}</h3>
-											<a href="#" id="add_a_new_verb">Add a new verb instead</a>
-										{end editing}
-										{begin adding | if {not verb}}
-											<h3>Add a new verb</h3>
-										{end adding}
-
-										<div style="display:{verb | then :none else :block}">              
-
-											<div class="control-group">
-												<label class="control-label" for="from_noun_list">From</label>
-												<div class="controls">
-													<select name="from" id="from_noun_list">
-														{begin from_noun_list | merge data @nouns}
-															<option value="{_id}">{name}</option>
-														{end from_noun_list}
-													</select>
-													{dom set_template id :from_noun_list daml "{from_noun_list | merge data @nouns}"}
-													{variable bind path :@nouns daml "{dom refresh id :from_noun_list}"}
-
-												</div>
-											</div>
-
-										</div>
+                    <div class="control-group">
+                      <label class="control-label" for="date">Date (0,1,2)</label>
+                      <div class="controls">
+                        <textarea name="date" id="date" class="input-xlarge" rows="7">{noun.data.date}</textarea>
+                      </div>
+                    </div>
 
 
-										<div class="control-group">
-											<label class="control-label" for="type">Type</label>
-											<div class="controls">
-												{(:instigated
-													:coordinated
-													:influenced
-													:originated
-													:consulted
-													:organized
-													:assisted
-													:mentored
-													:created
-													:hired
-													:cited
-													"participated in"
-													"collaborated with"
-												) | > :types ||}
-												<select name="type" id="type">
-													{begin loop | each data types}
-														<option {verb.type | eq value | then :selected} value="{value}">{value}</option>
-													{end loop}
-												</select>
-											</div>
-										</div>
+                    <input type="hidden" name="id" value="{verb._id}" id="id">
 
+                    <div class="form-actions">
+                      <input type="submit" name="submit" class="btn" value="{verb | then :Edit else :Add}">
+                    </div>            
+                    <textarea name="commands" style="display:none">
+                      {begin verbatim | quote}
+                        {* (:id id :type type :from from :to to :value value :story story :date date) | > :context}
+                        {if id 
+                          then "{verb set_type id POST.id value POST.type}
+                          {/verb set_from id POST.id value POST.name}
+                          {/verb set_to id POST.id value POST.name}
+                          {verb set_value id POST.id value POST.value}
+                          {verb set_data id POST.id value {* (:story POST.story :date POST.date)}}"
+                          else "{verb add type POST.type 
+                                  from POST.from 
+                                  to POST.to 
+                                  value POST.value 
+                                  data {* (:story POST.story :date POST.date)}}"
+                          | > :actions | ""}
+                          {network send string actions then "{verb_fetcher}" context context}
+                          {false | > :@selected_verb}
+                        {end verbatim}
+                      </textarea>
+                    </script>
+                  </form>
+                </div>
+              </div>
+            </div>
 
+          </div>
 
-										<div style="display:{verb | then :none else :block}">              
+        </div>
 
-											<div class="control-group">
-												<label class="control-label" for="to">To</label>
-												<div class="controls">
-													<select name="to" id="to_noun_list" class="input-xlarge">
-														{begin to_noun_list | merge data @nouns}
-															<option value="{_id}">{name}</option>
-														{end to_noun_list}
-													</select>
-												</div>
-											</div>
+      </div>
+    </body> 
 
-
-											{dom set_template id :to_noun_list daml "{to_noun_list | merge data @nouns}"}
-											{variable bind path :@nouns daml "{dom refresh id :to_noun_list}"}
-										</div>
-
-										{// Add start and end dates //}
-
-
-										<div class="control-group">
-											<label class="control-label" for="value">Strength</label>
-											<div class="controls">
-												<input type="text" class="input-xlarge" id="value" name="value" value="{verb.value}">
-												<p class="help-block">Relative strength of connection (1-10)</p>      
-											</div>
-										</div>
-
-										<div class="control-group">
-											<label class="control-label" for="story">Description</label>
-											<div class="controls">
-												<textarea name="story" id="story" class="input-xlarge" rows="7">{verb.data.story}</textarea>
-											</div>
-										</div>
-
-
-										<input type="hidden" name="id" value="{verb._id}" id="id">
-
-										<div class="form-actions">
-											<input type="submit" name="submit" class="btn" value="{verb | then :Edit else :Add}">
-										</div>            
-										<textarea name="commands" style="display:none">
-											{begin verbatim | quote}
-												{* (:id id :type type :from from :to to :value value :story story) | > :context}
-												{if id 
-													then "{verb set_type id POST.id value POST.type}
-													{/verb set_from id POST.id value POST.name}
-													{/verb set_to id POST.id value POST.name}
-													{verb set_value id POST.id value POST.value}
-													{verb set_data id POST.id value {* (:story POST.story)}}"
-													else "{verb add type POST.type 
-														from POST.from 
-														to POST.to 
-														value POST.value 
-														data {* (:story POST.story)}}"
-													| > :actions | ""}
-													{network send string actions then "{verb_fetcher}" context context}
-													{false | > :@selected_verb}
-												{end verbatim}
-											</textarea>
-										</script>
-									</form>
-								</div>
-							</div>
-						</div>
-
-					</div>
-
-				</div>
-
-			</div>
-		</body>	
-
-
-        <!-- <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
-          <p>Raw DAML (kinda):</p>
-          <textarea id="daml" name="daml" rows="1" cols="40"></textarea>    
-          <input type="submit" name="submit" value="go">
-        </form> -->
 
 
       <!-- VIZ! -->
@@ -468,6 +516,43 @@
       </select> -->
 
 
+      <div class="row">
+
+        <!-- Make these into tabs or something -->
+
+        <div class="span8">
+          <div class="btn-group">
+            <button id="force_button" class="btn">Force</button>
+            <button id="grid_button" class="btn">Grid</button>
+            <button id="hive_button" class="btn">Hive</button>
+          </div>
+
+          <div class='gallery' id='force' style="width: 920px;"> </div>
+          <div class='gallery' id='grid' style="display:none"> </div>
+          <div class='gallery' id='hive' style="display:none"> </div>
+        </div>
+
+        <div id="filter_noun_div" class="span4">
+          <script type="text/daml" data-var="@filter_noun">
+            <p><strong>{@filter_noun.name}</strong></p>
+            <p>{@filter_noun.data.story}</p>
+            <ul>
+              {begin list 
+              | merge data 
+                {@verbs
+                | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+                | sort by :value
+                | list reverse
+              }}
+                <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
+                  <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
+                  <p><em>{data.story}</em></p>
+                </li>
+              {end list}
+            </ul>
+          </script>
+        </div>
+      </div>
 
   <pre style="display:none">
     TODOS:
@@ -522,12 +607,24 @@
     // links = {source: 1, target: 2}
     DAML.ETC.d3.forcer = function(id, width, height, nodes, links, charge, distance) {    
       // defaults
-      var width = width || 620,
+      var width = width || 920,
           height = height || 600,
           id = id || 'force',
           charge = charge || -800,
           distance = distance || 150,
           color = d3.scale.category20();
+      
+      // link filter
+      node_ids = nodes.map(function(node) {return node._id})
+      console.log(links.length, nodes, node_ids)
+      links = links.filter(function(link) {
+        if(node_ids.indexOf(link.from) == -1) return false;
+        if(node_ids.indexOf(link.to) == -1) return false;
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
+      });
+      console.log(links.length)
+      
       
       d3.select("#" + id + " svg").remove();
       var svg = d3.select('#' + id).append("svg")
@@ -600,6 +697,12 @@
       var angle = d3.scale.ordinal().domain(d3.range(4)).rangePoints([0, 2 * Math.PI]),
           radius = d3.scale.linear().range([innerRadius, outerRadius]),
           color = d3.scale.category10().domain(d3.range(20));
+
+      // link filter
+      links = links.filter(function(link) {
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
+      });
 
       d3.select("#" + id + " svg").remove();
       var svg = d3.select('#' + id).append("svg")
@@ -751,6 +854,12 @@
         node.index = i;
         node.count = 0;
         matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+      });
+
+      // link filter
+      links = links.filter(function(link) {
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
       });
 
       // Convert links to matrix; count character occurrences.
