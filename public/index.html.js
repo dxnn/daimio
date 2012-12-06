@@ -113,6 +113,7 @@
       {// THINK: also, we've rekeyed nouns -- can't we just use that? //}
       {@source | > {"@verbs.{key}.source" | run}}
       {@target | > {"@verbs.{key}.target" | run}}
+      {log {(@source @target key @verbs.{key} 123) | list reverse} }
     {end forcer_hacking}
     
     {begin noun_stuff | variable bind path :@nouns}
@@ -615,15 +616,43 @@
           color = d3.scale.category20();
       
       // link filter
-      node_ids = nodes.map(function(node) {return node._id})
-      console.log(links.length, nodes, node_ids)
-      links = links.filter(function(link) {
-        if(node_ids.indexOf(link.from) == -1) return false;
-        if(node_ids.indexOf(link.to) == -1) return false;
-        if(!nodes[link.source] || !nodes[link.target]) return false;
-        return true;
-      });
-      console.log(links.length)
+      // node_ids = nodes.map(function(node) {return node._id})
+
+      // links = links.filter(function(link) {
+      //   if(node_ids.indexOf(link.from) == -1) return false;
+      //   if(node_ids.indexOf(link.to) == -1) return false;
+      //   if(!nodes[link.source] || !nodes[link.target]) return false;
+      //   return true;
+      // });
+      
+      var new_links = []
+      links.forEach(function(link) {
+        var source_node = nodes.filter(function(node) {return node._id == link.from})[0]
+        var target_node = nodes.filter(function(node) {return node._id == link.to})[0]
+        
+        if(!source_node || !target_node) return false
+        
+        link.source = source_node
+        link.target = target_node
+        new_links.push(link)
+      })
+      links = new_links
+      
+      // chomp = nodes
+      // chomp_links = links
+      
+      // for (i = 0; i < m; ++i) {
+      //   o = links[i];
+      //   if (typeof o.source == "number") o.source = nodes[o.source];
+      //   if (typeof o.target == "number") o.target = nodes[o.target];
+      //   distances[i] = linkDistance.call(this, o, i);
+      //   strengths[i] = linkStrength.call(this, o, i);
+      //   ++o.source.weight;
+      //   ++o.target.weight;
+      // }
+      // 
+      
+      
       
       
       d3.select("#" + id + " svg").remove();
@@ -685,7 +714,9 @@
 
     // nodes = {x:1, y:0.4}
     // links = {source: 1, target: 2}
-    DAML.ETC.d3.hiver = function(id, width, height, nodes, links) {    
+    DAML.ETC.d3.hiver = function(id, width, height, nodes, links) {
+      return false;
+       
       // defaults
       var width = width || 800,
           height = height || 600,
@@ -828,6 +859,8 @@
     // nodes = {name:foo, group:1}
     // links = {source:3, target:0, value:10}
     DAML.ETC.d3.grider = function(id, width, height, nodes, links) {
+      return false;
+
       // defaults
       var width = width || 720,
           height = height || 720,
