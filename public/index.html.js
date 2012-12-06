@@ -115,9 +115,12 @@
     {noun_fetcher}
     {process wait for 500 then "{verb_fetcher}"} {// this really stinks //}
     
-    {dom on event :click id :april daml "{"{this.data.date | less than 1 | then 1}" | > :@the_filter | build_viz}"}
-    {dom on event :click id :july daml "{"{this.data.date | less than 2 | then 1}" | > :@the_filter | build_viz}"}
-    {dom on event :click id :nov daml "{"{this.data.date | less than 3 | then 1}" | > :@the_filter | build_viz}"}
+    {dom on event :click id :date_button filter :#april 
+      daml "{"{this.data.date | less than 1 | then 1}" | > :@the_filter | build_viz}{:april | > :@date_button}"}
+    {dom on event :click id :date_button filter :#july 
+      daml "{"{this.data.date | less than 2 | then 1}" | > :@the_filter | build_viz}{:july | > :@date_button}"}
+    {dom on event :click id :date_button filter :#nov 
+      daml "{"{this.data.date | less than 3 | then 1}" | > :@the_filter | build_viz}{:nov | > :@date_button}"}
     
     {dom on event :submit id :add_noun_form}
     {dom on event :submit id :add_verb_form}
@@ -139,6 +142,8 @@
     {dom on event :click id :add_verb_form filter :#add_a_new_verb daml "{"" | > :@selected_verb}"}
     
     {dom on event :click id :force filter ".node" daml "{@nouns.{this.dataset.id} | > :@filter_noun}"}
+    
+    {:april | > :@date_button}
   </script>
 
   
@@ -152,10 +157,13 @@
           <li><a data-toggle="tab" href="#verbs">Verbs</a></li>
         </ul>
 				<hr>
-				<div class="btn-group">
-					<button class="btn" id="april">April</button>
-					<button class="btn" id="july">July</button>
-					<button class="btn" id="nov">November</button>
+				
+				<div id="date_button" class="btn-group">
+          <script type="text/daml" data-var="@date_button">
+  					<button class="btn {:active | if {@date_button | eq :april} }" id="april">April</button>
+  					<button class="btn {:active | if {@date_button | eq :july} }" id="july">July</button>
+  					<button class="btn {:active | if {@date_button | eq :nov} }" id="nov">November</button>
+					</script>
 				</div>
 				<hr>
 
