@@ -25,9 +25,48 @@
   <script type="text/javascript" src="http://bentodojo.com/thingviz/node_modules/d3/d3.v2.js"></script>
   
   <script src="http://bentodojo.com/thingviz/public/js/bootstrap.min.js"></script>
-  <link href="http://redfish.local/~jennie/thingviz/public/css/tv.bootstrap.css" rel="stylesheet">
--->  
+  <link href="http://bentodojo.com/thingviz/public/css/bootstrap.css" rel="stylesheet">
+  
+-->
+  
+  <style type="text/css">
+    #grid svg {
+      font: 12px sans-serif;
+    }
+    #grid .background {
+      fill: #eee;
+    }
+    #grid line {
+      stroke: #fff;
+    }
+    #grid text.active {
+      fill: red;
+    }
+  
+    #force svg {
+      background: #efe;
+    }
+    #force .link {
+      stroke: #999;
+      stroke-opacity: .6;
+    }
+    #force .node circle{
+      stroke: #ddd;
+      stroke-width: 1px;
+    }
 
+    #hive svg {
+      background: #eef;
+    }
+    #hive .link {
+      stroke-width: 1.5px;
+    }
+    #hive .axis, #hive .node {
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+  </style>
+  
 </head>
 <body id="">
   
@@ -35,7 +74,7 @@
     {// Import any needed commands here //}
     {// (note that you can't access any other script blocks from here...) //}
     
-    {:true | > :@the_filter}
+    {"{this.data.date | less than 1 | then 1}" | > :@the_filter}
     
   </script>
     
@@ -110,12 +149,16 @@
     {noun_fetcher}
     {process wait for 500 then "{verb_fetcher}"} {// this really stinks //}
     
+    {dom on event :click id :april daml "{"{this.data.date | less than 1 | then 1}" | > :@the_filter | build_viz}"}
+    {dom on event :click id :july daml "{"{this.data.date | less than 2 | then 1}" | > :@the_filter | build_viz}"}
+    {dom on event :click id :nov daml "{"{this.data.date | less than 3 | then 1}" | > :@the_filter | build_viz}"}
+    
     {dom on event :submit id :add_noun_form}
     {dom on event :submit id :add_verb_form}
     
     {dom on event :click id :nounlistlink daml "{dom toggle id :nounlist}"}
     {dom on event :click id :verblistlink daml "{dom toggle id :verblist}"}
-    
+
     {dom on event :click id :nounlist filter :a daml "{this.dataset.id | > :@selected_noun}"}
     {dom on event :click id :verblist filter :a daml "{this.dataset.id | > :@selected_verb}"}
     
@@ -131,7 +174,6 @@
     
     {dom on event :click id :force filter ".node" daml "{@nouns.{this.dataset.id} | > :@filter_noun}"}
   </script>
-
 
   
 	<div class="container-fluid">
@@ -452,12 +494,6 @@
 		</body>	
 
 
-        <!-- <form method="post" accept-charset="utf-8" onsubmit="jDaimio.process($('#daml').val(), {}, function(results) {DAML.run('{noun_fetcher}')}); return false;" class="form-vertical">
-          <p>Raw DAML (kinda):</p>
-          <textarea id="daml" name="daml" rows="1" cols="40"></textarea>    
-          <input type="submit" name="submit" value="go">
-        </form> -->
-
 
       <!-- VIZ! -->
 
@@ -468,6 +504,43 @@
       </select> -->
 
 
+      <div class="row">
+
+        <!-- Make these into tabs or something -->
+
+        <div class="span8">
+          <div class="btn-group">
+            <button id="force_button" class="btn">Force</button>
+            <button id="grid_button" class="btn">Grid</button>
+            <button id="hive_button" class="btn">Hive</button>
+          </div>
+
+          <div class='gallery' id='force' style="width: 920px;"> </div>
+          <div class='gallery' id='grid' style="display:none"> </div>
+          <div class='gallery' id='hive' style="display:none"> </div>
+        </div>
+
+        <div id="filter_noun_div" class="span4">
+          <script type="text/daml" data-var="@filter_noun">
+            <p><strong>{@filter_noun.name}</strong></p>
+            <p>{@filter_noun.data.story}</p>
+            <ul>
+              {begin list 
+              | merge data 
+                {@verbs
+                | extract "{@filter_noun._id | is in (this.to this.from) | then 1}"
+                | sort by :value
+                | list reverse
+              }}
+                <li style="color: #{value | divide by 10 | round | math subtract from 9 | > :x}{x}{x};">
+                  <p>{@nouns.{from}.name} <em>{type}</em> {@nouns.{to}.name} ({value})</p>
+                  <p><em>{data.story}</em></p>
+                </li>
+              {end list}
+            </ul>
+          </script>
+        </div>
+      </div>
 
   <pre style="display:none">
     TODOS:
@@ -522,12 +595,24 @@
     // links = {source: 1, target: 2}
     DAML.ETC.d3.forcer = function(id, width, height, nodes, links, charge, distance) {    
       // defaults
-      var width = width || 620,
+      var width = width || 920,
           height = height || 600,
           id = id || 'force',
           charge = charge || -800,
           distance = distance || 150,
           color = d3.scale.category20();
+      
+      // link filter
+      node_ids = nodes.map(function(node) {return node._id})
+      console.log(links.length, nodes, node_ids)
+      links = links.filter(function(link) {
+        if(node_ids.indexOf(link.from) == -1) return false;
+        if(node_ids.indexOf(link.to) == -1) return false;
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
+      });
+      console.log(links.length)
+      
       
       d3.select("#" + id + " svg").remove();
       var svg = d3.select('#' + id).append("svg")
@@ -600,6 +685,12 @@
       var angle = d3.scale.ordinal().domain(d3.range(4)).rangePoints([0, 2 * Math.PI]),
           radius = d3.scale.linear().range([innerRadius, outerRadius]),
           color = d3.scale.category10().domain(d3.range(20));
+
+      // link filter
+      links = links.filter(function(link) {
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
+      });
 
       d3.select("#" + id + " svg").remove();
       var svg = d3.select('#' + id).append("svg")
@@ -751,6 +842,12 @@
         node.index = i;
         node.count = 0;
         matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+      });
+
+      // link filter
+      links = links.filter(function(link) {
+        if(!nodes[link.source] || !nodes[link.target]) return false;
+        return true;
       });
 
       // Convert links to matrix; count character occurrences.
