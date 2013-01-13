@@ -1,5 +1,30 @@
 WELCOME TO DAML
 
+// TEMP
+
+{daml alias string "audio add-osc freq" as :osc}
+
+{daml alias string "audio add-gain value" as :gain}
+
+{daml alias string "audio play" as :play}
+
+{daml alias string "audio pause" as :pause}
+
+{daml alias string "audio connect input" as :connect}
+
+{daml alias string "audio connect to 0" as :out}
+
+
+{/osc 5 | gain 80 | osc | audio mainline | play}
+
+// DAML.run('{osc 5 | gain 80 | osc | audio mainline | play}')
+
+
+
+// interesting: http://www.g200kg.com/en/docs/webmodular/index.html?p=1F2B3H5H8091BHCAE2H2IHK3N6Q4T7WIY5Z4aEc3dH_0021CPo500021COo00Ze0nNoR0l00Qnoo0Z00Ko00Z00no00oRoe00o0201P1000b&m=t150%0Ae-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-4%3Ce-4%3Eg-4%3Cd-4%3Efrf4%0Ae-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Ef4%3Ce-4%3Ef4%3Cg-4%3Eg-rg-4
+
+
+
 This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the DAML language.
 
 DAML is a thin, narrow, safe language designed as a container for your application's functionality, to allow scripting and templating by people who aren't you. It's thin in the sense that the base language is right under the surface, narrow in that it only has five elements (strings, numbers, lists, commands, and pipes), and safe as in untrusted code can be run on your server.
