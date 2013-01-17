@@ -1,18 +1,15 @@
-var http = require('http'),
-    fs = require('fs'),
-    static = require('node-static'),
-    qs = require('querystring'),
-    mongo = require('mongodb');
+var http = require('http')
+  , fs = require('fs')
+  , static = require('node-static')
+  , qs = require('querystring')
     
 var DAML = require('daml');
 
-var db = new mongo.Db('figviz', new mongo.Server('localhost', 27017, {auto_reconnect: true}));
 var fileServer = new(static.Server)('./public');
 
 var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8');
 
 DAML.db = db;
-DAML.mongo = mongo;
 
 
 var onerror = function(err) {

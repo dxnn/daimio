@@ -6,14 +6,24 @@ WELCOME TO DAML
 
 {daml alias string "audio add-gain value" as :gain}
 
+{daml alias string "audio set-param name" as :set}
+
 {daml alias string "audio play" as :play}
 
 {daml alias string "audio pause" as :pause}
 
-{daml alias string "audio connect input" as :connect}
+{daml alias string "audio connect" as :connect}
 
 {daml alias string "audio connect to 0" as :out}
 
+
+
+{/osc 5 | > :lfo | gain 80 | osc | out | play}
+true
+{/lfo | set :frequency to 1}
+1
+{/lfo | set :frequency to 10}
+1
 
 {/osc 5 | gain 80 | osc | audio mainline | play}
 
