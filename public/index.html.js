@@ -29,11 +29,13 @@
     {daml alias string "math pow exp" as :exp}
     
     {begin nextstep | daml import into :deck as :next}
+      {audio reset}
       {@current_slide | add 1 | > :@current_slide}
       {network bounce daml {"{reset | @value | > :@current_slide}" | string transform from :@value to @current_slide}}
     {end nextstep}
 
     {begin nextstep | daml import into :deck as :prev}
+      {audio reset}
       {@current_slide | subtract 1 | > :@current_slide}
       {network bounce daml {"{reset | @value | > :@current_slide}" | string transform from :@value to @current_slide}}
     {end nextstep}
@@ -314,11 +316,16 @@ maybe allow graph editing
 
   <div id="presentation">
     
+    <div id="graphics">
+      <canvas id="canvas" width="1000" height="50" style="display: block;"></canvas>
+    </div>
+    
     <div id="header">
       <script type="text/daml" data-var="@header">
         {@header}
       </script>
     </div>
+    
     <div id="dform">
       <script type="text/daml" data-var="@dform">
         {begin check | if @dform}
@@ -438,6 +445,33 @@ maybe allow graph editing
       primeme = function(pwd) {
         socket.emit('primeme', {pwd: pwd})
       }
+      
+      // viz stuff... yurmx
+      // (mostly stolen from www.smartjava.org/examples/webaudio/)
+      ctx = $("#canvas").get()[0].getContext("2d"); // FIXME: global yuck yuck
+      var gradient = ctx.createLinearGradient(0,0,0,50);
+      gradient.addColorStop(1,'#00ff00');
+      gradient.addColorStop(0,'#ffff00');
+      javascriptNode.onaudioprocess = function() {
+          // get the average for the first channel
+          var array =  new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(array);
+
+          // clear the current state
+          ctx.clearRect(0, 0, 1000, 50);
+
+          // set the fill style
+          ctx.fillStyle=gradient;
+          drawSpectrum(array);
+      }
+
+      function drawSpectrum(array) {
+        for ( var i = 0; i < (array.length); i++ ){
+          var value = array[i];
+          ctx.fillRect(i*5, 55-(value/5), 3, 50);
+        }
+      };
+
       
       DAML.run(DAML.VARS.postload)
     })
