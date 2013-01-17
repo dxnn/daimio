@@ -23,15 +23,19 @@
     {daml alias string "audio reset" as :reset}
     {daml alias string "audio connect" as :connect}
     {daml alias string "audio connect to 0" as :output}
+
+    {daml alias string "list range length" as :range}
+    {daml alias string "math multiply value" as :times}
+    {daml alias string "math pow exp" as :exp}
     
     {begin nextstep | daml import into :deck as :next}
       {@current_slide | add 1 | > :@current_slide}
-      {network bounce daml {"{@value | > :@current_slide}" | string transform from :@value to @current_slide}}
+      {network bounce daml {"{reset | @value | > :@current_slide}" | string transform from :@value to @current_slide}}
     {end nextstep}
 
     {begin nextstep | daml import into :deck as :prev}
       {@current_slide | subtract 1 | > :@current_slide}
-      {network bounce daml {"{@value | > :@current_slide}" | string transform from :@value to @current_slide}}
+      {network bounce daml {"{reset | @value | > :@current_slide}" | string transform from :@value to @current_slide}}
     {end nextstep}
 
     {/osc 5 | > :lfo | gain 80 | osc | out | play}
@@ -46,7 +50,6 @@
 
       {* (
         :header ""
-        :code ""
       )}
       
       {* (
@@ -71,7 +74,7 @@ var osc = context.createOscillator()
 osc.connect(output)
 osc.noteOn(0)
 
-var gain = context.createGain();
+var gain = context.createGainNode();
 gain.gain.value = 80.0;
 gain.connect(osc.frequency);
 
@@ -95,7 +98,7 @@ lfo.noteOn(0)"
       {* (
         :header "Now with Harmonics"
         :code "
-var gain1600 = context.createGain();
+var gain1600 = context.createGainNode();
 gain1600.gain.value = 0.5;
 
 var osc1600 = context.createOscillator()
@@ -103,7 +106,7 @@ osc1600.frequency.value = 1600
 osc1600.connect(gain1600)
 osc1600.noteOn(0)
 
-var gain1400 = context.createGain();
+var gain1400 = context.createGainNode();
 gain1400.gain.value = 0.5;
 gain1600.connect(gain1400)
 
@@ -112,7 +115,7 @@ osc1400.frequency.value = 1400
 osc1400.connect(gain1400)
 osc1400.noteOn(0)
 
-var gain1200 = context.createGain();
+var gain1200 = context.createGainNode();
 gain1200.gain.value = 0.5;
 gain1400.connect(gain1200)
 
@@ -121,7 +124,7 @@ osc1200.frequency.value = 1200
 osc1200.connect(gain1200)
 osc1200.noteOn(0)
 
-var gain1000 = context.createGain();
+var gain1000 = context.createGainNode();
 gain1000.gain.value = 0.5;
 gain1200.connect(gain1000)
 
@@ -130,7 +133,7 @@ osc1000.frequency.value = 1000
 osc1000.connect(gain1000)
 osc1000.noteOn(0)
 
-var gain800 = context.createGain();
+var gain800 = context.createGainNode();
 gain800.gain.value = 0.5;
 gain1000.connect(gain800)
 
@@ -139,7 +142,7 @@ osc800.frequency.value = 800
 osc800.connect(gain800)
 osc800.noteOn(0)
 
-var gain600 = context.createGain();
+var gain600 = context.createGainNode();
 gain600.gain.value = 0.5;
 gain800.connect(gain600)
 
@@ -148,7 +151,7 @@ osc600.frequency.value = 600
 osc600.connect(gain600)
 osc600.noteOn(0)
 
-var gain400 = context.createGain();
+var gain400 = context.createGainNode();
 gain400.gain.value = 0.5;
 gain600.connect(gain400)
 
@@ -157,7 +160,7 @@ osc400.frequency.value = 400
 osc400.connect(gain400)
 osc400.noteOn(0)
 
-var gain200 = context.createGain();
+var gain200 = context.createGainNode();
 gain200.gain.value = 0.5;
 gain400.connect(gain200)
 
@@ -166,7 +169,7 @@ osc200.frequency.value = 200
 osc200.connect(gain200)
 osc200.noteOn(0)
 
-var gain100 = context.createGain();
+var gain100 = context.createGainNode();
 gain100.gain.value = 0.5;
 gain400.connect(gain100)
 
@@ -180,16 +183,48 @@ gain100.connect(output)
       )}
       
       {* (
-        :header "Voltage Controlled Oscillator, redux"
+        :header "Voltage Controlled Oscillator, revisited"
         :dform :true
-        :code "osc 5 | gain 80 | osc 440 | output"
+        :code "
+{begin code | quote}
+{osc 5 | gain 80 | osc 440 | output}
+{pause}
+{play}
+{end code}
+"
       )}
 
       {* (
-        :header "Now with Color!"
+        :header "Voltage Controlled Amplifier"
+        :dform :true
         :code "
-add a processing graph
-and an oscillator"
+{begin code | quote}
+{osc | gain 1 | > :vca | output || osc 5 | > :lfo | connect to vca as :gain}
+{lfo | set :frequency to 10}
+{lfo | set :frequency to 1}
+{pause}
+{play}
+{end code}
+"
+      )}
+
+      {* (
+        :header "Harmonics Redux"
+        :dform :true
+        :code "
+{begin code | quote}
+{range 8 | map daml "{osc {value | times 100} | gain {.8 | exp value}}" | output}
+{pause}
+{play}
+{reset}
+
+{osc | gain 1 | > :vca | output || osc 5 | > :lfo | connect to vca as :gain}
+{lfo | set :frequency to 10}
+{lfo | set :frequency to 1}
+
+{osc 5 | gain 80 | osc 440 | output}
+{end code}
+"
       )}
 
       {* (
@@ -272,7 +307,9 @@ maybe allow graph editing
       {@slides.#{@current_slide}.code | > :@code}
     {end slider}
     
-    {1 | > :@current_slide}    
+    {1 | > :@current_slide}
+    
+    {dom on event :submit id :dform filter :form}
   </script>
 
   <div id="presentation">
@@ -280,6 +317,28 @@ maybe allow graph editing
     <div id="header">
       <script type="text/daml" data-var="@header">
         {@header}
+      </script>
+    </div>
+    <div id="dform">
+      <script type="text/daml" data-var="@dform">
+        {begin check | if @dform}
+          <form action="" method="" id="some_daml">
+            <input type="text" name="daml_input" value="" id="daml_input" />
+            <textarea name="commands" style="display:none">
+              {begin verbatim | quote}
+                {daml_input | unquote}
+                {:code 
+                | dom set_html to 
+                  {("<p>"
+                    {:daml_input | dom get_value}
+                    "</p>"
+                    {:code | dom get_html}) 
+                  | string join}}
+                {:daml_input | dom set_value to ""}
+              {end verbatim}
+            </textarea>
+          </form>
+        {end check}
       </script>
     </div>
     
@@ -292,22 +351,7 @@ maybe allow graph editing
         </ul>
       </script>
     </div>
-    
-    <div id="dform">
-      <script type="text/daml" data-var="@dform">
-        {begin check | if @dform}
-          <form action="" method="" id="some_daml">
-            <input type="text" name="daml" value="" id="daml" />
-            <textarea name="commands" style="display:none">
-              {begin verbatim | quote}
-                {daml}
-              {end verbatim}
-            </textarea>
-          </form>
-        {end check}
-      </script>
-    </div>
-    
+        
     <pre>
       <code id="code"><script type="text/daml" data-var="@code">{@code | quote}</script></code>
     </pre>
@@ -354,16 +398,22 @@ maybe allow graph editing
       $(document).keydown( function(e) {
         if (!keynavon || !DAML.ETC.prime) return true
         
-        var keyCode = e.keyCode || e.which, arrow = {left: 37, up: 38, right: 39, down: 40 }
+        var keyCode = e.keyCode || e.which, arrow = {left: 37, up: 38, right: 39, down: 40}
         
         switch (keyCode) {
           case arrow.left:
             e.preventDefault()
             DAML.run('{deck prev}')
           break
+          
           case arrow.right:
             e.preventDefault()
             DAML.run('{deck next}')
+          break
+          
+          case 32: // space
+            e.preventDefault()
+            DAML.run('{network bounce daml "{audio reset}"}')
           break
         }
       })
