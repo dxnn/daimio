@@ -27,7 +27,7 @@
     {daml alias string "list range length" as :range}
     {daml alias string "math multiply value" as :times}
     {daml alias string "math pow exp" as :exp}
-    
+
     {begin nextstep | daml import into :deck as :next}
       {audio reset}
       {@current_slide | add 1 | > :@current_slide}
@@ -39,12 +39,6 @@
       {@current_slide | subtract 1 | > :@current_slide}
       {network bounce daml {"{reset | @value | > :@current_slide}" | string transform from :@value to @current_slide}}
     {end nextstep}
-
-    {/osc 5 | > :lfo | gain 80 | osc | out | play}
-    {/lfo | set :frequency to 1}
-    {/lfo | set :frequency to 10}
-    {/osc 5 | gain 80 | osc | audio mainline | play}
-    
   </script>
     
   <script type="text/daml" id="postload">
