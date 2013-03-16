@@ -61,7 +61,7 @@ let -> daml import into :etc key
 plus aliasing...
 {@count | plural}
 
-did i mention that fancy handlers return a function that takes into account the local scope, var name/path, etc and that a call to this fancy function is placed in the fing but then it could be pre-run in the stack? 
+did i mention that fancy handlers return a function that takes into account the local scope, var name/path, etc and that a call to this fancy function is placed in the block but then it could be pre-run in the stack? 
 
 {(1 2 3) | > (:a :b :c)}
 {(1 2 3 4 5) | > (:first "..." :last)}
@@ -103,7 +103,7 @@ unionizer:
   {"x":1,"y":2,"z":3,"a":4}
   
 
-fing problem:
+block problem:
   { ((1 2 3) 2 3) | extract "{and (1 1)}"}
     [[1,2,3],2,3]
 
@@ -119,8 +119,8 @@ Tests for switch
     {logic switch on {:asdf | string slice start 2} value (:as 1 :sd 2 :df 3)}
       3
 
-Tests for fings
-  this should return nothing, because we should cancel the fing's status when trying to add to it
+Tests for blocks
+  this should return nothing, because we should cancel the block's status when trying to add to it
     {"{:foo}x" | > :xxx || 123 | > :xxx.y | xxx.string}
   
   make sure we're not defuncing pre-merge
@@ -282,13 +282,13 @@ Tests for self-reference. PBV cures these ills.
 
 
 Tests for array compilation:
-  {"{add (counter 1) | > :counter}" | > :countfing}
+  {"{add (counter 1) | > :counter}" | > :countblock}
     1
   
-  {countfing}
+  {countblock}
     2
   
-  {countfing | run | counter}
+  {countblock | run | counter}
     3
 
 
@@ -337,25 +337,25 @@ hey dann!
 {:blargh | > :name}
 blargh
 
-{merge data names daml foo}           {/ var get => fing}
+{merge data names daml foo}           {/ var get => block}
 hey youhoo!         
                     
 {merge data names daml {foo}}         {/ same}
 hey youhoo!
            
-{merge data names daml "{foo}"}       {/ new fing => var get => old fing}
+{merge data names daml "{foo}"}       {/ new block => var get => old block}
 hey youhoo!
   
 {merge data names daml {"{foo}"}}     {/ same}
 hey youhoo!
   
-{merge data names daml "{foo} x"}     {/ different new fing}
+{merge data names daml "{foo} x"}     {/ different new block}
 hey youhoo! x
   
-{merge data names daml {"{foo} x"}}   {/ same different new fing}
+{merge data names daml {"{foo} x"}}   {/ same different new block}
 hey youhoo! x
     
-{merge data names daml {foo | run}}   {/ var get => fing => defunc => string}
+{merge data names daml {foo | run}}   {/ var get => block => defunc => string}
 hey blargh!
 
 
@@ -591,8 +591,8 @@ Here's the use cases, from the user's perspective:
   {each daml {{block}} data (1 2)}
     x0yzx1yz
 
------ Loading value into the value variable creates a self-referencing fing, which affects us later... 
-// what we want to show here is that editing a fing changes it back into just a regular 'dead' string.
+----- Loading value into the value variable creates a self-referencing block, which affects us later... 
+// what we want to show here is that editing a block changes it back into just a regular 'dead' string.
 {begin x_to_y}
   {string transform value value from x to y}
 {end x_to_y}
@@ -602,10 +602,10 @@ Here's the use cases, from the user's perspective:
 {"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || x_to_y}
   ayy fiy hey hoay
 
-{x_to_y | > :value | x_to_y | run | > :modded_fing}
+{x_to_y | > :value | x_to_y | run | > :modded_block}
   {string transform value value from y to y}
 
-{modded_fing}
+{modded_block}
   {string transform value value from y to y}
 
 // and then show you can 'rez' a dead string by unquoting it. (unquoting is dark, necromantic magic.)
@@ -629,14 +629,14 @@ Here's the use cases, from the user's perspective:
   axx fix hex hoax
 
 
-// unquote the string to create a fing
-{y_to_x | unquote | > :y_to_x_fing}
+// unquote the string to create a block
+{y_to_x | unquote | > :y_to_x_block}
   axx fix hex hoax
 
 {y_to_x | unquote | quote}
   {string transform value value from y to x}
 
-{"axy faxy foxy" | > :value || y_to_x_fing}
+{"axy faxy foxy" | > :value || y_to_x_block}
   axx faxx foxx
   
 
