@@ -48,7 +48,8 @@ function handler (req, res) {
         // this_html += DAML.run(POST.daml);
         // TODO: allow text through here, not just json
       // } 
-      DAML.add_global('POST', POST);
+      
+      // DAML.add_global('POST', POST);
       DAML.run(POST.daml);
       res.writeHead(200, {"Content-Type": "application/json"});
       res.end(JSON.stringify(global.output));
