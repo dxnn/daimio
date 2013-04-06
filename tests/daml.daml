@@ -70,6 +70,9 @@ did i mention that fancy handlers return a function that takes into account the 
 
 
 
+maybe you can bind something to errors in a space, so if ERROR is triggered it sort of inserts some code into the pipeline right there? like you could send a message to a different space, or write it into the console. maybe you can tap into the ERRORS var -- oh, maybe that's at the Space level. and you can check it to see if anything has changed, or something.
+
+pattern matching over trees... i have a tree of this shape, and if you find it while you're DFSing you should do X. like only leaves, or only branches, or only branches whose children are all leaves. that kind of thing. 
 
 
 
