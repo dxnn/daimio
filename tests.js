@@ -28,3 +28,15 @@
 
 // string->AB tests
 
+var app = require('http')
+    
+var DAML = require('daml')
+
+
+s2ABt = string_to_ABs_test = function(string, result) {
+  var AB = DAML.string_to_ABlock(string)
+  if(JSON.stringify(AB) == JSON.stringify(result))
+    return false
+    
+  console.log({in: string, out: AB, expected: result})
+}
