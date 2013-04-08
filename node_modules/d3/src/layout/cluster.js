@@ -1,3 +1,8 @@
+import "../arrays/max";
+import "layout";
+import "hierarchy";
+import "tree";
+
 // Implements a hierarchical layout using the cluster (or dendrogram)
 // algorithm.
 d3.layout.cluster = function() {
@@ -9,9 +14,7 @@ d3.layout.cluster = function() {
     var nodes = hierarchy.call(this, d, i),
         root = nodes[0],
         previousNode,
-        x = 0,
-        kx,
-        ky;
+        x = 0;
 
     // First walk, computing the initial x & y values.
     d3_layout_treeVisitAfter(root, function(node) {

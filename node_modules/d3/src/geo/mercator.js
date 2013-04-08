@@ -1,36 +1,48 @@
-d3.geo.mercator = function() {
-  var scale = 500,
-      translate = [480, 250];
+import "../math/trigonometry";
+import "geo";
+import "projection";
 
-  function mercator(coordinates) {
-    var x = coordinates[0] / 360,
-        y = -(Math.log(Math.tan(Math.PI / 4 + coordinates[1] * d3_geo_radians / 2)) / d3_geo_radians) / 360;
-    return [
-      scale * x + translate[0],
-      scale * Math.max(-.5, Math.min(.5, y)) + translate[1]
-    ];
-  }
+function d3_geo_mercator(λ, φ) {
+  return [λ, Math.log(Math.tan(π / 4 + φ / 2))];
+}
 
-  mercator.invert = function(coordinates) {
-    var x = (coordinates[0] - translate[0]) / scale,
-        y = (coordinates[1] - translate[1]) / scale;
-    return [
-      360 * x,
-      2 * Math.atan(Math.exp(-360 * y * d3_geo_radians)) / d3_geo_radians - 90
-    ];
-  };
-
-  mercator.scale = function(x) {
-    if (!arguments.length) return scale;
-    scale = +x;
-    return mercator;
-  };
-
-  mercator.translate = function(x) {
-    if (!arguments.length) return translate;
-    translate = [+x[0], +x[1]];
-    return mercator;
-  };
-
-  return mercator;
+d3_geo_mercator.invert = function(x, y) {
+  return [x, 2 * Math.atan(Math.exp(y)) - π / 2];
 };
+
+function d3_geo_mercatorProjection(project) {
+  var m = d3_geo_projection(project),
+      scale = m.scale,
+      translate = m.translate,
+      clipExtent = m.clipExtent,
+      clipAuto;
+
+  m.scale = function() {
+    var v = scale.apply(m, arguments);
+    return v === m ? (clipAuto ? m.clipExtent(null) : m) : v;
+  };
+
+  m.translate = function() {
+    var v = translate.apply(m, arguments);
+    return v === m ? (clipAuto ? m.clipExtent(null) : m) : v;
+  };
+
+  m.clipExtent = function(_) {
+    var v = clipExtent.apply(m, arguments);
+    if (v === m) {
+      if (clipAuto = _ == null) {
+        var k = π * scale(), t = translate();
+        clipExtent([[t[0] - k, t[1] - k], [t[0] + k, t[1] + k]]);
+      }
+    } else if (clipAuto) {
+      v = null;
+    }
+    return v;
+  };
+
+  return m.clipExtent(null);
+}
+
+(d3.geo.mercator = function() {
+  return d3_geo_mercatorProjection(d3_geo_mercator);
+}).raw = d3_geo_mercator;

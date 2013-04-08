@@ -1,3 +1,8 @@
+import "../arrays/map";
+import "../arrays/permute";
+import "../arrays/range";
+import "layout";
+
 // data is two-dimensional array of x,y; we populate y0
 d3.layout.stack = function() {
   var values = d3_identity,
@@ -15,7 +20,7 @@ d3.layout.stack = function() {
     });
 
     // Convert each series to canonical [[x,y]] representation.
-    var points = series.map(function(d, i) {
+    var points = series.map(function(d) {
       return d.map(function(v, i) {
         return [x.call(stack, v, i), y.call(stack, v, i)];
       });
@@ -82,7 +87,7 @@ d3.layout.stack = function() {
   };
 
   return stack;
-}
+};
 
 function d3_layout_stackX(d) {
   return d.x;
@@ -157,7 +162,6 @@ var d3_layout_stackOffsets = d3.map({
     var n = data.length,
         x = data[0],
         m = x.length,
-        max = 0,
         i,
         j,
         k,

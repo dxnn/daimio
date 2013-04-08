@@ -1,3 +1,13 @@
+import "../core/document";
+import "../core/rebind";
+import "../event/dispatch";
+import "../event/event";
+import "../event/mouse";
+import "../event/touches";
+import "../scale/scale";
+import "../selection/selection";
+import "svg";
+
 d3.svg.brush = function() {
   var event = d3_eventDispatch(brush, "brushstart", "brush", "brushend"),
       x = null, // x-scale, optional
@@ -93,7 +103,7 @@ d3.svg.brush = function() {
         origin = mouse(),
         offset;
 
-    var w = d3.select(window)
+    var w = d3.select(d3_window)
         .on("mousemove.brush", brushmove)
         .on("mouseup.brush", brushend)
         .on("touchmove.brush", brushmove)

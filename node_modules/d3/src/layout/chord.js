@@ -1,3 +1,6 @@
+import "../arrays/range";
+import "../math/trigonometry";
+
 d3.layout.chord = function() {
   var chord = {},
       chords,
@@ -52,7 +55,7 @@ d3.layout.chord = function() {
     // Convert the sum to scaling factor for [0, 2pi].
     // TODO Allow start and end angle to be specified.
     // TODO Allow padding to be specified as percentage?
-    k = (2 * Math.PI - padding * n) / k;
+    k = (2 * π - padding * n) / k;
 
     // Compute the start and end angle for each group and subgroup.
     // Note: Opera has a bug reordering object literal properties!

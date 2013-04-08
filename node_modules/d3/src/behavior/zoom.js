@@ -1,3 +1,11 @@
+import "../core/document";
+import "../core/rebind";
+import "../event/event";
+import "../event/mouse";
+import "../event/touches";
+import "../selection/selection";
+import "behavior";
+
 d3.behavior.zoom = function() {
   var translate = [0, 0],
       translate0, // translate when we started zooming (to avoid drift)
@@ -12,11 +20,9 @@ d3.behavior.zoom = function() {
       touchtime; // time of last touchstart (to detect double-tap)
 
   function zoom() {
-    this
-        .on("mousedown.zoom", mousedown)
-        .on("mousewheel.zoom", mousewheel)
+    this.on("mousedown.zoom", mousedown)
         .on("mousemove.zoom", mousemove)
-        .on("DOMMouseScroll.zoom", mousewheel)
+        .on(d3_behavior_zoomWheel + ".zoom", mousewheel)
         .on("dblclick.zoom", dblclick)
         .on("touchstart.zoom", touchstart)
         .on("touchmove.zoom", touchmove)
@@ -26,12 +32,14 @@ d3.behavior.zoom = function() {
   zoom.translate = function(x) {
     if (!arguments.length) return translate;
     translate = x.map(Number);
+    rescale();
     return zoom;
   };
 
   zoom.scale = function(x) {
     if (!arguments.length) return scale;
     scale = +x;
+    rescale();
     return zoom;
   };
 
@@ -45,6 +53,8 @@ d3.behavior.zoom = function() {
     if (!arguments.length) return x1;
     x1 = z;
     x0 = z.copy();
+    translate = [0, 0];
+    scale = 1;
     return zoom;
   };
 
@@ -52,6 +62,8 @@ d3.behavior.zoom = function() {
     if (!arguments.length) return y1;
     y1 = z;
     y0 = z.copy();
+    translate = [0, 0];
+    scale = 1;
     return zoom;
   };
 
@@ -73,9 +85,13 @@ d3.behavior.zoom = function() {
     translate[1] += p[1] - l[1];
   }
 
-  function dispatch(event) {
+  function rescale() {
     if (x1) x1.domain(x0.range().map(function(x) { return (x - translate[0]) / scale; }).map(x0.invert));
     if (y1) y1.domain(y0.range().map(function(y) { return (y - translate[1]) / scale; }).map(y0.invert));
+  }
+
+  function dispatch(event) {
+    rescale();
     d3.event.preventDefault();
     event({type: "zoom", scale: scale, translate: translate});
   }
@@ -85,10 +101,10 @@ d3.behavior.zoom = function() {
         event_ = event.of(target, arguments),
         eventTarget = d3.event.target,
         moved = 0,
-        w = d3.select(window).on("mousemove.zoom", mousemove).on("mouseup.zoom", mouseup),
+        w = d3.select(d3_window).on("mousemove.zoom", mousemove).on("mouseup.zoom", mouseup),
         l = location(d3.mouse(target));
 
-    window.focus();
+    d3_window.focus();
     d3_eventCancel();
 
     function mousemove() {
@@ -100,12 +116,7 @@ d3.behavior.zoom = function() {
     function mouseup() {
       if (moved) d3_eventCancel();
       w.on("mousemove.zoom", null).on("mouseup.zoom", null);
-      if (moved && d3.event.target === eventTarget) w.on("click.zoom", click, true);
-    }
-
-    function click() {
-      d3_eventCancel();
-      w.on("click.zoom", null);
+      if (moved && d3.event.target === eventTarget) d3_eventSuppress(w, "click.zoom");
     }
   }
 
@@ -121,8 +132,8 @@ d3.behavior.zoom = function() {
   }
 
   function dblclick() {
-    var p = d3.mouse(this), l = location(p);
-    scaleTo(d3.event.shiftKey ? scale / 2 : scale * 2);
+    var p = d3.mouse(this), l = location(p), k = Math.log(scale) / Math.LN2;
+    scaleTo(Math.pow(2, d3.event.shiftKey ? Math.ceil(k) - 1 : Math.floor(k) + 1));
     translateTo(p, l);
     dispatch(event.of(this, arguments));
   }
@@ -165,34 +176,10 @@ d3.behavior.zoom = function() {
   return d3.rebind(zoom, event, "on");
 };
 
-var d3_behavior_zoomDiv, // for interpreting mousewheel events
-    d3_behavior_zoomInfinity = [0, Infinity]; // default scale extent
+var d3_behavior_zoomInfinity = [0, Infinity]; // default scale extent
 
-function d3_behavior_zoomDelta() {
-
-  // mousewheel events are totally broken!
-  // https://bugs.webkit.org/show_bug.cgi?id=40441
-  // not only that, but Chrome and Safari differ in re. to acceleration!
-  if (!d3_behavior_zoomDiv) {
-    d3_behavior_zoomDiv = d3.select("body").append("div")
-        .style("visibility", "hidden")
-        .style("top", 0)
-        .style("height", 0)
-        .style("width", 0)
-        .style("overflow-y", "scroll")
-      .append("div")
-        .style("height", "2000px")
-      .node().parentNode;
-  }
-
-  var e = d3.event, delta;
-  try {
-    d3_behavior_zoomDiv.scrollTop = 1000;
-    d3_behavior_zoomDiv.dispatchEvent(e);
-    delta = 1000 - d3_behavior_zoomDiv.scrollTop;
-  } catch (error) {
-    delta = e.wheelDelta || (-e.detail * 5);
-  }
-
-  return delta;
-}
+// https://developer.mozilla.org/en-US/docs/Mozilla_event_reference/wheel
+var d3_behavior_zoomDelta, d3_behavior_zoomWheel
+    = "onwheel" in d3_document ? (d3_behavior_zoomDelta = function() { return -d3.event.deltaY * (d3.event.deltaMode ? 120 : 1); }, "wheel")
+    : "onmousewheel" in d3_document ? (d3_behavior_zoomDelta = function() { return d3.event.wheelDelta; }, "mousewheel")
+    : (d3_behavior_zoomDelta = function() { return -d3.event.detail; }, "MozMousePixelScroll");
