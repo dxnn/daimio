@@ -102,11 +102,22 @@ s2ABt('{(1 2 3)}',
                                   , {type:"Number", value:3} ]} ]} ])
 
 s2ABt('{(1 (2 4) 3)}', 
-  [ {body: [ {block: 1168461047} ]}
+  [ {body: [ {block: 2143384289} ]}
   , {head: [ {type:"List",value:[ {type:"Number",value:2}, {type:"Number",value:4} ], "outs":["0-1"]}
-           , {type:"List",value:[ {type:"Number",value:1}, 
-                                , {type:"String",value:""}
+           , {type:"List",value:[ {type:"Number",value:1}
+                                , {type:"Null",value:""}
                                 , {type:"Number",value:3} ], "ins":{"1":"0-1"} } ]} ])
+  
+s2ABt('{(1 (2 (3 4) (5 6) 7) 8)}', 
+  [ {body: [ {block: 2853555593} ]}
+  , {head: [ {type:"List",value:[ {type:"Number",value:3}, {type:"Number",value:4} ], "outs":["0-1"]} 
+           , {type:"List",value:[ {type:"Number",value:5}, {type:"Number",value:6} ], "outs":["1-2"]}
+           , {type:"List",value:[ {type:"Number",value:2}, {type:"Null",value:""}
+                                , {type:"Null",value:""},  {type:"Number",value:7} ]
+                                , "outs":["0-1"], "ins":{"1":"0-1","2":"1-2"}}
+           , {type:"List",value:[ {type:"Number",value:1}, {type:"Null",value:""}
+                                , {type:"Number",value:8} ], "ins":{"1":"0-1"}} ]} ])
+  
   
 s2ABt('{(1 {asdf} 3)}', 
   [ {body: [ {block: 4138245633} ]}
