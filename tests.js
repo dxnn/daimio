@@ -108,6 +108,10 @@ s2ABt('{(1 (2 4) 3)}',
                                 , {type:"Null",value:""}
                                 , {type:"Number",value:3} ], "ins":{"1":"0-1"} } ]} ])
   
+
+// TODO: all of these are wrong, because they repeat 0-1 as an out. the outs HAVE to be exclusive, because they can be picked up again at any point in the pipeline. [especially if we add dedicated pipeline vars.]  
+  
+  
 s2ABt('{(1 (2 (3 4) (5 6) 7) 8)}', 
   [ {body: [ {block: 2853555593} ]}
   , {head: [ {type:"List",value:[ {type:"Number",value:3}, {type:"Number",value:4} ], "outs":["0-1"]} 
@@ -120,33 +124,52 @@ s2ABt('{(1 (2 (3 4) (5 6) 7) 8)}',
   
   
 s2ABt('{(1 {asdf} 3)}', 
-  [ {body: [ {block: 4138245633} ]}
-  , {head: [  ]} ])
+  [ {body: [ {block: 4145493638} ]}
+  , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
+           , {"type":"List","value":[{"type":"Number","value":1}
+                                    ,{"type":"Null","value":""}
+                                    ,{"type":"Number","value":3}],"ins":{"1":"0-1"}} ]} ])
 
 s2ABt('{(1 (2 {asdf}) 3)}', 
-  [ {body: [ {block: 4138245633} ]}
-  , {head: [  ]} ])
+  [ {body: [ {block: 397202077} ]}
+  , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
+           , {"type":"List","value":[{"type":"Number","value":2}
+                                    ,{"type":"Null","value":""}],"outs":["0-1"],"ins":{"1":"0-1"}}
+           , {"type":"List","value":[{"type":"Number","value":1}
+                                    ,{"type":"Null","value":""}
+                                    ,{"type":"Number","value":3}],"ins":{"1":"0-1"}}]} ])
 
-// s2ABt('{"{x}"}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-// 
-// s2ABt('{"{x}" | asdf}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-// 
-// s2ABt('{asdf {x}}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-// 
-// s2ABt('{begin foo}asdf{end foo}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-// 
+s2ABt('{"{x}"}', 
+  [ {body: [ {block: 3914678910} ]}
+  , {head: [ {"type":"Block","value":1209581963} ]} 
+  , {body: [{"block":822001503}],"adjunct":true} 
+  , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
+
+// THINK: should probably strip out the adjuncts at some point... but where?
+
+s2ABt('{"{x}" | asdf}', 
+  [ {body: [ {block: 1344695667} ]}
+  , {head: [ {"type":"Block","value":1209581963,"outs":[1]}
+           , {"type":"Alias","value":"asdf","ins":{"!":1},"params":{"!":null}} ]} 
+  , {body: [{"block":822001503}], "adjunct":true} 
+  , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
+
+s2ABt('{asdf {x}}', 
+  [ {body: [ {block: 1713317783} ]}
+  , {head: [ {"type":"Alias","value":"x","outs":[0]}
+           , {"type":"Alias","value":"asdf","params":{"!":null},"ins":{"!":0}} ]} ])
+
+s2ABt('{begin foo}asdf{end foo}', 
+  [ {body: [ {block: 536339701} ]}
+  , {head: [ {"type":"Block","value":3171660288} ]}
+  , {"body":["asdf"],"adjunct":true} ])
+
+
+
 // s2ABt('{math add value (1 2 3)}', 
 //   [ {body: [ {block: 4138245633} ]}
 //   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-// 
+
 // s2ABt('{math add value {2}}', 
 //   [ {body: [ {block: 4138245633} ]}
 //   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
