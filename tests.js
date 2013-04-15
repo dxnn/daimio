@@ -3,10 +3,13 @@
   This is a set of js tests for ensuring various things about the daml interpreter.
   
   Todo:
-  - write string->ABlock tests
-  - fix head+block ABlocks
-  - fix head segments
-  - fix everything else
+  -- write string->ABlock tests
+  -- fix head+block ABlocks
+  -- fix head segments
+  -- fix everything else
+
+  -> build Dialects
+  -> link Dialects and Spaces and PBlocks and stuff
 
   - write string->PBlock tests
   - fix Psegments / pipelines
@@ -36,15 +39,29 @@ var DAML = require('daml')
 ERRORS = []
 
 s2ABt = string_to_ABs_test = function(string, result) {
-  var AB = DAML.string_to_ABlocks(string)
+  var ABlocks = DAML.string_to_ABlocks(string)
   
-  DAML.recursive_walk(AB, function(item) {return item.id}, function(item) {delete item.id})
+  DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
   
-  if(JSON.stringify(AB) == JSON.stringify(result))
+  if(JSON.stringify(ABlocks) == JSON.stringify(result))
     return false
     
-  ERRORS.push({in: string, out: AB, was: result})
+  ERRORS.push({in: string, out: ABlocks, was: result})
 }
+
+head2pipe = function(blockhead, result) {
+  var output = DAML.blockhead_to_pipeline(blockhead, DAML.DIALECTS.top)
+  
+  // DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
+  // 
+  if(JSON.stringify(output) == JSON.stringify(result))
+    return false
+    
+  ERRORS.push({in: blockhead, out: output, was: result})
+}
+
+
+
 
 // TESTS GO HERE!!!!
 // THINK: these magic block numbers are less than satisfying...
@@ -65,8 +82,8 @@ s2ABt('x{asdf}y{foo}z',
   , {head: [ {type: "Alias", value: "foo"} ]} ])
   
 s2ABt('{asdf 2}', 
-  [ {body: [ {block: 3941407930} ]}
-  , {head: [ {type: "Alias", value: "asdf", params: {"!": {type:"Number", value:2}} } ]} ])
+  [ {body: [ {block: 3631929967} ]}
+  , {head: [ {type: "Alias", value: "asdf", params: {"__alias__": {type:"Number", value:2}} } ]} ])
   
 s2ABt('{asdf lala 2}', 
   [ {body: [ {block: 3966142309} ]}
@@ -85,15 +102,15 @@ s2ABt('{math add value 2 to 5}',
   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"}, params: {value: {type:"Number", value:2}, to: {type:"Number", value:5}} } ]} ])
 
 s2ABt('{5 | math add}', 
-  [ {body: [ {block: 1765860203} ]}
+  [ {body: [ {block: 3471145687} ]}
   , {head: [ {type: "Number", value: 5, outs: [1]}, 
-             {type: "Command", value: {Handler:"math", Method:"add"}, ins: {"!": 1}, params: {"!": null}} ]} ])
+             {type: "Command", value: {Handler:"math", Method:"add"}, ins: {"__pipe__": 1}, params: {"__pipe__": null}} ]} ])
 
 s2ABt('{5 | math add to 2}', 
-  [ {body: [ {block: 1633836451} ]}
+  [ {body: [ {block: 1134101991} ]}
   , {head: [ {type: "Number", value: 5, outs: [1]}, 
              {type: "Command", value: {Handler:"math", Method:"add"}, 
-              params: {to: {type:"Number", value:2}, "!": null}, ins: {"!": 1}} ]} ])
+              params: {to: {type:"Number", value:2}, "__pipe__": null}, ins: {"__pipe__": 1}} ]} ])
 
 s2ABt('{(1 2 3)}', 
   [ {body: [ {block: 684287387} ]}
@@ -148,38 +165,68 @@ s2ABt('{"{x}"}',
 // THINK: should probably strip out the adjuncts at some point... but where?
 
 s2ABt('{"{x}" | asdf}', 
-  [ {body: [ {block: 1344695667} ]}
+  [ {body: [ {block: 448126997} ]}
   , {head: [ {"type":"Block","value":1209581963,"outs":[1]}
-           , {"type":"Alias","value":"asdf","ins":{"!":1},"params":{"!":null}} ]} 
+           , {"type":"Alias","value":"asdf","ins":{"__pipe__":1},"params":{"__pipe__":null}} ]} 
   , {body: [{"block":822001503}], "adjunct":true} 
   , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
 
 s2ABt('{asdf {x}}', 
-  [ {body: [ {block: 1713317783} ]}
+  [ {body: [ {block: 3525083354} ]}
   , {head: [ {"type":"Alias","value":"x","outs":[0]}
-           , {"type":"Alias","value":"asdf","params":{"!":null},"ins":{"!":0}} ]} ])
+           , {"type":"Alias","value":"asdf","params":{"__alias__":null},"ins":{"__alias__":0}} ]} ])
 
 s2ABt('{begin foo}asdf{end foo}', 
   [ {body: [ {block: 536339701} ]}
   , {head: [ {"type":"Block","value":3171660288} ]}
   , {"body":["asdf"],"adjunct":true} ])
 
+s2ABt('{begin foo}as{begin baz}qqq{end baz}df{end foo}', 
+  [ {"body":[{"block":1369631471}]}
+  , {"head":[{"type":"Block","value":3811656590}]}
+  , {"body":["as",{"block":1237117008},"df"],"adjunct":true}
+  , {"head":[{"type":"Block","value":3775770175}],"adjunct":true}
+  , {"body":["qqq"],"adjunct":true} ])
 
 
-// s2ABt('{math add value (1 2 3)}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
+// PBlock tests!
 
-// s2ABt('{math add value {2}}', 
-//   [ {body: [ {block: 4138245633} ]}
-//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
+head2pipe([ { type: "Command"
+            , value: {Handler:"math", Method:"add"} } ],
+
+          [ { type: "Command"
+            , value: {Handler:"math", Method:"add"} 
+            , method: DAML.models.math.methods.add
+            , paramlist: [null,null] } ])
 
 
-/*
+head2pipe([ { type: "Command"
+            , value: {Handler:"math", Method:"add"}
+            , params: { value: {type:"Number", value:2}
+                      , to: {type:"Number", value:4} } } ],
+                      
+          [ { type: "Command"
+            , value: {Handler:"math", Method:"add"} 
+            , params: { value: {"type":"Number","value":2}
+                      , to: {"type":"Number","value":4} }
+            , method: DAML.models.math.methods.add
+            , paramlist: [{"type":"Number","value":2},{"type":"Number","value":4}] } ])
+    
+    
+head2pipe([ { type:"Number", value:2, "outs":[0]}
+          , { type: "Alias", value: 'add', "params":{"__pipe__":null}, "ins":{"__pipe__":0} } ],
+          
+          [ {type:"Number", value:2, "outs":[0]}
+          , { type: "Command"
+            , value: {Handler:"math", Method:"add"} 
+            , params: {"value":null,"__pipe__":null}
+            , ins: {"__pipe__":0}
+            , method: DAML.models.math.methods.add
+            , paramlist: [{"type":"Input","value":0},null] } ])
 
-  {begin foo}asdf{end foo}
-  hrmmm...
-*/
+
+
+
 
 
 // WRAP IT ALL UP WITH A BOW
