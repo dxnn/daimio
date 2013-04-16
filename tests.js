@@ -52,15 +52,23 @@ s2ABt = string_to_ABs_test = function(string, result) {
 head2pipe = function(blockhead, result) {
   var output = DAML.blockhead_to_pipeline(blockhead, DAML.DIALECTS.top)
   
-  // DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
-  // 
   if(JSON.stringify(output) == JSON.stringify(result))
     return false
     
   ERRORS.push({in: blockhead, out: output, was: result})
 }
 
+funtest = function(string, result) {
+  var space = DAML.SPACES.top
+    , ABlocks = DAML.string_to_ABlocks(string)
+  
+  space.execute(ABlocks[0], function(output) {
+    if(JSON.stringify(output) == JSON.stringify(result))
+      return false
 
+    ERRORS.push({in: string, out: output, was: result})
+  })
+}
 
 
 // TESTS GO HERE!!!!
@@ -225,7 +233,9 @@ head2pipe([ { type:"Number", value:2, "outs":[0]}
             , paramlist: [{"type":"Input","value":0},null] } ])
 
 
+// fun tests!
 
+funtest('{2 | add 5}', 7)
 
 
 
