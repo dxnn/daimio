@@ -235,6 +235,14 @@ head2pipe([ { type:"Number", value:2, "outs":[0]}
 
 // fun tests!
 
+funtest('{math add value 7 to 13}', 20)
+
+funtest('{math add value (7 13)}', 20)
+
+funtest('{7 | math add to 13}', 20)
+
+funtest('{add 7 to 13}', 20)
+
 funtest('{2 | add 5}', 7)
 
 
