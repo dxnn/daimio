@@ -39,7 +39,10 @@ var DAML = require('daml')
 ERRORS = []
 
 s2ABt = string_to_ABs_test = function(string, result) {
-  var ABlocks = DAML.string_to_ABlocks(string)
+  // var ABlocks = DAML.string_to_ABlocks(string)
+  
+  var segment = DAML.Parser.string_to_block_segment(string)
+    , ABlocks = DAML.ABLOCKS
   
   DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
   
@@ -47,6 +50,8 @@ s2ABt = string_to_ABs_test = function(string, result) {
     return false
     
   ERRORS.push({in: string, out: ABlocks, was: result})
+  
+  DAML.ABLOCKS = {}
 }
 
 head2pipe = function(blockhead, result) {
