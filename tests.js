@@ -38,18 +38,20 @@ var DAML = require('daml')
 
 ERRORS = []
 
-s2ABt = string_to_ABs_test = function(string, result) {
-  // var ABlocks = DAML.string_to_ABlocks(string)
-  
-  var segment = DAML.Parser.string_to_block_segment(string)
+s2ABt = string_to_tokens_and_segments_and_block_test = function(string, result_tokens, result_segments, result_blocks) {
+  var tokens = DAML.Parser.string_to_tokens(string)
+    , segments = DAML.Parser.string_to_segments(string)
+    , block_ref = DAML.Parser.string_to_block_segment(string)
     , ABlocks = DAML.ABLOCKS
   
-  DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
+  // DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
   
-  if(JSON.stringify(ABlocks) == JSON.stringify(result))
-    return false
+  // if(JSON.stringify(ABlocks) == JSON.stringify(result))
+  //   return false
     
-  ERRORS.push({in: string, out: ABlocks, was: result})
+  ERRORS.push({in: string, 
+               out: {tokens: tokens, segments: segments, block_ref: block_ref, blocks: ABlocks}, 
+               was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks} })
   
   DAML.ABLOCKS = {}
 }
@@ -65,9 +67,11 @@ head2pipe = function(blockhead, result) {
 
 funtest = function(string, result) {
   var space = DAML.SPACES.top
-    , ABlocks = DAML.string_to_ABlocks(string)
+    , segment = DAML.Parser.string_to_block_segment(string)
+    , ABlocks = DAML.ABLOCKS
+    , block = ABlocks[segment.value.id]
   
-  space.execute(ABlocks[0], function(output) {
+  space.execute(block, function(output) {
     if(JSON.stringify(output) == JSON.stringify(result))
       return false
 
@@ -79,176 +83,178 @@ funtest = function(string, result) {
 // TESTS GO HERE!!!!
 // THINK: these magic block numbers are less than satisfying...
 
-s2ABt('asdf', [ {body: ['asdf'] } ])
+// s2ABt('asdf', 
+//   [ {segments: [{type: 'String', value: 'asdf'}], wiring: {} } ])
 
-s2ABt('{asdf}', 
-  [ {body: [ {block: 423294921} ]}
-  , {head: [ {type: "Alias", value: "asdf"} ]} ])
+s2ABt('{(1 2 3) | math add to 4}', 
+  {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
+  // [ {body: [ {block: 423294921} ]}
+  // , {head: [ {type: "Alias", value: "asdf"} ]} ])
   
-s2ABt('x{asdf}y', 
-  [ {body: [ "x", {block: 423294921}, "y" ]}
-  , {head: [ {type: "Alias", value: "asdf"} ]} ])
-
-s2ABt('x{asdf}y{foo}z', 
-  [ {body: [ "x", {block: 423294921}, "y", {block: 870984491}, "z" ]}
-  , {head: [ {type: "Alias", value: "asdf"} ]} 
-  , {head: [ {type: "Alias", value: "foo"} ]} ])
-  
-s2ABt('{asdf 2}', 
-  [ {body: [ {block: 3631929967} ]}
-  , {head: [ {type: "Alias", value: "asdf", params: {"__alias__": {type:"Number", value:2}} } ]} ])
-  
-s2ABt('{asdf lala 2}', 
-  [ {body: [ {block: 3966142309} ]}
-  , {head: [ {type: "Alias", value: "asdf", params: {"lala": {type:"Number", value:2}} } ]} ])
-  
-s2ABt('{math add}', 
-  [ {body: [ {block: 4138245633} ]}
-  , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
-
-s2ABt('{math add value 2}', 
-  [ {body: [ {block: 2720656261} ]}
-  , {head: [ {type: "Command", value: {Handler:"math", Method:"add"}, params: {value: {type:"Number", value:2}} } ]} ])
-
-s2ABt('{math add value 2 to 5}', 
-  [ {body: [ {block: 2753018361} ]}
-  , {head: [ {type: "Command", value: {Handler:"math", Method:"add"}, params: {value: {type:"Number", value:2}, to: {type:"Number", value:5}} } ]} ])
-
-s2ABt('{5 | math add}', 
-  [ {body: [ {block: 3471145687} ]}
-  , {head: [ {type: "Number", value: 5, outs: [1]}, 
-             {type: "Command", value: {Handler:"math", Method:"add"}, ins: {"__pipe__": 1}, params: {"__pipe__": null}} ]} ])
-
-s2ABt('{5 | math add to 2}', 
-  [ {body: [ {block: 1134101991} ]}
-  , {head: [ {type: "Number", value: 5, outs: [1]}, 
-             {type: "Command", value: {Handler:"math", Method:"add"}, 
-              params: {to: {type:"Number", value:2}, "__pipe__": null}, ins: {"__pipe__": 1}} ]} ])
-
-s2ABt('{(1 2 3)}', 
-  [ {body: [ {block: 684287387} ]}
-  , {head: [ {type:"List", value: [ {type:"Number", value:1}
-                                  , {type:"Number", value:2}
-                                  , {type:"Number", value:3} ]} ]} ])
-
-s2ABt('{(1 (2 4) 3)}', 
-  [ {body: [ {block: 2143384289} ]}
-  , {head: [ {type:"List",value:[ {type:"Number",value:2}, {type:"Number",value:4} ], "outs":["0-1"]}
-           , {type:"List",value:[ {type:"Number",value:1}
-                                , {type:"Null",value:""}
-                                , {type:"Number",value:3} ], "ins":{"1":"0-1"} } ]} ])
-  
-
-// TODO: all of these are wrong, because they repeat 0-1 as an out. the outs HAVE to be exclusive, because they can be picked up again at any point in the pipeline. [especially if we add dedicated pipeline vars.]  
-  
-  
-s2ABt('{(1 (2 (3 4) (5 6) 7) 8)}', 
-  [ {body: [ {block: 2853555593} ]}
-  , {head: [ {type:"List",value:[ {type:"Number",value:3}, {type:"Number",value:4} ], "outs":["0-1"]} 
-           , {type:"List",value:[ {type:"Number",value:5}, {type:"Number",value:6} ], "outs":["1-2"]}
-           , {type:"List",value:[ {type:"Number",value:2}, {type:"Null",value:""}
-                                , {type:"Null",value:""},  {type:"Number",value:7} ]
-                                , "outs":["0-1"], "ins":{"1":"0-1","2":"1-2"}}
-           , {type:"List",value:[ {type:"Number",value:1}, {type:"Null",value:""}
-                                , {type:"Number",value:8} ], "ins":{"1":"0-1"}} ]} ])
-  
-  
-s2ABt('{(1 {asdf} 3)}', 
-  [ {body: [ {block: 4145493638} ]}
-  , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
-           , {"type":"List","value":[{"type":"Number","value":1}
-                                    ,{"type":"Null","value":""}
-                                    ,{"type":"Number","value":3}],"ins":{"1":"0-1"}} ]} ])
-
-s2ABt('{(1 (2 {asdf}) 3)}', 
-  [ {body: [ {block: 397202077} ]}
-  , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
-           , {"type":"List","value":[{"type":"Number","value":2}
-                                    ,{"type":"Null","value":""}],"outs":["0-1"],"ins":{"1":"0-1"}}
-           , {"type":"List","value":[{"type":"Number","value":1}
-                                    ,{"type":"Null","value":""}
-                                    ,{"type":"Number","value":3}],"ins":{"1":"0-1"}}]} ])
-
-s2ABt('{"{x}"}', 
-  [ {body: [ {block: 3914678910} ]}
-  , {head: [ {"type":"Block","value":1209581963} ]} 
-  , {body: [{"block":822001503}],"adjunct":true} 
-  , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
-
-// THINK: should probably strip out the adjuncts at some point... but where?
-
-s2ABt('{"{x}" | asdf}', 
-  [ {body: [ {block: 448126997} ]}
-  , {head: [ {"type":"Block","value":1209581963,"outs":[1]}
-           , {"type":"Alias","value":"asdf","ins":{"__pipe__":1},"params":{"__pipe__":null}} ]} 
-  , {body: [{"block":822001503}], "adjunct":true} 
-  , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
-
-s2ABt('{asdf {x}}', 
-  [ {body: [ {block: 3525083354} ]}
-  , {head: [ {"type":"Alias","value":"x","outs":[0]}
-           , {"type":"Alias","value":"asdf","params":{"__alias__":null},"ins":{"__alias__":0}} ]} ])
-
-s2ABt('{begin foo}asdf{end foo}', 
-  [ {body: [ {block: 536339701} ]}
-  , {head: [ {"type":"Block","value":3171660288} ]}
-  , {"body":["asdf"],"adjunct":true} ])
-
-s2ABt('{begin foo}as{begin baz}qqq{end baz}df{end foo}', 
-  [ {"body":[{"block":1369631471}]}
-  , {"head":[{"type":"Block","value":3811656590}]}
-  , {"body":["as",{"block":1237117008},"df"],"adjunct":true}
-  , {"head":[{"type":"Block","value":3775770175}],"adjunct":true}
-  , {"body":["qqq"],"adjunct":true} ])
-
-
-// PBlock tests!
-
-head2pipe([ { type: "Command"
-            , value: {Handler:"math", Method:"add"} } ],
-
-          [ { type: "Command"
-            , value: {Handler:"math", Method:"add"} 
-            , method: DAML.models.math.methods.add
-            , paramlist: [null,null] } ])
-
-
-head2pipe([ { type: "Command"
-            , value: {Handler:"math", Method:"add"}
-            , params: { value: {type:"Number", value:2}
-                      , to: {type:"Number", value:4} } } ],
-                      
-          [ { type: "Command"
-            , value: {Handler:"math", Method:"add"} 
-            , params: { value: {"type":"Number","value":2}
-                      , to: {"type":"Number","value":4} }
-            , method: DAML.models.math.methods.add
-            , paramlist: [{"type":"Number","value":2},{"type":"Number","value":4}] } ])
-    
-    
-head2pipe([ { type:"Number", value:2, "outs":[0]}
-          , { type: "Alias", value: 'add', "params":{"__pipe__":null}, "ins":{"__pipe__":0} } ],
-          
-          [ {type:"Number", value:2, "outs":[0]}
-          , { type: "Command"
-            , value: {Handler:"math", Method:"add"} 
-            , params: {"value":null,"__pipe__":null}
-            , ins: {"__pipe__":0}
-            , method: DAML.models.math.methods.add
-            , paramlist: [{"type":"Input","value":0},null] } ])
-
-
-// fun tests!
-
-funtest('{math add value 7 to 13}', 20)
-
-funtest('{math add value (7 13)}', 20)
-
-funtest('{7 | math add to 13}', 20)
-
-funtest('{add 7 to 13}', 20)
-
-funtest('{2 | add 5}', 7)
+// s2ABt('x{asdf}y', 
+//   [ {body: [ "x", {block: 423294921}, "y" ]}
+//   , {head: [ {type: "Alias", value: "asdf"} ]} ])
+// 
+// s2ABt('x{asdf}y{foo}z', 
+//   [ {body: [ "x", {block: 423294921}, "y", {block: 870984491}, "z" ]}
+//   , {head: [ {type: "Alias", value: "asdf"} ]} 
+//   , {head: [ {type: "Alias", value: "foo"} ]} ])
+//   
+// s2ABt('{asdf 2}', 
+//   [ {body: [ {block: 3631929967} ]}
+//   , {head: [ {type: "Alias", value: "asdf", params: {"__alias__": {type:"Number", value:2}} } ]} ])
+//   
+// s2ABt('{asdf lala 2}', 
+//   [ {body: [ {block: 3966142309} ]}
+//   , {head: [ {type: "Alias", value: "asdf", params: {"lala": {type:"Number", value:2}} } ]} ])
+//   
+// s2ABt('{math add}', 
+//   [ {body: [ {block: 4138245633} ]}
+//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"} } ]} ])
+// 
+// s2ABt('{math add value 2}', 
+//   [ {body: [ {block: 2720656261} ]}
+//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"}, params: {value: {type:"Number", value:2}} } ]} ])
+// 
+// s2ABt('{math add value 2 to 5}', 
+//   [ {body: [ {block: 2753018361} ]}
+//   , {head: [ {type: "Command", value: {Handler:"math", Method:"add"}, params: {value: {type:"Number", value:2}, to: {type:"Number", value:5}} } ]} ])
+// 
+// s2ABt('{5 | math add}', 
+//   [ {body: [ {block: 3471145687} ]}
+//   , {head: [ {type: "Number", value: 5, outs: [1]}, 
+//              {type: "Command", value: {Handler:"math", Method:"add"}, ins: {"__pipe__": 1}, params: {"__pipe__": null}} ]} ])
+// 
+// s2ABt('{5 | math add to 2}', 
+//   [ {body: [ {block: 1134101991} ]}
+//   , {head: [ {type: "Number", value: 5, outs: [1]}, 
+//              {type: "Command", value: {Handler:"math", Method:"add"}, 
+//               params: {to: {type:"Number", value:2}, "__pipe__": null}, ins: {"__pipe__": 1}} ]} ])
+// 
+// s2ABt('{(1 2 3)}', 
+//   [ {body: [ {block: 684287387} ]}
+//   , {head: [ {type:"List", value: [ {type:"Number", value:1}
+//                                   , {type:"Number", value:2}
+//                                   , {type:"Number", value:3} ]} ]} ])
+// 
+// s2ABt('{(1 (2 4) 3)}', 
+//   [ {body: [ {block: 2143384289} ]}
+//   , {head: [ {type:"List",value:[ {type:"Number",value:2}, {type:"Number",value:4} ], "outs":["0-1"]}
+//            , {type:"List",value:[ {type:"Number",value:1}
+//                                 , {type:"Null",value:""}
+//                                 , {type:"Number",value:3} ], "ins":{"1":"0-1"} } ]} ])
+//   
+// 
+// // TODO: all of these are wrong, because they repeat 0-1 as an out. the outs HAVE to be exclusive, because they can be picked up again at any point in the pipeline. [especially if we add dedicated pipeline vars.]  
+//   
+//   
+// s2ABt('{(1 (2 (3 4) (5 6) 7) 8)}', 
+//   [ {body: [ {block: 2853555593} ]}
+//   , {head: [ {type:"List",value:[ {type:"Number",value:3}, {type:"Number",value:4} ], "outs":["0-1"]} 
+//            , {type:"List",value:[ {type:"Number",value:5}, {type:"Number",value:6} ], "outs":["1-2"]}
+//            , {type:"List",value:[ {type:"Number",value:2}, {type:"Null",value:""}
+//                                 , {type:"Null",value:""},  {type:"Number",value:7} ]
+//                                 , "outs":["0-1"], "ins":{"1":"0-1","2":"1-2"}}
+//            , {type:"List",value:[ {type:"Number",value:1}, {type:"Null",value:""}
+//                                 , {type:"Number",value:8} ], "ins":{"1":"0-1"}} ]} ])
+//   
+//   
+// s2ABt('{(1 {asdf} 3)}', 
+//   [ {body: [ {block: 4145493638} ]}
+//   , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
+//            , {"type":"List","value":[{"type":"Number","value":1}
+//                                     ,{"type":"Null","value":""}
+//                                     ,{"type":"Number","value":3}],"ins":{"1":"0-1"}} ]} ])
+// 
+// s2ABt('{(1 (2 {asdf}) 3)}', 
+//   [ {body: [ {block: 397202077} ]}
+//   , {head: [ {"type":"Alias","value":"asdf","outs":["0-1"]}
+//            , {"type":"List","value":[{"type":"Number","value":2}
+//                                     ,{"type":"Null","value":""}],"outs":["0-1"],"ins":{"1":"0-1"}}
+//            , {"type":"List","value":[{"type":"Number","value":1}
+//                                     ,{"type":"Null","value":""}
+//                                     ,{"type":"Number","value":3}],"ins":{"1":"0-1"}}]} ])
+// 
+// s2ABt('{"{x}"}', 
+//   [ {body: [ {block: 3914678910} ]}
+//   , {head: [ {"type":"Block","value":1209581963} ]} 
+//   , {body: [{"block":822001503}],"adjunct":true} 
+//   , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
+// 
+// // THINK: should probably strip out the adjuncts at some point... but where?
+// 
+// s2ABt('{"{x}" | asdf}', 
+//   [ {body: [ {block: 448126997} ]}
+//   , {head: [ {"type":"Block","value":1209581963,"outs":[1]}
+//            , {"type":"Alias","value":"asdf","ins":{"__pipe__":1},"params":{"__pipe__":null}} ]} 
+//   , {body: [{"block":822001503}], "adjunct":true} 
+//   , {head: [{"type":"Alias","value":"x"}], "adjunct":true} ])
+// 
+// s2ABt('{asdf {x}}', 
+//   [ {body: [ {block: 3525083354} ]}
+//   , {head: [ {"type":"Alias","value":"x","outs":[0]}
+//            , {"type":"Alias","value":"asdf","params":{"__alias__":null},"ins":{"__alias__":0}} ]} ])
+// 
+// s2ABt('{begin foo}asdf{end foo}', 
+//   [ {body: [ {block: 536339701} ]}
+//   , {head: [ {"type":"Block","value":3171660288} ]}
+//   , {"body":["asdf"],"adjunct":true} ])
+// 
+// s2ABt('{begin foo}as{begin baz}qqq{end baz}df{end foo}', 
+//   [ {"body":[{"block":1369631471}]}
+//   , {"head":[{"type":"Block","value":3811656590}]}
+//   , {"body":["as",{"block":1237117008},"df"],"adjunct":true}
+//   , {"head":[{"type":"Block","value":3775770175}],"adjunct":true}
+//   , {"body":["qqq"],"adjunct":true} ])
+// 
+// 
+// // PBlock tests!
+// 
+// head2pipe([ { type: "Command"
+//             , value: {Handler:"math", Method:"add"} } ],
+// 
+//           [ { type: "Command"
+//             , value: {Handler:"math", Method:"add"} 
+//             , method: DAML.models.math.methods.add
+//             , paramlist: [null,null] } ])
+// 
+// 
+// head2pipe([ { type: "Command"
+//             , value: {Handler:"math", Method:"add"}
+//             , params: { value: {type:"Number", value:2}
+//                       , to: {type:"Number", value:4} } } ],
+//                       
+//           [ { type: "Command"
+//             , value: {Handler:"math", Method:"add"} 
+//             , params: { value: {"type":"Number","value":2}
+//                       , to: {"type":"Number","value":4} }
+//             , method: DAML.models.math.methods.add
+//             , paramlist: [{"type":"Number","value":2},{"type":"Number","value":4}] } ])
+//     
+//     
+// head2pipe([ { type:"Number", value:2, "outs":[0]}
+//           , { type: "Alias", value: 'add', "params":{"__pipe__":null}, "ins":{"__pipe__":0} } ],
+//           
+//           [ {type:"Number", value:2, "outs":[0]}
+//           , { type: "Command"
+//             , value: {Handler:"math", Method:"add"} 
+//             , params: {"value":null,"__pipe__":null}
+//             , ins: {"__pipe__":0}
+//             , method: DAML.models.math.methods.add
+//             , paramlist: [{"type":"Input","value":0},null] } ])
+// 
+// 
+// // fun tests!
+// 
+// funtest('{math add value 7 to 13}', 20)
+// 
+// funtest('{math add value (7 13)}', 20)
+// 
+// funtest('{7 | math add to 13}', 20)
+// 
+// funtest('{add 7 to 13}', 20)
+// 
+// funtest('{2 | add 5}', 7)
 
 
 
@@ -256,7 +262,7 @@ funtest('{2 | add 5}', 7)
 
 show_errors = function(error) {
   for(key in error) {
-    console.log(key + ': ' + JSON.stringify(error[key]))
+    console.log(key + ': ' + JSON.stringify(error[key], null, 2))
   }
   console.log("")
 }
