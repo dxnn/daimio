@@ -271,8 +271,17 @@ funtest('{(1 2 3) | add (4 4 4) | add 7 | math subtract value (1 2 3)}', [11,11,
 
 funtest('{add 2 to (3 4 5)}', [5,6,7])
 
+funtest('{math add value "7" to "13"}', 20)
 
-funtest('{add 2 to {77 | add 3}}', [5,6,7])
+funtest('{add 2 to {77 | add 3}}', 82)
+
+funtest('{({77 | add 3} {17 | add 3}) | add}', 100)
+
+funtest('{((1 2) (4 5)) | union}', [1,2,4,5])
+
+funtest('{(({1} {2 | add 3}) (8 9 (6))) | union}', [1,5,8,9,[6]])
+
+funtest('{math add value "{7}" to 13}', 20)
 
 
 
