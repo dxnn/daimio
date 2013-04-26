@@ -261,6 +261,10 @@ funtest('{2 | add 5}', 7)
 
 funtest('{(1 2 3) | math add to 4}', [5,6,7])
 
+funtest('{(1 2 3) | add 4}', [5,6,7])
+
+funtest('{(1 2 3) | add (3 2 1)}', [4,4,4])
+
 
 
 // WRAP IT ALL UP WITH A BOW
