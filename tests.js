@@ -91,8 +91,8 @@ funtest = function(string, result) {
   // [ {body: [ {block: 423294921} ]}
   // , {head: [ {type: "Alias", value: "asdf"} ]} ])
 
-s2ABt('{(1 2 3) | math add to 4}', 
-  {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
+// s2ABt('{(1 2 3) | math add to 4}', 
+//   {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
   
 // s2ABt('x{asdf}y', 
 //   [ {body: [ "x", {block: 423294921}, "y" ]}
@@ -251,16 +251,15 @@ s2ABt('{(1 2 3) | math add to 4}',
 
 funtest('{math add value 7 to 13}', 20)
 
-funtest('{(1 2 3) | math add to 4}', 20)
+funtest('{math add value (7 13)}', 20)
 
+funtest('{7 | math add to 13}', 20)
 
-// funtest('{math add value (7 13)}', 20)
-// 
-// funtest('{7 | math add to 13}', 20)
-// 
-// funtest('{add 7 to 13}', 20)
-// 
-// funtest('{2 | add 5}', 7)
+funtest('{add 7 to 13}', 20)
+
+funtest('{2 | add 5}', 7)
+
+funtest('{(1 2 3) | math add to 4}', [5,6,7])
 
 
 
