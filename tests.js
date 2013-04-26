@@ -51,13 +51,13 @@ s2ABt = string_to_tokens_and_segments_and_block_test = function(string, result_t
     
   ERRORS.push({in: string, 
                out: {tokens: tokens, segments: segments, block_ref: block_ref, blocks: ABlocks}, 
-               was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks} })
+               was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks, fff: "x" + DAML.run('{(1 2 3) | math add to 4}')} })
   
   DAML.ABLOCKS = {}
 }
 
 head2pipe = function(blockhead, result) {
-  var output = DAML.blockhead_to_pipeline(blockhead, DAML.DIALECTS.top)
+  // var output = DAML.blockhead_to_pipeline(blockhead, DAML.DIALECTS.top)
   
   if(JSON.stringify(output) == JSON.stringify(result))
     return false
@@ -86,10 +86,13 @@ funtest = function(string, result) {
 // s2ABt('asdf', 
 //   [ {segments: [{type: 'String', value: 'asdf'}], wiring: {} } ])
 
-s2ABt('{(1 2 3) | math add to 4}', 
-  {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
+// s2ABt('{asdf}', 
+//   {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
   // [ {body: [ {block: 423294921} ]}
   // , {head: [ {type: "Alias", value: "asdf"} ]} ])
+
+s2ABt('{(1 2 3) | math add to 4}', 
+  {segments: [{type: 'Alias', value: 'asdf'}], wiring: {} } )
   
 // s2ABt('x{asdf}y', 
 //   [ {body: [ "x", {block: 423294921}, "y" ]}
@@ -244,10 +247,13 @@ s2ABt('{(1 2 3) | math add to 4}',
 //             , paramlist: [{"type":"Input","value":0},null] } ])
 // 
 // 
-// // fun tests!
-// 
-// funtest('{math add value 7 to 13}', 20)
-// 
+// fun tests!
+
+funtest('{math add value 7 to 13}', 20)
+
+funtest('{(1 2 3) | math add to 4}', 20)
+
+
 // funtest('{math add value (7 13)}', 20)
 // 
 // funtest('{7 | math add to 13}', 20)
