@@ -33,26 +33,30 @@
       win=0
       lose=0
       html=''
+      mode='text'
+      block_name=''
+      code_value=''
       
       eat_lines()
     });
     
     eat_lines = function(value) {
-      if(value) {
+      var output = false
+      
+      if(value !== undefined) {
         code_value = value
       }
       
-      if(lines.length) {
-        eat_line()
+      while(lines.length) {
+        output = eat_line()
+        if(output === false) return false
       }
-      else {
-        done()
-      }
+
+      done()
     }
     
     eat_line = function() {
-      var whitespace='', wscount=0, mode='text'
-        , block_name='', code_string='', code_value=''
+      var whitespace='', wscount=0, code_string=''
         , line = lines.pop()
         
       /*
@@ -112,6 +116,7 @@
           eat_lines(value)
         }
         DAML.run(code_string, callback);
+        return false // signal of callback
       }
       
       // handle asserts
@@ -140,7 +145,7 @@
         }
       }
       
-      eat_lines()
+      return true
     }
     
     done = function() {
