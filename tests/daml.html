@@ -27,13 +27,34 @@
     // load daml file
     $.get('daml.daml', function(data) {
       
-      // HACK (slight)
-      daml_data = data;
+      // these globals are kind of a hack...
+      lines = data.split(/\n/).reverse()
+      starttime = new Date().getTime()
+      win=0
+      lose=0
+      html=''
       
-      var win=0, lose=0, lines=data.split(/\n/);
-      var html='', whitespace='', wscount=0, mode='text', 
-          block_name='', code_string='', code_value='';
+      eat_lines()
+    });
+    
+    eat_lines = function(value) {
+      if(value) {
+        code_value = value
+      }
       
+      if(lines.length) {
+        eat_line()
+      }
+      else {
+        done()
+      }
+    }
+    
+    eat_line = function() {
+      var whitespace='', wscount=0, mode='text'
+        , block_name='', code_string='', code_value=''
+        , line = lines.pop()
+        
       /*
         There's four modes:
         - text, which just displays regular text based on whitespace and other factors
@@ -42,86 +63,87 @@
         - assert, the value the code should process to
       */
       
-      var starttime = new Date().getTime();
-
-      for(var i=0, l=lines.length; i < l; i++) {
-        var line = lines[i];
-        
-        // mode switcher
-        if(mode != 'block') {
-          if(/^\s*\{begin /.test(line)) {
-            code_string = '';
-            block_name = line.match(/^\s*\{begin (\w+)/)[1];
-            mode = 'block'; // begin a block
-          } 
-          else if(mode == 'code') {
-            mode = 'assert'; // switch to assert
-          }
-          else if(/^\s*\{/.test(line)) {
-            code_string = line;
-            mode = 'code'; // begin a line of code
-          } 
-          else if(mode == 'assert') {
-            mode = 'text'; // switch back to text
-          }
+      // mode switcher
+      if(mode != 'block') {
+        if(/^\s*\{begin /.test(line)) {
+          code_string = '';
+          block_name = line.match(/^\s*\{begin (\w+)/)[1];
+          mode = 'block'; // begin a block
+        } 
+        else if(mode == 'code') {
+          mode = 'assert'; // switch to assert
         }
-        
-        // continue the block
-        if(mode == 'block') {
-          code_string += line;
-        }
-        
-        // end the block
-        if(new RegExp("\{end " + block_name + '\}').test(line)) {
-          mode = 'code';
-        }
-        
-        // sort out whitespace
-        whitespace = '';
-        wscount = line.search(/\S/);
-        if(wscount >= 1) {
-          whitespace = new Array( wscount + 1 ).join( '&nbsp;' );
-          // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;');
-        }
-        
-        // handle text
-        if(mode == 'text') {
-          html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>';
-        }
-        
-        // handle code
-        if(mode == 'code') {
-          html += '<code><pre>' + code_string + '</pre></code>';
-          code_value = DAML.run(code_string);
-        }
-        
-        // handle asserts
-        if(mode == 'assert') {
-          if(code_value === false) {
-            code_value = '';
-          }
-          
-          if(typeof(code_value) != 'string') {
-            code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : '';
-          }
-          
-          if(code_value.trim() === line.trim()) {
-            result = 'good';
-            win++;
-          } else {
-            result = 'bad';
-            lose++;
-          }
-          
-          // TODO: convert line and code_value to escaped html
-          
-          html += '<pre class="assert ' + result + '">' + line + '</pre>';
-          if(result == 'bad') {
-            html += '<pre class="actual">Actual: ' + code_value + '</pre>';
-          }
+        else if(/^\s*\{/.test(line)) {
+          code_string = line;
+          mode = 'code'; // begin a line of code
+        } 
+        else if(mode == 'assert') {
+          mode = 'text'; // switch back to text
         }
       }
       
+      // continue the block
+      if(mode == 'block') {
+        code_string += line;
+      }
+      
+      // end the block
+      if(new RegExp("\{end " + block_name + '\}').test(line)) {
+        mode = 'code';
+      }
+      
+      // sort out whitespace
+      whitespace = '';
+      wscount = line.search(/\S/);
+      if(wscount >= 1) {
+        whitespace = new Array( wscount + 1 ).join( '&nbsp;' );
+        // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;');
+      }
+      
+      // handle text
+      if(mode == 'text') {
+        html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>';
+      }
+      
+      // handle code
+      if(mode == 'code') {
+        html += '<code><pre>' + code_string + '</pre></code>';
+        var callback = function(value) {
+          eat_lines(value)
+        }
+        DAML.run(code_string, callback);
+      }
+      
+      // handle asserts
+      if(mode == 'assert') {
+        if(code_value === false) {
+          code_value = '';
+        }
+        
+        if(typeof(code_value) != 'string') {
+          code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : '';
+        }
+        
+        if(code_value.trim() === line.trim()) {
+          result = 'good';
+          win++;
+        } else {
+          result = 'bad';
+          lose++;
+        }
+        
+        // TODO: convert line and code_value to escaped html
+        
+        html += '<pre class="assert ' + result + '">' + line + '</pre>';
+        if(result == 'bad') {
+          html += '<pre class="actual">Actual: ' + code_value + '</pre>';
+        }
+      }
+      
+      eat_lines()
+    }
+    
+    done = function() {
       var endtime = new Date().getTime();
 
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>";
@@ -132,10 +154,8 @@
       
       $('#stats').html(stats);
       $('#tests').html(html);
-      
-      // run daml
-      // eat cake.
-    });
+    }
+    
     
   </script>
   
