@@ -66,12 +66,13 @@ head2pipe = function(blockhead, result) {
 }
 
 funtest = function(string, result) {
-  var space = DAML.SPACES.top
-    , segment = DAML.Parser.string_to_block_segment(string)
-    , ABlocks = DAML.ABLOCKS
-    , block = ABlocks[segment.value.id]
-  
-  space.execute(block, function(output) {
+  // var space = DAML.SPACES.top
+  //   , segment = DAML.Parser.string_to_block_segment(string)
+  //   , ABlocks = DAML.ABLOCKS
+  //   , block = ABlocks[segment.value.id]
+  // 
+  // space.execute(block, function(output) {
+  DAML.run(string, function(output) {
     if(JSON.stringify(output) == JSON.stringify(result))
       return false
 
@@ -249,55 +250,96 @@ funtest = function(string, result) {
 // 
 // fun tests!
 
-// funtest('{math add value 7 to 13}', 20)
-// 
-// funtest('{math add value (7 13)}', 20)
-// 
-// funtest('{7 | math add to 13}', 20)
-// 
-// funtest('{add 7 to 13}', 20)
-// 
-// funtest('{2 | add 5}', 7)
-// 
-// funtest('{(1 2 3) | math add to 4}', [5,6,7])
-// 
-// funtest('{(1 2 3) | add 4}', [5,6,7])
-// 
-// funtest('{(1 2 3) | add (3 2 1)}', [4,4,4])
-// 
-// funtest('{(1 2 3) | add (3 2 1) | add 7}', [11,11,11])
-// 
-// funtest('{(1 2 3) | add (4 4 4) | add 7 | math subtract value (1 2 3)}', [11,11,11])
-// 
-// funtest('{add 2 to (3 4 5)}', [5,6,7])
-// 
-// funtest('{math add value "7" to "13"}', 20)
-// 
-// funtest('{add 2 to {77 | add 3}}', 82)
-// 
-// funtest('{({77 | add 3} {17 | add 3}) | add}', 100)
-// 
-// funtest('{((1 2) (4 5)) | union}', [1,2,4,5])
-// 
-// funtest('{union ((1 2) (4 5))}', [1,2,4,5])
-// 
-// funtest('{((1 2) (4 5)) | union (6 7)}', [[1,2],[4,5],6,7])
-// 
-// funtest('{(({1} {2 | add 3}) (8 9 (6))) | union}', [1,5,8,9,[6]])
-// 
-// funtest('{list map data (1 2 3) daml "7"}', ["7","7","7"])
-// 
-// funtest('{list map data (1 2 3) daml "7" | map daml "13"}', ["13","13","13"])
-// 
-// funtest('{logic switch on 2 value (1 :one 2 :two 3 :three)}', "two")
+funtest('{math add value 7 to 13}', 20)
 
-funtest('{list map data (1 2 3) daml "{7}"}', ["7","7","7"])
+funtest('{math add value (7 13)}', 20)
+
+funtest('{7 | math add to 13}', 20)
+
+funtest('{add 7 to 13}', 20)
+
+funtest('{2 | add 5}', 7)
+
+funtest('{(1 2 3) | math add to 4}', [5,6,7])
+
+funtest('{(1 2 3) | add 4}', [5,6,7])
+
+funtest('{(1 2 3) | add (3 2 1)}', [4,4,4])
+
+funtest('{(1 2 3) | add (3 2 1) | add 7}', [11,11,11])
+
+funtest('{(1 2 3) | add (4 4 4) | add 7 | math subtract value (1 2 3)}', [11,11,11])
+
+funtest('{add 2 to (3 4 5)}', [5,6,7])
+
+funtest('{math add value "7" to "13"}', 20)
+
+funtest('{add 2 to {77 | add 3}}', 82)
+
+funtest('{({77 | add 3} {17 | add 3}) | add}', 100)
+
+funtest('{((1 2) (4 5)) | union}', [1,2,4,5])
+
+funtest('{union ((1 2) (4 5))}', [1,2,4,5])
+
+funtest('{((1 2) (4 5)) | union (6 7)}', [[1,2],[4,5],6,7])
+
+funtest('{(({1} {2 | add 3}) (8 9 (6))) | union}', [1,5,8,9,[6]])
+
+funtest('{list map data (1 2 3) daml "7"}', ["7","7","7"])
+
+funtest('{list map data (1 2 3) daml "7" | map daml "13"}', ["13","13","13"])
+
+funtest('{logic switch on 2 value (1 :one 2 :two 3 :three)}', "two")
+
+funtest('{list map data (1 2 3) daml "{7}"}', [7,7,7])
+
+funtest('{(:One {"1 2 3" | string split on " "} :Two)}', ["One",["1","2","3"],"Two"])
+
+
+funtest('asdf', 'asdf')
+
+funtest('{:asdf}', 'asdf')
+
+funtest('{"asdf"}', 'asdf')
+
+funtest('  asdf {:asdf}  ', '  asdf asdf  ')
+
+funtest('asdf {:asdf} asdf', 'asdf asdf asdf')
+
+funtest('{"{:asdf}"}', 'asdf')
+
+funtest('{"{:asdf}"} ', 'asdf ')
+
+funtest('{"{:asdf}"} bax', 'asdf bax')
+
+funtest('2 {2 | add 2} ', '2 4 ')
+
+funtest('2 {2 | add 2} {2 | times 4}', '2 4 8')
+
+
+// funtest('{each daml {{block}} data (1 2)}', 'asdf bax')
+
+
+// funtest('{begin block | merge with @bundle} {one} {end block}')
+// 
+// funtest('{begin foo | foo}One{"1 2 3" | string split on " "}Two{end foo}')
+// 
+
+
+
 
 
 
 // funtest('{math add value "{7}" to 13}', 20) 
 // THINK: what should this do? maybe make add accept only numbers, and use fold/zipwith/etc to add over lists?
+funtest('2 {"{2}" | add 2} ', 'asdf bax')
 
+funtest('2 {2 | add "{2}"} ', 'asdf bax')
+
+funtest('2 {"{2}" | add "{2}"} ', 'asdf bax')
+
+funtest('2 {{2} | add "{2}"} ', 'asdf bax')
 
 
 // WRAP IT ALL UP WITH A BOW
