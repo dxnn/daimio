@@ -5,7 +5,7 @@
   
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__jquery.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml&x=1"></script>
   
   <style type="text/css" media="screen">
     code {
@@ -49,7 +49,7 @@
       
       while(lines.length) {
         output = eat_line()
-        if(output === false) return false
+        if(output !== output) return false
       }
 
       done()
@@ -116,7 +116,7 @@
           eat_lines(value)
         }
         DAML.run(code_string, callback);
-        return false // signal of callback
+        return NaN // signal of callback
       }
       
       // handle asserts

@@ -286,13 +286,13 @@ funtest('{((1 2) (4 5)) | union (6 7)}', "[[1,2],[4,5],6,7]")
 
 funtest('{(({1} {2 | add 3}) (8 9 (6))) | union}', "[1,5,8,9,[6]]")
 
-funtest('{list map data (1 2 3) daml "7"}', "[\"7\",\"7\",\"7\"]")
+funtest('{list map data (1 2 3) block "7"}', "[\"7\",\"7\",\"7\"]")
 
-funtest('{list map data (1 2 3) daml "7" | map daml "13"}', "[\"13\",\"13\",\"13\"]")
+funtest('{list map data (1 2 3) block "7" | map block "13"}', "[\"13\",\"13\",\"13\"]")
 
 funtest('{logic switch on 2 value (1 :one 2 :two 3 :three)}', "two")
 
-funtest('{list map data (1 2 3) daml "{7}"}', "[7,7,7]")
+funtest('{list map data (1 2 3) block "{7}"}', "[7,7,7]")
 
 funtest('{(:One {"1 2 3" | string split on " "} :Two)}', "[\"One\",[\"1\",\"2\",\"3\"],\"Two\"]")
 
@@ -319,7 +319,20 @@ funtest('2 {2 | add 2} {2 | times 4}', '2 4 8')
 
 funtest('{(1 {"{2}"} 3)}', "[1,\"{2}\",3]")
 
-// funtest('{each daml {{block}} data (1 2)}', 'asdf bax')
+funtest('{(1 2 3) | map block "{__ | add 4}"}', '[5,6,7]')
+
+funtest('{(1 2 3 4 5) | map block "{__ | times __}"}', '[1,4,9,16,25]')
+
+funtest('{(1 2 3 4 5) | map block "{times (__ __ __)}"}', '[1,8,27,64,125]')
+
+funtest('{(1 2 3 4 5) | map block "{(__ __ __) | times}"}', '[1,8,27,64,125]')
+
+funtest('{(1 2 3 4 5) | map block "{__ | times __ | times __}"}', '[1,16,81,256,625]')
+
+
+
+funtest('{begin block | map data (1 2 3)} asdf {end block}', 'foo')
+
 
 
 // funtest('{begin block | merge with @bundle} {one} {end block}')

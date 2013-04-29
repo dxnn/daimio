@@ -34,6 +34,10 @@ true
 // interesting: http://www.g200kg.com/en/docs/webmodular/index.html?p=1F2B3H5H8091BHCAE2H2IHK3N6Q4T7WIY5Z4aEc3dH_0021CPo500021COo00Ze0nNoR0l00Qnoo0Z00Ko00Z00no00oRoe00o0201P1000b&m=t150%0Ae-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-4%3Ce-4%3Eg-4%3Cd-4%3Efrf4%0Ae-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Ef4%3Ce-4%3Ef4%3Cg-4%3Eg-rg-4
 
 
+// Extra braces don't matter. extra quotes do, but are generally ok.
+{{{"{__ | add {"4"}}"}} | map data {(1 2)} }
+[5,6]
+
 
 This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the DAML language.
 
@@ -127,12 +131,12 @@ Tests for blocks
     {"{:foo}x" | > :xxx || 123 | > :xxx.y | xxx.string}
   
   make sure we're not defuncing pre-merge
-    {"{:foo}x" | > :qq.ww.ee || merge data qq daml "{ee | quote}"}
+    {"{:foo}x" | > :qq.ww.ee || merge data qq block "{ee | quote}"}
       {:foo}x
   
 
 Tests for stringification
-  {1 | > :power || each data (1 2 3 4) daml "{math pow value 2 exp power | > :power} "}
+  {1 | > :power || each data (1 2 3 4) block "{math pow value 2 exp power | > :power} "}
     2 4 16 65536
 
 Tests for strings
@@ -175,7 +179,7 @@ Tests for pipes
     {begin walk | merge data ({* (:a {* (:s 1)} )}) }x{a.s}{end walk}
       x1
     
-    {merge data ({* (:a {* (:s 1)} )}) daml "{a.s}"} 
+    {merge data ({* (:a {* (:s 1)} )}) block "{a.s}"} 
       1
     
 Tests for lists
@@ -196,26 +200,26 @@ Tests for lists
     {klist | list sort by :y | list reverse | __.y}
       ["d","d","c","b","a"]
 
-    {klist | list sort by "{(this.x this.y) | string join}" | merge daml "{x}{y} "}
+    {klist | list sort by "{(this.x this.y) | string join}" | merge block "{x}{y} "}
       1d 2c 2d 3a 4b
 
-    {klist | list sort by "{(this.y this.x) | string join}" | map daml "{value.y}{value.x}"}
+    {klist | list sort by "{(this.y this.x) | string join}" | map block "{value.y}{value.x}"}
       ["a3","b4","c2","d1","d2"]
 
     // extract
     // THINK: why do we need all the 'then 1's?
-    {klist | list extract daml "{this.x | eq 2 | then 1}"}
+    {klist | list extract block "{this.x | eq 2 | then 1}"}
       [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    {klist | list extract daml "{this | eq :d | then 1}" path "*"}
+    {klist | list extract block "{this | eq :d | then 1}" path "*"}
       ["d","d"]
       
     {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
     
-    {dlist | list extract daml "{this | less than :4 | then 1}" path "*.*"}
+    {dlist | list extract block "{this | less than :4 | then 1}" path "*.*"}
       [2,3,1,3,3,1,3]
     
-    {dlist | list extract daml "{parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
+    {dlist | list extract block "{parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
       [2,3,5]
     
 
@@ -340,25 +344,25 @@ hey dann!
 {:blargh | > :name}
 blargh
 
-{merge data names daml foo}           {/ var get => block}
+{merge data names block foo}           {/ var get => block}
 hey youhoo!         
                     
-{merge data names daml {foo}}         {/ same}
+{merge data names block {foo}}         {/ same}
 hey youhoo!
            
-{merge data names daml "{foo}"}       {/ new block => var get => old block}
+{merge data names block "{foo}"}       {/ new block => var get => old block}
 hey youhoo!
   
-{merge data names daml {"{foo}"}}     {/ same}
+{merge data names block {"{foo}"}}     {/ same}
 hey youhoo!
   
-{merge data names daml "{foo} x"}     {/ different new block}
+{merge data names block "{foo} x"}     {/ different new block}
 hey youhoo! x
   
-{merge data names daml {"{foo} x"}}   {/ same different new block}
+{merge data names block {"{foo} x"}}   {/ same different new block}
 hey youhoo! x
     
-{merge data names daml {foo | run}}   {/ var get => block => defunc => string}
+{merge data names block {foo | run}}   {/ var get => block => defunc => string}
 hey blargh!
 
 
@@ -367,7 +371,7 @@ hey blargh!
 {* (:one {* (:name :youhoo)} ) | > :names}
   {"one":{"name":"youhoo"}}
 
-{merge data names daml foo}
+{merge data names block foo}
   hey youhoo!  
 
 
@@ -454,17 +458,17 @@ Here's the use cases, from the user's perspective:
 - I put a DAML string in to a variable, then use that variable as a template for merging.
   {variable set path :z value "~{value}~"}
     ~~
-  {each daml z data (1 2 3)}
+  {each block z data (1 2 3)}
     ~1~~2~~3~
   
 - I pass a DAML string in as a template for merging.
-  {each daml "~{value}~" data (1 2 3)}
+  {each block "~{value}~" data (1 2 3)}
     ~1~~2~~3~
   
 - I create a DAML string, do substitutions on it, and then pass it in as a template for merging.
 -----> this one is weird, because the inner command should *fully* process the string.
 ---- note the 'unquote' command, which processes the tainted strings.
-  {each daml {string transform value "~{value}~" from "~" to "!" | unquote} data (1 2 3)}
+  {each block {string transform value "~{value}~" from "~" to "!" | unquote} data (1 2 3)}
     !1!!2!!3!
   {string transform value "~{value}~" from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
@@ -569,29 +573,29 @@ Here's the use cases, from the user's perspective:
     x0yzx1yz
   {"x{key}y{z}" | > :x1 | each data (1 2)} {// var via pipe}
     x0yzx1yz
-  {each daml "x{key}y{z}" data (1 2)}
+  {each block "x{key}y{z}" data (1 2)}
     x0yzx1yz
-  {each daml {"x{key}y{z}"} data (1 2)}
+  {each block {"x{key}y{z}"} data (1 2)}
     x0yzx1yz
-  {each daml {{"x{key}y{z}"}} data (1 2)}
+  {each block {{"x{key}y{z}"}} data (1 2)}
     x0yzx1yz
-  {each daml x data (1 2)}
+  {each block x data (1 2)}
     x0yzx1yz
-  {each daml {x} data (1 2)}
+  {each block {x} data (1 2)}
     x0yzx1yz
-  {each daml {{x}} data (1 2)}
+  {each block {{x}} data (1 2)}
     x0yzx1yz
-  {each daml x1 data (1 2)}
+  {each block x1 data (1 2)}
     x0yzx1yz
-  {each daml {x1} data (1 2)}
+  {each block {x1} data (1 2)}
     x0yzx1yz
-  {each daml {{x1}} data (1 2)}
+  {each block {{x1}} data (1 2)}
     x0yzx1yz
-  {each daml block data (1 2)}
+  {each block block data (1 2)}
     x0yzx1yz
-  {each daml {block} data (1 2)}
+  {each block {block} data (1 2)}
     x0yzx1yz
-  {each daml {{block}} data (1 2)}
+  {each block {{block}} data (1 2)}
     x0yzx1yz
 
 ----- Loading value into the value variable creates a self-referencing block, which affects us later... 
@@ -908,35 +912,35 @@ Snack 2: Blocks
       {begin foo}x{value}-{end foo}
     
     The each command invokes a DAML string for every element of a list. These are all equivalent:
-      {each daml "x{value}-" data (1 2 3)}
+      {each block "x{value}-" data (1 2 3)}
       x1-x2-x3-
-      {each daml {"x{value}-"} data (1 2 3)}
+      {each block {"x{value}-"} data (1 2 3)}
       x1-x2-x3-
-      {each daml {{"x{value}-"}} data (1 2 3)}
+      {each block {{"x{value}-"}} data (1 2 3)}
       x1-x2-x3-
       
     This one also behaves the same, but the extra quotes slow things down.
-      {each daml {"{"x{value}-"}"} data (1 2 3)}
+      {each block {"{"x{value}-"}"} data (1 2 3)}
       x1-x2-x3-
       
     These works like you would expect -- each iteration returns an array, which is JSONified internally.
-      {each daml "{(:x {string join value {value}} "-")}" data (1 2 3)}
+      {each block "{(:x {string join value {value}} "-")}" data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
-      {each daml {"{(:x {string join value {value}} "-")}"} data (1 2 3)}
+      {each block {"{(:x {string join value {value}} "-")}"} data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
     
     These show the strange, sad results of trying to coerce an array into a template.
       {:hey | > :value}
       hey
-      {each daml (:x value {value} "{value}" {"{value}"}) data (1 2 3)}
+      {each block (:x value {value} "{value}" {"{value}"}) data (1 2 3)}
       ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
-      {each daml (:x {string join value {value}}) data (1 2 3)}
+      {each block (:x {string join value {value}}) data (1 2 3)}
       ["x","hey"]["x","hey"]["x","hey"]
-      {each daml {(:x value "-")} data (1 2 3)}
+      {each block {(:x value "-")} data (1 2 3)}
       ["x","hey","-"]["x","hey","-"]["x","hey","-"]
 
     It pairs nicely with blocks:
-      {each daml foo data (1 2 3)}
+      {each block foo data (1 2 3)}
       x1-x2-x3-
       {foo | each data (1 2 3)}
       x1-x2-x3-
@@ -1223,7 +1227,7 @@ Depth 5: Creating aliases
 
 :::Bindings and such:::
 
-    {variable bind path :test daml "{count1 | add 1 | > :count1}"}
+    {variable bind path :test block "{count1 | add 1 | > :count1}"}
       
     {:a | > :test}
       a
@@ -1232,7 +1236,7 @@ Depth 5: Creating aliases
       1
     
   The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-    {variable bind path :test daml "{count2 | add 1 | > :count2}"}
+    {variable bind path :test block "{count2 | add 1 | > :count2}"}
       
     {:b | > :test}
       b
@@ -1240,7 +1244,7 @@ Depth 5: Creating aliases
     {count1} x {count2}
       2 x 1
       
-    {variable unbind path :test daml "{count1 | add 1 | > :count1}"}
+    {variable unbind path :test block "{count1 | add 1 | > :count1}"}
   
     {:c | > :test}
       c
@@ -1248,7 +1252,7 @@ Depth 5: Creating aliases
     {count1} x {count2}
       2 x 2
     
-    {variable bind path :testx.y.z daml "{count2 | add 2 | > :count2}"}
+    {variable bind path :testx.y.z block "{count2 | add 2 | > :count2}"}
     
     {:x | > :testx.y.z}
       x
@@ -1257,7 +1261,7 @@ Depth 5: Creating aliases
       2 x 4
     
   You can edit the bound var directly in the daml -- infinite recursion is prevented.
-    {variable bind path :foox daml "{__var.#1 | add 2 | > :foox.0}"}
+    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
     
     {(7 2) | > :foox}
       [7,2]
@@ -1266,7 +1270,7 @@ Depth 5: Creating aliases
       [9,2]
   
   Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-    {variable bind path :foox daml "{__var.#1 | add __var.#2 | > :foox.1}"}
+    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
 
     {(7 2) | > :foox}
       [7,2]
@@ -1351,11 +1355,11 @@ CC 1: Math commands
         1.75
       {:7 | divide by :4}
         1.75
-      {divide value (:1 2 :3) | map daml "{value | round to 2}"}
+      {divide value (:1 2 :3) | map block "{value | round to 2}"}
         ["0.17"]
-      {(1 2 3) | divide by 3 | map daml "{value | round to 2}"}
+      {(1 2 3) | divide by 3 | map block "{value | round to 2}"}
         ["0.33","0.67","1"]
-      {math divide value (1 2 3) by (6 5 4) | map daml "{value | round to 2}"}
+      {math divide value (1 2 3) by (6 5 4) | map block "{value | round to 2}"}
         ["0.17","0.4","0.75"]
       
       // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
@@ -1393,11 +1397,11 @@ CC 2: Looping
   There are two primary loop commands in DAML: each and merge. They require a string (the template) and a list or map (the data). Both work by variablizing each element of data in turn and running the template over it.
   
     Foreach pushes each element into a variable called 'value':
-      {each data (1 2 3) daml "{value}x"}
+      {each data (1 2 3) block "{value}x"}
       1x2x3x
     
     The each command also pushes the value's key into a variable called 'key':
-      {each data {* (:one 1 :two 2 :three 3)} daml "{key}x"}
+      {each data {* (:one 1 :two 2 :three 3)} block "{key}x"}
       onextwoxthreex
     
     It works on blocks, too, naturally. Here we use the common alias form:
@@ -2112,11 +2116,11 @@ hashly and surprise local! and local and bashly and local and surprise local! an
 // hashly x bashly
 // 
 // // each with 'as' param
-// {each daml "{one} {two} x " data @hash}
+// {each block "{one} {two} x " data @hash}
 // hashly surprise local! x local bashly x local surprise local! x 
 // 
 // // each with 'as' param
-// {each daml "{peg} x " data @hash as "peg"}
+// {each block "{peg} x " data @hash as "peg"}
 // hashly x bashly x crashly x 
 
 
