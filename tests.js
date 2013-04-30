@@ -329,9 +329,21 @@ funtest('{(1 2 3 4 5) | map block "{(__ __ __) | times}"}', '[1,8,27,64,125]')
 
 funtest('{(1 2 3 4 5) | map block "{__ | times __ | times __}"}', '[1,16,81,256,625]')
 
+funtest('{begin block | map data (1 2 3) | string join on ","} asdf {end block}', ' asdf , asdf , asdf ')
 
+funtest('{begin foo | map data (1 2 3 4)}{__ | add 4}{end foo}', '[5,6,7,8]')
 
-funtest('{begin block | map data (1 2 3)} asdf {end block}', 'foo')
+funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}{__ | add 4}{end foo}', '59 610 711 812')
+
+funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}x{__ | add 4}{end foo}', '59 610 711 812')
+
+funtest('{begin foo | map data (1 2 3 4) | string join on "---"}answer: {__ | add 4}{end foo}', 'answer: 4---answer: 4---answer: 4---answer: 4')
+
+funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string transform from :answer to :foo}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 4---foo: 4---foo: 4---foo: 4')
+
+funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string split on ": " | map block "{if {__ | is like :answer} then :foo else "{__ | add 3}" | run}" | string join on ": "}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 4---foo: 4---foo: 4---foo: 4')
+
+funtest('{begin foo | string split on " " | string join on "---"}Some {a} text{end foo}', 'Some---{a}---text')
 
 
 
