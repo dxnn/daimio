@@ -331,6 +331,8 @@ funtest('{(1 2 3 4 5) | map block "{__ | times __ | times __}"}', '[1,16,81,256,
 
 funtest('{begin block | map data (1 2 3) | string join on ","} asdf {end block}', ' asdf , asdf , asdf ')
 
+funtest('{(1 2 3) | map block "{add __ to 4}"}', '[5,6,7]')
+
 funtest('{begin foo | map data (1 2 3 4)}{__ | add 4}{end foo}', '[5,6,7,8]')
 
 funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}{__ | add 4}{end foo}', '59 610 711 812')
