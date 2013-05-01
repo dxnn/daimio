@@ -17,20 +17,26 @@
   </form>
   
   <script type="text/daml" id="hello_daimio">
-    {// establish #count gateway}
-    { channel add name :counter 
-    | channel attach 
-        side :end
-        gateway {gateway add type :dom-text thing :count name :setcount}
-    | channel send name :counter value 47
-    | 48 | @>counter}
+    {// counter space //}
+    { space add name :counterspace block "{$count | add 1 | > :count}"
+    | gateway add type :space name :counterspace-gateway}
     
-    {/5555 | add 5}
+    {// make gateways //}
+    {gateway add name :button-gateway type :dom-submit thing :button_form}
+    {gateway add name :display-gateway type :dom-text thing :count}
     
-    {// establish #button_form gateway}
-    {//3 | process wait for 1000 | add 99}
-    {//3 | process wait for 1000 then "{__}" | add 99}
-    {//2 | add 4}
+    {// channel button-to-space //}
+    { channel add name :button-to-space
+    | channel attach-to-start gateway :button-gateway
+    | channel attach-to-end gateway :counterspace-gateway}
+    
+    {// channel space-to-display //}
+    { channel add name :space-to-display 
+    | channel attach-to-start gateway :counterspace-gateway
+    | channel attach-to-end gateway :display-gateway}
+    
+    {// THINK: why do we have to name gateways and spaces and channels at all? Sometimes it's useless... //}
+    {// TODO: yeah, we should ref those by variable instead, and return like guids or something //}
     
   </script>
   
@@ -44,6 +50,10 @@
   <!-- 
   
     DAML.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
+    {//3 | process wait for 1000 | add 99}
+    {3 | process wait for 1000 then "{__}" | add 99}
+    
+    {48 | @>counter}
     
     
    -->
