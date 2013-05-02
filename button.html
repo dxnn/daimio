@@ -9,7 +9,7 @@
 <body>
 
   <div id="counter_div">
-    <p>The button has been pushed <span id="count">0.01</span> times!</p>
+    <p>The button has been pushed <span id="count">0.707</span> times!</p>
   </div>
   
   <form id="button_form">
@@ -35,6 +35,8 @@
     | channel attach-to-start gateway :counterspace-gateway
     | channel attach-to-end gateway :display-gateway}
     
+    {// get initial data //}
+    
     {// THINK: why do we have to name gateways and spaces and channels at all? Sometimes it's useless... //}
     {// TODO: yeah, we should ref those by variable instead, and return like guids or something //}
     
@@ -48,6 +50,13 @@
   </script>
   
   <!-- 
+  
+    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}" | gateway add name :tickergateway type :space | channel attach-to-end name :button-to-space | channel attach-to-start gateway :tickergateway}')
+    
+    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}"}')
+    DAML.run('{gateway add name :tickergateway type :space thing :ticker}')
+    DAML.run('{channel attach-to-end name :button-to-space gateway :tickergateway}')
+    DAML.run('{channel attach-to-start name :button-to-space gateway :tickergateway}')
   
     DAML.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
     {//3 | process wait for 1000 | add 99}

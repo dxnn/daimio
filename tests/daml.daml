@@ -1,51 +1,6 @@
 WELCOME TO DAML
 
-
-
-
-notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
-  {"12 x 34" | string transform from "/\\d+/g" to "{__ | add 7}"}
-    19 x 41
-
-
-// TEMP
-
-{daml alias string "audio add-osc freq" as :osc}
-
-{daml alias string "audio add-gain value" as :gain}
-
-{daml alias string "audio set-param name" as :set}
-
-{daml alias string "audio play" as :play}
-
-{daml alias string "audio pause" as :pause}
-
-{daml alias string "audio connect" as :connect}
-
-{daml alias string "audio connect to 0" as :out}
-
-
-
-{/osc 5 | > :lfo | gain 80 | osc | out | play}
-true
-{/lfo | set :frequency to 1}
-1
-{/lfo | set :frequency to 10}
-1
-
-{/osc 5 | gain 80 | osc | audio mainline | play}
-
-// DAML.run('{osc 5 | gain 80 | osc | audio mainline | play}')
-
-
-
-// interesting: http://www.g200kg.com/en/docs/webmodular/index.html?p=1F2B3H5H8091BHCAE2H2IHK3N6Q4T7WIY5Z4aEc3dH_0021CPo500021COo00Ze0nNoR0l00Qnoo0Z00Ko00Z00no00oRoe00o0201P1000b&m=t150%0Ae-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-rg-4e-d-%3Cg-4%3Eg-4%3Ce-4%3Eg-4%3Cd-4%3Efrf4%0Ae-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Efrf4e-d-%3Cd-4%3Ef4%3Ce-4%3Ef4%3Cg-4%3Eg-rg-4
-
-
-// Extra braces don't matter. extra quotes do, but are generally ok.
-{{{"{__ | add {"4"}}"}} | map data {(1 2)} }
-[5,6]
-
+<!--
 
 This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the DAML language.
 
@@ -68,16 +23,16 @@ Schema: a list of collections and the mechanical fields (ie non-attr, non-perm) 
 
 orthogonal setters vs unified add: always use empty add + validator. data schema may help with that.
 
-{let :plural on :value be "{value | is like :1 | not | then :s}"}
+/ {let :plural on :value be "{value | is like :1 | not | then :s}"}
 let -> daml import into :etc key 
 plus aliasing...
-{@count | plural}
+/ {@count | plural}
 
 did i mention that fancy handlers return a function that takes into account the local scope, var name/path, etc and that a call to this fancy function is placed in the block but then it could be pre-run in the stack? 
 
-{(1 2 3) | > (:a :b :c)}
-{(1 2 3 4 5) | > (:first "..." :last)}
-{(1 2 3 4 5) | > (:head "...tail")}
+/ {(1 2 3) | > (:a :b :c)}
+/ {(1 2 3 4 5) | > (:first "..." :last)}
+/ {(1 2 3 4 5) | > (:head "...tail")}
 ---- look up more destructuring examples
 
 
@@ -99,13 +54,19 @@ Tests in DAML:
 - 
 
 
-
-{begin add_edge | daml import into : in (:v1 :v2) out :1}
-  
-{end add_edge}
-
+-->
 
 SOME STUFF THAT'S HERE FOR NOW
+
+
+notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
+  {"12 x 34" | string transform from "/\\d+/g" to "{__ | add 7}"}
+    19 x 41
+
+Extra braces don't matter. extra quotes do, but are generally ok.
+  {{{"{__ | add {"4"}}"}} | map data {(1 2)} }
+    [5,6]
+    
 
 unionizer: 
   {(1 2 3) | union (4 5 6)}
@@ -136,15 +97,15 @@ Tests for switch
 
 Tests for blocks
   this should return nothing, because we should cancel the block's status when trying to add to it
-    {"{:foo}x" | > :xxx || 123 | > :xxx.y | xxx.string}
+    {"{:foo}x" | > :xxx || 123 | > :xxx.y | $xxx.string}
   
   make sure we're not defuncing pre-merge
-    {"{:foo}x" | > :qq.ww.ee || merge data qq block "{ee | quote}"}
+    {"{:foo}x" | > :qq.ww.ee || merge data $qq block "{_ee | quote}"}
       {:foo}x
-  
+
 
 Tests for stringification
-  {1 | > :power || each data (1 2 3 4) block "{math pow value 2 exp power | > :power} "}
+  {1 | > :power || each data (1 2 3 4) block "{math pow value 2 exp $power | > :power} "}
     2 4 16 65536
 
 Tests for strings
@@ -181,13 +142,13 @@ Tests for pipes
       0
 
   ok, but what about this?
-    {begin walk | merge data ({* (:a {* (:s 1)} )}) }{a.s}{end walk}
+    {begin walk | merge data ({* (:a {* (:s 1)} )}) }{_a.s}{end walk}
       1
     
-    {begin walk | merge data ({* (:a {* (:s 1)} )}) }x{a.s}{end walk}
+    {begin walk | merge data ({* (:a {* (:s 1)} )}) }x{_a.s}{end walk}
       x1
     
-    {merge data ({* (:a {* (:s 1)} )}) block "{a.s}"} 
+    {merge data ({* (:a {* (:s 1)} )}) block "{_a.s}"} 
       1
     
 Tests for lists
@@ -202,40 +163,40 @@ Tests for lists
     {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | > :klist}
       [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
       
-    {klist | list sort by :x | __.x}
+    {$klist | list sort by :x | __.x}
       [1,2,2,3,4]
 
-    {klist | list sort by :y | list reverse | __.y}
+    {$klist | list sort by :y | list reverse | __.y}
       ["d","d","c","b","a"]
 
-    {klist | list sort by "{(this.x this.y) | string join}" | merge block "{x}{y} "}
+    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{x}{y} "}
       1d 2c 2d 3a 4b
 
-    {klist | list sort by "{(this.y this.x) | string join}" | map block "{value.y}{value.x}"}
+    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{value.y}{value.x}"}
       ["a3","b4","c2","d1","d2"]
 
     // extract
     // THINK: why do we need all the 'then 1's?
-    {klist | list extract block "{this.x | eq 2 | then 1}"}
+    {$klist | list extract block "{__.x | eq 2 | then 1}"}
       [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    {klist | list extract block "{this | eq :d | then 1}" path "*"}
+    {$klist | list extract block "{__ | eq :d | then 1}" path "*"}
       ["d","d"]
       
     {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
     
-    {dlist | list extract block "{this | less than :4 | then 1}" path "*.*"}
+    {$dlist | list extract block "{__ | less than :4 | then 1}" path "*.*"}
       [2,3,1,3,3,1,3]
     
-    {dlist | list extract block "{parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
+    {$dlist | list extract block "{_parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
       [2,3,5]
     
 
       // // prune
-      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {__ | less than :4} path "*.*"}
       // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
       // 
-      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | eq :3} path "*.*"}
+      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {_parent.parent.one.1 | eq :3} path "*.*"}
       // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
       // 
     
@@ -297,13 +258,13 @@ Tests for self-reference. PBV cures these ills.
 
 
 Tests for array compilation:
-  {"{add (counter 1) | > :counter}" | > :countblock}
+  {"{add ($counter 1) | > :counter}" | > :countblock}
     1
   
-  {countblock}
+  {$countblock}
     2
   
-  {countblock | run | counter}
+  {$countblock | run | $counter}
     3
 
 
@@ -321,23 +282,23 @@ Tests for weird variables and stuff:
   dann
 
 Quoting a string passes the DAML through unscathed.
-  {"hi {name}" | quote}
-    hi {name}
+  {"hi {$name}" | quote}
+    hi {$name}
 
 Additional braces are irrelevant. (Internal braces are merely for grouping.)
-  {{"hi {name}"} | quote}
-    hi {name}
+  {{"hi {$name}"} | quote}
+    hi {$name}
 
 Running the DAML first changes the output.
-  {"hi {name}" | run | quote}
+  {"hi {$name}" | run | quote}
     hi dann
 
-  {{"hi {name}" | run} | quote}
+  {{"hi {$name}" | run} | quote}
     hi dann
 
 The quote command also works on arrays.
-  {"hi {name}" | string split on " " | quote}
-    ["hi","{name}"]
+  {"hi {$name}" | string split on " " | quote}
+    ["hi","{$name}"]
 
 
 Once more, with feeling
@@ -346,7 +307,7 @@ Once more, with feeling
 {({* (:name :youhoo)}) | > :names}
 [{"name":"youhoo"}]
 
-{"hey {name}!" | > :foo}
+{"hey {$name}!" | > :foo}
 hey dann!
 
 {:blargh | > :name}
@@ -425,7 +386,7 @@ Here's the use cases, from the user's perspective:
     asxfxx
 
 - transformations can accept daml, also. the 'this' variable is loaded with matches.
-  {"food mood wood" | string transform from "/oo/g" to "{this | string uppercase}"}
+  {"food mood wood" | string transform from "/oo/g" to "{__ | string uppercase}"}
     fOOd mOOd wOOd
 
 - I put a DAML string in with escape characters, and want the raw DAML string out.
@@ -988,7 +949,7 @@ Snack 3: Aliases
   You can also create aliases at runtime. This is useful when paired with command creation.
     
     Create a new command:
-      {daml import template "hey {name}!" into :string as :greet params :name}
+      {daml import template "hey {$name}!" into :string as :greet params :name}
         
       {string greet name "yourself"}
         hey yourself!
@@ -2138,3 +2099,26 @@ hashly and surprise local! and local and bashly and local and surprise local! an
 
 // STRING commands...
 
+// {daml alias string "audio add-osc freq" as :osc}
+// 
+// {daml alias string "audio add-gain value" as :gain}
+// 
+// {daml alias string "audio set-param name" as :set}
+// 
+// {daml alias string "audio play" as :play}
+// 
+// {daml alias string "audio pause" as :pause}
+// 
+// {daml alias string "audio connect" as :connect}
+// 
+// {daml alias string "audio connect to 0" as :out}
+//
+// {osc 5 | > :lfo | gain 80 | osc | out | play}
+// 
+// {lfo | set :frequency to 1}
+// 
+// {lfo | set :frequency to 10}
+// 
+// {osc 5 | gain 80 | osc | audio mainline | play}
+
+// DAML.run('{osc 5 | gain 80 | osc | audio mainline | play}')
