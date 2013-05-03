@@ -250,15 +250,15 @@ funtest = function(string, result) {
 // 
 // fun tests!
 
-funtest('{math add value 7 to 13}', 20)
+funtest('{math add value 7 to 13}', "20")
 
-funtest('{math add value (7 13)}', 20)
+funtest('{math add value (7 13)}', "20")
 
-funtest('{7 | math add to 13}', 20)
+funtest('{7 | math add to 13}', "20")
 
-funtest('{add 7 to 13}', 20)
+funtest('{add 7 to 13}', "20")
 
-funtest('{2 | add 5}', 7)
+funtest('{2 | add 5}', "7")
 
 funtest('{(1 2 3) | math add to 4}', "[5,6,7]")
 
@@ -272,11 +272,11 @@ funtest('{(1 2 3) | add (4 4 4) | add 7 | math subtract value (1 2 3)}', "[11,11
 
 funtest('{add 2 to (3 4 5)}', "[5,6,7]")
 
-funtest('{math add value "7" to "13"}', 20)
+funtest('{math add value "7" to "13"}', "20")
 
-funtest('{add 2 to {77 | add 3}}', 82)
+funtest('{add 2 to {77 | add 3}}', "82")
 
-funtest('{({77 | add 3} {17 | add 3}) | add}', 100)
+funtest('{({77 | add 3} {17 | add 3}) | add}', "100")
 
 funtest('{((1 2) (4 5)) | union}', "[1,2,4,5]")
 
