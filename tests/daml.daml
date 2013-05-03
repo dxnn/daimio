@@ -84,7 +84,7 @@ block problem:
     [[1,2,3],2,3]
 
 counting problem (should count non-lists as 0):
-  { ((1 2 3) 2 3) | extract "{this | count}"}
+  { ((1 2 3) 2 3) | extract "{__ | count}"}
     [[1,2,3]]
 
 Tests for switch
@@ -169,10 +169,10 @@ Tests for lists
     {$klist | list sort by :y | list reverse | __.y}
       ["d","d","c","b","a"]
 
-    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{x}{y} "}
+    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{$x}{$y} "}
       1d 2c 2d 3a 4b
 
-    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{value.y}{value.x}"}
+    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{$value.y}{$value.x}"}
       ["a3","b4","c2","d1","d2"]
 
     // extract
@@ -207,7 +207,7 @@ Tests for falseness
       false
     {0 | then :true else :false}
       false
-    {x | then :true else :false}
+    {$x | then :true else :false}
       false
     {() | then :true else :false}
       false
@@ -221,28 +221,35 @@ Tests for falseness
       true
     {"0" | then :true else :false}
       true
-    {(false) | then :true else :false}
+    {($false) | then :true else :false}
       true
     {(0) | then :true else :false}
       true
-    {* (0 false) | then :true else :false}
+    {* (0 $false) | then :true else :false}
       true
 
   Some parameters are required to have a non-false value. The below fails with an error.
     {3 | > ""}
 
 
+
+    {range 100 | add}
+      5050
+
+
+
+
 Tests for pass-by-value. Changing a DAML variable shouldn't change other variables, either in DAML or in the base language.
   {(1 2 3 4) | > :x}
     [1,2,3,4]
     
-  {x | > :y}
+  {$x | > :y}
     [1,2,3,4]
     
-  {5 | > :x.{x | count}}
+  {5 | > :x.{$x | count}}
     5
     
-  {x} x {y}
+  {$x} x {$y}
     [1,2,3,4,5] x [1,2,3,4]
 
 
@@ -250,10 +257,10 @@ Tests for self-reference. PBV cures these ills.
   {* (:a 1 :b 2) | > :x | > :x.c}
     {"a":1,"b":2}
     
-  {x | > :x.d}
+  {$x | > :x.d}
     {"a":1,"b":2,"c":{"a":1,"b":2}}
     
-  {x}
+  {$x}
     {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
 
 
@@ -313,25 +320,25 @@ hey dann!
 {:blargh | > :name}
 blargh
 
-{merge data names block foo}           {/ var get => block}
+{merge data $names block $foo}           {/ var get => block}
 hey youhoo!         
                     
-{merge data names block {foo}}         {/ same}
+{merge data $names block {$foo}}         {/ same}
 hey youhoo!
            
-{merge data names block "{foo}"}       {/ new block => var get => old block}
+{merge data $names block "{$foo}"}       {/ new block => var get => old block}
 hey youhoo!
   
-{merge data names block {"{foo}"}}     {/ same}
+{merge data $names block {"{$foo}"}}     {/ same}
 hey youhoo!
   
-{merge data names block "{foo} x"}     {/ different new block}
+{merge data $names block "{$foo} x"}     {/ different new block}
 hey youhoo! x
   
-{merge data names block {"{foo} x"}}   {/ same different new block}
+{merge data $names block {"{$foo} x"}}   {/ same different new block}
 hey youhoo! x
     
-{merge data names block {foo | run}}   {/ var get => block => defunc => string}
+{merge data $names block {$foo | run}}   {/ var get => block => defunc => string}
 hey blargh!
 
 
@@ -340,7 +347,7 @@ hey blargh!
 {* (:one {* (:name :youhoo)} ) | > :names}
   {"one":{"name":"youhoo"}}
 
-{merge data names block foo}
+{merge data $names block $foo}
   hey youhoo!  
 
 
@@ -349,19 +356,19 @@ hey blargh!
 {variable set path :foo value 123}
 123
 
-{variable set path :string_foo value "{foo} ~"} 
+{variable set path :string_foo value "{$foo} ~"} 
 123 ~
 
-{variable set path :run_foo value {"~ {foo}"}}
+{variable set path :run_foo value {"~ {$foo}"}}
 ~ 123
 
-{string_foo}{run_foo}
+{$string_foo}{$run_foo}
 123 ~~ 123
 
 {variable set path :foo value :asdf}
 asdf
 
-{string_foo}{run_foo} 
+{$string_foo}{$run_foo} 
 asdf ~~ asdf
 
 
@@ -372,7 +379,7 @@ Here's the use cases, from the user's perspective:
 - I put a simple string in, I want the same string out.
   {"asdf"}
     asdf
-  {begin x | x}asdf{end x}
+  {begin x | $x}asdf{end x}
     asdf
 
 - I put a simple string in, do some regex substitution, and get the evolved string out.
@@ -395,53 +402,53 @@ Here's the use cases, from the user's perspective:
     
 
 - I pass/pipe a DAML string in to the quote command, and want the raw DAML string out.
-  {daml quote value "{asdf}"}
-    {asdf}
-  {"{asdf}" | daml quote}
-    {asdf}
+  {daml quote value "{$asdf}"}
+    {$asdf}
+  {"{$asdf}" | daml quote}
+    {$asdf}
 
 - I put a DAML string in, and want the processed output.
-  {"{foo}x"}
+  {"{$foo}x"}
     123x
 
 - I put a DAML string in, get the processed output, and put that in a variable.
-  {variable set path :x value {"{foo}x" | run}}
+  {variable set path :x value {"{$foo}x" | run}}
     123x
-  {x}
+  {$x}
     123x
   {variable set path :foo value 321}
     321
-  {x}
+  {$x}
     123x
 
 - I put a DAML string in to a variable, then invoke that variable later (getting the processed output in each new context).
-  {variable set path :x value "{foo}x"}
+  {variable set path :x value "{$foo}x"}
     321x
-  {x}
+  {$x}
     321x
   {variable set path :foo value 123}
     123
-  {x}
+  {$x}
     123x
 
 - I put a DAML string in to a variable, then use that variable as a template for merging.
-  {variable set path :z value "~{value}~"}
+  {variable set path :z value "~{$value}~"}
     ~~
-  {each block z data (1 2 3)}
+  {each block $z data (1 2 3)}
     ~1~~2~~3~
   
 - I pass a DAML string in as a template for merging.
-  {each block "~{value}~" data (1 2 3)}
+  {each block "~{$value}~" data (1 2 3)}
     ~1~~2~~3~
   
 - I create a DAML string, do substitutions on it, and then pass it in as a template for merging.
 -----> this one is weird, because the inner command should *fully* process the string.
 ---- note the 'unquote' command, which processes the tainted strings.
-  {each block {string transform value "~{value}~" from "~" to "!" | unquote} data (1 2 3)}
+  {each block {string transform value "~{$value}~" from "~" to "!" | unquote} data (1 2 3)}
     !1!!2!!3!
-  {string transform value "~{value}~" from "~" to "!" | unquote | each data (1 2 3)}
+  {string transform value "~{$value}~" from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
-  {"~{value}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
+  {"~{$value}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
   
 - I take a DAML string, get its ptree, do some mangling (macros), then get the processed output.
@@ -478,141 +485,139 @@ Here's the use cases, from the user's perspective:
   ---- this section highlights the new 'tainting' aspect of DAML. Strings from foreign sources (db, user input, etc) aren't processed unless explicitly instructed. Also, string transformations taint the source string, and will only process when requested. 
   
   For reference, this is how you immediately run tainted strings:
-    {"x{key}y{z}" | string transform from "{key}" to 123 | run}
+    {"x{$key}y{$z}" | string transform from "{$key}" to 123 | run}
       x123yz
 
   And this is how you prep them for running eventually:
-    {"x{key}y{z}" | string transform from "{key}" to 123 | unquote}
+    {"x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote}
       x123yz
 
   And these are all transformed, hence tainted:
 
-  {"x{key}y{z}" | string transform from "{key}" to 123}
-    x123y{z}
-  {begin block | string transform from "{key}" to 123}x{key}y{z}{end block}
-    x123y{z}
-  {block | string transform from "{key}" to 123}
-    x123y{z}
-  {> :x value "x{key}y{z}" | string transform from "{key}" to 123} {// as a var}
-    x123y{z}
-  {"x{key}y{z}" | > :x1 | string transform from "{key}" to 123} {// through a pipe}
-    x123y{z}
-  {string transform value "x{key}y{z}" from "{key}" to 123}
-    x123y{z}
-  {string transform value {"x{key}y{z}"} from "{key}" to 123}
-    x123y{z}
-  {string transform value {{"x{key}y{z}"}} from "{key}" to 123}
-    x123y{z}
-  {string transform value x from "{key}" to 123}
-    x123y{z}
-  {string transform value {x} from "{key}" to 123}
-    x123y{z}
-  {string transform value {{x}} from "{key}" to 123}
-    x123y{z}
-  {string transform value x1 from "{key}" to 123}
-    x123y{z}
-  {string transform value {x1} from "{key}" to 123}
-    x123y{z}
-  {string transform value {{x1}} from "{key}" to 123}
-    x123y{z}
-  {string transform value block from "{key}" to 123}
-    x123y{z}
-  {string transform value {block} from "{key}" to 123}
-    x123y{z}
-  {string transform value {{block}} from "{key}" to 123}
-    x123y{z}
+  {"x{$key}y{$z}" | string transform from "{$key}" to 123}
+    x123y{$z}
+  {begin block | string transform from "{$key}" to 123}x{$key}y{$z}{end block}
+    x123y{$z}
+  {$block | string transform from "{$key}" to 123}
+    x123y{$z}
+  {> :x value "x{$key}y{$z}" | string transform from "{$key}" to 123} {// as a var}
+    x123y{$z}
+  {"x{$key}y{$z}" | > :x1 | string transform from "{$key}" to 123} {// through a pipe}
+    x123y{$z}
+  {string transform value "x{$key}y{$z}" from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {"x{$key}y{$z}"} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {{"x{$key}y{$z}"}} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value $x from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {$x} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {{$x}} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value $x1 from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {$x1} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {{$x1}} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value $block from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {$block} from "{$key}" to 123}
+    x123y{$z}
+  {string transform value {{$block}} from "{$key}" to 123}
+    x123y{$z}
   
 - ensure we can fully process if necessary
-  {string transform value {x | run} from "{key}" to 123}
+  {string transform value {$x | run} from "{$key}" to 123}
     xKEYyz
-  {string transform value {x1 | run} from "{key}" to 123}
+  {string transform value {$x1 | run} from "{$key}" to 123}
     xKEYyz
-  {string transform value {block | run} from "{key}" to 123}
+  {string transform value {$block | run} from "{$key}" to 123}
     xKEYyz
   
 - ensure we can also access it as a function
 
-  {"x{key}y{z}" | each data (1 2)}
+  {"x{$key}y{$z}" | each data (1 2)}
     x0yzx1yz
-  {begin block | each data (1 2)}x{key}y{z}{end block}
+  {begin block | each data (1 2)}x{$key}y{$z}{end block}
     x0yzx1yz
-  {block | each data (1 2)}
+  {$block | each data (1 2)}
     x0yzx1yz
-  {> :x value "x{key}y{z}" | each data (1 2)} {// as a var}
+  {> :x value "x{$key}y{$z}" | each data (1 2)} {// as a var}
     x0yzx1yz
-  {"x{key}y{z}" | > :x1 | each data (1 2)} {// var via pipe}
+  {"x{$key}y{$z}" | > :x1 | each data (1 2)} {// var via pipe}
     x0yzx1yz
-  {each block "x{key}y{z}" data (1 2)}
+  {each block "x{$key}y{$z}" data (1 2)}
     x0yzx1yz
-  {each block {"x{key}y{z}"} data (1 2)}
+  {each block {"x{$key}y{$z}"} data (1 2)}
     x0yzx1yz
-  {each block {{"x{key}y{z}"}} data (1 2)}
+  {each block {{"x{$key}y{$z}"}} data (1 2)}
     x0yzx1yz
-  {each block x data (1 2)}
+  {each block $x data (1 2)}
     x0yzx1yz
-  {each block {x} data (1 2)}
+  {each block {$x} data (1 2)}
     x0yzx1yz
-  {each block {{x}} data (1 2)}
+  {each block {{$x}} data (1 2)}
     x0yzx1yz
-  {each block x1 data (1 2)}
+  {each block $x1 data (1 2)}
     x0yzx1yz
-  {each block {x1} data (1 2)}
+  {each block {$x1} data (1 2)}
     x0yzx1yz
-  {each block {{x1}} data (1 2)}
+  {each block {{$x1}} data (1 2)}
     x0yzx1yz
-  {each block block data (1 2)}
+  {each block $block data (1 2)}
     x0yzx1yz
-  {each block {block} data (1 2)}
+  {each block {$block} data (1 2)}
     x0yzx1yz
-  {each block {{block}} data (1 2)}
+  {each block {{$block}} data (1 2)}
     x0yzx1yz
 
 ----- Loading value into the value variable creates a self-referencing block, which affects us later... 
 // what we want to show here is that editing a block changes it back into just a regular 'dead' string.
-{begin x_to_y}
-  {string transform value value from x to y}
-{end x_to_y}
+{begin x_to_y}{string transform value $value from $x to $y}{end x_to_y}
 
-{x_to_y}
+{$x_to_y}
 
-{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || x_to_y}
+{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || $x_to_y}
   ayy fiy hey hoay
 
-{x_to_y | > :value | x_to_y | run | > :modded_block}
-  {string transform value value from y to y}
+{$x_to_y | > :value | $x_to_y | run | > :modded_block}
+  {string transform value $value from $x to $y}
 
-{modded_block}
-  {string transform value value from y to y}
+{$modded_block}
+  {string transform value $value from $x to $y}
 
 // and then show you can 'rez' a dead string by unquoting it. (unquoting is dark, necromantic magic.)
 
-{x_to_y | > :value | run}
-  {string transform value value from y to y}
+{$x_to_y | > :value | run}
+  {string transform value $value from $x to $y}
 
 // alternately:
-{x_to_y | string transform from :x to :z | string transform from :y to :x | string transform from :z to :y | > :y_to_x}
-  {string transform value value from y to x}
+{$x_to_y | string transform from :x to :z | string transform from :y to :x | string transform from :z to :y | > :y_to_x}
+  {string transform value $value from $x to $y}
   
-{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || y_to_x}
-  {string transform value value from y to x}
+{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || $y_to_x}
+  {string transform value $value from $x to $y}
 
 
 // run the process instantly
-{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || y_to_x | run}
+{"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || $y_to_x | run}
   axx fix hex hoax
 
-{y_to_x | run | quote}
+{$y_to_x | run | quote}
   axx fix hex hoax
 
 
 // unquote the string to create a block
-{y_to_x | unquote | > :y_to_x_block}
+{$y_to_x | unquote | > :y_to_x_block}
   axx fix hex hoax
 
-{y_to_x | unquote | quote}
-  {string transform value value from y to x}
+{$y_to_x | unquote | quote}
+  {string transform value $value from $x to $y}
 
-{"axy faxy foxy" | > :value || y_to_x_block}
+{"axy faxy foxy" | > :value || $y_to_x_block}
   axx faxx foxx
   
 
@@ -626,31 +631,31 @@ z
 {"" | > :y}
 
 // this one's pretty easy -- just make sure you fully process before you finish
-{"1 {z} {"2 {z} {"3 {z}"}"}"}
+{"1 {$z} {"2 {$z} {"3 {$z}"}"}"}
 1 z 2 z 3 z
 
 // this one's a bit harder -- once it starts running, the first command should fully proc before the next one
-{"1 {"{y} 2 {z | > :y} 3"} {y}"}
+{"1 {"{$y} 2 {$z | > :y} 3"} {$y}"}
 1  2 z 3 z
 
 // ho ho ho
 {1 | > :x}
 1
 
-{({"{x}" | > :asdf} "zxcv" {"{x}"} asdf) | string join on " "}
+{({"{$x}" | > :asdf} "zxcv" {"{$x}"} $asdf) | string join on " "}
 1 zxcv 1 1
 
-{({"{x}dog" | > :asdf} asdf {8 | > :x} asdf) | string join on " "}
+{({"{$x}dog" | > :asdf} $asdf {8 | > :x} $asdf) | string join on " "}
 1dog 1dog 8 8dog
     
 {1 | > :x}
 1
 
 -- note here that the entire list gets processed before the 'on' param's DAML is processed. this is due to the internal mechanics of 'string join': some commands may behave differently. 
-{(asdf {"{x}" | > :asdf} "zxcv" {"{x}"} asdf) | string join on " {asdf} "}
+{($asdf {"{$x}" | > :asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} "}
 1dog 1 1 1 zxcv 1 1 1 1
 
-{({"{x}dog" | > :asdf} asdf {8 | > :x} asdf) | string join on " {x} "}
+{({"{$x}dog" | > :asdf} $asdf {8 | > :x} $asdf) | string join on " {$x} "}
 1dog 8 1dog 8 8 8 8dog
     
 END STUFF
@@ -832,7 +837,7 @@ Snack 1: Variables
       ["one","two","three"]
   
     But you can also use this shorter form:
-      {bar}
+      {$bar}
       ["one","two","three"]
   
     You can push things deeper into a variable using a dot ('.'):
@@ -840,15 +845,15 @@ Snack 1: Variables
       xyzzy
   
     You can reach in to variables the same way:
-      {foo.one}
+      {$foo.one}
       xyzzy
 
     Use an octothorp to find the Nth value in a list:
-      {bar.#2}
+      {$bar.#2}
       two
   
     Negative indices are also supported:
-      {bar.#-1}
+      {$bar.#-1}
       three
   
   We'll see some more ways to reach into variables in a bit.
@@ -866,54 +871,62 @@ Snack 2: Blocks
       ["Some","text"]
     
     The block also creates a new variable:
-      {begin foo}Some text{end foo}{foo}
+      {begin foo}Some text{end foo}{$foo}
       Some text
-      {begin foo | foo}Some text{end foo}
+      {begin foo | $foo}Some text{end foo}
       Some text
 
   We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
   
     Using a block we've previously built:
-      {foo | string split on " "}
+      {$foo | string split on " "}
       ["Some","text"]
     
     Blocks can also contain DAML:
-      {begin foo}x{value}-{end foo}
+      {begin foo}x{$value}-{end foo}
     
     The each command invokes a DAML string for every element of a list. These are all equivalent:
-      {each block "x{value}-" data (1 2 3)}
+      {each block "x{__}-" data (1 2 3)}
       x1-x2-x3-
-      {each block {"x{value}-"} data (1 2 3)}
+      {each block {"x{__}-"} data (1 2 3)}
       x1-x2-x3-
-      {each block {{"x{value}-"}} data (1 2 3)}
+      {each block {{"x{__}-"}} data (1 2 3)}
       x1-x2-x3-
       
     This one also behaves the same, but the extra quotes slow things down.
-      {each block {"{"x{value}-"}"} data (1 2 3)}
+      {each block {"{"x{__}-"}"} data (1 2 3)}
       x1-x2-x3-
       
     These works like you would expect -- each iteration returns an array, which is JSONified internally.
-      {each block "{(:x {string join value {value}} "-")}" data (1 2 3)}
+      {each block "{(:x {string join value {__}} "-")}" data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
-      {each block {"{(:x {string join value {value}} "-")}"} data (1 2 3)}
+      {each block {"{(:x {string join value {__}} "-")}"} data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
     
     These show the strange, sad results of trying to coerce an array into a template.
       {:hey | > :value}
       hey
-      {each block (:x value {value} "{value}" {"{value}"}) data (1 2 3)}
+      {each block (:x __ {__} "{__}" {"{__}"}) data (1 2 3)}
       ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
-      {each block (:x {string join value {value}}) data (1 2 3)}
+      {each block (:x {string join value {__}}) data (1 2 3)}
       ["x","hey"]["x","hey"]["x","hey"]
-      {each block {(:x value "-")} data (1 2 3)}
+      {each block {(:x __ "-")} data (1 2 3)}
       ["x","hey","-"]["x","hey","-"]["x","hey","-"]
 
+{map block "{__ | add 1}" data (1 2 3)}
+
+{map block "{__}x" data (1 2 3)}
+
+{map block "{__}" data (1 2 3)}
+
+{map block "x{__}" data (1 2 3)}
+
     It pairs nicely with blocks:
-      {each block foo data (1 2 3)}
+      {each block $foo data (1 2 3)}
       x1-x2-x3-
-      {foo | each data (1 2 3)}
+      {$foo | each data (1 2 3)}
       x1-x2-x3-
-      {begin foo | each data (1 2 3)}x{value}-{end foo}
+      {begin foo | each data (1 2 3)}x{$value}-{end foo}
       x1-x2-x3-
       
       {({:8} {8})}
@@ -949,7 +962,7 @@ Snack 3: Aliases
   You can also create aliases at runtime. This is useful when paired with command creation.
     
     Create a new command:
-      {daml import template "hey {$name}!" into :string as :greet params :name}
+      {daml import block "hey {$name}!" into :string as :greet params :name}
         
       {string greet name "yourself"}
         hey yourself!
@@ -1042,33 +1055,33 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
         123
   
     Variables beginning with '@' are global:
-      {begin block}{123 | > :@foo}{end block}{@foo}
+      {begin block}{123 | > :foo}{end block}{$foo}
         123
     
     Blocks create a new variable:
-      {begin block}Hey there{end block}{block}
+      {begin block}Hey there{end block}{$block}
         Hey there
     
 //    Nested blocks are only accessible inside their parent block:
-//      {begin outer}{begin inner}123{end inner}{end outer}{inner}
+//      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
         
       
     Use a global if you need access to it later:
-      {begin outer}{begin inner | > :@inner}123{end inner}{end outer}{@inner}
+      {begin outer}{begin inner | > :inner}123{end inner}{end outer}{$inner}
         123
     
     Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
-      {123 | > :x ||}{begin foo}{x}{end foo}{x}
+      {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
       123
     
 //    But they aren't actually globals:
-//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{x}{end foo}{x}
+//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
 //      456123
   
   See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
   
     Contrast that with a global:
-      {123 | > :@x ||}{begin foo |}{456 | > :@x ||}{@x}{end foo}{@x}
+      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
       456456
   
   Changing a global changes it everywhere, regardless of scope. 
@@ -1076,7 +1089,7 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
   Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, DAML isn't general purpose. In DAML globals are cute and cuddly and always floss.
   
 //    Blocks establish a new variable scope:
-//      {"asdf" | > :x}{begin foo}{123 | > :x || x}{end foo}{x}
+//      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
 //  
 //    But variables starting with '@' are global:
 //      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
@@ -1098,7 +1111,7 @@ Depth 2: Maps
   As you can see, the * operator (which is really just an alias for a command) uses the first value in the list as a key, the second as its value, the third as the second key, the fourth as its value, and so on. While this seems a bit messy on a single line, with proper whitespacing it's very easy to read. 
 
     In DAML maps are sorted, so we can use the #N notation on them:
-      {* (:one :first :two :second) | > :x || x.#2}
+      {* (:one :first :two :second) | > :x || $x.#2}
       second
     
     [Integer keys in maps can mess up the sorting in the JS implementation]
@@ -1136,19 +1149,19 @@ Depth 3: Further fun with variables
     Dot values. You can reach inside variables in a variety of ways. Here's a list.
 
       A named parameter:
-        {* (:one 1 :two 2 :three 3) | > :x | x.two}
+        {* (:one 1 :two 2 :three 3) | > :x | $x.two}
           2
 
       A numbered parameter (notice numbering is 1-indexed):
-        {x.#1}
+        {$x.#1}
           1
-        {x.#5}
+        {$x.#5}
 
       You can also go negative:
-        {x.#-2}
+        {$x.#-2}
           2
         
-        {x.#-5}
+        {$x.#-5}
 
     You can use the magic character ('__') to access the pipe value.
 
@@ -1167,16 +1180,16 @@ Depth 3: Further fun with variables
       ex: using .*. formation
 
       ex: using .{}. notation
-      {@bundle.{@bar.one}.one | eq :1}
+      {$bundle.{$bar.one}.one | eq :1}
 
       //
       // test DAML path setting
       //
 
-      {:ash | > :hash.{"two"}} {hash}
+      {:ash | > :hash.{"two"}} {$hash}
         ash {"two":"ash"}
 
-      {:ash | > :hash.{"two"}.monkey.flu} {hash}
+      {:ash | > :hash.{"two"}.monkey.flu} {$hash}
         ash {"two":{"monkey":{"flu":"ash"}}}
 
 
@@ -1196,57 +1209,57 @@ Depth 5: Creating aliases
 
 :::Bindings and such:::
 
-    {variable bind path :test block "{count1 | add 1 | > :count1}"}
-      
-    {:a | > :test}
-      a
-      
-    {count1}
-      1
-    
-  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-    {variable bind path :test block "{count2 | add 1 | > :count2}"}
-      
-    {:b | > :test}
-      b
-      
-    {count1} x {count2}
-      2 x 1
-      
-    {variable unbind path :test block "{count1 | add 1 | > :count1}"}
-  
-    {:c | > :test}
-      c
-      
-    {count1} x {count2}
-      2 x 2
-    
-    {variable bind path :testx.y.z block "{count2 | add 2 | > :count2}"}
-    
-    {:x | > :testx.y.z}
-      x
-    
-    {count1} x {count2}
-      2 x 4
-    
-  You can edit the bound var directly in the daml -- infinite recursion is prevented.
-    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
-    
-    {(7 2) | > :foox}
-      [7,2]
-    
-    {foox}
-      [9,2]
-  
-  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
-
-    {(7 2) | > :foox}
-      [7,2]
-    
-    {foox}
-      [9,9]
-      
+//    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
+//      
+//    {:a | > :test}
+//      a
+//      
+//    {$count1}
+//      1
+//    
+//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
+//    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
+//      
+//    {:b | > :test}
+//      b
+//      
+//    {$count1} x {$count2}
+//      2 x 1
+//      
+//    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
+//  
+//    {:c | > :test}
+//      c
+//      
+//    {$count1} x {$count2}
+//      2 x 2
+//    
+//    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
+//    
+//    {:x | > :testx.y.z}
+//      x
+//    
+//    {$count1} x {$count2}
+//      2 x 4
+//    
+//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
+//    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
+//    
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,2]
+//  
+//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
+//    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
+//
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,9]
+//      
   // THINK: make a different test suite for the dom handler and interactive stuff.
   
 :::Common Commands:::
@@ -1257,7 +1270,7 @@ CC 1: Math commands
 
   // TODO: move this
   Ensure values are properly finagled. 
-    {1 | > :x | 2 | > :y | 3 | > :z | (x y z) | add}
+    {1 | > :x | 2 | > :y | 3 | > :z | ($x $y $z) | add}
       6
       
       --> these don't exist anymore
@@ -1324,11 +1337,11 @@ CC 1: Math commands
         1.75
       {:7 | divide by :4}
         1.75
-      {divide value (:1 2 :3) | map block "{value | round to 2}"}
+      {divide value (:1 2 :3) | map block "{__ | round to 2}"}
         ["0.17"]
-      {(1 2 3) | divide by 3 | map block "{value | round to 2}"}
+      {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
         ["0.33","0.67","1"]
-      {math divide value (1 2 3) by (6 5 4) | map block "{value | round to 2}"}
+      {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
         ["0.17","0.4","0.75"]
       
       // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
@@ -1366,15 +1379,15 @@ CC 2: Looping
   There are two primary loop commands in DAML: each and merge. They require a string (the template) and a list or map (the data). Both work by variablizing each element of data in turn and running the template over it.
   
     Foreach pushes each element into a variable called 'value':
-      {each data (1 2 3) block "{value}x"}
+      {each data (1 2 3) block "{__}x"}
       1x2x3x
     
     The each command also pushes the value's key into a variable called 'key':
-      {each data {* (:one 1 :two 2 :three 3)} block "{key}x"}
+      {each data {* (:one 1 :two 2 :three 3)} block "{_key}x"}
       onextwoxthreex
     
     It works on blocks, too, naturally. Here we use the common alias form:
-      {begin loop | each data {* (:one 1 :two 2 :three 3)}} {key}: {value} {end loop}
+      {begin loop | each data {* (:one 1 :two 2 :three 3)}} {_key}: {__} {end loop}
       one: 1  two: 2  three: 3
   
   Merge is a little more complicated
@@ -1384,8 +1397,8 @@ CC 2: Looping
   A 'merge' will push
   
   merging...
-  {(@bar @hash) | > :bundle}
-  {begin block | merge with @bundle} {one} {end block}
+  {($bar $hash) | > :bundle}
+  {begin block | merge block $bundle} {$one} {end block}
   
   
   
@@ -1404,10 +1417,10 @@ CC 2: Looping
 {(:One {"1 2 3" | string split on " "} :Two)}
   ["One",["1","2","3"],"Two"]
 
-{begin foo | foo}One{"1 2 3" | string split on " "}Two{end foo}
+{begin foo | $foo}One{"1 2 3" | string split on " "}Two{end foo}
   One["1","2","3"]Two
 
-{begin foo}One{"1 2 3" | string split on " "}Two{end foo}{foo}
+{begin foo}One{"1 2 3" | string split on " "}Two{end foo}{$foo}
   One["1","2","3"]Two
 
 
@@ -1466,13 +1479,13 @@ Basic blocks and vars:
 {begin foo | string split on " " | grep :h}hello how are you?{end foo}
 ["hello","how"]
 
-{begin foo | ""}hello{end foo}{foo | grep :llo}
+{begin foo | ""}hello{end foo}{$foo | grep :llo}
 ["hello"]
 
-{> :x value (:foo :buzz :bizz :bazz) | grep :zz value x}
+{> :x value (:foo :buzz :bizz :bazz) | grep :zz value $x}
 ["buzz","bizz","bazz"]
 
-{begin foo | string split on " " | > :x ||}hello hey zebra squid{end foo}{x | grep :h}
+{begin foo | string split on " " | > :x ||}hello hey zebra squid{end foo}{$x | grep :h}
 ["hello","hey"]
 
 
@@ -1486,21 +1499,21 @@ Basic blocks and vars:
 
   This obviously does what you would expect, processing the list elements in order:
   // NOTE: false -> "" when output as a string, but not when JSONified.
-    {( a {2 | > :a} a )}
+    {( $a {2 | > :a} $a )}
       [false,2,2]
 
   Same:
-    {( {a} {4 | > :a} {a} )}
+    {( {$a} {4 | > :a} {$a} )}
       [2,4,4]
 
   This also does what you'd want:
-    {( "{a}" {8 | > :a} {a} )}
+    {( "{$a}" {8 | > :a} {$a} )}
       ["4",8,8]
 
   This, however, is a little different. 
-    {( "{a}" {16 | > :a} {a} ) | __}
+    {( "{$a}" {16 | > :a} {$a} ) | __}
       ["8",16,16]
-    {( "{a}" {32 | > :a} {a} ) | __}
+    {( "{$a}" {32 | > :a} {$a} ) | __}
       ["16",32,32]
     
   That's probably a bug. it really shouldn't be ["8",32,32]...
@@ -1565,22 +1578,22 @@ y
 
 // tests for quote and brace matching
 
-{* ("one" "local" "two" "surprise local!" "foo" "bar" "bar" "{foo}") | > :x}
+{* ("one" "local" "two" "surprise local!" "foo" "bar" "bar" "{$foo}") | > :x}
   {"one":"local","two":"surprise local!","foo":"bar","bar":"hello hey zebra squid"}
 
 {{"stupid"}} y
   stupid y
-{"stupid {x.one}"} y
+{"stupid {$x.one}"} y
   stupid local y
-{"{"stupid"} {x.one}"} y
+{"{"stupid"} {$x.one}"} y
   stupid local y
-{"{"stupid {x.one}"} {x.one}"} y
+{"{"stupid {$x.one}"} {$x.one}"} y
   stupid local local y
-{"{"stupid {"{x.one}"}"} {x.one}"} y
+{"{"stupid {"{$x.one}"}"} {$x.one}"} y
   stupid local local y
-{"{"stupid {"{x.one} {x.two}"}"} {x.one}"} y
+{"{"stupid {"{$x.one} {$x.two}"}"} {$x.one}"} y
   stupid local surprise local! local y
-{"{"stupid {"{x.one} {x.two} {x.bogus.foo}"}"} {x.one}"} y
+{"{"stupid {"{$x.one} {$x.two} {$x.bogus.foo}"}"} {$x.one}"} y
   stupid local surprise local!  local y
 
 
@@ -1701,38 +1714,38 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
   ~~~ OR returns the first true value it finds ~~~
   
   One valued 'or' looks at each item in the list
-    {(false 1 2 3) | or}
+    {($false 1 2 3) | or}
       1
 
-    {or (false 1 2 3)}
+    {or ($false 1 2 3)}
       1
 
-    {or (false 0 "" :true)}
+    {or ($false 0 "" :true)}
       true
 
   With two values it just considers each in toto
     {5 | or 10}
       5
   
-    {false | or :true}
+    {$false | or :true}
       true
 
     {(0 0) | or 1}
       [0,0]
 
-    {false | or (0 0)}
+    {$false | or (0 0)}
       [0,0]
 
   ~~~ AND only returns true or false ~~~
 
   One valued 'and' looks at each item in the list
-    {(false 1 2 3) | and | then :true else :false}
+    {($false 1 2 3) | and | then :true else :false}
       false
       
-    {and (false 1 2 3) | then :true else :false}
+    {and ($false 1 2 3) | then :true else :false}
       false
       
-    {and (false 0 "" :true) | then :true else :false}
+    {and ($false 0 "" :true) | then :true else :false}
       false
       
     {(1 2 3) | and | then :true else :false}
@@ -1750,13 +1763,13 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
     {5 | and 10 | then :true else :false}
       true
   
-    {false | and :true | then :true else :false}
+    {$false | and :true | then :true else :false}
       false
 
     {(0 0) | and 10 | then :true else :false}
       true
 
-    {false | and (0 0) | then :true else :false}
+    {$false | and (0 0) | then :true else :false}
       false
 
 {if :true then :awesome}
@@ -1764,23 +1777,23 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 
 {if "" then "not awesome"}
   
-{if false then "not awesome"}
+{if $false then "not awesome"}
   
 {if {not ""} then :awesome}
   awesome
 
-{if {and ({not ""} {not false})} then :awesome}
+{if {and ({not ""} {not $false})} then :awesome}
   awesome
 
-{if {and ({or ({not false} false)} x)} then :awesome}
+{if {and ({or ({not $false} $false)} $x)} then :awesome}
   awesome
 
-{if {and ({false} {x})} then :awesome}
+{if {and ({$false} {$x})} then :awesome}
 
 {if {and (:great "not bad!")} then :awesome}
   awesome
 
-{if {and (:great "not bad!" nothing)} then "bad" else :awesome}
+{if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
   awesome
 
 {:true | if __ then :neat}
@@ -1789,7 +1802,7 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 {:true | else "bad"}
   true
 
-{false | else "good"}
+{$false | else "good"}
   good
 
 {:asdf | is in (:foo :bar :asdf) | then :great}
@@ -1813,22 +1826,22 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 {:burgers | is like "/^urge/" | then "oh no!" else :super}
   super
 
-{false | not | then :true else :false}
+{$false | not | then :true else :false}
   true
 
 {:true | not | then :true else :false}
   false
 
-{not false | then :true else :false}
+{not $false | then :true else :false}
   true
 
 {not :true | then :true else :false}
   false
 
-{cond (false "bad!" {:true} "{:yep}" nope "baaaad!!!")}
+{cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
   yep
 
-{cond ((false "bad!") ({:true} 456 "hey {bat}") ({123 | > :bat} "too far"))}
+{cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
   hey
 
 
@@ -1849,76 +1862,76 @@ $GLOBALS['X']['VARS']['STATIC']['data'] = array(
 
 {* (:one :one :two :two :three :three) | > :numbers ||}
 
-{* (:one :hashly :two :bashly :three :crashly) | > :@hash ||}
+{* (:one :hashly :two :bashly :three :crashly) | > :hash ||}
 
-{* (:one :local :two "surprise local!" :foo :bar :bar foo :hash @hash) | > :locals ||}
+{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals ||}
 
-{( {* (:one :first :two "surprise array!" :locals locals)} {* (:one :second :two "surprise number also!" :locals locals)} {* (:one :third :two "surprise me too!" :locals locals)} ) | > :@data ||}
+{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :@data ||}
 
 
-{@hash.one}
+{$hash.one}
 hashly
                  
 // replacement with command parsing
-{@data.{"1"}.one}
+{$data.{"1"}.one}
 second
 
-{@data.{1}.{numbers.one}}
+{$data.{1}.{$numbers.one}}
 second
 
 // careful with numerical tests!
-{@data.1.one}
+{$data.1.one}
 second
 
-{@data.#1.one}
+{$data.#1.one}
 first
 
-{@data.#-1.one}
+{$data.#-1.one}
 third
 
-{@data.#12.one}
+{$data.#12.one}
 
-{@data.#-33.one}
+{$data.#-33.one}
 
 // check iteration
-{@data.one}
+{$data.one}
 ["first","second","third"]
 
-{@data.locals.hash.one}
+{$data.locals.hash.one}
 ["hashly","hashly","hashly"]
 
-{@data.locals.foo}
+{$data.locals.foo}
 ["bar","bar","bar"]
 
-// // check stars
-// {@data | array count}
-// 3
-// 
-// {@data.* | array count}
-// 9
-// 
-// {@data.*.* | array count}
-// 15
-// 
-// {@data.*.*.* | array count}
-// 9
-// 
-// {@data.*.*.*.*}
-// 
-// {@data.*.one}
-// first
-// 
-// {@data.*.*.one}
-// local
-// 
-// {@data.*.*.*.one}
-// hashly
+// check stars
+{$data | list count}
+3
 
-// {@data.foo.*}
+{$data.* | list count}
+9
 
-{@data.one.foo}
+{$data.*.* | list count}
+15
 
-{@data.one.#1.foo}
+{$data.*.*.* | list count}
+9
+
+{$data.*.*.*.*}
+
+{$data.*.one}
+first
+
+{$data.*.*.one}
+local
+
+{$data.*.*.*.one}
+hashly
+
+{$data.foo.*}
+
+{$data.one.foo}
+
+{$data.one.#1.foo}
 
 
 
@@ -2007,7 +2020,7 @@ $GLOBALS['X']['VARS']['BLOCK']['jtemp'] = '{id} and {keyword} ';
 $TESTS[1] = array('in' => '{"{one} and {two} and {three}" | each data @hash}
 hashly and surprise local! and local and bashly and local and surprise local! and crashly
 
-// {"{key} and {value}; " | each data @hash as "value" and "key"}
+// {"{key} and {$value}; " | each data @hash as "value" and "key"}
 // one and hashly; two and bashly; three and crashly; 
 // 
 // {"{temp} and {three}" | sub with $temp as :temp | each data @hash}
@@ -2091,6 +2104,7 @@ hashly and surprise local! and local and bashly and local and surprise local! an
 // // each with 'as' param
 // {each block "{peg} x " data @hash as "peg"}
 // hashly x bashly x crashly x 
+
 
 
 
