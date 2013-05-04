@@ -432,23 +432,23 @@ Here's the use cases, from the user's perspective:
     123x
 
 - I put a DAML string in to a variable, then use that variable as a template for merging.
-  {variable set path :z value "~{$value}~"}
+  {variable set path :z value "~{__}~"}
     ~~
   {each block $z data (1 2 3)}
     ~1~~2~~3~
   
 - I pass a DAML string in as a template for merging.
-  {each block "~{$value}~" data (1 2 3)}
+  {each block "~{__}~" data (1 2 3)}
     ~1~~2~~3~
   
 - I create a DAML string, do substitutions on it, and then pass it in as a template for merging.
 -----> this one is weird, because the inner command should *fully* process the string.
 ---- note the 'unquote' command, which processes the tainted strings.
-  {each block {string transform value "~{$value}~" from "~" to "!" | unquote} data (1 2 3)}
+  {each block {string transform value "~{__}~" from "~" to "!" | unquote} data (1 2 3)}
     !1!!2!!3!
-  {string transform value "~{$value}~" from "~" to "!" | unquote | each data (1 2 3)}
+  {string transform value "~{__}~" from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
-  {"~{$value}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
+  {"~{__}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
   
 - I take a DAML string, get its ptree, do some mangling (macros), then get the processed output.
@@ -926,7 +926,7 @@ Snack 2: Blocks
       x1-x2-x3-
       {$foo | each data (1 2 3)}
       x1-x2-x3-
-      {begin foo | each data (1 2 3)}x{$value}-{end foo}
+      {begin foo | each data (1 2 3)}x{__}-{end foo}
       x1-x2-x3-
       
       {({:8} {8})}
