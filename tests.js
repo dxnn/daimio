@@ -351,6 +351,12 @@ funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string split on ": "
 
 funtest('{begin foo | string split on " " | string join on "---"}Some {a} text{end foo}', 'Some---{a}---text')
 
+funtest('{(1 2 3) | __.#2}', '2')
+
+funtest('{(1 2 3) | > :foo | $foo.#2}', '2')
+
+
+
 
 
 // funtest('{begin block | merge with @bundle} {one} {end block}')
@@ -358,6 +364,14 @@ funtest('{begin foo | string split on " " | string join on "---"}Some {a} text{e
 // funtest('{begin foo | foo}One{"1 2 3" | string split on " "}Two{end foo}')
 // 
 
+// THINK: what should these do?
+// funtest('2 {"{2}" | add 2} ', 'asdf bax')
+// 
+// funtest('2 {2 | add "{2}"} ', 'asdf bax')
+// 
+// funtest('2 {"{2}" | add "{2}"} ', 'asdf bax')
+// 
+// funtest('2 {{2} | add "{2}"} ', 'asdf bax')
 
 
 
@@ -366,13 +380,6 @@ funtest('{begin foo | string split on " " | string join on "---"}Some {a} text{e
 // funtest('{math add value "{7}" to 13}', 20) 
 // THINK: what should this do? maybe make add accept only numbers, and use fold/zipwith/etc to add over lists?
 
-// funtest('2 {"{2}" | add 2} ', 'asdf bax')
-// 
-// funtest('2 {2 | add "{2}"} ', 'asdf bax')
-// 
-// funtest('2 {"{2}" | add "{2}"} ', 'asdf bax')
-// 
-// funtest('2 {{2} | add "{2}"} ', 'asdf bax')
 
 
 // WRAP IT ALL UP WITH A BOW
