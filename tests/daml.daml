@@ -80,11 +80,11 @@ unionizer:
   
 
 block problem:
-  { ((1 2 3) 2 3) | extract "{and (1 1)}"}
+  { ((1 2 3) 2 3) | filter block "{and (1 1)}"}
     [[1,2,3],2,3]
 
 counting problem (should count non-lists as 0):
-  { ((1 2 3) 2 3) | extract "{__ | count}"}
+  { ((1 2 3) 2 3) | filter block "{__ | count}"}
     [[1,2,3]]
 
 Tests for switch
@@ -175,20 +175,23 @@ Tests for lists
     {$klist | list sort by "{(__.y __.x) | string join}" | map block "{$value.y}{$value.x}"}
       ["a3","b4","c2","d1","d2"]
 
-    // extract
+    // filter
+    
+    // NOTE: these used to be extract, but we're going to handle that differently in the future. There's a filter function that does what it says on the tin, and a 'treewalk' function that allows you to dive into data and filter it from the inside. these two together can probably replace the old extract/prune functionality, maybe.
+    
     // THINK: why do we need all the 'then 1's?
-    {$klist | list extract block "{__.x | eq 2 | then 1}"}
+    {$klist | list filter block "{__.x | eq 2 | then 1}"}
       [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    {$klist | list extract block "{__ | eq :d | then 1}" path "*"}
+    {$klist | __.* | list filter block "{__ | eq :d | then 1}"}
       ["d","d"]
       
     {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
     
-    {$dlist | list extract block "{__ | less than :4 | then 1}" path "*.*"}
+    {$dlist | __.* | list filter block "{__ | less than :4 | then 1}"}
       [2,3,1,3,3,1,3]
     
-    {$dlist | list extract block "{_parent.parent.one.1 | eq :3 | then 1}" path "*.one"}
+    {$dlist |  __.*.one | list filter block "{_parent.parent.one.1 | eq :3 | then 1}"}
       [2,3,5]
     
 
