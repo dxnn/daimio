@@ -339,11 +339,11 @@ funtest('{map data (1 2 3 4) block "ok is {__ | add 4}"}', '["ok is 5","ok is 6"
 
 funtest('{begin foo | map data (1 2 3 4)}{__ | add 4}{end foo}', '[5,6,7,8]')
 
-funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}{__ | add 4}{end foo}', '59 610 711 812')
+funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}{__ | add 4}{end foo}', '55 66 77 88')
 
-funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}x{__ | add 4}{end foo}', '"5x5 6x6 7x7 8x8')
+funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}x{__ | add 4}{end foo}', '5x5 6x6 7x7 8x8')
 
-funtest('{begin foo | map data (1 2 3 4) | string join on "---"}answer: {__ | add 4}{end foo}', 'answer: 4---answer: 4---answer: 4---answer: 4')
+funtest('{begin foo | map data (1 2 3 4) | string join on "---"}answer: {__ | add 4}{end foo}', 'answer: 5---answer: 6---answer: 7---answer: 8')
 
 funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string transform from :answer to :foo}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 4---foo: 4---foo: 4---foo: 4')
 
