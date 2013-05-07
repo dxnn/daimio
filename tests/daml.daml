@@ -83,8 +83,13 @@ block problem:
   { ((1 2 3) 2 3) | filter block "{and (1 1)}"}
     [[1,2,3],2,3]
 
-counting problem (should count non-lists as 0):
+// counting problem (should count non-lists as 0): // your face has a counting problem
+// truthy non-lists count as 1
   { ((1 2 3) 2 3) | filter block "{__ | count}"}
+    [[1,2,3],2,3]
+  { ((1 2 3) 2 3) | filter block "{__ | count | eq 1}"}
+    [2,3]
+  { ((1 2 3) 2 3) | filter block "{__ | count | less than 2 | not}"}
     [[1,2,3]]
 
 Tests for switch
