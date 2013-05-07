@@ -60,7 +60,7 @@ SOME STUFF THAT'S HERE FOR NOW
 
 
 notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
-  {"12 x 34" | string transform from "/\\d+/g" to "{__ | add 7}"}
+  {"12 x 34" | string transform from "/\d+/g" to "{__ | add 7}"}
     19 x 41
 
 Extra braces don't matter. extra quotes do, but are generally ok.
@@ -169,10 +169,10 @@ Tests for lists
     {$klist | list sort by :y | list reverse | __.y}
       ["d","d","c","b","a"]
 
-    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{$x}{$y} "}
+    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{__.x}{__.y} "}
       1d 2c 2d 3a 4b
 
-    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{$value.y}{$value.x}"}
+    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
       ["a3","b4","c2","d1","d2"]
 
     // filter

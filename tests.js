@@ -345,7 +345,7 @@ funtest('{begin foo | map data (1 2 3 4) | string join on " "}{__ | add 4}x{__ |
 
 funtest('{begin foo | map data (1 2 3 4) | string join on "---"}answer: {__ | add 4}{end foo}', 'answer: 5---answer: 6---answer: 7---answer: 8')
 
-funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string transform from :answer to :foo}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 4---foo: 4---foo: 4---foo: 4')
+funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string transform from :answer to :foo}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 5---foo: 6---foo: 7---foo: 8')
 
 funtest('{begin foo | map data (1 2 3 4) | map block "{__ | string split on ": " | map block "{if {__ | is like :answer} then :foo else "{__ | add 3}" | run}" | string join on ": "}" | string join on "---"}answer: {__ | add 4}{end foo}', 'foo: 4---foo: 4---foo: 4---foo: 4')
 
@@ -356,7 +356,41 @@ funtest('{(1 2 3) | __.#2}', '2')
 funtest('{(1 2 3) | > :foo | $foo.#2}', '2')
 
 
+funtest('{"asdfasdf" | string transform from "x" to "{__ | string uppercase}"}', 'asdfasdf')
 
+funtest('{"asdfasdf" | string transform from "/x(.)/" to "{__ | string uppercase}"}', 'asdfasdf')
+
+
+funtest('{"xxffxfasdf" | string transform from "x" to "{__ | string uppercase}"}', 'XXffXfasdf')
+
+funtest('{"fxxffxfasdf" | string transform from "x" to "{__ | string uppercase}"}', 'fXXffXfasdf')
+
+
+funtest('{"xxffxfasdf" | string transform from "/x/g" to "{__ | string uppercase}"}', 'XXffXfasdf')
+
+funtest('{"xxffxfasdf" | string transform from "/x/" to "{__ | string uppercase}"}', 'Xxffxfasdf')
+
+funtest('{"ffxxffxfasdf" | string transform from "/x/g" to "{__ | string uppercase}"}', 'ffXXffXfasdf')
+
+funtest('{"ffxxffxfasdf" | string transform from "/x/" to "{__ | string uppercase}"}', 'ffXxffxfasdf')
+
+
+funtest('{"xxffxfasdf" | string transform from "/x(.)/g" to "qq$1gg"}', 'qqxggffqqfggasdf')
+
+funtest('{"xxffxfasdf" | string transform from "/x(.)/" to "qq$1gg"}', 'qqxggffxfasdf')
+
+funtest('{"pxxffxfasdf" | string transform from "/x(.)/g" to "qq$1gg"}', 'pqqxggffqqfggasdf')
+
+funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "qq$1gg"}', 'pqqxggffxfasdf')
+
+
+funtest('{"xxffxfasdf" | string transform from "/x(.)/g" to "{__ | string uppercase}"}', 'XXffXFasdf') 
+
+funtest('{"xxffxfasdf" | string transform from "/x(.)/" to "{__ | string uppercase}"}', 'XXffxfasdf')
+
+funtest('{"pxxffxfasdf" | string transform from "/x(.)/g" to "{__ | string uppercase}"}', 'pXXffXFasdf')
+
+funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string uppercase}"}', 'pXXffxfasdf')
 
 
 // funtest('{begin block | merge with @bundle} {one} {end block}')
