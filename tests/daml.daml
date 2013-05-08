@@ -58,6 +58,12 @@ Tests in DAML:
 
 SOME STUFF THAT'S HERE FOR NOW
 
+{0}
+0
+{(0 0)}
+[0,0]
+{0 | __}
+0
 
 notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
   {"12 x 34" | string transform from "/\d+/g" to "{__ | add 7}"}
@@ -107,7 +113,11 @@ Tests for blocks
   make sure we're not defuncing pre-merge
     {"{:foo}x" | > :qq.ww.ee || merge data $qq block "{_ee | quote}"}
       {:foo}x
-
+    {$qq | merge block "{__}"}
+      alksd
+    {$qq | merge block "{(__)}"}
+      adsf
+        
 
 Tests for stringification
   {1 | > :power || each data (1 2 3 4) block "{math pow value 2 exp $power | > :power} "}
@@ -288,8 +298,9 @@ Tests for weird variables and stuff:
     {+foo | > :ok}
   
   leading underscores are ok
-    {12 | > :_foo | _foo}
-      12
+  [no, no, they really aren't]
+//    {12 | > :_foo | _foo}
+//      12
 
 // other stuff
 
@@ -322,7 +333,7 @@ Once more, with feeling
 {({* (:name :youhoo)}) | > :names}
 [{"name":"youhoo"}]
 
-{"hey {$name}!" | > :foo}
+{"hey {_name}!" | > :foo}
 hey dann!
 
 {:blargh | > :name}
@@ -504,7 +515,7 @@ Here's the use cases, from the user's perspective:
 
   {"x{$key}y{$z}" | string transform from "{$key}" to 123}
     x123y{$z}
-  {begin block | string transform from "{$key}" to 123}x{$key}y{$z}{end block}
+  {begin block | > :block | string transform from "{$key}" to 123}x{$key}y{$z}{end block}
     x123y{$z}
   {$block | string transform from "{$key}" to 123}
     x123y{$z}
@@ -546,22 +557,23 @@ Here's the use cases, from the user's perspective:
     xKEYyz
   
 - ensure we can also access it as a function
+  // THINK: these tests rely on implicit integer keys for lists. do we really want that? is there a downside?
 
-  {"x{$key}y{$z}" | each data (1 2)}
+  {"x{_key}y{$z}" | each data (1 2)}
     x0yzx1yz
-  {begin block | each data (1 2)}x{$key}y{$z}{end block}
+  {begin block | > :block | each data (1 2)}x{_key}y{$z}{end block}
     x0yzx1yz
   {$block | each data (1 2)}
     x0yzx1yz
-  {> :x value "x{$key}y{$z}" | each data (1 2)} {// as a var}
+  {> :x value "x{_key}y{$z}" | each data (1 2)} {// as a var}
     x0yzx1yz
-  {"x{$key}y{$z}" | > :x1 | each data (1 2)} {// var via pipe}
+  {"x{_key}y{$z}" | > :x1 | each data (1 2)} {// var via pipe}
     x0yzx1yz
-  {each block "x{$key}y{$z}" data (1 2)}
+  {each block "x{_key}y{$z}" data (1 2)}
     x0yzx1yz
-  {each block {"x{$key}y{$z}"} data (1 2)}
+  {each block {"x{_key}y{$z}"} data (1 2)}
     x0yzx1yz
-  {each block {{"x{$key}y{$z}"}} data (1 2)}
+  {each block {{"x{_key}y{$z}"}} data (1 2)}
     x0yzx1yz
   {each block $x data (1 2)}
     x0yzx1yz
@@ -682,6 +694,14 @@ Element 1: Numbers
       65535
       {3.14159}
       3.14159
+  
+    Negatives:
+      {-0}
+      0
+      {-65535}
+      -65535
+      {-3.14159}
+      -3.14159
   
     Exponential notation:
       {3e10}
@@ -913,32 +933,44 @@ Snack 2: Blocks
     
     These show the strange, sad results of trying to coerce an array into a template.
       {:hey | > :value}
-      hey
+        hey
+      {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2 3)}
+        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
+      {each block (:x {string join value {$value}}) data (1 2 3)}
+        ["x","hey"]["x","hey"]["x","hey"]
+      {each block {(:x $value "-")} data (1 2 3)}
+        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
+      {:hey | > :value}
+        hey
+    
+    And as magic pipes
       {each block (:x __ {__} "{__}" {"{__}"}) data (1 2 3)}
-      ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
+        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
       {each block (:x {string join value {__}}) data (1 2 3)}
-      ["x","hey"]["x","hey"]["x","hey"]
+        ["x","hey"]["x","hey"]["x","hey"]
       {each block {(:x __ "-")} data (1 2 3)}
-      ["x","hey","-"]["x","hey","-"]["x","hey","-"]
+        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
 
-{map block "{__ | add 1}" data (1 2 3)}
-
-{map block "{__}x" data (1 2 3)}
-
-{map block "{__}" data (1 2 3)}
-
-{map block "x{__}" data (1 2 3)}
+    More maps
+      {map block "{__ | add 1}" data (1 2 3)}
+        [2,3,4]
+      {map block "{__}x" data (1 2 3)}
+        ["1x","2x","3x"]
+      {map block "{__}" data (1 2 3)}
+        [1,2,3]
+      {map block "x{__}" data (1 2 3)}
+        ["x1","x2","x3"]
 
     It pairs nicely with blocks:
       {each block $foo data (1 2 3)}
-      x1-x2-x3-
+        x1-x2-x3-
       {$foo | each data (1 2 3)}
-      x1-x2-x3-
+        x1-x2-x3-
       {begin foo | each data (1 2 3)}x{__}-{end foo}
-      x1-x2-x3-
+        x1-x2-x3-
       
       {({:8} {8})}
-      ["8",8]
+        ["8",8]
     
   [TODO: upgrade the test suite to allow blocks to spread over lines.]
 
@@ -983,28 +1015,6 @@ Snack 3: Aliases
       
     // TODO: it looks like this doesn't pop the var context stack like it should...
     
-  
-  Some basic math commands are published by default. All the default aliases for math commands are two characters, which saves some single characters for more common aliases.
-
-     ---> these don't exist any more: use 'add 1' and 'add -1'
-    // Increment:
-    //   {math increment value 1}
-    //   2
-    //   {inc 2}
-    //   3
-    //   {3 | inc}
-    //   4
-    // 
-    // Decrement:
-    //   {math decrement value 257}
-    //   256
-    //   {dec 256}
-    //   255
-    //   {255 | dec | dec}
-    //   253
-
-  You can find more math commands and their default aliases in the Common Commands section.
-
 
 :::Quick Notes 2:::
 
@@ -1070,8 +1080,8 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
       {begin block}Hey there{end block}{$block}
         Hey there
     
-//    Nested blocks are only accessible inside their parent block:
-//      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
+    Nested blocks are only accessible inside their parent block:
+      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
         
       
     Use a global if you need access to it later:
@@ -1082,9 +1092,9 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
       {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
       123
     
-//    But they aren't actually globals:
-//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
-//      456123
+    But they aren't actually globals:
+      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
+      456123
   
   See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
   
@@ -1096,11 +1106,11 @@ NOTE: I've changed this so that certain command (each, merge) set a new block co
   
   Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, DAML isn't general purpose. In DAML globals are cute and cuddly and always floss.
   
-//    Blocks establish a new variable scope:
-//      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
-//  
-//    But variables starting with '@' are global:
-//      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
+    Blocks establish a new variable scope:
+      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
+  
+    But variables starting with '@' are global:
+      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
 
 
 Depth 2: Maps
@@ -1205,69 +1215,69 @@ Depth 4: Creating commands
   
 Depth 5: Creating aliases
 
-//    Get all current aliases: 
-//      {alias find}
-//    
-//    Make an alias yourself:
-//      {alias add string "string join" as :join}
-//
-//    This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
-//      {begin j}string join on ", "{end j}{alias add string j as :stick}
+  Get all current aliases: 
+    {alias find}
+  
+  Make an alias yourself:
+    {alias add string "string join" as :join}
+
+  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
+    {begin j}string join on ", "{end j}{alias add string j as :stick}
 
 
 :::Bindings and such:::
 
-//    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
-//      
-//    {:a | > :test}
-//      a
-//      
-//    {$count1}
-//      1
-//    
-//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-//    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
-//      
-//    {:b | > :test}
-//      b
-//      
-//    {$count1} x {$count2}
-//      2 x 1
-//      
-//    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
-//  
-//    {:c | > :test}
-//      c
-//      
-//    {$count1} x {$count2}
-//      2 x 2
-//    
-//    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
-//    
-//    {:x | > :testx.y.z}
-//      x
-//    
-//    {$count1} x {$count2}
-//      2 x 4
-//    
-//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
-//    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
-//    
-//    {(7 2) | > :foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,2]
-//  
-//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-//    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
-//
-//    {(7 2) | > :foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,9]
-//      
+    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
+      
+    {:a | > :test}
+      a
+      
+    {$count1}
+      1
+    
+  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
+    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
+      
+    {:b | > :test}
+      b
+      
+    {$count1} x {$count2}
+      2 x 1
+      
+    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
+  
+    {:c | > :test}
+      c
+      
+    {$count1} x {$count2}
+      2 x 2
+    
+    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
+    
+    {:x | > :testx.y.z}
+      x
+    
+    {$count1} x {$count2}
+      2 x 4
+    
+  You can edit the bound var directly in the daml -- infinite recursion is prevented.
+    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
+    
+    {(7 2) | > :foox}
+      [7,2]
+    
+    {$foox}
+      [9,2]
+  
+  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
+    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
+
+    {(7 2) | > :foox}
+      [7,2]
+    
+    {$foox}
+      [9,9]
+      
   // THINK: make a different test suite for the dom handler and interactive stuff.
   
 :::Common Commands:::
@@ -1281,23 +1291,23 @@ CC 1: Math commands
     {1 | > :x | 2 | > :y | 3 | > :z | ($x $y $z) | add}
       6
       
-      --> these don't exist anymore
-   //  Increment:
-   //    {math increment value 222}
-   //    223
-   //    {inc 222}
-   //    223
-   //    {222 | inc}
-   //    223
-   // 
-   //  Decrement:
-   //    {math decrement value 222}
-   //    221
-   //    {dec 222}
-   //    221
-   //    {222 | dec}
-   //    221
-  
+     --> these don't exist anymore, add aliases!
+    Increment:
+      {math increment value 222}
+      223
+      {inc 222}
+      223
+      {222 | inc}
+      223
+    
+    Decrement:
+      {math decrement value 222}
+      221
+      {dec 222}
+      221
+      {222 | dec}
+      221
+    
     Add:
       {math add value 123 to 321}
         444
@@ -1608,114 +1618,105 @@ y
 
 // array commands
 
-$GLOBALS['X']['VARS']['STATIC']['data'] = 
-  array(
-        '2' => array('one' => 'second', 'two' => array('hinterlands', 'yellow', 'mishmash'), 'three' => 'odd'),
-        '1' => array('one' => 'first', 'two' => array('hi', 'hello', 'hijinx', 'goodbye'), 'three' => 'even'),
-        '3' => array('one' => 'third', 'two' => array('hinterlands', 'yellow', 'mishmash'), 'three' => 'even'));
+{* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data | ""}
 
 
-// // list commands
-// {@data | list count}
-// 3
-// 
-// {((:one :row) (:second :row)) | list to_csv}
-// one,row\nsecond,row
-// 
-// {((:one :row) (:second :row)) | list to_json}
-// [["one","row"],["second","row"]]
-// 
-// // otherwise the {...} gets proc'd
-// {{* (:one :row :second :row)} | list to_json | quote}
-// {"one":"row","second":"row"}
-// 
-// // intersection
-// {list intersect values (@data.1.two (:hi :hello :gogo))}
-// ["hi","hello"]
-// 
-// {list intersect values (@data.1 {* (:one :first :four :nothing)})}
-// {"one":"first"}
-// 
-// // keys
-// {@data | list keys}
-// [2,1,3]
-// 
-// // organize
-// {@data | list organize command "sort:one,desc;"}
-// {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-// 
-// {@data | list organize command "stack:three;"}
-// {"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
-// 
-// {@data | list organize command "sort:one,desc;stack:three;"}
-// {"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
-// 
-// // rekey
-// {@data | list rekey key_by :one}
-// {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
-// 
-// {@data | list rekey key_by :three}
-// {"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
-// 
-// // remove
-// {@data | list remove path :2}
-// {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-// 
-// {@data | list remove path "*.two"}
-// {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-// 
-// {(:one :two :three) | list remove path :one}
-// ["two","three"] 
-// 
-// // union
-// {list union value (@data (:1 :2 :four))}
-// [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
-// 
-// {list union value (@data {*(:1 {* (:one :lovely :four :goodness)})})}
-// [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
-// 
-// // unique
-// {(:hi :hi :puffy :ami :yumi) | list unique}
-// {"0":"hi","2":"puffy","3":"ami","4":"yumi"}
-// 
-// // prune
-// {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-// [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
-// 
-// {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
-// [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
-// 
-// // extract
-// {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-// ["2","3","1","3","3","1","3"]
-// 
-// {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
-// ["2","3","5"]
-// 
-// // sort
-// {@data | list sort by :one}
-// [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
-// 
-// {@data | list sort by {* (:three :desc :one :asc)} | __.one}
-// ["second","first","third"]
-// 
-// {@data | list sort by {* (:three :desc :one :desc)} | __.one}
-// ["second","third","first"]
-// 
-// {@data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
-// ["third","second","first"]
-// 
-// {@data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
-// ["second","third","first"]
+// list commands
+{$data | list count}
+3
+
+{((:one :row) (:second :row)) | list to_csv}
+one,row\nsecond,row
+
+{((:one :row) (:second :row)) | list to_json}
+[["one","row"],["second","row"]]
+
+// otherwise the {...} gets proc'd
+{{* (:one :row :second :row)} | list to_json | quote}
+{"one":"row","second":"row"}
+
+// intersection
+{list intersect values ($data.1.two (:hi :hello :gogo))}
+["hi","hello"]
+
+{list intersect values ($data.1 {* (:one :first :four :nothing)})}
+{"one":"first"}
+
+// keys
+{$data | list keys}
+[2,1,3]
+
+// organize
+{$data | list organize command "sort:one,desc;"}
+{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+
+{$data | list organize command "stack:three;"}
+{"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
+
+{$data | list organize command "sort:one,desc;stack:three;"}
+{"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
+
+// rekey
+{$data | list rekey key_by :one}
+{"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+
+{$data | list rekey key_by :three}
+{"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+
+// remove
+{$data | list remove path :2}
+{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+
+{$data | list remove path "*.two"}
+{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+
+{(:one :two :three) | list remove path :one}
+["two","three"] 
+
+// union
+{list union value ($data (:1 :2 :four))}
+[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
+
+{list union value ($data {*(:1 {* (:one :lovely :four :goodness)})})}
+[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
+
+// unique
+{(:hi :hi :puffy :ami :yumi) | list unique}
+{"0":"hi","2":"puffy","3":"ami","4":"yumi"}
+
+// prune
+{list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+[{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
+
+{list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
+[{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
+
+// extract
+{list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+["2","3","1","3","3","1","3"]
+
+{list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
+["2","3","5"]
+
+// sort
+{$data | list sort by :one}
+[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
+
+{$data | list sort by {* (:three :desc :one :asc)} | __.one}
+["second","first","third"]
+
+{$data | list sort by {* (:three :desc :one :desc)} | __.one}
+["second","third","first"]
+
+{$data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
+["third","second","first"]
+
+{$data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
+["second","third","first"]
 
 
 // LOGIC
 
-
-$GLOBALS['X']['VARS']['LOCAL'] = array('one' => 'local', 'two' => 'surprise local!', 'foo' => 'bar', 'bar' => '{foo}
-$GLOBALS['X']['VARS']['BLOCK'] = array('one' => 'string', 'two' => 'surprise string!', 'temp' => "{one} and {two} ");
-$GLOBALS['X']['VARS']['STATIC']['data'] = array(array('one' => 'array', 'two' => 'surprise array!'),array('one' => 'second', 'two' => 'surprise number also!'));
-$GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bashly', 'three' => 'crashly
 
 
 // logic commands
@@ -1856,25 +1857,13 @@ $GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bas
 // PARAMS
 
 
-$GLOBALS['X']['VARS']['BLOCK'] = array('one' => 'one', 'two' => 'surprise string!', 'temp' => "{one} and {two} ");
+{* (:one :one :two :two :three :three) | > :numbers || ""}
 
-$GLOBALS['X']['VARS']['STATIC']['hash'] = $hash = array('one' => 'hashly', 'two' => 'bashly', 'three' => 'crashly
+{* (:one :hashly :two :bashly :three :crashly) | > :hash || ""}
 
-$GLOBALS['X']['VARS']['LOCAL'] = $locals = array('one' => 'local', 'two' => 'surprise local!', 'foo' => 'bar', 'bar' => '{foo}', 'hash' => $hash);
+{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals || ""}
 
-$GLOBALS['X']['VARS']['STATIC']['data'] = array(
-  array('one' => 'first', 'two' => 'surprise array!', 'locals' => $locals),
-  array('one' => 'second', 'two' => 'surprise number also!', 'locals' => $locals),
-  array('one' => 'third', 'two' => 'surprise me too!', 'locals' => $locals));
-
-
-{* (:one :one :two :two :three :three) | > :numbers ||}
-
-{* (:one :hashly :two :bashly :three :crashly) | > :hash ||}
-
-{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals ||}
-
-{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :@data ||}
+{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :data || ""}
 
 
 {$hash.one}
@@ -1947,31 +1936,37 @@ hashly
 // now with more tests!
 //
 
-$a_john = array('name' => 'Awesome John', 'age' => 'alpha
-$a_bobs = array('name' => 'Awesome Bobs', 'age' => 'beta
-$a_mary = array('name' => 'Awesome Mary', 'age' => 'gamma
-$a_stev = array('name' => 'Awesome Stev', 'age' => 'delta
+{* (:name "Awesome John" :age :alpha) | > :a-john | ""}
 
-$awesome_people = array($a_john, $a_bobs, $a_mary, $a_stev);
+{* (:name "Awesome Bobs" :age :beta) | > :a-bobs | ""}
 
-$c_john = array('name' => 'Cool John', 'age' => 'alpha
-$c_bobs = array('name' => 'Cool Bobs', 'age' => 'beta
-$c_mary = array('name' => 'Cool Mary', 'age' => 'gamma
-$c_stev = array('name' => 'Cool Stev', 'age' => 'delta
+{* (:name "Awesome Mary" :age :gamma) | > :a-mary | ""}
 
-$cool_people = array($c_john, $c_bobs, $c_mary, $c_stev);
+{* (:name "Awesome Stev" :age :delta) | > :a-stev | ""}
 
-$n_john = array('name' => 'Neat John', 'age' => 'alpha
-$n_bobs = array('name' => 'Neat Bobs', 'age' => 'beta
-$n_mary = array('name' => 'Neat Mary', 'age' => 'gamma
-$n_stev = array('name' => 'Neat Stev', 'age' => 'delta
+{($a-john $a-bobs $a-mary $a-stev) | > :awesome_people | ""}
 
-$neat_people = array($n_john, $n_bobs, $n_mary, $n_stev);
+{* (:name "Cool John" :age :alpha) | > :c-john | ""}
 
-$GLOBALS['X']['VARS']['STATIC']['companies'] = array(
-  array('name' => 'awesome test co', 'employees' => $awesome_people, 'boss' => $a_john),
-  array('name' => 'cool test co', 'employees' => $cool_people, 'boss' => $c_john),
-  array('name' => 'neat test co', 'employees' => $neat_people, 'boss' => $n_john));
+{* (:name "Cool Bobs" :age :beta) | > :c-bobs | ""}
+
+{* (:name "Cool Mary" :age :gamma) | > :c-mary | ""}
+
+{* (:name "Cool Stev" :age :delta) | > :c-stev | ""}
+
+{($c-john $c-bobs $c-mary $c-stev) | > :cool_people | ""}
+
+{* (:name "Neat John" :age :alpha) | > :n-john | ""}
+
+{* (:name "Neat Bobs" :age :beta) | > :n-bobs | ""}
+
+{* (:name "Neat Mary" :age :gamma) | > :n-mary | ""}
+
+{* (:name "Neat Stev" :age :delta) | > :n-stev | ""}
+
+{($n-john $n-bobs $n-mary $n-stev) | > :neat_people | ""}
+
+{( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | > :companies | ""}
 
 /* 
   write tests:
@@ -1981,166 +1976,15 @@ $GLOBALS['X']['VARS']['STATIC']['companies'] = array(
   - find by range-and-key-and-number (companies.employees.#2.name) [name of second employee at each company? nope, it's the second employee overall]
 */
 
-// {@companies.#-2.boss.name}
-// Cool John
-// 
-// {@companies.employees}
-// [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
-// 
-// {@companies.employees.name}
-// ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
-// 
-// {@companies.employees.#2.name}
-// Awesome Bobs
+ {$companies.#-2.boss.name}
+ Cool John
+ 
+ {$companies.employees}
+ [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
+ 
+ {$companies.employees.name}
+ ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
+ 
+ {$companies.employees.#2.name}
+ Awesome Bobs
 
-
-
-
-
-
-//
-// a couple more for the road
-//
-
-$GLOBALS['X']['VARS']['STATIC']['test_notices'] = array("row_inserted" => array("20" => "Row updated"));
-
-// {@test_notices.row_inserted.1}
-//   
-// {@test_notices.row_inserted.20}
-// Row updated
-//   
-// {string lowercase value {"{@MY.keychain.#1}/asdf"}}
-// __world/asdf
-  
-// PROCESS
-
-
-$GLOBALS['X']['VARS']['LOCAL'] = array('one' => 'local', 'two' => 'surprise local!', 'foo' => 'bar', 'bar' => '{foo}
-$GLOBALS['X']['VARS']['BLOCK'] = array('one' => 'string', 'two' => 'surprise string!', 'temp' => "{one} and {two} ");
-$GLOBALS['X']['VARS']['STATIC']['data'] = array(array('one' => 'array', 'two' => 'surprise array!'),array('one' => 'second', 'two' => 'surprise number also!'));
-$GLOBALS['X']['VARS']['STATIC']['hash'] = array('one' => 'hashly', 'two' => 'bashly', 'three' => 'crashly
-
-$GLOBALS['X']['VARS']['BLOCK']['jdata'] = '[{"id":"298","keyword":"bar"},{"id":"297","keyword":"foo"}]';
-$GLOBALS['X']['VARS']['BLOCK']['jtemp'] = '{id} and {keyword} ';
-
-
-// pipe replacement / merge commands
-$TESTS[1] = array('in' => '{"{one} and {two} and {three}" | each data @hash}
-hashly and surprise local! and local and bashly and local and surprise local! and crashly
-
-// {"{key} and {$value}; " | each data @hash as "value" and "key"}
-// one and hashly; two and bashly; three and crashly; 
-// 
-// {"{temp} and {three}" | sub with $temp as :temp | each data @hash}
-// hashly and surprise local!  and local and bashly  and local and surprise local!  and crashly
-// 
-// 
-// // blocks with merge and sub
-// x{begin anon | merge with @data}{one} and {two}{end anon}
-// yxarray and surprise array!second and surprise number also!y
-// 
-// x{begin anon | sub with @hash}{one} and {two}{end anon}
-// yxhashly and bashlyy
-// 
-// 
-// // shortcut replacement
-// {merge string $temp with @data}
-// array and surprise array! second and surprise number also! 
-// 
-// 
-// // merge with | value
-// {$jdata | array from_json | merge string $jtemp}
-// 298 and bar 297 and foo 
-// 
-// {$jdata | array from_json | merge string "{$jtemp}"}
-// 298 and bar 297 and foo 
-// 
-// // merge with {} data
-// {merge string $jtemp with {array from_json value $jdata}}
-// 298 and bar 297 and foo 
-// 
-// {$jtemp | merge with {$jdata | array from_json}}
-// 298 and bar 297 and foo 
-// 
-// // merge with sub'd data
-// {begin block | sub with $jtemp as :temp | merge with {$jdata | array from_json}}{temp}{end block}
-// 298 and bar 297 and foo 
-// 
-// // merge with 'as' param
-// {merge string "{namesake.id} and {namesake.keyword} " with {$jdata | array from_json} as "namesake"}
-// 298 and bar 297 and foo 
-// 
-// {begin block | merge with {$jdata | array from_json} as "namesake"}{namesake.id} and {namesake.keyword} {end block}
-// 298 and bar 297 and foo 
-// 
-// // sub with string
-// {sub with $two as :test string "{test}"}
-// surprise string!
-// 
-// // complex sub with string
-// {"{temp} and {three}" | sub with $temp as :temp}
-// local and surprise local!  and 
-// 
-// // sub with array
-// {sub string "x {test} x" with (:neat :cool) as :test}
-// x neat xx cool x
-// 
-// // sub with array and glue
-// {sub string "{test}" with (:neat :cool) as :test glue " x "}
-// neat x cool
-// 
-// // sub with AoH
-// {$jdata | array from_json | sub string "{id}:{keyword} "}
-// 298:bar 297:foo 
-// 
-// // sub with AoH and as and glue
-// {$jdata | array from_json | sub string "{pico.id}:{pico.keyword}" as :pico glue " x "}
-// 298:bar x 297:foo
-// 
-// // sub with hash
-// {sub string "{one} x {two}" with @hash}
-// hashly x bashly
-// 
-// // sub with hash and as
-// {sub string "{peg.one} x {peg.two}" with @hash as "peg"}
-// hashly x bashly
-// 
-// // each with 'as' param
-// {each block "{one} {two} x " data @hash}
-// hashly surprise local! x local bashly x local surprise local! x 
-// 
-// // each with 'as' param
-// {each block "{peg} x " data @hash as "peg"}
-// hashly x bashly x crashly x 
-
-
-
-
-// DAML commands...
-
-
-// STRING commands...
-
-// {daml alias string "audio add-osc freq" as :osc}
-// 
-// {daml alias string "audio add-gain value" as :gain}
-// 
-// {daml alias string "audio set-param name" as :set}
-// 
-// {daml alias string "audio play" as :play}
-// 
-// {daml alias string "audio pause" as :pause}
-// 
-// {daml alias string "audio connect" as :connect}
-// 
-// {daml alias string "audio connect to 0" as :out}
-//
-// {osc 5 | > :lfo | gain 80 | osc | out | play}
-// 
-// {lfo | set :frequency to 1}
-// 
-// {lfo | set :frequency to 10}
-// 
-// {osc 5 | gain 80 | osc | audio mainline | play}
-
-// DAML.run('{osc 5 | gain 80 | osc | audio mainline | play}')

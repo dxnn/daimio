@@ -37,8 +37,10 @@
       block_name=''
       code_value=''
       
-      eat_lines()
-    });
+      DAML.dataTrampoline(lines, eat_line, DAML.string_concat, function() {}, done)
+      // eat_lines()
+      
+    })
     
     eat_lines = function(value) {
       var output = false
@@ -55,7 +57,7 @@
       done()
     }
     
-    eat_line = function() {
+    eat_line = function(value, prior_starter) {
       var whitespace='', wscount=0, code_string=''
         , line = lines.pop()
         
@@ -70,78 +72,80 @@
       // mode switcher
       if(mode != 'block') {
         if(/^\s*\{begin /.test(line)) {
-          code_string = '';
-          block_name = line.match(/^\s*\{begin (\w+)/)[1];
-          mode = 'block'; // begin a block
+          code_string = ''
+          block_name = line.match(/^\s*\{begin (\w+)/)[1]
+          mode = 'block' // begin a block
         } 
         else if(mode == 'code') {
-          mode = 'assert'; // switch to assert
+          mode = 'assert' // switch to assert
         }
         else if(/^\s*\{/.test(line)) {
-          code_string = line;
-          mode = 'code'; // begin a line of code
+          code_string = line
+          mode = 'code' // begin a line of code
         } 
         else if(mode == 'assert') {
-          mode = 'text'; // switch back to text
+          mode = 'text' // switch back to text
         }
       }
       
       // continue the block
       if(mode == 'block') {
-        code_string += line;
+        code_string += line
       }
       
       // end the block
       if(new RegExp("\{end " + block_name + '\}').test(line)) {
-        mode = 'code';
+        mode = 'code'
       }
       
       // sort out whitespace
-      whitespace = '';
-      wscount = line.search(/\S/);
+      whitespace = ''
+      wscount = line.search(/\S/)
       if(wscount >= 1) {
-        whitespace = new Array( wscount + 1 ).join( '&nbsp;' );
-        // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;');
+        whitespace = new Array( wscount + 1 ).join( '&nbsp;' )
+        // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;')
       }
       
       // handle text
       if(mode == 'text') {
-        html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>';
+        html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>'
       }
       
       // handle code
       if(mode == 'code') {
-        html += '<code><pre>' + code_string + '</pre></code>';
-        var callback = function(value) {
-          eat_lines(value)
-        }
-        DAML.run(code_string, callback);
-        return NaN // signal of callback
+        html += '<code><pre>' + code_string + '</pre></code>'
+        // var callback = function(value) {
+        //   eat_lines(value)
+        // }
+        // DAML.run(code_string, callback)
+        // return NaN // signal of callback
+        code_value = DAML.SPACES.top.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter)
+        return code_value
       }
       
       // handle asserts
       if(mode == 'assert') {
         if(code_value === false) {
-          code_value = '';
+          code_value = ''
         }
         
         if(typeof(code_value) != 'string') {
-          code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : '';
+          code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : ''
         }
         
         if(code_value.trim() === line.trim()) {
-          result = 'good';
-          win++;
+          result = 'good'
+          win++
         } else {
-          result = 'bad';
-          lose++;
+          result = 'bad'
+          lose++
         }
         
         // TODO: convert line and code_value to escaped html
         
-        html += '<pre class="assert ' + result + '">' + line + '</pre>';
+        html += '<pre class="assert ' + result + '">' + line + '</pre>'
         if(result == 'bad') {
-          html += '<pre class="actual">Actual: ' + code_value + '</pre>';
+          html += '<pre class="actual">Actual: ' + code_value + '</pre>'
         }
       }
       
@@ -149,16 +153,16 @@
     }
     
     done = function() {
-      var endtime = new Date().getTime();
+      var endtime = new Date().getTime()
 
-      stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>";
-      stats += '<p><span class="good">Won ' + win + ' tests.</span></p>';
+      stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
+      stats += '<p><span class="good">Won ' + win + ' tests.</span></p>'
       
-      if(lose) stats += '<p><span class="bad">Lost ' + lose + ' tests.</span></p>';
+      if(lose) stats += '<p><span class="bad">Lost ' + lose + ' tests.</span></p>'
       if(!lose) stats += '<p>You win!!!</p>'
       
-      $('#stats').html(stats);
-      $('#tests').html(html);
+      $('#stats').html(stats)
+      $('#tests').html(html)
     }
     
     
