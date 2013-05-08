@@ -115,9 +115,20 @@ MAGIC PIPE TESTS
       [5,6,7]
     {(1 2 3) | map block "{add __ to __}"}
       [2,4,6]
-      
+    {(1 2 3) | map block "{__}"}
+      [1,2,3]
+    {(1 2 3) | map block "{__ | __}"}
+      [1,2,3]
+    {(1 2 3) | map block "{__ | __ | add 1}"}
+      [2,3,4]
+  
 //    {(1 2 3) | reduce block "{add __}"}  // what oh no what
 //      [5,6,7]
+//    here, like this:
+//      {(1 2 3) | reduce block "{add _value to _total}"} 
+//        6
+//      {(1 2 3) | reduce block "{__ | add to _total}"} 
+//        6
   
   Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
     {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
@@ -125,47 +136,33 @@ MAGIC PIPE TESTS
     {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
       4 x 8 :: 5 x 9 :: 6 x 10 ::
   
+  Notes:
+    To connect to the process input you must explicitly add the magic pipe the first segment:
+      {(1 2 3) | map block "{__ | add to 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add to 4}"}
+        ["","",""]
+      {(1 2 3) | map block "{__ | add 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add 4}"}
+        [4,4,4]
+    
+  
   
   Questions: 
     -- what about putting a magic pipe in a pipeline as a param?
       --> this currently tries to grab the process input. is that good? it's probably the right thing. this is stupid.
-    {20 | add {__ | add 2} to __}
-      22?
+    {20 | add {__ | add 7}}
+      7
+    {20 | add {__ | add 7} to __}
+      27
     -- what about the empty pipe? this should also grab process input, right?
+    {21 | add {__} to 7}
+      7
     {21 | add {__} to __}
-      21?
+      21
     -- what about the identity map?
-    {(1 2 3) | map block "{__}"}
-      [1,2,3]
   
-  pipes in commands in lists:
-    {21 | add ({__})}
-      [42]
-    {21 | add ({__} {__})}
-      [42,42]
-    {20 | add ({__ | add 2})}
-      [42]
-    {20 | add ({__ | add 2} {__ | add 2})}
-      [42,42]
-    {20 | add (22 {__ | add 2} {__ | add 2})}
-      [42,42,42]
-    {20 | add ({__ | add 2} 22 {__ | add 2})}
-      [42,42,42]
-    {20 | add ({__ | add 2} {__ | add 2} 22)}
-      [42,42,42]
-
-  pipes in blocks:
-    {21 | add (__)}
-      [42]
-    {21 | add (__ __)}
-      [42,42]
-    {21 | add (21 __ __)}
-      [42,42,42]
-    {21 | add (__ 21 __)}
-      [42,42,42]
-    {21 | add (__ __ 21)}
-      [42,42,42]
-
 falsy falsers:
   {0}
     0
