@@ -91,11 +91,11 @@
       // continue the block
       if(mode == 'block') {
         code_string += line
-      }
-      
-      // end the block
-      if(new RegExp("\{end " + block_name + '\}').test(line)) {
-        mode = 'code'
+
+        // end the block
+        if(new RegExp("\{end " + block_name + '\}').test(line)) {
+          mode = 'code'
+        }
       }
       
       // sort out whitespace

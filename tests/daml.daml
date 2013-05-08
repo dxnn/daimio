@@ -58,12 +58,121 @@ Tests in DAML:
 
 SOME STUFF THAT'S HERE FOR NOW
 
-{0}
-0
-{(0 0)}
-[0,0]
-{0 | __}
-0
+
+MAGIC PIPE TESTS
+
+  The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
+
+  Case 1: explicit connection. Each of these also has an implicit connection, but only the first example uses it because the others have no additional param space (add only takes two params).
+    {21 | add __}
+      42
+    {21 | add 21 to __}
+      42
+    {21 | add __ to 21}
+      42
+    {21 | add __ to __}
+      42
+
+  Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
+    {42 || add __}
+      42
+    {42 || add to __}
+      42
+
+  Case 1b: carry along. You can use a pipe to carry the value through segments.
+    {42 | __}
+      42
+    {42 | __ | __}
+      42
+    
+  Case 1c: duplication. You can use pipes in lists to duplicate the previous value
+    {42 | (__)}
+      [42]
+    {42 | (__ __)}
+      [42,42]
+    {42 | (:x __ __)}
+      ["x",42,42]
+    {42 | (__ :x __)}
+      [42,"x",42]
+    {42 | (__ __ :x)}
+      [42,42,"x"]
+    
+    {21 | add (__)}
+      [42]
+    {21 | add (__ __)}
+      [42,42]
+    {21 | add (21 __ __)}
+      [42,42,42]
+    {21 | add (__ 21 __)}
+      [42,42,42]
+    {21 | add (__ __ 21)}
+      [42,42,42]
+
+  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment.
+    {(1 2 3) | map block "{__ | add 4}"}
+      [5,6,7]
+    {(1 2 3) | map block "{add __ to 4}"}
+      [5,6,7]
+    {(1 2 3) | map block "{add __ to __}"}
+      [2,4,6]
+      
+//    {(1 2 3) | reduce block "{add __}"}  // what oh no what
+//      [5,6,7]
+  
+  Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
+    {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
+      4 x 8 :: 5 x 9 :: 6 x 10 ::
+    {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
+      4 x 8 :: 5 x 9 :: 6 x 10 ::
+  
+  
+  Questions: 
+    -- what about putting a magic pipe in a pipeline as a param?
+      --> this currently tries to grab the process input. is that good? it's probably the right thing. this is stupid.
+    {20 | add {__ | add 2} to __}
+      22?
+    -- what about the empty pipe? this should also grab process input, right?
+    {21 | add {__} to __}
+      21?
+    -- what about the identity map?
+    {(1 2 3) | map block "{__}"}
+      [1,2,3]
+  
+  pipes in commands in lists:
+    {21 | add ({__})}
+      [42]
+    {21 | add ({__} {__})}
+      [42,42]
+    {20 | add ({__ | add 2})}
+      [42]
+    {20 | add ({__ | add 2} {__ | add 2})}
+      [42,42]
+    {20 | add (22 {__ | add 2} {__ | add 2})}
+      [42,42,42]
+    {20 | add ({__ | add 2} 22 {__ | add 2})}
+      [42,42,42]
+    {20 | add ({__ | add 2} {__ | add 2} 22)}
+      [42,42,42]
+
+  pipes in blocks:
+    {21 | add (__)}
+      [42]
+    {21 | add (__ __)}
+      [42,42]
+    {21 | add (21 __ __)}
+      [42,42,42]
+    {21 | add (__ 21 __)}
+      [42,42,42]
+    {21 | add (__ __ 21)}
+      [42,42,42]
+
+falsy falsers:
+  {0}
+    0
+  {(0 0)}
+    [0,0]
+  {0 | __}
+    0
 
 notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
   {"12 x 34" | string transform from "/\d+/g" to "{__ | add 7}"}
@@ -398,7 +507,9 @@ Here's the use cases, from the user's perspective:
 - I put a simple string in, I want the same string out.
   {"asdf"}
     asdf
-  {begin x | $x}asdf{end x}
+  {begin x}asdf{end x}
+    asdf
+  {begin x | > :x | $x}asdf{end x}
     asdf
 
 - I put a simple string in, do some regex substitution, and get the evolved string out.
@@ -889,19 +1000,22 @@ Snack 1: Variables
 
 Snack 2: Blocks
 
-  A block encloses text. [Could be a template, or some DAML code (or a mix). they're equivalent to a string join + context + var. discuss var scope]
+  A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
+  
+  Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
   
     Here's a simple block:
       {begin foo}Some text{end foo}
+        Some text
   
-    Notice that it doesn't output anything. What if we pipe it into a command?
+    That just returns whatever we put in -- not particularly useful. What if we pipe it into a command?
       {begin foo | string split on " "}Some text{end foo}
-      ["Some","text"]
+        ["Some","text"]
     
-    The block also creates a new variable:
-      {begin foo}Some text{end foo}{$foo}
+    The block can also be stored as a variable:
+      {begin foo | > :foo | ""}Some text{end foo}{$foo}
       Some text
-      {begin foo | $foo}Some text{end foo}
+      {begin foo | > :foo | $foo}Some text{end foo}
       Some text
 
   We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
@@ -911,7 +1025,8 @@ Snack 2: Blocks
       ["Some","text"]
     
     Blocks can also contain DAML:
-      {begin foo}x{$value}-{end foo}
+      {begin foo | > :foo}x{_value}-{end foo}
+        x-
     
     The each command invokes a DAML string for every element of a list. These are all equivalent:
       {each block "x{__}-" data (1 2 3)}
@@ -974,12 +1089,10 @@ Snack 2: Blocks
     
   [TODO: upgrade the test suite to allow blocks to spread over lines.]
 
-      {begin foo |}One{"1 2 3" | string split on " "}Two{end foo}
+    These two things are almost equivalent:
+      {begin foo}One{"1 2 3" | string split on " "}Two{end foo}
       One["1","2","3"]Two
 
-    These two things are almost equivalent:
-      {begin foo | foo}One{"1 2 3" | string split on " "}Two{end foo}
-      One["1","2","3"]Two
       {string join value (:One {"1 2 3" | string split on " "} :Two)}
       One["1","2","3"]Two
 
@@ -1034,7 +1147,7 @@ Quick 1: Comments
 Quick 2: Embedded blocks
 
     I put a block in a block for you:
-      {begin outer |}qq {begin inner | add 321}123{end inner} pp {end outer}
+      {begin outer}qq {begin inner | add 321}123{end inner} pp {end outer}
         qq 444 pp
 
   (Blocks with the same name can't be nested. That would just be weird.)
@@ -1062,61 +1175,61 @@ We've seen the 5 elements of DAML (three primitive types, commands, and the pipe
 
 Depth 1: Blocks and scope
 
+  so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
+  
+  space vars are mutable and persistent. they model state within the space. you should only use them when necessary, and maybe not even then.
 
-NOTE: I've changed this so that certain command (each, merge) set a new block context, but regular blocks don't. I'm not sure this is quite right yet... still deliberating. 
+    TODO: fix this section!
+
+//    A pipeline variable created in a block goes away when that block ends:
+//      {begin block | ""}{123 | > :foo}{end block}{foo}
+//        123
+//  
+//    Variables beginning with '@' are global:
+//      {begin block}{123 | > :foo}{end block}{$foo}
+//        123
+//    
+//    Blocks create a new variable:
+//      {begin block}Hey there{end block}{$block}
+//        Hey there
+//    
+//    Nested blocks are only accessible inside their parent block:
+//      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
+//        
+//      
+//    Use a global if you need access to it later:
+//      {begin outer}{begin inner | > :inner}123{end inner}{end outer}{$inner}
+//        123
+//    
+//    Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
+//      {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
+//      123
+//    
+//    But they aren't actually globals:
+//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
+//      456123
+//  
+//  See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
+//  
+//    Contrast that with a global:
+//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
+//      456456
+//  
+//  Changing a global changes it everywhere, regardless of scope. 
+//  
+//  Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, DAML isn't general purpose. In DAML globals are cute and cuddly and always floss.
+//  
+//    Blocks establish a new variable scope:
+//      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
+//  
+//    But variables starting with '@' are global:
+//      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
 
 
-  Variables in DAML are *NOT* block-scoped. 
-
-    A variable created in a block goes away when that block ends:
-      {begin block}{123 | > :foo}{end block}{foo}
-        123
-  
-    Variables beginning with '@' are global:
-      {begin block}{123 | > :foo}{end block}{$foo}
-        123
-    
-    Blocks create a new variable:
-      {begin block}Hey there{end block}{$block}
-        Hey there
-    
-    Nested blocks are only accessible inside their parent block:
-      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
-        
-      
-    Use a global if you need access to it later:
-      {begin outer}{begin inner | > :inner}123{end inner}{end outer}{$inner}
-        123
-    
-    Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
-      {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
-      123
-    
-    But they aren't actually globals:
-      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
-      456123
-  
-  See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
-  
-    Contrast that with a global:
-      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
-      456456
-  
-  Changing a global changes it everywhere, regardless of scope. 
-  
-  Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, DAML isn't general purpose. In DAML globals are cute and cuddly and always floss.
-  
-    Blocks establish a new variable scope:
-      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
-  
-    But variables starting with '@' are global:
-      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
-
-
-Depth 2: Maps
+Depth 2: Keyed lists
   TODO: this whole section needs changing to conform with the new 'list' data type.
 
-  A map (aka hash, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. There's no built-in syntax for creating maps, but fortunately we have a command to do it for us.
+  A keyed list (aka hash, map, hash map, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. Every list in Daimio can take keys. There's a special command for transforming an unkeyed list into a new keyed list called 'list pair'.
   
     Here is the command written out:
       {list pair value (:one :first :two :second)}
@@ -1128,7 +1241,7 @@ Depth 2: Maps
     
   As you can see, the * operator (which is really just an alias for a command) uses the first value in the list as a key, the second as its value, the third as the second key, the fourth as its value, and so on. While this seems a bit messy on a single line, with proper whitespacing it's very easy to read. 
 
-    In DAML maps are sorted, so we can use the #N notation on them:
+    Lists -- including keyed lists -- are always sorted, so we can use the #N notation on them:
       {* (:one :first :two :second) | > :x || $x.#2}
       second
     
@@ -1150,20 +1263,26 @@ Depth 3: Further fun with variables
   .*
   AoH
   #vars
+  
+  
+  
+  FIX THIS!!!!!
+  
+  
 
-    ALL-CAPS variables are write-once read-many (WORM):
-      {128 | > :MY.id}
-        128
-      {256 | > :MY.id}
-        128
-      // the above also throws an error...
-
-      Request variables come from POST and the querystring. Reference them like this:
-      {REQUEST.foo}
-
-      Or use the short form:
-      {#foo}
-
+//    ALL-CAPS variables are write-once read-many (WORM):
+//      {128 | > :MY.id}
+//        128
+//      {256 | > :MY.id}
+//        128
+//      // the above also throws an error...
+//
+//      Request variables come from POST and the querystring. Reference them like this:
+//      {REQUEST.foo}
+//
+//      Or use the short form:
+//      {#foo}
+//
     Dot values. You can reach inside variables in a variety of ways. Here's a list.
 
       A named parameter:
@@ -1204,80 +1323,82 @@ Depth 3: Further fun with variables
       // test DAML path setting
       //
 
-      {:ash | > :hash.{"two"}} {$hash}
-        ash {"two":"ash"}
-
-      {:ash | > :hash.{"two"}.monkey.flu} {$hash}
-        ash {"two":{"monkey":{"flu":"ash"}}}
+//      {:ash | > :hash.{"two"}} {$hash}
+//        ash {"two":"ash"}
+//
+//      {:ash | > :hash.{"two"}.monkey.flu} {$hash}
+//        ash {"two":{"monkey":{"flu":"ash"}}}
 
 
 Depth 4: Creating commands
   
 Depth 5: Creating aliases
 
-  Get all current aliases: 
-    {alias find}
-  
-  Make an alias yourself:
-    {alias add string "string join" as :join}
+FIX ME!!!!!
 
-  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
-    {begin j}string join on ", "{end j}{alias add string j as :stick}
-
-
-:::Bindings and such:::
-
-    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
-      
-    {:a | > :test}
-      a
-      
-    {$count1}
-      1
-    
-  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
-      
-    {:b | > :test}
-      b
-      
-    {$count1} x {$count2}
-      2 x 1
-      
-    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
-  
-    {:c | > :test}
-      c
-      
-    {$count1} x {$count2}
-      2 x 2
-    
-    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
-    
-    {:x | > :testx.y.z}
-      x
-    
-    {$count1} x {$count2}
-      2 x 4
-    
-  You can edit the bound var directly in the daml -- infinite recursion is prevented.
-    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
-    
-    {(7 2) | > :foox}
-      [7,2]
-    
-    {$foox}
-      [9,2]
-  
-  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
-
-    {(7 2) | > :foox}
-      [7,2]
-    
-    {$foox}
-      [9,9]
-      
+//  Get all current aliases: 
+//    {alias find}
+//  
+//  Make an alias yourself:
+//    {alias add string "string join" as :join}
+//
+//  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
+//    {begin j}string join on ", "{end j}{alias add string j as :stick}
+//
+//
+//:::Bindings and such:::
+//
+//    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
+//      
+//    {:a | > :test}
+//      a
+//      
+//    {$count1}
+//      1
+//    
+//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
+//    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
+//      
+//    {:b | > :test}
+//      b
+//      
+//    {$count1} x {$count2}
+//      2 x 1
+//      
+//    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
+//  
+//    {:c | > :test}
+//      c
+//      
+//    {$count1} x {$count2}
+//      2 x 2
+//    
+//    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
+//    
+//    {:x | > :testx.y.z}
+//      x
+//    
+//    {$count1} x {$count2}
+//      2 x 4
+//    
+//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
+//    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
+//    
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,2]
+//  
+//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
+//    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
+//
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,9]
+//      
   // THINK: make a different test suite for the dom handler and interactive stuff.
   
 :::Common Commands:::
@@ -1416,7 +1537,8 @@ CC 2: Looping
   
   merging...
   {($bar $hash) | > :bundle}
-  {begin block | merge block $bundle} {$one} {end block}
+    alkdfj
+  {begin block | merge block $bundle} {_one} {end block}
   
   
   
