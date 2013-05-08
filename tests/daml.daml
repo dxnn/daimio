@@ -596,7 +596,7 @@ Here's the use cases, from the user's perspective:
 
 ----- Loading value into the value variable creates a self-referencing block, which affects us later... 
 // what we want to show here is that editing a block changes it back into just a regular 'dead' string.
-{begin x_to_y}{string transform value $value from $x to $y}{end x_to_y}
+{begin x_to_y | > :x_to_y}{string transform value $value from $x to $y}{end x_to_y}
 
 {$x_to_y}
 
@@ -604,7 +604,7 @@ Here's the use cases, from the user's perspective:
   ayy fiy hey hoay
 
 {$x_to_y | > :value | $x_to_y | run | > :modded_block}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $y}
 
 {$modded_block}
   {string transform value $value from $x to $y}
@@ -861,7 +861,7 @@ Snack 1: Variables
       ["one","two","three"]
   
     And this command retrieves the variable value:
-      {variable get path :bar}
+      {variable get name :bar}
       ["one","two","three"]
   
     But you can also use this shorter form:
@@ -1497,13 +1497,13 @@ Basic blocks and vars:
 {begin foo | string split on " " | grep :h}hello how are you?{end foo}
 ["hello","how"]
 
-{begin foo | ""}hello{end foo}{$foo | grep :llo}
+{begin foo | > :foo | ""}hello{end foo}{$foo | grep :llo}
 ["hello"]
 
 {> :x value (:foo :buzz :bizz :bazz) | grep :zz value $x}
 ["buzz","bizz","bazz"]
 
-{begin foo | string split on " " | > :x ||}hello hey zebra squid{end foo}{$x | grep :h}
+{begin foo | string split on " " | > :x || ""}hello hey zebra squid{end foo}{$x | grep :h}
 ["hello","hey"]
 
 
@@ -1847,11 +1847,20 @@ one,row\nsecond,row
 {not :true | then :true else :false}
   false
 
+{cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
+  good
+
+{cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
+  good
+
+{cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+  good
+
 {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
   yep
 
-{cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
-  hey
+// {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
+//  hey
 
 
 // PARAMS

@@ -42,20 +42,20 @@
       
     })
     
-    eat_lines = function(value) {
-      var output = false
-      
-      if(value !== undefined) {
-        code_value = value
-      }
-      
-      while(lines.length) {
-        output = eat_line()
-        if(output !== output) return false
-      }
-
-      done()
-    }
+    // eat_lines = function(value) {
+    //   var output = false
+    //   
+    //   if(value !== undefined) {
+    //     code_value = value
+    //   }
+    //   
+    //   while(lines.length) {
+    //     output = eat_line()
+    //     if(output !== output) return false
+    //   }
+    // 
+    //   done()
+    // }
     
     eat_line = function(value, prior_starter) {
       var whitespace='', wscount=0, code_string=''
@@ -119,7 +119,7 @@
         // }
         // DAML.run(code_string, callback)
         // return NaN // signal of callback
-        code_value = DAML.SPACES.top.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter)
+        code_value = DAML.execute_then_stringify(DAML.SPACES.top.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter))
         return code_value
       }
       
