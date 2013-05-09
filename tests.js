@@ -408,7 +408,20 @@ funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string upperc
 // funtest('2 {{2} | add "{2}"} ', 'asdf bax')
 
 
-
+// seqfun = function(x) {
+//   return DAML.mungeLR(x, function(L, num, R) {
+//     if(num % 2) return [L.concat(num), R]
+//     if(R.length) R[0] += num/2
+//     if(L.length) {
+//       var last_L = L.pop() + num/2
+//       R.unshift(last_L)
+//     }
+//     return [L, R]
+//   })
+// }
+// seqfun([1,1,1,2,1,1,1])
+// 
+// for(var i = 2; i<160; i+=2) {console.log(i, seqfun([1,1,i,1,1,1,1,1]))}
 
 
 // funtest('{math add value "{7}" to 13}', 20) 

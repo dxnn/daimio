@@ -76,7 +76,7 @@ MAGIC PIPE TESTS
   Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
     {42 || add __}
       42
-    {42 || add to __}
+    {21 || add 21 to __}
       42
 
   Case 1b: carry along. You can use a pipe to carry the value through segments.
@@ -101,14 +101,14 @@ MAGIC PIPE TESTS
       [42]
     {21 | add (__ __)}
       [42,42]
-    {21 | add (21 __ __)}
-      [42,42,42]
-    {21 | add (__ 21 __)}
-      [42,42,42]
-    {21 | add (__ __ 21)}
-      [42,42,42]
+    {21 | add (-1 __ __)}
+      [20,42,42]
+    {21 | add (__ -1 __)}
+      [42,20,42]
+    {21 | add (__ __ -1)}
+      [42,42,20]
 
-  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment.
+  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
     {(1 2 3) | map block "{__ | add 4}"}
       [5,6,7]
     {(1 2 3) | map block "{add __ to 4}"}
@@ -121,14 +121,8 @@ MAGIC PIPE TESTS
       [1,2,3]
     {(1 2 3) | map block "{__ | __ | add 1}"}
       [2,3,4]
-  
-//    {(1 2 3) | reduce block "{add __}"}  // what oh no what
-//      [5,6,7]
-//    here, like this:
-//      {(1 2 3) | reduce block "{add _value to _total}"} 
-//        6
-//      {(1 2 3) | reduce block "{__ | add to _total}"} 
-//        6
+    {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
+      [3,4,5]
   
   Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
     {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
@@ -137,31 +131,77 @@ MAGIC PIPE TESTS
       4 x 8 :: 5 x 9 :: 6 x 10 ::
   
   Notes:
-    To connect to the process input you must explicitly add the magic pipe the first segment:
+    To connect to the process input you must explicitly add the magic pipe to the first segment:
       {(1 2 3) | map block "{__ | add to 4}"}
         [5,6,7]
-      {(1 2 3) | map block "{add to 4}"}
+      {(1 2 3) | map block "{add to 4}" // bad}
         ["","",""]
       {(1 2 3) | map block "{__ | add 4}"}
         [5,6,7]
-      {(1 2 3) | map block "{add 4}"}
+      {(1 2 3) | map block "{add 4}" // bad}
         [4,4,4]
     
+    The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
+      {20 | add {__ | add 1} // bad}
+        1
+      {20 | add {__ | add 1} to __ // bad}
+        21
+
+      {20 | add 1 | add __ to __}
+        42
+        
+    If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
+      {21 | join (__ " " __)}
+        21 21
+      {21 | join ({__ | add 1} " " {__ | add 2}) // bad}
+        1 2
+      {21 | join ({add 1 to __} " " {add __ to 2}) // bad}
+        1 2
+      {21 | >_a | join ({_a | add 1} " " {_a | add 2})}
+        22 23
+      
+    The above also applies to the empty pipe:
+      {21 | add {__} to 7 // bad}
+        7
+      {21 | add {__} to __ // bad}
+        21
+      {21 | add __ to {__} // bad}
+        21
+  
+    Double pipes are also used to squelch output from a pipeline:
+      {42 ||}
+        
+      {(1 2 3) | map block "{__ | add 1 ||}"}
+        ["","",""]
+  
+  reduce:
+    {(1 2 3) | reduce block "{add _value to _total}"} 
+      6
+    {(1 2 3) | reduce block "{__ | add to _total}"} 
+      6
+
+  
+quote, unquote, and run:
+  {"{__ | add 1}" | map data (1 2)}
+    [2,3]
+    
+  {"{__ | add 1}" | quote}
+    {__ | add 1}
+
+  {"{__ | add 1}" | quote | map data (1 2)}
+    ["{__ | add 1}","{__ | add 1}"]
+
+  {"{__ | add 1}" | unquote // does nothing}
+    1
+
+  {"{__ | add 1}" | quote | unquote}
+    1
+
+  {"{__ | add 1}" | quote | unquote | map data (1 2)}
+    [2,3]
   
   
-  Questions: 
-    -- what about putting a magic pipe in a pipeline as a param?
-      --> this currently tries to grab the process input. is that good? it's probably the right thing. this is stupid.
-    {20 | add {__ | add 7}}
-      7
-    {20 | add {__ | add 7} to __}
-      27
-    -- what about the empty pipe? this should also grab process input, right?
-    {21 | add {__} to 7}
-      7
-    {21 | add {__} to __}
-      21
-    -- what about the identity map?
+  
   
 falsy falsers:
   {0}
@@ -440,7 +480,6 @@ Once more, with feeling
 [{"name":"youhoo"}]
 
 {"hey {_name}!" | > :foo}
-hey dann!
 
 {:blargh | > :name}
 blargh
@@ -1010,7 +1049,7 @@ Snack 2: Blocks
         ["Some","text"]
     
     The block can also be stored as a variable:
-      {begin foo | > :foo | ""}Some text{end foo}{$foo}
+      {begin foo | > :foo ||}Some text{end foo}{$foo}
       Some text
       {begin foo | > :foo | $foo}Some text{end foo}
       Some text
@@ -1179,7 +1218,7 @@ Depth 1: Blocks and scope
     TODO: fix this section!
 
 //    A pipeline variable created in a block goes away when that block ends:
-//      {begin block | ""}{123 | > :foo}{end block}{foo}
+//      {begin block ||}{123 | > :foo}{end block}{foo}
 //        123
 //  
 //    Variables beginning with '@' are global:
@@ -1474,11 +1513,11 @@ CC 1: Math commands
       {:7 | divide by :4}
         1.75
       {divide value (:1 2 :3) | map block "{__ | round to 2}"}
-        ["0.17"]
+        [0.17]
       {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
-        ["0.33","0.67","1"]
+        [0.33,0.67,1]
       {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
-        ["0.17","0.4","0.75"]
+        [0.17,0.4,0.75]
       
       // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
       
@@ -1547,17 +1586,17 @@ CC 2: Looping
   
   
   
-  // next up: coffee, jazz, obscure sports, obscure holidays, autological (anti, homo, etc), deep sea creatures, church/kleene/turing etc, russell/conway/tarski etc, singularity/bingularity/tringularity, murray gell-mann, pynchon&co, funny parts of the eye, shakespearean neologisms, joycean neologisms, other biology, music theory, strange foods, topological space organization (T1), the lambda cube, ways of making numbers, mermaid > duck > bunny > manatee, 
+  // next up: coffee, jazz, obscure sports, obscure holidays, autological (anti, homo, etc), deep sea creatures, church/kleene/turing etc, russell/conway/tarski etc, singularity/bingularity/tringularity, murray gell-mann, pynchon&co, funny parts of the eye, shakespearean neologisms, joycean neologisms, carrollean neologisms, other biology, music theory, strange foods, topological space organization (T1), the lambda cube [posets&dags], ways of making numbers, mermaid > duck > bunny > manatee, 
   
 
 
 {(:One {"1 2 3" | string split on " "} :Two)}
   ["One",["1","2","3"],"Two"]
 
-{begin foo | $foo}One{"1 2 3" | string split on " "}Two{end foo}
+{begin foo | > :foo | $foo}One{"1 2 3" | string split on " "}Two{end foo}
   One["1","2","3"]Two
 
-{begin foo}One{"1 2 3" | string split on " "}Two{end foo}{$foo}
+{begin foo | > :foo ||}One{"1 2 3" | string split on " "}Two{end foo}{$foo}
   One["1","2","3"]Two
 
 
@@ -1616,13 +1655,13 @@ Basic blocks and vars:
 {begin foo | string split on " " | grep :h}hello how are you?{end foo}
 ["hello","how"]
 
-{begin foo | > :foo | ""}hello{end foo}{$foo | grep :llo}
+{begin foo | > :foo ||}hello{end foo}{$foo | grep :llo}
 ["hello"]
 
 {> :x value (:foo :buzz :bizz :bazz) | grep :zz value $x}
 ["buzz","bizz","bazz"]
 
-{begin foo | string split on " " | > :x || ""}hello hey zebra squid{end foo}{$x | grep :h}
+{begin foo | string split on " " | > :x ||}hello hey zebra squid{end foo}{$x | grep :h}
 ["hello","hey"]
 
 
@@ -1737,7 +1776,7 @@ y
 
 // array commands
 
-{* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data | ""}
+{* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
 
 
 // list commands
@@ -1985,13 +2024,13 @@ one,row\nsecond,row
 // PARAMS
 
 
-{* (:one :one :two :two :three :three) | > :numbers || ""}
+{* (:one :one :two :two :three :three) | > :numbers ||}
 
-{* (:one :hashly :two :bashly :three :crashly) | > :hash || ""}
+{* (:one :hashly :two :bashly :three :crashly) | > :hash ||}
 
-{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals || ""}
+{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals ||}
 
-{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :data || ""}
+{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :data ||}
 
 
 {$hash.one}
@@ -2064,37 +2103,37 @@ hashly
 // now with more tests!
 //
 
-{* (:name "Awesome John" :age :alpha) | > :a-john | ""}
+{* (:name "Awesome John" :age :alpha) | > :a-john ||}
 
-{* (:name "Awesome Bobs" :age :beta) | > :a-bobs | ""}
+{* (:name "Awesome Bobs" :age :beta) | > :a-bobs ||}
 
-{* (:name "Awesome Mary" :age :gamma) | > :a-mary | ""}
+{* (:name "Awesome Mary" :age :gamma) | > :a-mary ||}
 
-{* (:name "Awesome Stev" :age :delta) | > :a-stev | ""}
+{* (:name "Awesome Stev" :age :delta) | > :a-stev ||}
 
-{($a-john $a-bobs $a-mary $a-stev) | > :awesome_people | ""}
+{($a-john $a-bobs $a-mary $a-stev) | > :awesome_people ||}
 
-{* (:name "Cool John" :age :alpha) | > :c-john | ""}
+{* (:name "Cool John" :age :alpha) | > :c-john ||}
 
-{* (:name "Cool Bobs" :age :beta) | > :c-bobs | ""}
+{* (:name "Cool Bobs" :age :beta) | > :c-bobs ||}
 
-{* (:name "Cool Mary" :age :gamma) | > :c-mary | ""}
+{* (:name "Cool Mary" :age :gamma) | > :c-mary ||}
 
-{* (:name "Cool Stev" :age :delta) | > :c-stev | ""}
+{* (:name "Cool Stev" :age :delta) | > :c-stev ||}
 
-{($c-john $c-bobs $c-mary $c-stev) | > :cool_people | ""}
+{($c-john $c-bobs $c-mary $c-stev) | > :cool_people ||}
 
-{* (:name "Neat John" :age :alpha) | > :n-john | ""}
+{* (:name "Neat John" :age :alpha) | > :n-john ||}
 
-{* (:name "Neat Bobs" :age :beta) | > :n-bobs | ""}
+{* (:name "Neat Bobs" :age :beta) | > :n-bobs ||}
 
-{* (:name "Neat Mary" :age :gamma) | > :n-mary | ""}
+{* (:name "Neat Mary" :age :gamma) | > :n-mary ||}
 
-{* (:name "Neat Stev" :age :delta) | > :n-stev | ""}
+{* (:name "Neat Stev" :age :delta) | > :n-stev ||}
 
-{($n-john $n-bobs $n-mary $n-stev) | > :neat_people | ""}
+{($n-john $n-bobs $n-mary $n-stev) | > :neat_people ||}
 
-{( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | > :companies | ""}
+{( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | > :companies ||}
 
 /* 
   write tests:
