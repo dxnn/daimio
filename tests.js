@@ -423,6 +423,10 @@ funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string upperc
 // 
 // for(var i = 2; i<160; i+=2) {console.log(i, seqfun([1,1,i,1,1,1,1,1]))}
 
+// for(var i = 2; i<46; i+=1) {console.log(i, seqfun(DAML.models.list.methods.range.fun(i, 1, 1)[2]))}
+// for(var i = 2; i<246; i+=1) {x = seqfun(DAML.models.list.methods.range.fun(i, 1, 1)); if(x && x[1]) {console.log(x[1])} }
+// all 2s: 5,-,-
+// 2s w/ 1 1: 7,- or 5,-,- or -
 
 // funtest('{math add value "{7}" to 13}', 20) 
 // THINK: what should this do? maybe make add accept only numbers, and use fold/zipwith/etc to add over lists?
