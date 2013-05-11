@@ -108,6 +108,16 @@ MAGIC PIPE TESTS
     {21 | add (__ __ -1)}
       [42,42,20]
 
+
+  Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
+  [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
+  maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
+  and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
+  BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
+  
+
+
+
   Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
     {(1 2 3) | map block "{__ | add 4}"}
       [5,6,7]
