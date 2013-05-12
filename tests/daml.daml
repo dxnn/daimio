@@ -272,9 +272,9 @@ Tests for blocks
     {"{:foo}x" | > :qq.ww.ee || merge data $qq block "{_ee | quote}"}
       {:foo}x
     {$qq | merge block "{__}"}
-      alksd
+      {"ee":"{:foo}x"}
     {$qq | merge block "{(__)}"}
-      adsf
+      [{"ee":"{:foo}x"}]
         
 
 Tests for stringification
@@ -1106,13 +1106,17 @@ Snack 2: Blocks
       {:hey | > :value}
         hey
     
-    And as magic pipes
-      {each block (:x __ {__} "{__}" {"{__}"}) data (1 2 3)}
-        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
-      {each block (:x {string join value {__}}) data (1 2 3)}
-        ["x","hey"]["x","hey"]["x","hey"]
-      {each block {(:x __ "-")} data (1 2 3)}
-        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
+    Pipeline variables, including magic pipes, are reduced prior to templatization. 
+    --> in general, don't use lists as templates.
+      {(7 8) | each block (1 __ "{__}")}
+        [1,[7,8],"{__}"][1,[7,8],"{__}"] 
+        
+//      {each block (1 __) data (7 8)}
+//        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
+//      {each block (:x {string join value {__}}) data (1 2 3)}
+//        ["x","hey"]["x","hey"]["x","hey"]
+//      {each block {(:x __ "-")} data (1 2 3)}
+//        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
 
     More maps
       {map block "{__ | add 1}" data (1 2 3)}
