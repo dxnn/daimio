@@ -17,7 +17,7 @@ At one point in the development of DAML I managed to reduce the entire language 
  
  To notebook: use space+key as meta, pointless programming (no variables), help dictionary for keybindings (emacs), more recursive combinators in daml, monads in daml for guarding variables etc?, virtual edge when you click a port that tracks your mouse, ...
  
-Keyed lists: the position of an item in the list is not a key. Items can always be retrieved by positional index. Items can also be keyed. Sorting, grouping, and other such operations preserve keys. Remember to use #N to access by position. @foo.{"#{pos}"} works also. @foo.(:#2 :#4 :alpha 7) also works, though this also means you can never key an array with '#N' where N is an integer, so... actually, that's probably fine.
+Keyed lists: the position of an item in the list is not a key. Items can always be retrieved by positional index. Items can also be keyed. Sorting, grouping, and other such operations preserve keys. Remember to use #N to access by position. @foo.{"#{pos}"} works also. @foo.(:#2 :#4 :alpha 7) also works, though this also means you can never key a list with '#N' where N is an integer, so... actually, that's probably fine.
 
 Schema: a list of collections and the mechanical fields (ie non-attr, non-perm) fields inside them. used by the mongo layer to do automatic type conversion. maybe used to verify validity of objects. also for data migrations (much easier to see if it's all in one place, and may even be possible to automate sometimes). prevents weird string->int->string casting bugs. so a pretty convenient thing for larger apps. might not be mandatory... but really, with all soft data in attrs, there's almost no reason not to always use it: you have to have a schema somewhere, either scattered through your code or in one place. so stick it one place.
 
@@ -145,7 +145,7 @@ MAGIC PIPE TESTS
       {(1 2 3) | map block "{__ | add to 4}"}
         [5,6,7]
       {(1 2 3) | map block "{add to 4}" // bad}
-        ["","",""]
+        [4,4,4]
       {(1 2 3) | map block "{__ | add 4}"}
         [5,6,7]
       {(1 2 3) | map block "{add 4}" // bad}
@@ -161,13 +161,13 @@ MAGIC PIPE TESTS
         42
         
     If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
-      {21 | join (__ " " __)}
+      {21 | join (__ " " __) on ""}
         21 21
-      {21 | join ({__ | add 1} " " {__ | add 2}) // bad}
+      {21 | join ({__ | add 1} " " {__ | add 2}) on "" // bad}
         1 2
-      {21 | join ({add 1 to __} " " {add __ to 2}) // bad}
+      {21 | join ({add 1 to __} " " {add __ to 2}) on "" // bad}
         1 2
-      {21 | >_a | join ({_a | add 1} " " {_a | add 2})}
+      {21 | >_a | join ({_a | add 1} " " {_a | add 2}) on ""}
         22 23
       
     The above also applies to the empty pipe:
@@ -197,11 +197,11 @@ quote, unquote, and run:
   {"{__ | add 1}" | map data (1 2)}
     [2,3]
     
-  {"{__ | add 1}" | quote}
-    {__ | add 1}
+  {"{__ | add 11}" | quote}
+    {__ | add 11}
 
-  {"{__ | add 1}" | quote | map data (1 2)}
-    ["{__ | add 1}","{__ | add 1}"]
+  {"{__ | add 11}" | quote | map data (1 2)}
+    ["{__ | add 11}","{__ | add 11}"]
 
   {"{__ | add 1}" | unquote // does nothing}
     1
@@ -378,7 +378,7 @@ Tests for lists
     
 
 Tests for falseness
-  Empty strings, arrays, and hashes are false, as is the number zero and unset vars.
+  Empty strings, lists, and keyed lists are false, as is the number zero and unset vars.
     {"" | then :true else :false}
       false
     {0 | then :true else :false}
@@ -440,7 +440,7 @@ Tests for self-reference. PBV cures these ills.
     {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
 
 
-Tests for array compilation:
+Tests for list compilation:
   {"{add ($counter 1) | > :counter}" | > :countblock}
     1
   
@@ -480,7 +480,7 @@ Running the DAML first changes the output.
   {{"hi {$name}" | run} | quote}
     hi dann
 
-The quote command also works on arrays.
+The quote command also works on lists.
   {"hi {$name}" | string split on " " | quote}
     ["hi","{$name}"]
 
@@ -518,7 +518,7 @@ hey youhoo! x
 hey blargh!
 
 
---> merge over an object instead of an array
+--> merge over a keyed list of keyed lists
 
 {* (:one {* (:name :youhoo)} ) | > :names}
   {"one":{"name":"youhoo"}}
@@ -553,10 +553,10 @@ Here's the use cases, from the user's perspective:
   123
 
 - I put a simple string in, I want the same string out.
-  {"asdf"}
-    asdf
-  {begin x}asdf{end x}
-    asdf
+  {"simple"}
+    simple
+  {begin x}blockguts{end x}
+    blockguts
   {begin x | > :x | $x}asdf{end x}
     asdf
 
@@ -933,7 +933,7 @@ Element 4: Commands
 
   The following commands use models that are published by default.
   
-    Join an array of strings:
+    Join a list of strings:
       {string join value (:barbera :belvest :brioni)}
       barberabelvestbrioni
   
@@ -980,11 +980,11 @@ Element 5: The pipe operator
       bebop, hardbop, cool, swing
 
     A single pipe at the end of a command passes the value through:
-      {:asdf|}
-      asdf
+      {:mypipes|}
+      mypipes
 
     A double pipe in a command squelches the pipe value:
-      {:asdf ||}
+      {:doublepipes ||}
       
     
     Which is equivalent to:
@@ -1088,17 +1088,17 @@ Snack 2: Blocks
       {each block {"{"x{__}-"}"} data (1 2 3)}
       x1-x2-x3-
       
-    These works like you would expect -- each iteration returns an array, which is JSONified internally.
+    These works like you would expect -- each iteration returns a list, which is JSONified internally.
       {each block "{(:x {string join value {__}} "-")}" data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
       {each block {"{(:x {string join value {__}} "-")}"} data (1 2 3)}
       ["x","1","-"]["x","2","-"]["x","3","-"]
     
-    These show the strange, sad results of trying to coerce an array into a template.
+    These show the strange, sad results of trying to coerce a list into a template.
       {:hey | > :value}
         hey
-      {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2 3)}
-        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
+      {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2)}
+        ["x","hey","hey","{$value}","{$value}"]["x","hey","hey","{$value}","{$value}"]
       {each block (:x {string join value {$value}}) data (1 2 3)}
         ["x","hey"]["x","hey"]["x","hey"]
       {each block {(:x $value "-")} data (1 2 3)}
@@ -1356,7 +1356,7 @@ Depth 3: Further fun with variables
 
     And back to vars:
 
-      Reaching into a list of hashes brings back an array:
+      Reaching into a list of hashes brings back a list:
         {( {* (:one 1 :two 2)}  {* (:one 10 :two 20)} ) | __.one}
           [1,10]
 
@@ -1634,15 +1634,15 @@ CC 2: Looping
   [1,"asdf",3]
 
 {(1 {"{:asdf}"} 3)}
-  [1,"asdf",3]
+  [1,"{:asdf}",3]
 
 {(1 "{:asdf}" 3)}
-  [1,"asdf",3]
+  [1,"{:asdf}",3]
 
 {(1 {:asdf | string split} 3)}
   [1,["asdf"],3]
 
-{(1 "{:asdf | string split}" 3)} {// this becomes a string of an array of a string because of the quotes //}
+{(1 "{:asdf | string split}" 3)} {// this becomes a string of a list of a string because of the quotes //}
   [1,"[\"asdf\"]",3]
 
 {(1 {"{:asdf | string split}"} 3)}
@@ -1786,7 +1786,7 @@ y
 
 
 
-// array commands
+// list commands
 
 {* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
 
