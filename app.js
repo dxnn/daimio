@@ -2,13 +2,21 @@ var app = require('http').createServer(handler)
   , fs = require('fs')
   , static = require('node-static')
   , qs = require('querystring')
-  , io = require('socket.io').listen(app)
-  
-io.set('log level', 2)
+  , io = require('socket.io').listen(app, { log: false })
+  , mongo = require('mongodb')
+  , db = new mongo.Db('daimio', new mongo.Server('localhost', 27017, {auto_reconnect: true}), {w: 0});
+
+// io.set('log level', 0)
     
 var DAML = require('daml')
+DAML.db = db
+DAML.mongo = mongo
+
+
 var fileServer = new(static.Server)('./public')
-var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8')
+// var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8')
+
+var html = fs.readFileSync(__dirname+'/button.html', 'utf8')
 
 var onerror = function(err) {
   return console.log(err)
@@ -49,10 +57,13 @@ function handler (req, res) {
         // TODO: allow text through here, not just json
       // } 
       
-      // DAML.add_global('POST', POST);
-      DAML.run(POST.daml);
       res.writeHead(200, {"Content-Type": "application/json"});
-      res.end(JSON.stringify(global.output));
+
+      // DAML.add_global('POST', POST);
+      DAML.run(POST.daml, function(value) {
+        res.end(JSON.stringify(global.output));
+      });
+      
     });
     return;
   }
@@ -62,28 +73,37 @@ function handler (req, res) {
 }
 
 
-console.log('connected!');
-app.listen(8008);
+db.open(function(err, db) {
+  if(err) return onerror('DB refused to open: ', err);
 
-var counter = 0
-  , last_data = ''
-  , password = 'kjh1234kljh1324uiyhiuhfs98dfosdfhk2j3hk2jhsdfya9sd8fyasdfjh2k3jh234239uvnm23'
+  // console.log('connected!'); 
   
+  app.listen(8008);
+  
+  // io.on('connection', function (socket) {
+  //   socket.on('bounce', function (data) {
+  //     io.sockets.emit('bounced', data)
+  //     console.log(['bouncing', data])
+  //   })
+  // })
+  
+});
+
+
 io.on('connection', function (socket) {
-  socket.on('primeme', function (data) {
-    if(data.pwd != password) return false
-    socket.on('bounce', function (data) {
-      if(data.daml.indexOf('current_slide') > -1) {
-        last_data = data
-        // console.log(last_data, data.daml.indexOf('current_slide'))
-      }
-      io.sockets.emit('bounced', data)
-      console.log(['bouncing', data])
+  
+  socket.on('process', function (data) {
+    if(!data.daml) 
+      return false
+    
+    DAML.run(data.daml, function(value) { // TODO: add 'context' for run
+      io.sockets.emit('return', value) // TODO: return just to asker [maybe use jDaimio for this?]
     })
-    io.sockets.emit('primer', {prime: true})
   })
-  if(last_data) {
-    io.sockets.emit('bounced', last_data)
-  }
-  console.log(++counter)
+
+  socket.on('bounce', function (data) {
+    io.sockets.emit('bounced', data)
+    // console.log(['bouncing', data])
+  })
+  
 })

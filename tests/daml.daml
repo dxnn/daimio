@@ -353,19 +353,26 @@ Tests for lists
     // NOTE: these used to be extract, but we're going to handle that differently in the future. There's a filter function that does what it says on the tin, and a 'treewalk' function that allows you to dive into data and filter it from the inside. these two together can probably replace the old extract/prune functionality, maybe.
     
     // THINK: why do we need all the 'then 1's?
-    {$klist | list filter block "{__.x | eq 2 | then 1}"}
+    {$klist | filter block "{__.x | eq 2 | then 1}"}
       [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    {$klist | __.* | list filter block "{__ | eq :d | then 1}"}
+    {$klist | __.* | filter block "{__ | eq :d | then 1}"}
       ["d","d"]
       
     {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
     
-    {$dlist | __.* | list filter block "{__ | less than :4 | then 1}"}
+    {$dlist | __.* | filter block "{__ | less than :4 | then 1}"}
       [2,3,1,3,3,1,3]
     
-    {$dlist |  __.*.one | list filter block "{_parent.parent.one.1 | eq :3 | then 1}"}
+    {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3 | then 1}"}
       [2,3,5]
+    
+    
+    
+    
+    {(1 2 3) | __.#1 | add 2}
+      4
+    
     
 
       // // prune
@@ -766,19 +773,19 @@ Here's the use cases, from the user's perspective:
   {string transform value $value from $y to $y}
 
 {$modded_block}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $y}
 
 // and then show you can 'rez' a dead string by unquoting it. (unquoting is dark, necromantic magic.)
 
 {$x_to_y | > :value | run}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $y}
 
 // alternately:
 {$x_to_y | string transform from :x to :z | string transform from :y to :x | string transform from :z to :y | > :y_to_x}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $x}
   
 {"axy fix hex hoax" | > :value || :x | > :x || :y | > :y || $y_to_x}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $x}
 
 
 // run the process instantly
@@ -794,7 +801,7 @@ Here's the use cases, from the user's perspective:
   axx fix hex hoax
 
 {$y_to_x | unquote | quote}
-  {string transform value $value from $x to $y}
+  {string transform value $value from $y to $x}
 
 {"axy faxy foxy" | > :value || $y_to_x_block}
   axx faxx foxx
