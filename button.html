@@ -30,6 +30,50 @@
     
     
     
+    {:counter | gateway add type :dom-set-text thing __}
+
+    {:button | gateway add type :dom-submit thing __ 
+      -> "{count inc | >@everyone}" | >@Server}
+
+    {@Init 
+      -> "{count get | >@me}" | >@Server}
+
+    {@Server 
+      -> +=$count | >@counter}
+    
+    
+    
+    
+    
+    
+      {:counter | gateway add type :dom-set-text thing __}
+
+      {:button | gateway add type :dom-submit thing __}
+
+      {@Init 
+        -> "{count get | >@Me}" 
+        -> @Server}
+    
+      {@button
+        -> "{count inc | >@Everyone}"
+        -> @Server}
+    
+      {@Server
+        -> "{__ | + $count | >$count}"
+        -> @counter}
+    
+    
+    
+    
+    
+    -> is a terminator meaning 'channel add from *prev* to {space add block *next*}'
+       --OR-- 'channel add from *prev* to *next*' (if next is a gateway)
+    
+    channel add needs to take either gateways or spaces in this case, and default intelligently on spaces to stdin / stdout -- maybe it adds a gateway if provided a name for one that doesn't exist, like
+    {$myspace -> $youspace from :foo-out to :foo-in}
+    would add foo-out to myspace and foo-in to youspace if they didn't exist, and they'd be accessible from inside those spaces. 
+    
+    
     
     {// counter space //}
     { space add name :counterspace block "{$count | add 1 | > :count}"
