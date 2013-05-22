@@ -66,7 +66,7 @@ head2pipe = function(blockhead, result) {
 }
 
 funtest = function(string, result) {
-  // var space = DAML.SPACES.top
+  // var space = DAML.SPACES.outer
   //   , segment = DAML.Parser.string_to_block_segment(string)
   //   , ABlocks = DAML.ABLOCKS
   //   , block = ABlocks[segment.value.id]

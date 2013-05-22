@@ -122,7 +122,7 @@
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
-        code_value = DAML.execute_then_stringify(DAML.SPACES.top.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter))
+        code_value = DAML.execute_then_stringify(DAML.SPACES.outer.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter))
         return code_value
       }
       

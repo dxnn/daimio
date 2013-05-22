@@ -18,11 +18,11 @@
   </form>
   
   <script type="text/daml" id="hello_daimio">
-    {begin $count-S}
-      {__ | run | out}
-    {end $count-S}
+    {//begin $count-S}
+      {//__ | run | out}
+    {//end $count-S}
     
-    { $count-S 
+    {// $count-S 
     ^ gateway add type :space-in message "{$count | add 1 | > :count}" | >$inc-count-G
     ^ gateway add type :space-in message "{__ | > :count}" | >$set-count-G
     ^ gateway add type :space-out | >$out-count-G
@@ -30,19 +30,27 @@
     
     
     
-    {:counter | gateway add type :dom-set-text thing __}
+    {//:counter | gateway add type :dom-set-text thing __}
 
-    {:button | gateway add type :dom-submit thing __ 
+    {//:button | gateway add type :dom-submit thing __ 
       -> "{count inc | >@everyone}" | >@Server}
 
-    {@Init 
+    {//@Init 
       -> "{count get | >@me}" | >@Server}
 
-    {@Server 
+    {//@Server 
       -> +=$count | >@counter}
     
     
     
+    {:counter | gateway add type :dom-set-text thing __}
+
+    {:button | gateway add type :dom-submit thing __}
+
+    {@button
+      -> "{__ | + $count | >$count}"
+      -> @counter}
+  
     
     
     
@@ -66,6 +74,10 @@
     
     
     
+    
+    
+    
+    
     -> is a terminator meaning 'channel add from *prev* to {space add block *next*}'
        --OR-- 'channel add from *prev* to *next*' (if next is a gateway)
     
@@ -76,29 +88,29 @@
     
     
     {// counter space //}
-    { space add name :counterspace block "{$count | add 1 | > :count}"
+    {// space add name :counterspace block "{$count | add 1 | > :count}"
     | gateway add type :space-in name :inc-counterspace-gateway
    || gateway add type :space-in name :set-counterspace-gateway thing :counterspace decorate "{__ | > :count}"
    || gateway add type :space-out name :out-counterspace-gateway thing :counterspace}
     
     {// make dom gateways //}
-    {gateway add name :button-gateway type :dom-submit thing :button_form}
-    {gateway add name :display-gateway type :dom-text thing :count}
+    {//gateway add name :button-gateway type :dom-submit thing :button_form}
+    {//gateway add name :display-gateway type :dom-text thing :count}
     
     {// channel button-to-space //}
-    { channel add name :button-to-space
+    {// channel add name :button-to-space
     | channel attach-to-start gateway :button-gateway
     | channel attach-to-end gateway :inc-counterspace-gateway}
     
     {// channel space-to-display //}
-    { channel add name :space-to-display 
+    {// channel add name :space-to-display 
     | channel attach-to-start gateway :out-counterspace-gateway
     | channel attach-to-end gateway :display-gateway}
     
     {// send count to server //}
-    {gateway add name :server-inc-gateway type :server-send thing :increment}
+    {//gateway add name :server-inc-gateway type :server-send thing :increment}
 
-    { channel add name :button-to-server 
+    {// channel add name :button-to-server 
     | channel attach-to-start gateway :button-gateway
     | channel attach-to-end gateway :server-inc-gateway}
     
