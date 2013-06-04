@@ -2,7 +2,7 @@
 <html> 
 <head> 
   <meta charset="utf-8">
-  <title>Push My Button! Volume Two</title>
+  <title>Push My Button! Volume Two: Electric Buttonloo (TWO buttons for every counter)</title>
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
 </head>
@@ -22,9 +22,8 @@
   </form>
   
   <script type="text/daml" id="hello_daimio">
-    {// :counter | gateway dom-set-text thing __}
-    {// :button | gateway dom-submit thing __}
-    {// why doesn't @button1 → "1" work? //}
+
+    {// THINK: why doesn't @button1 → "1" work? //}
   
     {:counter | gateway add type :dom-set-text thing __}
 
@@ -45,22 +44,5 @@
     })
   </script>
   
-  <!-- 
-  
-    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}" | gateway add name :tickergateway type :space | channel attach-to-end name :button-to-space | channel attach-to-start gateway :tickergateway}')
-    
-    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}"}')
-    DAML.run('{gateway add name :tickergateway type :space thing :ticker}')
-    DAML.run('{channel attach-to-end name :button-to-space gateway :tickergateway}')
-    DAML.run('{channel attach-to-start name :button-to-space gateway :tickergateway}')
-  
-    DAML.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
-    {//3 | process wait for 1000 | add 99}
-    {3 | process wait for 1000 then "{__}" | add 99}
-    
-    {48 | @>counter}
-    
-    
-   -->
 </body>
 </html>

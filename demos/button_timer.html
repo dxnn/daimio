@@ -1,0 +1,66 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Push My Button! Volume Two</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+</head>
+
+<body>
+
+  <div>
+    <p>The button has been pushed <span id="counter">0</span> times!</p>
+  </div>
+  
+  <form id="button">
+    <p><input type="submit" value="Start counting"></p>
+  </form>
+  
+  <form id="values">
+    <p>
+      <input id="time-in" type="range" value="1000" min="0" max="2000"> 
+      <span id="time-out">1000</span> (delay, in milliseconds)</p>
+    <p>
+      <input id="step-in" type="range" value="1" min="1" max="1000"> 
+      <span id="step-out">1</span> (step size)</p>
+  </form>
+  
+  <script type="text/daml" id="hello_daimio">
+  
+    { 1000 | > :time
+    |    1 | > :step }
+    
+    { :time-in  | gateway add type :dom-get-value thing __
+    | :time-out | gateway add type :dom-set-text thing __ }
+    
+    { @time-in → "{__ | > :time}" → @time-out }
+    
+    {// 1000 | >@time-in //}
+    
+    { :step-in  | gateway add type :dom-get-value thing __ 
+    | :step-out | gateway add type :dom-set-text thing __ }
+
+    { @step-in → "{__ | > :step}" → @step-out }
+
+    { :counter | gateway add type :dom-set-text thing __
+    | :button  | gateway add type :dom-submit thing __ }
+
+    { @button 
+      → "{$count | then "{process sleep for 10000000}" | run}" / FIXME: this is very very silly
+      → "{__ | add $count | > :count}" | > :adder_gateway
+      → @counter }
+
+    { $adder_gateway → "{process sleep for $time | $step}" → $adder_gateway }
+ 
+  </script>
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      var code = document.getElementById('hello_daimio')
+      DAML.run(code.text, function() {})
+    })
+  </script>
+  
+</body>
+</html>
