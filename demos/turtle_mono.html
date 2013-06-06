@@ -1,0 +1,63 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>I Like Turtles</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+</head>
+
+<body>
+
+  MAKE ME A TURTLE
+  
+  <pre id="turtlepower">
+    /-\_
+    \-/
+  </pre>
+  
+  <form id="button">
+    <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
+    <div><input type="submit" name="send" value="send" id="send" /></div>
+  </form>
+  
+  <svg id="mainsvg" width="200px" height="200px" viewBox="0 0 200 200">
+    <g id="turtlebox" transform="translate(30,30)">
+      <rect width="30" height="50" id="turtle"></rect>
+    </g>
+  </svg>
+  
+  <pre id="output">output goes here</pre>
+  
+  <script type="text/daml" id="hello_daimio">
+    
+    { :code        | gateway add thing __ type :dom-get-value
+    | :output      | gateway add thing __ type :dom-set-text
+    | :button      | gateway add thing __ type :dom-submit 
+    | :svg-move    | gateway add type __ 
+    | :svg-rotate  | gateway add type __ 
+    | :svg-addline | gateway add type __ }
+    
+    { @code
+      → "{__ | > :code}"}
+    
+    { @button
+      → "{$code | unquote | run}"
+      → @output }
+    
+    {//
+      {* (:dy 10 :thing :turtlebox) | gateway send name :svg-move}
+      {* (:dangle 25 :thing :turtle) | gateway send name :svg-rotate}
+      {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | gateway send name :svg-rotate}
+    }
+  </script>
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      var code = document.getElementById('hello_daimio')
+      DAML.run(code.text, function() {})
+    })
+  </script>
+  
+</body>
+</html>
