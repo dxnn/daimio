@@ -15,7 +15,7 @@
   - fix Psegments / pipelines
   - fix function references
   - fix naming conventions
-  - fix space / dialect / varset 
+  - fix space / dialect / state 
   
   - write string->output tests
   - ensure one active process per space
