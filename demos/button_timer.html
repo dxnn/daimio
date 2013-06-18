@@ -31,20 +31,20 @@
     { 1000 | > :time
     |    1 | > :step }
     
-    { :time-in  | gateway add type :dom-get-value thing __
-    | :time-out | gateway add type :dom-set-text thing __ }
+    { :time-in  | gateway add thing __ type :dom-get-value
+    | :time-out | gateway add thing __ type :dom-set-text }
     
     { @time-in → "{__ | > :time}" → @time-out }
     
     {// 1000 | >@time-in //}
     
-    { :step-in  | gateway add type :dom-get-value thing __ 
-    | :step-out | gateway add type :dom-set-text thing __ }
+    { :step-in  | gateway add thing __ type :dom-get-value 
+    | :step-out | gateway add thing __ type :dom-set-text }
 
     { @step-in → "{__ | > :step}" → @step-out }
 
-    { :counter | gateway add type :dom-set-text thing __
-    | :button  | gateway add type :dom-submit thing __ }
+    { :counter | gateway add thing __ type :dom-set-text
+    | :button  | gateway add thing __ type :dom-submit }
 
     { @button 
       → "{$count | then "{process sleep for 10000000}" | run}" / FIXME: this is very very silly
