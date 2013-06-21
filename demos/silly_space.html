@@ -1,0 +1,53 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Push My Button!</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+</head>
+
+<body>
+
+  <div>
+    <p>The button has been pushed <span id="counter">0.707</span> times!</p>
+  </div>
+  
+  <form id="button">
+    <p><input type="submit" value="Click me!!"></p>
+  </form>
+  
+  <script type="text/daml" id="hello_daimio">
+  
+   {:counter | gateway add type :dom-set-text thing __}
+
+   {:button | gateway add type :dom-submit thing __}
+
+   {@button
+     → "{1 | add $count | > :count}"
+     → @counter}
+ 
+  </script>
+   
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      block = DAML.Parser.string_to_block_segment('{1 | add $count | > :count}')
+      
+      seed = { dialect: DAML.DIALECTS.top
+             , stations: [682758676]
+             , subspaces: []
+             , ports: [ {space:0, flavour:'dom-submit-track', settings: {thing: 'button'}, name: 'button'}
+                      , {space:0, flavour:'in', station: 1, settings: {}, name: 'inc-in'}
+                      , {space:0, flavour:'out', station: 1, settings: {}, name: 'inc-out'}
+                      , {space:0, flavour:'dom-text-set', settings: {thing: 'counter'}, name: 'counter'} ]
+             , routes: [[1,2],[3,4]]
+             , state: {}}
+      
+      seed_id = DAML.spaceseed_add(seed)
+      
+      space = new DAML.Space(seed_id)
+    })
+  </script>
+  
+</body>
+</html>
