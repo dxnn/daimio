@@ -116,10 +116,10 @@
     }
     
     if(!state.handler) {
-      maybe = Object.keys(DAML.models) // TODO: only at command start?
+      maybe = Object.keys(DAML.commands) // TODO: only at command start?
     }
     else if(!state.method) {
-      maybe = Object.keys(DAML.models[state.handler].methods)
+      maybe = Object.keys(DAML.commands[state.handler].methods)
     }
     else if(state.mode == 'pnaming' && !start) { // no pname
       maybe = state.pnames

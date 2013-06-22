@@ -176,8 +176,8 @@ CodeMirror.defineMode("daml", function() {
           
           if(words.length) {
             word = words.pop()
-            for(var i=0, l = DAML.models[data.handler].methods[word].params.length; i < l; i++) {
-              data.pnames.push(DAML.models[data.handler].methods[word].params[i].key)
+            for(var i=0, l = DAML.commands[data.handler].methods[word].params.length; i < l; i++) {
+              data.pnames.push(DAML.commands[data.handler].methods[word].params[i].key)
             }
             data.method = word
             now.verb = 'parametrize'
@@ -199,7 +199,7 @@ CodeMirror.defineMode("daml", function() {
         } 
         
         // good handler
-        else if(DAML.models[word]) { 
+        else if(DAML.commands[word]) { 
           data.handler = word
           returnType = HANDLER
           now.verb = 'methodize'
@@ -219,7 +219,7 @@ CodeMirror.defineMode("daml", function() {
       */
       case 'methodize':
         var word = getNextWord(stream)
-        var handler = DAML.models[data.handler]
+        var handler = DAML.commands[data.handler]
 
         // good method
         if(handler.methods[word]) { 
