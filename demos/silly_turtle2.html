@@ -34,6 +34,8 @@
     {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | port send name :svg-rotate}
     
     {range 360 | each block "{__ | > :x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+    
+    (try w/o sleep)
   </pre>
   
   <script type="text/json" id="spaceseeds">
@@ -70,7 +72,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
       var outerseed = DAML.make_some_space(seedlikes)
-      OuterSpace = new DAML.Space(outerseed) // note published (not necessary, just here for debug)
+      OuterSpace = new DAML.Space(outerseed) // published (just for debug)
     })
     
     
@@ -82,6 +84,12 @@
       - turtle line working
       - code sending working
       - good job
+      - pause space
+      - spacial processing limits
+      - cm editor for turtle code
+      - audio code
+      - concurrency code (turtle intersection?)
+      - live updates? maybe not for this one...
     */
     
   </script>
