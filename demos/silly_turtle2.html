@@ -1,0 +1,90 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>I Like Turtles</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+</head>
+
+<body>
+
+  MAKE ME A TURTLE
+  
+  <pre id="turtlepower">
+    /-\_
+    \-/
+  </pre>
+  
+  <form id="button">
+    <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
+    <div><input type="submit" name="send" value="send" id="send" /></div>
+  </form>
+  
+  <svg id="mainsvg" width="200px" height="200px" viewBox="0 0 200 200">
+    <g id="turtlebox" transform="translate(30,30)">
+      <rect width="30" height="50" id="turtle"></rect>
+    </g>
+  </svg>
+  
+  <pre id="hints">
+    {* (:dy 10 :thing :turtlebox) | port send name :svg-move}
+    
+    {* (:dangle 25 :thing :turtle) | port send name :svg-rotate}
+    {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | port send name :svg-rotate}
+    
+    {range 360 | each block "{__ | > :x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+  </pre>
+  
+  <script type="text/json" id="spaceseeds">
+    { exec:
+      {
+        
+      }
+      
+    , outer: 
+      { ports: 
+        { form: ["dom-submit-track"]
+        , "svg-move": ["svg-move"]
+        , "svg-rotate": ["svg-rotate"]
+        , "svg-line-add": ["svg-line-add"]
+        }
+      , subspaces: 
+        { exec: exec}
+      , stations: 
+        { cleaner: "{__.code | * (:exec __ :user USER)}" 
+        , setter: "{__ | > :code}"
+        }
+      , routes: 
+        [ ['form', 'cleaner.in']
+        , ['cleaner.out', 'exec.exec'] 
+        , ['exec.svg-move', 'dirtier.in']
+        , ['dirtier.out', 'svg-move']
+        ]
+      }
+    }
+    // yicky yick
+  </script>
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
+      var outerseed = DAML.make_some_space(seedlikes)
+      OuterSpace = new DAML.Space(outerseed) // note published (not necessary, just here for debug)
+    })
+    
+    
+    /*
+      TODOS!!!
+      - exec port
+      - network (websockets / webrtc) stuff... like USER
+      - svg display of spaces
+      - turtle line working
+      - code sending working
+      - good job
+    */
+    
+  </script>
+  
+</body>
+</html>
