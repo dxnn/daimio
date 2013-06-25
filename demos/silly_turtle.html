@@ -8,24 +8,17 @@
 </head>
 
 <body>
-
-  MAKE ME A TURTLE
   
-  <pre id="turtlepower">
-    /-\_
-    \-/
-  </pre>
+  <svg id="mainsvg" width="500px" height="500px" viewBox="0 0 500 500">
+    <g id="turtlebox" transform="translate(30,30)">
+      <rect width="30" height="50" id="turtle"></rect>
+    </g>
+  </svg>
   
   <form id="button">
     <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
-  
-  <svg id="mainsvg" width="200px" height="200px" viewBox="0 0 200 200">
-    <g id="turtlebox" transform="translate(30,30)">
-      <rect width="30" height="50" id="turtle"></rect>
-    </g>
-  </svg>
   
   <pre id="hints">
     {* (:dy 10 :thing :turtlebox) | port send name :svg-move}
@@ -34,6 +27,39 @@
     {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | port send name :svg-rotate}
     
     {range 360 | each block "{__ | > :x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+    
+    {range 20 | each block "{__ | process sleep for __ | times 5 | * (:y1 __ :x2 100 :y2 __ :thing :mainsvg) | port send name :svg-line-add}"}
+    
+    
+    {0 | > :angle | 30 | > :x | 30 | > :y | 10 | > :forward | 10 | > :turn | "black" | > :color | 1 | > :alpha}
+    
+    
+    {begin foo | > :foo}   
+      { $x | > :oldx | $y | > :oldy
+      
+      | $angle | add 90 | math cos | times $forward | > :dx
+      | add $x | > :x | less than 0 | then 0 else $x | > :x
+      | 450 | less than $x | then 450 else $x | > :x
+      
+      | $angle | add 90 | math sin | times $forward | > :dy
+      | add $y | > :y | less than 0 | then 0 else $y | > :y
+      | 450 | less than $y | then 450 else $y | > :y
+      
+      | * (:y $y :x $x :thing :turtlebox) | port send name :svg-move}
+      
+      {* (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$x | add 15} :y2 {$y | add 15} :color $color :alpha $alpha :thing :mainsvg) | port send name :svg-line-add}
+      
+      {* (:angle {$angle | add $turn | > :angle} :thing :turtle) | port send name :svg-rotate}
+    {end foo}
+    
+    {14.2 | > :turn | :green | > :color | 0.5 | > :alpha}    
+    {range 400 | each block "{__ | times 0.04 | add 3.2 | > :forward | $foo | run | process sleep}"}
+    
+    
+    {14.2 | > :turn | :red | > :color | 0.5 | > :alpha}    
+    {7 | range 200 | each block "{__ | divide value 200 | > :forward | $foo | run | process sleep}"}
+    
+
   </pre>
   
   <pre id="output"></pre>

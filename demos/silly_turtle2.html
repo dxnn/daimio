@@ -16,7 +16,7 @@
     \-/
   </pre>
   
-  <form id="button">
+  <form id="codeform">
     <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
@@ -34,34 +34,41 @@
     {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | port send name :svg-rotate}
     
     {range 360 | each block "{__ | > :x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+        
     
     (try w/o sleep)
   </pre>
   
   <script type="text/json" id="spaceseeds">
-    { exec:
-      {
-        
+    { execspace:
+      { dialect: {}
+      , ports: 
+        { "execport": ["exec"]
+        , "forward": ["out"]
+        , "turn": ["out"]
+        }
       }
       
     , outer: 
       { ports: 
-        { form: ["dom-submit-track"]
+        { "codeform": ["dom-submit-track"]
         , "svg-move": ["svg-move"]
         , "svg-rotate": ["svg-rotate"]
         , "svg-line-add": ["svg-line-add"]
         }
       , subspaces: 
-        { exec: exec}
+        { execs: "execspace"}
       , stations: 
-        { cleaner: "{__.code | * (:exec __ :user USER)}" 
-        , setter: "{__ | > :code}"
+        { cleaner: "{__ | > :f | * (:code $f.code :user 5)}" 
+        , forward_fix: "{__ | * (:dx 10 :thing :turtle) | port send name :svg-move}"
+        , turn_fix: "{__ | > :val | * (:dangle __.result :thing {\"turtle-{$val.user}\"} )}"
         }
       , routes: 
-        [ ['form', 'cleaner.in']
-        , ['cleaner.out', 'exec.exec'] 
-        , ['exec.svg-move', 'dirtier.in']
-        , ['dirtier.out', 'svg-move']
+        [ ['codeform', 'cleaner.in']
+        , ['cleaner.out', 'execs.execport'] 
+        , ['execs.forward', 'forward_fix.in']
+        // , ['forward_fix', 'svg-move']
+        , ['execs.turn', 'turn_fix.in']
         ]
       }
     }
@@ -78,13 +85,14 @@
     
     /*
       TODOS!!!
-      - exec port
+      -- exec port
       - network (websockets / webrtc) stuff... like USER
-      - svg display of spaces
-      - turtle line working
+      -- lines working
+      -- turtle line working
       - code sending working
       - good job
       - pause space
+      - svg display of spaces
       - spacial processing limits
       - cm editor for turtle code
       - audio code
