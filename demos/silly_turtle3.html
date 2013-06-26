@@ -9,23 +9,51 @@
 
 <body>
 
-  <svg id="mainsvg" width="500px" height="500px" viewBox="0 0 500 500">
-    <g id="turtlebox" transform="translate(30,30)">
-      <rect width="30" height="50" id="turtle"></rect>
-    </g>
-  </svg>
+  <svg id="mainsvg" width="500px" height="500px" viewBox="0 0 500 500"></svg>
+  
+  <div style="float:right; width: 300px; overflow: auto">
+    <pre id="hints">
+      
+{forward 10} {turn 10}
+
+{forward 10 | turn 10}
+
+{10 | forward | turn}
+
+{ 120 | forward | turn 
+| forward | turn | forward | turn}
+
+{90 | forward | turn}
+
+{ range 4 
+| do "{90 | forward | turn}" 
+    
+    </pre>
+  </div>
   
   <form id="codeform">
     <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
   
-  <pre id="hints">
-    {forward 10}
-    {turn 10}
+  <pre id="morehints">
     
-    {range 360 | each block "{__ | turn | process sleep}"}
+{range 36 | do "{turn 10 | range 4 | do "{90 | forward | turn | wait}"}"}
+
+{range 400 | do "{__ | times 0.04 | add 3.2 | forward | turn 14.2 | wait}"}
+
+{7 | range 200 | do "{__ | divide value 200 | forward | turn -16.3 | wait}"}
+
+{range 10 | do "{range 9 | do "{forward 100 | turn 200 | wait}" | turn 36}"}
+
+{range 4 | do "{range 100 | list reverse | do "{__ | turn | forward 10 | wait}" | turn 60}"}
+
+{range 400 | do "{forward 5 | math random max 4 | times 90 | turn | wait}"}
+
   </pre>
+  
+  <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
+  
   
   <script type="text/json" id="spaceseeds">
     { execspace:
@@ -43,24 +71,20 @@
         , "svg-move": ["svg-move"]
         , "svg-rotate": ["svg-rotate"]
         , "svg-line-add": ["svg-line-add"]
-        , "socket-connect": ["socket-connect"]
-        , "socket-disconnect": ["socket-disconnect"]
+        , "socket-user-add": ["socket-user-add"]
+        , "socket-user-remove": ["socket-user-remove"]
         , "socket-in": ["socket-in"]
         , "socket-out": ["socket-out"]
+        , "turtle-add": ["turtle-add"]
         }
       , state: 
-        { angle: 0
-        , x: 30
-        , y: 30
-        , alpha: 0.5
-        , color: "green"
-        }
+        { colors: ["aliceblue", "aqua", "aquamarine", "azure", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgreen", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dodgerblue", "firebrick", "forestgreen", "fuchsia", "gainsboro", "gold", "goldenrod", "green", "greenyellow", "honeydew", "hotpink", "indianred", "indigo", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lime", "limegreen", "linen", "magenta", "maroon", "midnightblue", "mintcream", "mistyrose", "moccasin", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "snow", "springgreen", "steelblue", "teal", "thistle", "tomato", "turquoise", "violet", "yellowgreen"]}
       , subspaces: 
         { execs: "execspace"}
-      , stations: 
-        { cleaner: "{__ | > :f | * (:code $f.code :user 5)}" 
-        , forward_fix: '{__ | > :ship | $ship.result | $x | > :oldx | $y | > :oldy | $angle | add 90 | math cos | times $ship.result | > :dx | add $x | > :x | less than 0 | then 0 else $x | > :x | 450 | less than $x | then 450 else $x | > :x | $angle | add 90 | math sin | times $ship.result | > :dy | add $y | > :y | less than 0 | then 0 else $y | > :y | 450 | less than $y | then 450 else $y | > :y | * (:y $y :x $x :thing :turtlebox) | port send name :svg-move} {* (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$x | add 15} :y2 {$y | add 15} :color $color :alpha $alpha :thing :mainsvg) | port send name :svg-line-add}'
-        , turn_fix: "{__ | > :ship | $ship.result | * (:angle {$angle | add $ship.result | > :angle} :thing :turtle) | @> :svg-rotate}"
+      , stations: // TODO: needs A) line breaks B) a "between" command C) var access sugar D) var setting sugar
+        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 450 | less than $turtles.{$ship.user}.x | then 450 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}'
+        , turn_fix: '{__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}'
+        , turtle_fix: '{__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}'
         }
       , routes: 
         [ ['codeform', 'socket-out']
@@ -68,6 +92,8 @@
         , ['socket-in', 'execs.execport'] 
         , ['execs.forward', 'forward_fix.in']
         , ['execs.turn', 'turn_fix.in']
+        , ['socket-user-add', 'turtle_fix.in']
+        , ['turtle_fix.out', 'turtle-add']
         ]
       }
     }
@@ -92,15 +118,16 @@
       -- turtle line working
       -- network (websockets / webrtc) stuff... like USER
       -- code sending working
-      - new turtle per user
-      - good job
+      -- new turtle per user
+      -- good job
+      
+      - audio code
+      - cm editor for turtle code
       - pause space
       - svg display of spaces
       - spacial processing limits
-      - cm editor for turtle code
-      - audio code
       - concurrency code (turtle intersection?)
-      - live updates? maybe not for this one...
+      - live updates
     */
     
   </script>

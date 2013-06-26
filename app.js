@@ -104,12 +104,12 @@ io.on('connection', function (socket) {
     // })
   
   last_user_id += 1
-  user_id = last_user_id
+  var user_id = last_user_id
   
   socket.on('bounce', function (data) {
     data.user = user_id
     io.sockets.emit('bounced', data)
-    // console.log(['bouncing', data])
+    console.log(['bouncing', data])
   })
   
   socket.on('disconnect', function () {
@@ -118,4 +118,7 @@ io.on('connection', function (socket) {
     
   io.sockets.emit('connected', {user: user_id})
   
+  for(var i=1; i < last_user_id; i++) {
+    socket.emit('add-user', {user: i})
+  }
 })
