@@ -9,9 +9,9 @@
 
 <body>
 
-  <svg id="mainsvg" width="500px" height="500px" viewBox="0 0 500 500"></svg>
+  <svg id="mainsvg" width="800px" height="500px" viewBox="0 0 800 500"></svg>
   
-  <div style="float:right; width: 300px; overflow: auto">
+  <div style="float:right; width: 320px; overflow: auto">
     <pre id="hints">
       
 {forward 10} {turn 10}
@@ -25,14 +25,20 @@
 
 {90 | forward | turn}
 
-{ range 4 
-| do "{90 | forward | turn}" 
-    
+{range 4 | do "{90 | forward | turn}"}
+
+Other math commands:
+{math mod value 7 by 2}
+{math pow value 2 exp 8}
+{math sin value 90}
+{math cos value 90}
+{math round value 1.234}
+
     </pre>
   </div>
   
   <form id="codeform">
-    <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
+    <div><textarea id="code" name="code" rows="4" cols="100"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
   
@@ -82,7 +88,7 @@
       , subspaces: 
         { execs: "execspace"}
       , stations: // TODO: needs A) line breaks B) a "between" command C) var access sugar D) var setting sugar
-        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 450 | less than $turtles.{$ship.user}.x | then 450 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}'
+        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}'
         , turn_fix: '{__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}'
         , turtle_fix: '{__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}'
         }
