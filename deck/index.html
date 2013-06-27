@@ -404,6 +404,9 @@
     <li class="slide">
       Requires propagating changes upward on edit
     </li>
+    <li class="slide">
+      FBP
+    </li>
   </ul>
 </section>
 
@@ -425,13 +428,7 @@
     <li class="slide">
       Benefits of dependency injection vis-a-vis testing
     </li>
-    <li class="slide">
-      Benefits of purity as well (memo, opt, replay, etc)
-*  break this out more? stm, ameoba, etc.
-    </li>
-    <li class="slide">
-      
-    </li>
+    
   </ul>
 </section>
 
@@ -476,29 +473,324 @@
   </h1>
 </section>
 
+<section class="slide" id="were-doing-it">
+  <h2>We're doing this now</h2>
+  <ul>
+    <li class="slide">
+      Six years of stable development 
+    </li>
+    <li class="slide">
+      Puts power where it belongs
+    </li>
+    <li class="slide">
+      Minimizes dev/design turn around
+    </li>
+    <li class="slide">
+      Unit tests == integration tests
+    </li>
+    <li class="slide">
+      Often trivial to add new features
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="howie-do-it">
+  <h2>How we do it</h2>
+  <ul>
+    <li class="slide">
+      Determine commands (shared language)
+    </li>
+    <li class="slide">
+      Views are just Daimio code (single API)
+    </li>
+    <li class="slide">
+      Controllers are Daimio code sent to server
+    </li>
+    <li class="slide">
+      Models are mechanically robust 
+    </li>
+    <li class="slide">
+      But ignorant of 'soft' parts
+    </li>
+    <li class="slide">
+      Perms and attrs handle the fluffy bits
+    </li>
+  </ul>
+</section>
 
 
-show how we do development currently:
-- commands are a shared language (transcends the stack: dev, ui, business, users)
-- views are mixed templates (allows ui folk to work independently) 
-- the language replaces controllers (which are just boilerplate)
-- models are robust over mechanical parts -- you can't break it
-- models are ignorant of 'soft' parts -- keeps things lean
-- perms and attrs handle soft parts universally
+<section class="slide" id="concpar1">
+  <h2>Concurrency vs Parallelism</h2>
+  <ul>
+    <li>
+      You have 1,000 independent tasks to perform
+    </li>
+    <li>
+      Each takes 1 second
+    </li>
+    <li>
+      One core? 1,000 seconds
+    </li>
+    <li>
+      Four cores? ~250 seconds
+    </li>
+    <li>
+      Parallelism is easy
+    </li>
+  </ul>
+</section>
 
-- where do you put the cruftyjunk?
+<section class="slide" id="concpar2">
+  <h2>Concurrency vs Parallelism</h2>
+  <ul>
+    <li>
+      You have 1,000 independent tasks to perform
+    </li>
+    <li>
+      Each takes 1 second, but requires no processing
+    </li>
+    <li>
+      With concurrency? ~1 second
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="concpar3">
+  <h2>Concurrency vs Parallelism</h2>
+  <ul>
+    <li>
+      You have 1,000 independent tasks to perform
+    </li>
+    <li>
+      Each takes 1 second, but requires no processing
+    </li>
+    <li class="slide">
+      Except it initially reads a counter, then increments it when done
+    </li>
+    <li class="slide">
+      ...
+    </li>
+    <li class="slide">
+      Concurrency is hard
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="concpar3">
+  <h2>Concurrency</h2>
+  <ul>
+    <li>
+      JS avoids critical section issues
+    </li>
+    <li>
+      Unless you go async, but it's obvious when that happens
+    </li>
+    <li class="slide">
+      Unless it isn't...
+    </li>
+    <li class="slide">
+      Spaces confine state
+    </li>
+    <li class="slide">
+      And have rules to limit concurrency
+    </li>
+    <li class="slide">
+      Maybe STM too
+    </li>
+  </ul>
+</section>
+
+
+<section class="slide" id="makes-it-tick">
+  <h2>Techniques that make Daimio tick</h2>
+  <ul>
+    <li>
+      Technique 1: Trampoline
+    </li>
+    <li>
+      Technique 2: NaN poison
+    </li>
+    <li>
+      Technique 3: MungeLR
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="tramp1">
+  <h2>Trampolines</h2>
+  <ul>
+    <li>
+      Magical async makes you think of CPS
+    </li>
+    <li>
+      CPS gives us control over async (just call cont instead of return)
+    </li>
+    <li>
+      JS: no native continuations, but we have closures
+    </li>
+    <li>
+      No TCO, though, so the call stack explodes
+    </li>
+    <li>
+      Answer: trampoline!
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="tramp2">
+  <h2>Trampolines</h2>
+  <pre><code>
+function trampoline(x) {
+  while (x && x.fun)
+    x = x.fun.apply(null, x.args)
+}
+
+function f(callback){
+  return ++n > 1000 ? callback(n) : {fun:f, args:[callback]}
+}
+
+n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date.now() - start)}]})
+  </code></pre>
+</section>
+
+<section class="slide" id="tramp3">
+  <h2>Trampolines</h2>
+  <ul>
+    <li>
+      We need to trampoline every time we might go async
+    </li>
+    <li>
+      So map, reduce, filter -- anything that accepts a pipeline
+    </li>
+    <li>
+      Let's make it as easy as possible
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="tramp4">
+  <h2>Daimio Map</h2>
+  <pre><code>function(data, block, prior_starter, process) {
+  var scope = {}
+  
+  var processfun = function(item, prior_starter) {
+    scope["*in"] = item
+    return block(function(value) 
+      {prior_starter(value)
+    }, scope, process)
+  }
+
+  return D.dataTrampoline(data, processfun, DAML.list_push, prior_starter)
+}
+  </code></pre>
+</section>
+
+<section class="slide" id="tramp5">
+  <h2>Trampolines</h2>
+  <pre><code>
+D.dataTrampoline = function(data, processfun, joinerfun, finalfun, prior_starter) {
+  var keys = Object.keys(data)
+    , size = keys.length
+    , index = -1
+    , result = joinerfun()
+    , asynced = false
+    , value
+
+  finalfun = finalfun || function(x) {return x}
+
+  var inner = function() {
+    while(++index < size) {
+      var key = keys[index]
+      value = processfun(data[key], my_starter, key, result)
+      if(value !== value) {
+        asynced = true
+        return NaN
+      }
+      result = joinerfun(result, value)
+    }
+
+    if(asynced)
+      return prior_starter(finalfun(result))
+
+    return finalfun(result)
+  }
+
+  var my_starter = function(value) {
+    result = joinerfun(result, value)
+    inner()
+  }
+
+  return inner()
+}
+  </code></pre>
+</section>
+
+<section class="slide" id="stack1">
+  <h2>Poisoning the Stack</h2>
+  <ul>
+    <li>
+      Everything has to pass a callback in case of async
+    </li>
+    <li>
+      If you go too deep you blow the stack
+    </li>
+    <li>
+      So return if you don't go async
+    </li>
+    <li>
+      But now you have two <strike>problems</strike> processes
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="stack1">
+  <h2>Poisoning the Stack</h2>
+  <ul>
+    <li>
+      Solution: return a proper value if sync
+    </li>
+    <li>
+      Return poison on async
+    </li>
+    <li>
+      We use NaN for poison
+    </li>
+    <li>
+      if(value !== value) return NaN
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="stack1">
+  <h2>Stack Inversion</h2>
+  <ul>
+    <li>
+      On re-entry, the stack is built backwards, from the innermost function up
+    </li>
+    <li>
+      Those new layers are the skeletal remains of the past adventure
+    </li>
+    <li>
+      The remain until the process completely ends (return cascade)
+    </li>
+    <li>
+      Or the next async call smashes the stack
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="stack1">
+  <h2>The Munger</h2>
+  <ul>
+    <li>
+      Say you wanted to perform a function over some data items
+    </li>
+  </ul>
+</section>
 
 
 
-
-in a lang w/o proper continuations, you can fake it with a stack of one-param funs (basically a pipeline)
-you could also pass a single one-param fun w/ more embedded inside of it
-
-concurrency: 1000 items, map 1sec timeout. 500 seconds w/ 2 cores. 
-
-data trampoline
 mungelr / catamorphisms
-cps / futures / nan poisoning / call stack
 
 
 
@@ -523,65 +815,8 @@ cps / futures / nan poisoning / call stack
 
 
 
-<section class="slide" id="themes">
-	<h2>Style Themes</h2>
-	<p>Customizes the colors, typography, and layout of slide&nbsp;content.</p>
-	<pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;/path/to/css/style-theme.css&quot;&gt;</code></pre>
-	<h2>Transition Themes</h2>
-	<p>Defines transitions between slides using CSS3 transitions.  Less capable browsers fall back to cutaways. But <strong>you</strong> aren&rsquo;t using <em>those</em> browsers to give your presentations, are&nbsp;you&hellip;</p>
-	<pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;/path/to/css/transition-theme.css&quot;&gt;</code></pre>
-</section>
 
-<section class="slide" id="extensions">
-	<h2>Extensions</h2>
-	<p>Core gives you basic slide functionality with left and right arrow navigation, but you may want more. Here are the ones included in this&nbsp;deck:</p>
-	
-	<ul>
-		<li class="slide" id="extensions-goto">
-			<strong>deck.goto</strong>: Adds a shortcut key to jump to any slide number.  Hit g, type in the slide number, and hit&nbsp;enter.
-		</li>
-		
-		<li class="slide" id="extensions-hash">
-			<strong>deck.hash</strong>: Enables internal linking within slides, deep linking to individual slides, and updates the address bar &amp; a permalink anchor with each slide&nbsp;change.
-		</li>
 
-		<li class="slide" id="extensions-menu">
-			<strong>deck.menu</strong>: Adds a menu view, letting you see all slides in a grid. Hit m to toggle to menu view, continue navigating your deck, and hit m to return to normal view. Touch devices can double-tap the deck to switch between&nbsp;views.
-		</li>
-
-		<li class="slide" id="extensions-navigation">
-			<strong>deck.navigation</strong>: Adds clickable left and right buttons for the less keyboard&nbsp;inclined.
-		</li>
-
-		<li class="slide" id="extensions-status">
-			<strong>deck.status</strong>: Adds a page number indicator. (current/total)
-		</li>
-
-		<li class="slide" id="extensions-scale">
-			<strong>deck.scale</strong>: Scales each slide to fit within the deck container using CSS Transforms for those browsers that support them.
-		</li>
-	</ul>
-	
-	<p class="slide" id="extension-folders">Each extension folder in the download package contains the necessary JavaScript, CSS, and HTML&nbsp;files. For a complete list of extension modules included in deck.js, check out the&nbsp;<a href="http://imakewebthings.github.com/deck.js/docs">documentation</a>.</p>
-</section>
-
-<section class="slide" id="nested">
-	<h2>Nested Slides</h2>
-	<p>That last slide had a few steps.  To create substeps in slides, just nest them:</p>
-	<pre><code>&lt;section class=&quot;slide&quot;&gt;
-  &lt;h2&gt;Extensions&lt;/h2&gt;
-  &lt;p&gt;Core gives you basic slide functionality...&lt;/p&gt;		
-  &lt;ul&gt;
-     &lt;li class=&quot;slide&quot;&gt;
-        &lt;h3&gt;deck.goto&lt;/h3&gt;
-        &lt;p&gt;Adds a shortcut key to jump to any slide number...&lt;/p&gt;
-     &lt;/li&gt;
-     &lt;li class=&quot;slide&quot;&gt;...&lt;/li&gt;	
-     &lt;li class=&quot;slide&quot;&gt;...&lt;/li&gt;
-     &lt;li class=&quot;slide&quot;&gt;...&lt;/li&gt;
-  &lt;/ul&gt;
-&lt;/section&gt;</code></pre>
-</section>
 
 <section class="slide" id="elements-images">
 	<h2>Other Elements: Images</h2>
@@ -602,17 +837,6 @@ cps / futures / nan poisoning / call stack
 </section>
 
 
-<section class="slide" id="elements-videos">
-	<h2>Other Elements: Video Embeds</h2>
-	<p>Embed videos from your favorite online video service or with an HTML5 video&nbsp;element.</p>
-	
-	<pre><code>&lt;iframe src=&quot;http://player.vimeo.com/video/1063136?title=0&amp;amp;byline=0&amp;amp;portrait=0&quot; width=&quot;400&quot; height=&quot;225&quot; frameborder=&quot;0&quot;&gt;&lt;/iframe&gt;</code></pre>
-</section>
-
-<section class="slide" id="digging-deeper">
-	<h2>Digging Deeper</h2>
-	<p>If you want to learn about making your own themes, extending deck.js, and more, check out the&nbsp;<a href="../docs/">documentation</a>.</p>
-</section>
 
 <!-- Grab CDN jQuery, with a protocol relative URL; fall back to local if offline -->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
