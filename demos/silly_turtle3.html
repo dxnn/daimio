@@ -43,7 +43,16 @@ Other math commands:
   </form>
   
   <pre id="morehints">
-    
+{range 5 | do "{144 | forward | turn}"}
+
+{range 5 | do "{turn 10 | range 5 | do "{ 144 | forward | turn | wait}"}"}
+
+{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 | wait}"}"}
+
+{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 |  turn 270 | forward 20 | wait}"}"}
+
+{range 8 |  do "{turn 45 | range 5 | do "{turn 90 | forward 50 | turn 270 | forward 50 |  turn 270 | forward 50 | wait}"}"}"}
+
 {range 36 | do "{turn 10 | range 4 | do "{90 | forward | turn | wait}"}"}
 
 {range 400 | do "{__ | times 0.04 | add 3.2 | forward | turn 14.2 | wait}"}
