@@ -60,9 +60,9 @@
   <h2>Paper is awful</h2>
   
   <ul>
-    <li class="slide">The data is analog</li>
-    <li class="slide">And isn't on the network</li>
-    <li class="slide">Immutable, but not in a good way</li>
+    <li>The data is analog</li>
+    <li>And isn't on the network</li>
+    <li>Immutable, but not in a good way</li>
   </ul>
 </section>
 
@@ -70,10 +70,10 @@
   <h2>The web is awful too</h2>
   
   <ul>
-    <li class="slide">Cumbersome workflows</li>
-    <li class="slide">Fixed interfaces</li>
-    <li class="slide">Frozen functionality</li>
-    <li class="slide">Can't be extended or modified</li>
+    <li>Cumbersome workflows</li>
+    <li>Fixed interfaces</li>
+    <li>Frozen functionality</li>
+    <li>Can't be extended or modified</li>
   </ul>
 </section>
 
@@ -116,7 +116,7 @@
     <li class="slide">But at what cost?</li>
     <li class="slide">No safety, no limits, no programmability exposed</li>
     <li class="slide">No connection to the app</li>
-    <li class="slide">No community in the app</li>
+    <li class="slide">No community in the app.</li>
   </ul>
 </section>
 
@@ -167,23 +167,23 @@
 
 <section class="slide" id="needs">
 	<h2>We need the power to:</h2>
-	<ol>
+	<ul>
 		<li class="slide">
-			<h3>Craft interfaces</h3>
+			Craft interfaces
 		</li>
     <li class="slide">
-      <h3>Add functionality to them</h3>
+      Add functionality to them
     </li>
     <li class="slide">
-      <h3>Modify that functionality</h3>
+      Modify that functionality
     </li>
     <li class="slide">
-      <h3>Share modified functionality with others</h3>
+      Share modified functionality with others
     </li>
     <li class="slide">
-      <h3>Run modified functionality on server</h3>
+      Run modified functionality on server.
     </li>
-	</ol>
+	</ul>
 </section>
 
 
@@ -219,7 +219,9 @@
     {(1 2 3) | add}
     {(1 2 3) | add 1}
     {(1 2 3) | add (3 2 1)}
+  </code></pre>
     
+  <pre class="slide"><code>
     {(1 2 3) | map block "{__ | add 5 | mod 7}"}
   </code></pre>
 </section>
@@ -227,50 +229,49 @@
 <section class="slide" id="for-sharing">
   <h2>Daimio is a language for sharing</h2>
   <ul>
-		<li class="slide">
+		<li>
       Commands are permissible
     </li>
 		<li class="slide">
       Dialects contain commands
     </li>
 		<li class="slide">
-      Execution context has a dialect
+      Execution context has a dialect.
     </li>
   </ul>
 </section>
 
-<section class="slide" id="is-a-dataflow">
+<section class="slide" id="is-extensible">
   <h2>Daimio is extensible</h2>
   <ul>
-    <li class="slide">
+    <li>
       You publish commands to create your application's functionality
     </li>
     <li class="slide">
-      Create specialized dialects within your app
+      Create specialized dialects within your app.
     </li>
   </ul>
 </section>
 
-<section class="slide" id="is-a-dataflow">
+<section class="slide" id="is-universal">
   <h2>Daimio is a universal language</h2>
   <ul>
-    <li class="slide">
+    <li>
       Used by ops, devs, designers, marketeering, business folk and end users
     </li>
     <li class="slide">
       The command list is your API 
     </li>
     <li class="slide">
-      Design your API first, enjoy concurrent development
+      Design your API first, enjoy concurrent development.
     </li>
   </ul>
 </section>
 
-<section class="slide" id="for-sharing">
+<section class="slide" id="not-gp">
   <h2>Daimio is not general purpose</h2>
-  <p>General purpose implies breadth of features and low-level control</p>
   <ul>
-		<li class="slide">
+		<li>
       Domain specific, for your specific domain
     </li>
 		<li class="slide">
@@ -283,7 +284,7 @@
       Performance issues? Add a new command (i.e. do it in JS)
     </li>
 		<li class="slide">
-      Unwieldy? Add a new command
+      Unwieldy? Add a new command.
     </li>
   </ul>
 </section>
@@ -291,7 +292,7 @@
 <section class="slide" id="is-a-vm">
   <h2>Daimio is a virtual machine</h2>
   <ul>
-    <li class="slide">
+    <li>
       Segments is an array of numbers, strings, "lists", and commands
     </li>
     <li class="slide">
@@ -304,7 +305,7 @@
       Lists and commands are exploded
     </li>
     <li class="slide">
-      {segments: ___, wiring: ___} is expressible in JSON
+      {segments: ___, wiring: ___} is expressible in JSON.
     </li>
   </ul>
 </section>
@@ -312,14 +313,14 @@
 <section class="slide" id="is-a-jit">
   <h2>VM benefit: JIT</h2>
   <ul>
-    <li class="slide">
+    <li>
       Deoptimized to build VM (~4x)
     </li>
     <li class="slide">
       Simplicity trumps performance
     </li>
     <li class="slide">
-      Orthogonal optimization
+      Orthogonal optimization.
     </li>
   </ul>
 </section>
@@ -327,17 +328,17 @@
 <section class="slide" id="is-an-async">
   <h2>VM benefit: Async</h2>
   <ul>
-    <li class="slide">
+    <li>
       We want JS async to be sync in Daimio
     </li>
     <li class="slide">
-      Don't break functions 
+      Don't split functions 
     </li>
     <li class="slide">
       Don't invert control
     </li>
     <li class="slide">
-      VM handles async and continues where it left off
+      VM handles async and continues where it left off.
     </li>
   </ul>
 </section>
@@ -345,7 +346,7 @@
 <section class="slide" id="is-a-dataflow">
   <h2>Daimio is a framework</h2>
   <ul>
-    <li class="slide">
+    <li>
       A space is an execution context: a dialect and state
     </li>
     <li class="slide">
@@ -358,7 +359,7 @@
       A space can contain code blocks, each wrapped in a station
     </li>
     <li class="slide">
-      Stations have ports too
+      Stations have ports too.
     </li>
   </ul>
 </section>
@@ -366,7 +367,7 @@
 <section class="slide" id="is-projectional">
   <h2>Daimio is projectional</h2>
   <ul>
-    <li class="slide">
+    <li>
       Code is not the final artifact; VM data structure is
     </li>
     <li class="slide">
@@ -382,7 +383,7 @@
       (Though not all are first class)
     </li>
     <li class="slide">
-      "There's more than one way to view it"
+      There's more than one way to view it.
     </li>
   </ul>
 </section>
@@ -390,22 +391,22 @@
 <section class="slide" id="is-projectional">
   <h2>Spaces are data too</h2>
   <ul>
-    <li class="slide">
+    <li>
       JSON-representable data structure, like Daimio code
     </li>
     <li class="slide">
       Like Daimio code, representable in multiple ways 
     </li>
     <li class="slide">
-      Immutable and uniquely id'd regardless of manufacturer 
+      Immutable and uniquely id'd regardless of manufacturer.
     </li>
   </ul>
 </section>
 
-<section class="slide" id="is-projectional">
+<section class="slide" id="is-immutable">
   <h2>Spaces are immutable</h2>
   <ul>
-    <li class="slide">
+    <li>
       Routes are defined at compile time (like FBP)
     </li>
     <li class="slide">
@@ -415,7 +416,7 @@
       A component with a given ID will *always* behave the same
     </li>
     <li class="slide">
-      Requires propagating changes upward on edit
+      Requires propagating changes upward on edit.
     </li>
   </ul>
 </section>
@@ -439,7 +440,7 @@
       Implicit port creation and routing
     </li>
     <li class="slide">
-      Benefits of dependency injection vis-a-vis testing
+      Benefits of dependency injection vis-a-vis testing.
     </li>
   </ul>
 </section>
@@ -457,12 +458,12 @@
       Process 0, 1, or N times
     </li>
     <li class="slide">
-      Optimistic concurrency control (STM)
+      Optimistic concurrency control (STM).
     </li>
   </ul>
 </section>
 
-<section class="slide" id="is-a-dataflow">
+<section class="slide" id="has-types">
   <h2>Daimio has "types"</h2>
   <ul>
     <li class="slide">
@@ -475,12 +476,12 @@
       Flavours for ports: db, dom, network, audio, svg
     </li>
     <li class="slide">
-      Typehints for ports too (implicit)
+      Typehints for ports too (implicit).
     </li>
   </ul>
 </section>
 
-<section class="slide" id="is-a-dataflow">
+<section class="slide" id="pause-here">
   <h2>Remember to pause for button demos...</h2>
 </section>
 
@@ -500,7 +501,7 @@
 <section class="slide" id="were-doing-it">
   <h2>We're doing this now</h2>
   <ul>
-    <li class="slide">
+    <li>
       Six years of stable development 
     </li>
     <li class="slide">
@@ -513,7 +514,7 @@
       Unit tests == integration tests
     </li>
     <li class="slide">
-      Often trivial to add new features
+      Often trivial to add new features.
     </li>
   </ul>
 </section>
@@ -521,7 +522,7 @@
 <section class="slide" id="howie-do-it">
   <h2>How we do it</h2>
   <ul>
-    <li class="slide">
+    <li>
       Determine commands (shared language)
     </li>
     <li class="slide">
@@ -537,7 +538,7 @@
       But ignorant of 'soft' parts
     </li>
     <li class="slide">
-      Perms and attrs handle the fluffy bits
+      Perms and attrs handle the fluffy bits.
     </li>
   </ul>
 </section>
@@ -595,7 +596,7 @@
       ...
     </li>
     <li class="slide">
-      Concurrency is hard
+      Concurrency is hard.
     </li>
   </ul>
 </section>
@@ -616,7 +617,7 @@
       Spaces confine state
     </li>
     <li class="slide">
-      And have rules to limit concurrency
+      And have rules to limit concurrency.
     </li>
   </ul>
 </section>
@@ -638,21 +639,21 @@
 </section>
 
 <section class="slide" id="tramp1">
-  <h2>Trampolines</h2>
+  <h2>#1: Trampolines</h2>
   <ul>
     <li>
       Magical async makes you think of CPS
     </li>
-    <li>
+    <li class="slide">
       CPS gives us control over async (just call cont instead of return)
     </li>
-    <li>
+    <li class="slide">
       JS: no native continuations, but we have closures
     </li>
-    <li>
+    <li class="slide">
       No TCO, though, so the call stack explodes
     </li>
-    <li>
+    <li class="slide">
       Answer: trampoline!
     </li>
   </ul>
@@ -707,7 +708,7 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
 </section>
 
 <section class="slide" id="tramp5">
-  <h2>Trampolines</h2>
+  <h2>Daimio Data Trampoline</h2>
   <pre><code>function(data, processfun, joinerfun, finalfun, prior_starter) {
   var keys = Object.keys(data)
     , size = keys.length
@@ -746,18 +747,18 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
 </section>
 
 <section class="slide" id="stack1">
-  <h2>Poisoning the Stack</h2>
+  <h2>#2: Poisoning the Stack</h2>
   <ul>
     <li>
       Everything has to pass a callback in case of async
     </li>
-    <li>
+    <li class="slide">
       If you go too deep you blow the stack
     </li>
-    <li>
+    <li class="slide">
       So return if you don't go async
     </li>
-    <li>
+    <li class="slide">
       But now you have two processes
     </li>
   </ul>
@@ -769,13 +770,13 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
     <li>
       Solution: return a proper value if sync
     </li>
-    <li>
+    <li class="slide">
       Return poison on async
     </li>
-    <li>
+    <li class="slide">
       We use NaN for poison
     </li>
-    <li>
+    <li class="slide">
       <pre><code>if(value !== value) return NaN</code></pre>
     </li>
   </ul>
@@ -800,7 +801,7 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
 </section>
 
 <section class="slide" id="munge1">
-  <h2>The Munger</h2>
+  <h2>#3: The Munger</h2>
   <ul>
     <li>
       Say you have a list of items
@@ -828,20 +829,10 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
 
 <section class="slide" id="munge2">
   <h2>Maps in JS</h2>
-  <ul>
-    <li>
-      [1, -2, 3.14].map( Math.abs )
-    </li>
-    <li>
-      [42, 3.14, 1234e-2].map( Math.round )
-    </li>
-    <li>
-      ["", 0, [], {}, null, NaN].map( Boolean )
-    </li>
-    <li>
-      ["1", "2", "xyzzy", "3"].map( parseFloat ).map( isNaN )
-    </li>
-  </ul>
+  <pre><code>[1, -2, 3.14].map( Math.abs )</code></pre>
+  <pre class="slide"><code>[42, 3.14, 1234e-2].map( Math.round )</code></pre>
+  <pre class="slide"><code>["", 0, [], {}, null, NaN].map( Boolean )</code></pre>
+  <pre class="slide"><code>["1", "2", "xyzzy", "3"].map( parseFloat ).map( isNaN )</code></pre>
 </section>
 
 <section class="slide" id="munge3">
@@ -853,31 +844,27 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
     <li>
       And you want the list of all subitems produced
     </li>
-    <li class="slide">
-      <img src="map-cat.jpg"></img>
-    </li>
+    <p class="slide"><img src="../map-cat.jpg"></img></p>
   </ul>
 </section>
 
 <section class="slide" id="munge4">
   <h2>Mapcat in JS</h2>
+  <pre><code>[].concat.apply([], 
+  [{x:1,y:2}, {z:3}, {q:4,p:5}].map( Object.keys ))</code></pre>
   <ul>
-    <li>
-      [].concat.apply([], [{x:1,y:2}, {z:3}, {q:4,p:5}].map ( Object.keys ))
-    </li>
-    <li>
+    <li class="slide">
       What if an item is 'empty' under f?
     </li>
-    <li>
+    <li class="slide">
       Does it leave a hole? We don't want a hole.
     </li>
-    <li class="slide">
-      [].concat.apply([], [{x:1,y:2}, {z:3}, {}, {}, {q:4,p:5}].map ( Object.keys ))
-    </li>
-    <li class="slide">
-      Still works!
-    </li>
   </ul>
+  <pre class="slide"><code>[].concat.apply([], 
+  [{x:1,y:2}, {z:3}, {}, {}, {q:4,p:5}].map(Object.keys))</code></pre>
+  <p class="slide">
+    Still works!
+  </p>
 </section>
 
 <section class="slide" id="munge5">
@@ -916,11 +903,10 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
   } while(R.length)
 
   return L
-}
-  </code></pre>
+}</code></pre>
 </section>
 
-<section class="slide" id="munge6">
+<section class="slide" id="munge7">
   <h2>The Munger in use</h2>
   <pre><code>function(L, segment, R) {
   var type = D.SegmentTypes[segment.type]

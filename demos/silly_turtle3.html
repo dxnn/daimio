@@ -69,8 +69,40 @@ Other math commands:
   
   <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
   
+  <script type="text/daml" id="spaceseeds">
+    execspace
+      {"minus": {}}
+      @execport exec
+      @forward out
+      @turn out
+      
+    outer
+      @codeform dom-submit-track
+      @svg-move
+      @svg-rotate
+      @svg-line-add
+      @socket-user-add
+      @socket-user-remove
+      @socket-in
+      @socket-out
+      @turtle-add
+      $colors ["blue", "blueviolet", "cadetblue", "chartreuse", "coral", "cornflowerblue", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgreen", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "firebrick", "forestgreen", "fuchsia", "gainsboro", "goldenrod", "green", "greenyellow", "hotpink", "indianred", "indigo", "lavenderblush", "lawngreen", "limegreen", "linen", "magenta", "moccasin", "navy", "olive", "olivedrab", "orange", "orangered", "peru", "pink", "plum", "purple", "red", "rosybrown", "royalblue", "salmon", "sandybrown", "seagreen", "slateblue", "springgreen", "steelblue", "teal", "tomato", "turquoise", "violet"]
+      
+      turn-fix {__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}
+      turtle-fix {__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}
+      forward-fix {__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}
+      
+      @codeform -> @socket-out
+      @socket-in -> execspace.execport
+      // execspace.forward -> forward-fix -> (@svg-move @svg-line-add)
+      execspace.forward -> forward-fix -> @svg-move 
+      forward-fix -> @svg-line-add
+      execspace.turn -> turn-fix -> @svg-rotate
+      @socket-user-add -> turtle-fix -> @turtle-add
+      
+  </script>
   
-  <script type="text/json" id="spaceseeds">
+  <script type="text/json" id="spaceseeds2">
     { execspace:
       { dialect: {}
       , ports: 
@@ -120,7 +152,8 @@ Other math commands:
     document.addEventListener('DOMContentLoaded', function() {
       socket = io.connect('http://sherpa.local:8008') // published for demo (icky)
       
-      eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
+      // eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
+      var seedlikes = document.getElementById('spaceseeds').text
       var outerseed = DAML.make_some_space(seedlikes)
       OuterSpace = new DAML.Space(outerseed) // published for debug
     })
