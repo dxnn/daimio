@@ -10,29 +10,143 @@
 <body>
 
   <div>
-    <p>The button has been pushed <span id="counter">0.707</span> times!</p>
+    <p>The button has been pushed <span id="counter">0</span> times!</p>
   </div>
   
   <form id="button">
     <p><input type="submit" value="Click me!!"></p>
   </form>
   
-  <script type="text/daml" id="hello_daimio">
+  <h3>The code</h3>
   
-   {:counter | gateway add type :dom-set-text thing __}
+  <pre><code>
+    outer
+    
+      @counter dom-set-text
+      @button  dom-on-submit
+      
+      @button -> {1 | add $count | > :count} -> @counter
+  </code></pre>
+  
+  <h3>The spacial structure</h3>
+  
+  <pre><code>
+   _______________________________________
+  |                                       |  
+  |     _____________________________     |  
+  |    /                             \    |  
+  o---(  {1 | add $count | > :count}  )---o
+  |    \_____________________________/    |  
+  |                                       |  
+  |_______________________________________|  
+  </code></pre>
+  
+  <script type="text/daml" id="spaceseeds">
 
-   {:button | gateway add type :dom-submit thing __}
+    outer
+      @counter dom-set-text
+      @button  dom-on-submit
+      
+      @button -> {1 | add $count | > :count} -> @counter
 
-   {@button
-     → "{1 | add $count | > :count}"
-     → @counter}
- 
   </script>
    
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var code = document.getElementById('hello_daimio')
-      DAML.run(code.text, function() {})
+      var stringlike = document.getElementById('spaceseeds').text
+        , seedlikes = DAML.seedlikes_from_string(stringlike)
+        , outerseed = DAML.make_spaceseeds(seedlikes)
+      
+      OuterSpace = new DAML.Space(outerseed) // published for debug
+
+      // var code = document.getElementById('hello_daimio')
+      // DAML.run(code.text, function() {})
+      
+      var get_seedlike_positions = function(seed) {
+        var inports = {}, outports = {}
+        
+        _.each(seed.ports, function(port, portkey) {
+          port.dir = DAML.PORTFLAVOURS[port[0]].dir
+          if(port.dir == 'in')
+            inports[portkey] = port
+          if(port.dir == 'out')
+            outports[portkey] = port
+        })
+        
+        seed.routes.forEach(function(route) {
+          /*
+            we want to... get a data structure? and then draw it. so the structure is like
+            inports: [5, 10, 12] <- heights
+            outports: [3, 7, 11]
+            stations: [[12,10]]
+            ...
+            so we have x,y values for every port. so then we can draw edges.
+            and we need to know how long the station is... i guess str.length + 6
+            so x,y for ports and for stations? and subspaces eventually. and sizes for subspaces.
+            if we can generate that auxiliary data structure, then we can draw it all pretty easily.
+            
+            ports: [[12,3],[4,5],...]
+            stations: [[3,2],...] <- inport coords?
+          */
+        })
+        
+        var positions = 
+        { ports: [[0,5], [60,5]]
+        , stations: [[5,5]]
+        }
+        
+        return positions
+        
+        // console.log(inports, outports)
+      }
+      
+      var draw_seedlike = function(seedlike, positions) {
+        var ports = positions.ports
+          , width = ports.reduce(function(acc, port) {return Math.max(port[0], acc)}, 0)
+          , height = ports.reduce(function(acc, port) {return Math.max(port[1], acc)}, 0) + 5
+          , chart = []
+        
+        // yuck yuck yuck
+        for(var i=0; i < height; i++) {
+          var row = []
+          for(var j=0; j < width; j++) {
+            row.push(' ')
+          }
+          chart.push(row)
+        }
+          
+        // draw bottom
+        chart[height-1] = chart[height-1].map(function() {return '_'})
+        // chart[height-1][0] = chart[height-1][width-1] = '|'
+
+        // draw left
+        for(var i=0; i < height; i++)
+          chart[i][0] = '|'
+        ports.filter(function(port) {return !port[0]})
+             .forEach(function(port) {chart[port[1]][0] = 'o'})
+
+        // draw right
+        for(var i=0; i < height; i++)
+          chart[i][width-1] = '|'
+        ports.filter(function(port) {return port[0] == width})
+             .forEach(function(port) {chart[port[1]][width-1] = 'o'})
+
+        // draw top
+        chart[0] = chart[0].map(function() {return '_'})
+        chart[0][0] = chart[0][width-1] = ' '
+
+        // add station
+        
+        
+        // add edges
+
+        console.log(chart)
+        x = chart
+        console.log(x.reduce(function(string, row) {return string += "\n" + row.join('')}, ''))
+      }
+      
+      
+      draw_seedlike(seedlikes.outer, get_seedlike_positions(seedlikes.outer))
     })
   </script>
   

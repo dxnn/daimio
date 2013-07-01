@@ -32,7 +32,7 @@
     
     {//:counter | gateway add type :dom-set-text thing __}
 
-    {//:button | gateway add type :dom-submit thing __ 
+    {//:button | gateway add type :dom-on-submit thing __ 
       -> "{count inc | >@everyone}" | >@Server}
 
     {//@Init 
@@ -45,11 +45,11 @@
     
         {// :counter | gateway dom-set-text thing __}
 
-        {// :button | gateway dom-submit thing __}
+        {// :button | gateway dom-on-submit thing __}
 
     {:counter | gateway add type :dom-set-text thing __}
 
-    {:button | gateway add type :dom-submit thing __}
+    {:button | gateway add type :dom-on-submit thing __}
 
     {@button
       -> "{__ | + $count | >$count}"
@@ -60,7 +60,7 @@
     
       {:counter | gateway add type :dom-set-text thing __}
 
-      {:button | gateway add type :dom-submit thing __}
+      {:button | gateway add type :dom-on-submit thing __}
 
       {@Init 
         -> "{count get | >@Me}" 
@@ -98,7 +98,7 @@
    || gateway add type :space-out name :out-counterspace-gateway thing :counterspace}
     
     {// make dom gateways //}
-    {//gateway add name :button-gateway type :dom-submit thing :button_form}
+    {//gateway add name :button-gateway type :dom-on-submit thing :button_form}
     {//gateway add name :display-gateway type :dom-text thing :count}
     
     {// channel button-to-space //}

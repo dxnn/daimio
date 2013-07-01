@@ -21,7 +21,7 @@
   
    {:counter | gateway add type :dom-set-text thing __}
 
-   {:button | gateway add type :dom-submit thing __}
+   {:button | gateway add type :dom-on-submit thing __}
 
    {@button
      → "{1 | add $count | > :count}"
@@ -32,8 +32,8 @@
    <script type="text/yaml" id="altseeds">
 
      outer: 
-       button: [dom-submit-track, button]
-       counter: [dom-text-set, counter]
+       button: [dom-on-submit, button]
+       counter: [dom-set-text, counter]
        routes: |
          button -> "{$count | add 1 | >$count}" -> counter
 
@@ -44,8 +44,8 @@
       { stations: 
         { inc: "{$count | add 1 | > :count}" }
       , ports: 
-        { button: ["dom-submit-track", "button"]
-        , counter: ["dom-text-set"] 
+        { button: ["dom-on-submit", "button"]
+        , counter: ["dom-set-text"] 
         }
       , routes: 
         [ ['button', 'inc.in']
@@ -73,10 +73,10 @@
       // seed = { dialect: {commands: {minus: {daml: true, dialect: true, port: true, space: true}}}
       //        , stations: [682758676]
       //        , subspaces: []
-      //        , ports: [ {space:0, flavour:'dom-submit-track', settings: {thing: 'button'}, name: 'button'}
+      //        , ports: [ {space:0, flavour:'dom-on-submit', settings: {thing: 'button'}, name: 'button'}
       //                 , {space:0, flavour:'in', station: 1, settings: {}, name: '_in'}
       //                 , {space:0, flavour:'out', station: 1, settings: {}, name: '_out'}
-      //                 , {space:0, flavour:'dom-text-set', settings: {thing: 'counter'}, name: 'counter'} ]
+      //                 , {space:0, flavour:'dom-set-text', settings: {thing: 'counter'}, name: 'counter'} ]
       //        , routes: [[1,2],[3,4]]
       //        , state: {}}
       
@@ -89,10 +89,10 @@
     //   seed = { dialect: {commands: {minus: {daml: true, dialect: true, port: true, space: true}}}
     //          , stations: [682758676]
     //          , subspaces: []
-    //          , ports: [ {space:0, flavour:'dom-submit-track', settings: {thing: 'button'}, name: 'button'}
+    //          , ports: [ {space:0, flavour:'dom-on-submit', settings: {thing: 'button'}, name: 'button'}
     //                   , {space:0, flavour:'in', station: 1, settings: {}, name: '_in'}
     //                   , {space:0, flavour:'out', station: 1, settings: {}, name: '_out'}
-    //                   , {space:0, flavour:'dom-text-set', settings: {thing: 'counter'}, name: 'counter'} ]
+    //                   , {space:0, flavour:'dom-set-text', settings: {thing: 'counter'}, name: 'counter'} ]
     //          , routes: [[1,2],[3,4]]
     //          , state: {}}
     //   

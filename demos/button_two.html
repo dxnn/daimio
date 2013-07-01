@@ -21,26 +21,69 @@
     <p><input type="submit" value="add 2"></p>
   </form>
   
-  <script type="text/daml" id="hello_daimio">
-
-    {// THINK: why doesn't @button1 → "1" work? //}
+  <h3>The code</h3>
   
-    {:counter | gateway add type :dom-set-text thing __}
+  <pre><code>
+    outer
+      @counter dom-set-text
+      @button1 dom-on-submit
+      @button2 dom-on-submit
+      
+      inc  {__ | add $count | > :count}
+      
+      @button1 -> {1} -> inc -> @counter
+      @button2 -> {2} -> inc
+  </code></pre>
+  
+  <h3>The spacial structure</h3>
+  
+  <pre><code>
+    _____________________________________________________________
+    |                                                           |
+    |      _____                                                |
+    |     /     \                                               |
+    o----(  {1}  )-\                                            |
+    |     \_____/   \                                           |
+    |                \                                          |
+    |                 \                                         |
+    |                  \     ______________________________     |
+    |                   \   /                              \    |
+    |                    --(  {__ | add $count | > :count}  )---o
+    |                   /   \______________________________/    |
+    |                  /                                        |
+    |                 /                                         |
+    |      _____     /                                          |
+    |     /     \   /                                           |
+    o----(  {2}  )-/                                            |
+    |     \_____/                                               |
+    |                                                           |
+    |___________________________________________________________|
+    
+  </code></pre>
+  
+  <script type="text/daml" id="spaceseeds">
 
-    {:button1 | gateway add type :dom-submit thing __}
-    {:button2 | gateway add type :dom-submit thing __}
+    outer
+      @counter dom-set-text
+      @button1 dom-on-submit
+      @button2 dom-on-submit
+      
+      inc  {__ | add $count | > :count}
+      
+      @button1 -> {1} -> inc -> @counter
+      @button2 -> {2} -> inc
 
-    {({@button1 → "{1}"}
-      {@button2 → "{2}"})
-    → "{__ | add $count | > :count}"
-    → @counter}
- 
   </script>
+   
   
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var code = document.getElementById('hello_daimio')
-      DAML.run(code.text, function() {})
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = DAML.make_some_space(seedlikes)
+      OuterSpace = new DAML.Space(outerseed) // published for debug
+
+      // var code = document.getElementById('hello_daimio')
+      // DAML.run(code.text, function() {})
     })
   </script>
   

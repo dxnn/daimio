@@ -40,9 +40,9 @@
 
   <script type="text/daml" id="hello_daimio">
     
-    { :code        | gateway add thing __ type :dom-get-value
+    { :code        | gateway add thing __ type :dom-on-change
     | :output      | gateway add thing __ type :dom-set-text
-    | :button      | gateway add thing __ type :dom-submit 
+    | :button      | gateway add thing __ type :dom-on-submit 
     | :svg-move    | gateway add type __ 
     | :svg-rotate  | gateway add type __ 
     | :svg-addline | gateway add type __ }

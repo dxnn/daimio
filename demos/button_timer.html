@@ -26,39 +26,95 @@
       <span id="step-out">1</span> (step size)</p>
   </form>
   
-  <script type="text/daml" id="hello_daimio">
+  <h3>The code</h3>
   
-    { 1000 | > :time
-    |    1 | > :step }
-    
-    { :time-in  | gateway add thing __ type :dom-get-value
-    | :time-out | gateway add thing __ type :dom-set-text }
-    
-    { @time-in → "{__ | > :time}" → @time-out }
-    
-    {// 1000 | >@time-in //}
-    
-    { :step-in  | gateway add thing __ type :dom-get-value 
-    | :step-out | gateway add thing __ type :dom-set-text }
+  <pre><code>
+    outer
+      $time 1000
+      $step 1
+      
+      @time-in  dom-on-change
+      @time-out dom-set-text
 
-    { @step-in → "{__ | > :step}" → @step-out }
+      @step-in  dom-on-change
+      @step-out dom-set-text
+      
+      @counter dom-set-text
+      @button  dom-on-submit
 
-    { :counter | gateway add thing __ type :dom-set-text
-    | :button  | gateway add thing __ type :dom-submit }
+      inc      {__ | add $count | > :count}
+      block    {$count | then "{process sleep for 10000000}" | run} 
+      
+      @time-in -> {__ | > :time} -> @time-out
+      @step-in -> {__ | > :step} -> @step-out
+      
+      @button -> block -> inc -> @counter
+      inc -> {process sleep for $time | $step} -> inc
+  </code></pre>
+  
+  <h3>The spacial structure</h3>
+  
+  <pre><code>
+    _____________________________________________________________
+    |                                                           |
+    |                                                           |
+    |             ______________________________                |
+    |            /                              \               |
+    o-----------(  {__ | add $count | > :count}  )--------------o
+    |     |      \______________________________/      |        |
+    |     ^                                            v        |
+    |     ^                                            v        |
+    |     |    ___________________________________     |        |
+    |     |   /                                   \    |        |
+    |     |--(  {process sleep for $time | $step}  )---|        |
+    |         \___________________________________/             |
+    |                                                           |
+    |                                                           |
+    |                   _________________                       |
+    |                  /                 \                      |
+    o-----------------(  {__ | > :time}   )---------------------o
+    |                  \_________________/                      |
+    |                   _________________                       |
+    |                  /                 \                      |
+    o-----------------(  {__ | > :step}   )---------------------o
+    |                  \_________________/                      |
+    |___________________________________________________________|
+    
+  </code></pre>
+  
+  
+  <script type="text/daml" id="spaceseeds">
 
-    { @button 
-      → "{$count | then "{process sleep for 10000000}" | run}" / FIXME: this is very very silly
-      → "{__ | add $count | > :count}" | > :adder_gateway
-      → @counter }
+    outer
+      $time 1000
+      $step 1
+      
+      @time-in  dom-on-change
+      @time-out dom-set-text
 
-    { $adder_gateway → "{process sleep for $time | $step}" → $adder_gateway }
- 
+      @step-in  dom-on-change
+      @step-out dom-set-text
+      
+      @counter dom-set-text
+      @button  dom-on-submit
+
+      inc      {__ | add $count | > :count}
+      block    {$count | then "{process sleep for 10000000}" | run} 
+      // FIXME: block is very very silly
+      
+      @time-in -> {__ | > :time} -> @time-out
+      @step-in -> {__ | > :step} -> @step-out
+      
+      @button -> block -> inc -> @counter
+      inc -> {process sleep for $time | $step} -> inc
+
   </script>
   
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var code = document.getElementById('hello_daimio')
-      DAML.run(code.text, function() {})
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = DAML.make_some_space(seedlikes)
+      OuterSpace = new DAML.Space(outerseed) // published for debug
     })
   </script>
   

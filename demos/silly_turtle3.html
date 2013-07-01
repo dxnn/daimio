@@ -77,12 +77,12 @@ Other math commands:
       @turn out
       
     outer
-      @codeform dom-submit-track
+      @codeform dom-on-submit
       @svg-move
       @svg-rotate
-      @svg-line-add
-      @socket-user-add
-      @socket-user-remove
+      @svg-add-line
+      @socket-add-user
+      @socket-remove-user
       @socket-in
       @socket-out
       @turtle-add
@@ -90,15 +90,15 @@ Other math commands:
       
       turn-fix {__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}
       turtle-fix {__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}
-      forward-fix {__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}
+      forward-fix {__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-add-line}
       
       @codeform -> @socket-out
       @socket-in -> execspace.execport
-      // execspace.forward -> forward-fix -> (@svg-move @svg-line-add)
+      // execspace.forward -> forward-fix -> (@svg-move @svg-add-line)
       execspace.forward -> forward-fix -> @svg-move 
-      forward-fix -> @svg-line-add
+      forward-fix -> @svg-add-line
       execspace.turn -> turn-fix -> @svg-rotate
-      @socket-user-add -> turtle-fix -> @turtle-add
+      @socket-add-user -> turtle-fix -> @turtle-add
       
   </script>
   
@@ -114,12 +114,12 @@ Other math commands:
       
     , outer: 
       { ports: 
-        { "codeform": ["dom-submit-track"]
+        { "codeform": ["dom-on-submit"]
         , "svg-move": ["svg-move"]
         , "svg-rotate": ["svg-rotate"]
-        , "svg-line-add": ["svg-line-add"]
-        , "socket-user-add": ["socket-user-add"]
-        , "socket-user-remove": ["socket-user-remove"]
+        , "svg-add-line": ["svg-add-line"]
+        , "socket-add-user": ["socket-add-user"]
+        , "socket-remove-user": ["socket-remove-user"]
         , "socket-in": ["socket-in"]
         , "socket-out": ["socket-out"]
         , "turtle-add": ["turtle-add"]
@@ -129,7 +129,7 @@ Other math commands:
       , subspaces: 
         { execs: "execspace"}
       , stations: // TODO: needs A) line breaks B) a "between" command C) var access sugar D) var setting sugar
-        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-line-add}'
+        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-add-line}'
         , turn_fix: '{__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}'
         , turtle_fix: '{__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}'
         }
@@ -139,7 +139,7 @@ Other math commands:
         , ['socket-in', 'execs.execport'] 
         , ['execs.forward', 'forward_fix.in']
         , ['execs.turn', 'turn_fix.in']
-        , ['socket-user-add', 'turtle_fix.in']
+        , ['socket-add-user', 'turtle_fix.in']
         , ['turtle_fix.out', 'turtle-add']
         ]
       }
@@ -152,7 +152,6 @@ Other math commands:
     document.addEventListener('DOMContentLoaded', function() {
       socket = io.connect('http://sherpa.local:8008') // published for demo (icky)
       
-      // eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
       var seedlikes = document.getElementById('spaceseeds').text
       var outerseed = DAML.make_some_space(seedlikes)
       OuterSpace = new DAML.Space(outerseed) // published for debug
