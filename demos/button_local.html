@@ -140,14 +140,145 @@
         
         // add edges
 
-        console.log(chart)
-        x = chart
-        console.log(x.reduce(function(string, row) {return string += "\n" + row.join('')}, ''))
+        // console.log(chart)
+        // x = chart
+        // console.log(x.reduce(function(string, row) {return string += "\n" + row.join('')}, ''))
       }
       
+      // TODO: lib me!
+      draw_box = function(w, h) {
+        // returns an array of strings representing rows
+        
+        // draw sides and blanks
+        var blank = '|' + Array(w-1).join(' ') + '|'
+          , box = Array(h).join('*').split('*').map(function() {return blank}) // herp derp halp
+
+        // draw bottom
+        box[h-1] = '|' + Array(w-1).join('_') + '|'
+
+        // draw top
+        box[0] = ' ' + Array(w-1).join('_') + ' '
+        
+        return box
+      }
+      
+      draw_station = function(block) {
+        // block is some words
+        var limit = 80
+          , len = block.length
+        
+        len = len < limit ? len : limit
+        var box = draw_box(len + 6, 4)
+        
+        // mangle sides
+        box[0] = '  '  + box[0].slice(2, -2) + '  '
+        box[1] = ' /'  + box[1].slice(2, -2) + '\\ '
+        box[2] = '(  ' + block.slice(0, len) + '  )'
+        box[3] = ' \\' + box[3].slice(2, -2) + '/ '
+        
+        return box
+      }
+      
+      add_ports = function(box, ports) {
+        // ports is an array of {dir: (in|out|up|down), pos: 0..100}
+        
+        var w = box[0].length - 1
+          , h = box.length - 1
+        
+        box = box.map(function(row) {return row.split('')}) // OPT: use .slice instead
+        
+        ports.forEach(function(port) {
+          var relp = port.pos / 100
+            , relw = Math.round(relp * (w-1)) + 1 // don't include corners
+            , relh = Math.round(relp * (h-1)) + 1
+
+          if(port.dir == 'in')
+            box[relh][0] = 'o'
+          if(port.dir == 'out')
+            box[relh][w] = 'o'
+
+          if(port.dir == 'up')
+            box[0][relw] = 'o'
+          if(port.dir == 'down')
+            box[h][relw] = 'o'
+        })
+        
+        return box.map(function(row) {return row.join('')})
+      }
+      
+      add_path = function(box, x1, y1, x2, y2) {
+        box = DAML.clone(box) // merp
+        
+        // coords are in box position values
+        var xdiff = Math.abs(x1 - x2)
+          , ydiff = Math.abs(y1 - y2)
+          , xshift = (xdiff - ydiff) / 2
+          , yshift = (ydiff - xdiff) / 2
+          , xdel = (xshift - Math.floor(xshift)) * 2
+          , ydel = (yshift - Math.floor(yshift)) * 2
+        
+        xshift = Math.floor(xshift)
+        yshift = Math.floor(yshift)
+        
+        // draw the largest diagonal, centered, and then the nubs
+        if(xdiff > ydiff) {
+          box = add_line(box, x1+xshift+xdel, y1, x2-xshift, y2)
+          box = add_line(box, x1, y1, x1+xshift+xdel, y1)
+          box = add_line(box, x2-xshift, y2, x2, y2)
+        }
+        else {
+          box = add_line(box, x1, y1+yshift+ydel, x2, y2-yshift)
+          box = add_line(box, x1, y1, x1, y1+yshift+ydel)
+          box = add_line(box, x2, y2-yshift, x2, y2)
+        }  
+
+        return box
+      }
+      
+      add_line = function(box, x1, y1, x2, y2) {
+        if(y1 == y2)
+          return add_hor_line(box, x1, y1, x2, y2)
+          
+        if(x1 == x2)
+          return add_ver_line(box, x1, y1, x2, y2)
+          
+        return add_dia_line(box, x1, y1, x2, y2)
+      }
+      
+      add_hor_line = function(box, x1, y1, x2, y2) {
+        box[y1] = box[y1].split('').map(function(ch, i) {return i >= x1 && i <= x2 ? '-' : ch }).join('')
+        return box
+      }
+      
+      add_ver_line = function(box, x1, y1, x2, y2) {
+        return box.map(function(row, iy) {
+          return row.split('').map(function(ch, ix) {
+            return ix == x1 && iy >= y1 && iy <= y2 ? '|' : ch }).join('')})
+      }
+      
+      add_dia_line = function(box, x1, y1, x2, y2) {
+        var xdiff = Math.abs(x1 - x2)
+          , ydiff = Math.abs(y1 - y2)
+          , line = y1 < y2 ? '\\' : '/'
+          , yless = y1 < y2 ? y1 : y2
+          , ymore = y1 < y2 ? y2 : y1
+        
+        if(xdiff != ydiff)
+          return box // TODO: throw error
+        
+        return box.map(function(row, iy) {
+          return row.split('').map(function(ch, ix) {
+            return ymore - iy >= yless && ix >= x1 && ix <= x2 && iy - yless == ix - x1 ? line : ch }).join('')})
+      }
       
       draw_seedlike(seedlikes.outer, get_seedlike_positions(seedlikes.outer))
+
+    ports = [{dir:'in', pos:20},{dir:'in', pos:70},{dir:'out', pos:50},{dir:'up', pos:30},{dir:'down', pos:60}]
+    x = draw_box(80,10)
+    q = add_ports(x, ports)
+    
     })
+    
   </script>
   
 </body>

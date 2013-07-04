@@ -86,23 +86,19 @@
   <script type="text/daml" id="spaceseeds">
 
     outer
-      $time 
-        1000
+      $time 1000
       $step 1
       
-      @time-in  
-        dom-on-change
+      @time-in  dom-on-change
       @time-out dom-set-text
 
-      @step-in  
-        dom-on-change
+      @step-in  dom-on-change
       @step-out dom-set-text
       
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc      
-        {__ | add $count | > :count}
+      inc      {__ | add $count | > :count}
       block    
         {$count 
         | then "{process sleep for 10000000}" 

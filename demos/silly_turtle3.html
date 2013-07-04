@@ -59,6 +59,8 @@ Other math commands:
 
 {7 | range 200 | do "{__ | divide value 200 | forward | turn -16.3 | wait}"}
 
+{range 12 | do "{7 | range 100 | do "{__ | divide value 100 | forward | turn -14.1 | wait}"}"}
+
 {range 10 | do "{range 9 | do "{forward 100 | turn 200 | wait}" | turn 36}"}
 
 {range 4 | do "{range 100 | list reverse | do "{__ | turn | forward 10 | wait}" | turn 60}"}
@@ -77,25 +79,44 @@ Other math commands:
       @turn out
       
     outer
-      @codeform dom-on-submit
+      @codeform 
+        dom-on-submit
+      
       @svg-move
       @svg-rotate
       @svg-add-line
+      
       @socket-add-user
       @socket-remove-user
       @socket-in
       @socket-out
+      
       @turtle-add
       
-      $colors ["blue", "blueviolet", "cadetblue", "chartreuse", "coral", "cornflowerblue", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgreen", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "firebrick", "forestgreen", "fuchsia", "gainsboro", "goldenrod", "green", "greenyellow", "hotpink", "indianred", "indigo", "lavenderblush", "lawngreen", "limegreen", "linen", "magenta", "moccasin", "navy", "olive", "olivedrab", "orange", "orangered", "peru", "pink", "plum", "purple", "red", "rosybrown", "royalblue", "salmon", "sandybrown", "seagreen", "slateblue", "springgreen", "steelblue", "teal", "tomato", "turquoise", "violet"]
+      $colors 
+        [ "blue", "blueviolet", "cadetblue", "chartreuse", "coral", "cornflowerblue"
+        , "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgreen"
+        , "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid"
+        , "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkturquoise"
+        , "darkviolet", "deeppink", "deepskyblue", "firebrick", "forestgreen", "fuchsia"
+        , "gainsboro", "goldenrod", "green", "greenyellow", "hotpink", "indianred", "indigo"
+        , "lavenderblush", "lawngreen", "limegreen", "linen", "magenta", "moccasin", "navy"
+        , "olive", "olivedrab", "orange", "orangered", "peru", "pink", "plum", "purple", "red"
+        , "rosybrown", "royalblue", "salmon", "sandybrown", "seagreen", "slateblue", "springgreen"
+        , "steelblue", "teal", "tomato", "turquoise", "violet" ]
       
+      turtle-fix 
+        { __ | > :ship 
+        | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color 
+        | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) 
+        | > {"turtles.{$ship.user}" | run} | $ship}
+
       turn-fix 
         { __ | > :ship 
         | * ( :angle 
               {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} 
               :thing 
-              {"turtle{$ship.user}" | run} ) 
-        | @> :svg-rotate}
+              {"turtle{$ship.user}" | run} ) }
         
 /      turn-fix 
 /        { __ | >_ship 
@@ -135,13 +156,68 @@ Other math commands:
 /              :thing {"turtle{-user}"} ) 
 /        | @> :svg-rotate}
        
-      turtle-fix {__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}
+// add {math bound by (0 750)} command
+// maybe...
+// {_dx | add $turtles.{_user}.x | math bound by (0 750) | $>turtles.{_user}.x}
+// but really something like 
+// {$turtles.{_user} | link :turtle | _dx | add ~turtle.x | math bound by (0 750) | $>turtle.x}
+// might be nicer for these long painful things...
+
       
-      forward-fix {__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-add-line}
+/      forward-fix 
+/        { __ | -> (:user :result)
+/        | $turtles.{_user} | ->turtle
+/        | _turtle.angle | add 90 | math cos | times _result | add _turtle.x | math bound by (0 750) | ->newx
+/        | _turtle.angle | add 90 | math sin | times _result | add _turtle.y | math bound by (0 450) | ->newy
+/        | * (:x newx :y newy) | extend _turtle | $>turtles.{_user}
+/        | extend with {* (:thing {"turtlebox{_user}"})}
+/        | port send name :move 
+/        | * ( :x1 {_turtle.x | add 15} 
+/              :y1 {_turtle.y | add 15} 
+/              :x2 {_newx | add 15} 
+/              :y2 {_newy | add 15} 
+/              :color _turtle.color 
+/              :alpha _turtle.alpha 
+/              :thing :mainsvg ) 
+/        | port send name :add-line}
+
+// THINK: how do we clean up the 'add 90 | math (sin|cos) | etc...' ?
+// { "{_turtle.angle | add 90 | _fun | times _result | add _offset | math bound by (0 _max)}" | as :convert
+// | _turtle.x | convert fun "{__ | math sin}" max 750 | ->newx
+// | _turtle.y | convert fun "{__ | math cos}" max 450 | ->newy }
+// so 'convert' goes in the dialect as an 'immediately compiled' command/alias... what about _result? is it shadowed? does it take a param?
+// honestly, though, the repetitive version is easier to read...
+      
+      forward-fix 
+        { __ | > :ship 
+        | $turtles.{$ship.user}.x | > :oldx 
+        | $turtles.{$ship.user}.y | > :oldy 
+        | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx 
+        | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
+        | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
+        | 750 | less than $turtles.{$ship.user}.x 
+        | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
+        | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy 
+        | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} 
+        | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} 
+        | 450 | less than $turtles.{$ship.user}.y 
+        | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} 
+        | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) 
+        | port send name :svg-move 
+        | * ( :x1 {$oldx | add 15} 
+              :y1 {$oldy | add 15} 
+              :x2 {$turtles.{$ship.user}.x | add 15} 
+              :y2 {$turtles.{$ship.user}.y | add 15} 
+              :color $turtles.{$ship.user}.color 
+              :alpha $turtles.{$ship.user}.alpha 
+              :thing :mainsvg) 
+        | port send name :svg-add-line}
       
       @codeform -> @socket-out
       @socket-in -> execspace.execport
-      // execspace.forward -> forward-fix -> (@svg-move @svg-add-line)
+   // execspace.forward -> forward-fix -> (@svg-move @svg-add-line)
+   // forward-fix.move -> @svg-move
+   // forward-fix.add-line -> @svg-add-line
       execspace.forward -> forward-fix -> @svg-move 
       forward-fix -> @svg-add-line
       execspace.turn -> turn-fix -> @svg-rotate
