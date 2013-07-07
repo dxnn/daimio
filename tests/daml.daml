@@ -140,6 +140,10 @@ MAGIC PIPE TESTS
     {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
       4 x 8 :: 5 x 9 :: 6 x 10 ::
   
+  You can reframe the above like this:
+  {(1 2 3) | each block "{__ | (" " {__ | add 3} " x " {__ | add 7} " ::") | join}"}
+     4 x 8 :: 5 x 9 :: 6 x 10 ::
+  
   Notes:
     To connect to the process input you must explicitly add the magic pipe to the first segment:
       {(1 2 3) | map block "{__ | add to 4}"}
@@ -151,7 +155,11 @@ MAGIC PIPE TESTS
       {(1 2 3) | map block "{add 4}" // bad}
         [4,4,4]
     
-    The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
+    
+    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
+    
+THINK: how does this square off with __.foo? that essentially becomes {__ | list pathfind path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
+
       {20 | add {__ | add 1} // bad}
         21
       {20 | add {__ | add 1} to __ // bad}
@@ -163,11 +171,11 @@ MAGIC PIPE TESTS
     If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
       {21 | join (__ " " __) on ""}
         21 21
-      {21 | join ({__ | add 1} " " {__ | add 2}) on "" // bad}
+      {21 | join ({__ | add 1} " " {__ | add 2})   // bad}
         1 2
-      {21 | join ({add 1 to __} " " {add __ to 2}) on "" // bad}
+      {21 | join ({add 1 to __} " " {add __ to 2})  // bad}
         1 2
-      {21 | >_a | join ({_a | add 1} " " {_a | add 2}) on ""}
+      {21 | >_a | join ({_a | add 1} " " {_a | add 2})}
         22 23
       
     The above also applies to the empty pipe:
@@ -185,13 +193,6 @@ MAGIC PIPE TESTS
         
       {(1 2 3) | map block "{__ | add 1 ||}"}
         ["","",""]
-  
-  reduce:
-    {(1 2 3) | reduce block "{add _value to _total}"} 
-      6
-    {(1 2 3) | reduce block "{__ | add to _total}"} 
-      6
-
   
 quote, unquote, and run:
   {"{__ | add 1}" | map data (1 2)}
@@ -265,8 +266,8 @@ Tests for switch
       3
 
 Tests for blocks
-  this should return nothing, because we should cancel the block's status when trying to add to it
-    {"{:foo}x" | > :xxx || 123 | > :xxx.y | $xxx.string}
+//  this should return nothing, because we should cancel the block's status when trying to add to it
+//    {"{:foo}x" | > :xxx || 123 | > :xxx.y | $xxx.string}
   
   make sure we're not defuncing pre-merge
     {"{:foo}x" | > :qq.ww.ee || merge data $qq block "{_ee | quote}"}
@@ -324,60 +325,6 @@ Tests for pipes
     {merge data ({* (:a {* (:s 1)} )}) block "{_a.s}"} 
       1
     
-Tests for lists
-  Sort and reverse
-    {(3 2 4 1) | list reverse}
-      [1,4,2,3]
-    {(3 2 4 1) | list sort}
-      [1,2,3,4]
-    {(3 2 4 1) | list sort | list reverse}
-      [4,3,2,1]
-    
-    {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | > :klist}
-      [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
-      
-    {$klist | list sort by :x | __.x}
-      [1,2,2,3,4]
-
-    {$klist | list sort by :y | list reverse | __.y}
-      ["d","d","c","b","a"]
-
-    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{__.x}{__.y} "}
-      1d 2c 2d 3a 4b
-
-    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
-      ["a3","b4","c2","d1","d2"]
-
-    // filter
-    
-    // NOTE: these used to be extract, but we're going to handle that differently in the future. There's a filter function that does what it says on the tin, and a 'treewalk' function that allows you to dive into data and filter it from the inside. these two together can probably replace the old extract/prune functionality, maybe.
-    
-    {(1 2) | __.#1 | add 7}
-      8
-    
-    {$klist | filter block "{__.x | eq 2}"}
-      [{"x":2,"y":"d"},{"x":2,"y":"c"}]
-      
-    {$klist | __.* | filter block "{__ | eq :d}"}
-      ["d","d"]
-      
-    {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
-    
-    {$dlist | __.* | filter block "{__ | less than :4 | then 1}"}
-      [2,3,1,3,3,1,3]
-    
-    {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3}"}
-      [2,3,5]
-    
-
-      // // prune
-      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {__ | less than :4} path "*.*"}
-      // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
-      // 
-      // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {_parent.parent.one.1 | eq :3} path "*.*"}
-      // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
-      // 
-    
 
 Tests for falseness
   Empty strings, lists, and keyed lists are false, as is the number zero and unset vars.
@@ -411,11 +358,6 @@ Tests for falseness
 
 
 
-    {range 100 | add}
-      5050
-
-
-
 
 Tests for pass-by-value. Changing a DAML variable shouldn't change other variables, either in DAML or in the base language.
   {(1 2 3 4) | > :x}
@@ -424,8 +366,12 @@ Tests for pass-by-value. Changing a DAML variable shouldn't change other variabl
   {$x | > :y}
     [1,2,3,4]
     
-  {5 | > :x.{$x | count}}
+  {5 | > {"x.{$x | count}" | run}}
     5
+    
+//  yuck -- should be 
+//  {5 | $>x.{$x.count}}
+//    5
     
   {$x} x {$y}
     [1,2,3,4,5] x [1,2,3,4]
@@ -494,6 +440,7 @@ Once more, with feeling
 [{"name":"youhoo"}]
 
 {"hey {_name}!" | > :foo}
+hey !
 
 {:blargh | > :name}
 blargh
@@ -1467,21 +1414,21 @@ CC 1: Math commands
       6
       
      --> these don't exist anymore, add aliases!
-    Increment:
-      {math increment value 222}
-      223
-      {inc 222}
-      223
-      {222 | inc}
-      223
-    
-    Decrement:
-      {math decrement value 222}
-      221
-      {dec 222}
-      221
-      {222 | dec}
-      221
+//    Increment:
+//      {math increment value 222}
+//      223
+//      {inc 222}
+//      223
+//      {222 | inc}
+//      223
+//    
+//    Decrement:
+//      {math decrement value 222}
+//      221
+//      {dec 222}
+//      221
+//      {222 | dec}
+//      221
     
     Add:
       {math add value 123 to 321}
@@ -1590,9 +1537,9 @@ CC 2: Looping
   A 'merge' will push
   
   merging...
-  {($bar $hash) | > :bundle}
-    alkdfj
-  {begin block | merge block $bundle} {_one} {end block}
+//  {($bar $hash) | > :bundle}
+//    alkdfj
+//  {begin block | merge block $bundle} {_one} {end block}
   
   
   
@@ -1646,16 +1593,16 @@ CC 2: Looping
   [1,"{:asdf}",3]
 
 {(1 {:asdf | string split} 3)}
-  [1,["asdf"],3]
+  [1,["a","s","d","f"],3]
 
 {(1 "{:asdf | string split}" 3)} {// this becomes a string of a list of a string because of the quotes //}
-  [1,"[\"asdf\"]",3]
+  [1,"{:asdf | string split}",3]
 
 {(1 {"{:asdf | string split}"} 3)}
-  [1,"[\"asdf\"]",3]
+  [1,"{:asdf | string split}",3]
 
 {"{(1 "{:asdf | string split}" 3)} bax"}
-  [1,"[\"asdf\"]",3] bax
+  [1,"{:asdf | string split}",3] bax
 
 
 Tests for command + string
@@ -1792,384 +1739,594 @@ y
 
 
 
-// list commands
-
-{* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
-
-
-// list commands
-{$data | list count}
-3
-
-{((:one :row) (:second :row)) | list to_csv}
-one,row\nsecond,row
-
-{((:one :row) (:second :row)) | list to_json}
-[["one","row"],["second","row"]]
-
-// otherwise the {...} gets proc'd
-{{* (:one :row :second :row)} | list to_json | quote}
-{"one":"row","second":"row"}
-
-// intersection
-{list intersect values ($data.1.two (:hi :hello :gogo))}
-["hi","hello"]
-
-{list intersect values ($data.1 {* (:one :first :four :nothing)})}
-{"one":"first"}
-
-// keys
-{$data | list keys}
-[2,1,3]
-
-// organize
-{$data | list organize command "sort:one,desc;"}
-{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-
-{$data | list organize command "stack:three;"}
-{"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
-
-{$data | list organize command "sort:one,desc;stack:three;"}
-{"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
-
-// rekey
-{$data | list rekey key_by :one}
-{"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
-
-{$data | list rekey key_by :three}
-{"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
-
-// remove
-{$data | list remove path :2}
-{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-
-{$data | list remove path "*.two"}
-{"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-
-{(:one :two :three) | list remove path :one}
-["two","three"] 
-
-// union
-{list union value ($data (:1 :2 :four))}
-[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
-
-{list union value ($data {*(:1 {* (:one :lovely :four :goodness)})})}
-[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
-
-// unique
-{(:hi :hi :puffy :ami :yumi) | list unique}
-{"0":"hi","2":"puffy","3":"ami","4":"yumi"}
-
-// prune
-{list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-[{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
-
-{list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
-[{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
-
-// extract
-{list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-["2","3","1","3","3","1","3"]
-
-{list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
-["2","3","5"]
-
-// sort
-{$data | list sort by :one}
-[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
-
-{$data | list sort by {* (:three :desc :one :asc)} | __.one}
-["second","first","third"]
-
-{$data | list sort by {* (:three :desc :one :desc)} | __.one}
-["second","third","first"]
-
-{$data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
-["third","second","first"]
-
-{$data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
-["second","third","first"]
-
-
-// LOGIC
 
 
 
-// logic commands
-  ~~~ OR returns the first true value it finds ~~~
+
+
+
+
+  // LOGIC COMMANDS
+
+
+    ~~~ OR returns the first true value it finds ~~~
+
+    One valued 'or' looks at each item in the list
+      {($false 1 2 3) | or}
+        1
+
+      {or ($false 1 2 3)}
+        1
+
+      {or ($false 0 "" :true)}
+        true
+
+    With two values it just considers each in toto
+      {5 | or 10}
+        5
+
+      {$false | or :true}
+        true
+
+      {(0 0) | or 1}
+        [0,0]
+
+      {$false | or (0 0)}
+        [0,0]
+
+    ~~~ AND only returns true or false ~~~
+
+    One valued 'and' looks at each item in the list
+      {($false 1 2 3) | and | then :true else :false}
+        false
+
+      {and ($false 1 2 3) | then :true else :false}
+        false
+
+      {and ($false 0 "" :true) | then :true else :false}
+        false
+
+      {(1 2 3) | and | then :true else :false}
+        true
+
+      // NOTE: the below fail due to faulty piping that sets 'also' to 'false'. 
+
+      {and (1 2 3) | then :true else :false}
+        true
+
+      {and ("asdf" :true) | then :true else :false}
+        true
+
+    With two values it just considers each in toto
+      {5 | and 10 | then :true else :false}
+        true
+
+      {$false | and :true | then :true else :false}
+        false
+
+      {(0 0) | and 10 | then :true else :false}
+        true
+
+      {$false | and (0 0) | then :true else :false}
+        false
+
+  {if :true then :awesome}
+    awesome
+
+  {if "" then "not awesome"}
+
+  {if $false then "not awesome"}
+
+  {if {not ""} then :awesome}
+    awesome
+
+  {if {and ({not ""} {not $false})} then :awesome}
+    awesome
+
+  {if {and ({or ({not $false} $false)} $x)} then :awesome}
+    awesome
+
+  {if {and ({$false} {$x})} then :awesome}
+
+  {if {and (:great "not bad!")} then :awesome}
+    awesome
+
+  {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
+    awesome
+
+  {:true | if __ then :neat}
+    neat
+
+  {:true | else "bad"}
+    true
+
+  {$false | else "good"}
+    good
+
+  {:asdf | is in (:foo :bar :asdf) | then :great}
+    great
+
+  {:asdf | is in (:foo :bar) | then "bad" else :great}
+    great
+
+  {:burgers | eq "urge" | then "uh-oh" else :super}
+    super
+
+  {:burgers | is like "/urge/" | then :super else "uh-oh"}
+    super
+
+  {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
+    super
+
+  {:burgers | is like "/URGE/" | then "oh no!" else :super}
+    super
+
+  {:burgers | is like "/^urge/" | then "oh no!" else :super}
+    super
+
+  {$false | not | then :true else :false}
+    true
+
+  {:true | not | then :true else :false}
+    false
+
+  {not $false | then :true else :false}
+    true
+
+  {not :true | then :true else :false}
+    false
+
+  {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
+    good
+
+  {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
+    good
+
+  {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+    good
+
+  {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
+    yep
+
+  // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
+  //  hey
+
+
+  // PARAMS
+
+
+  {* (:one :one :two :two :three :three) | > :numbers ||}
+
+  {* (:one :hashly :two :bashly :three :crashly) | > :hash ||}
+
+  {* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals ||}
+
+  {( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :data ||}
+
+
+  {$hash.one}
+  hashly
+
+  // replacement with command parsing
+  {$data.{"1"}.one}
+  second
+
+  {$data.{1}.{$numbers.one}}
+  second
+
+  // careful with numerical tests!
+  {$data.1.one}
+  second
+
+  {$data.#1.one}
+  first
+
+  {$data.#-1.one}
+  third
+
+  {$data.#12.one}
+
+  {$data.#-33.one}
+
+  // check iteration
+  {$data.one}
+  ["first","second","third"]
+
+  {$data.locals.hash.one}
+  ["hashly","hashly","hashly"]
+
+  {$data.locals.foo}
+  ["bar","bar","bar"]
+
+  // check stars
+  {$data | list count}
+  3
+
+
+  // NOTE: $foo.* is not implemented yet
+
+
+  {$data.* | list count}
+  9
+
+  {$data.*.* | list count}
+  15
+
+  {$data.*.*.* | list count}
+  9
+
+  {$data.*.*.*.*}
+
+  {$data.*.one}
+  first
+
+  {$data.*.*.one}
+  local
+
+  {$data.*.*.*.one}
+  hashly
+
+  {$data.foo.*}
+
+  {$data.one.foo}
+
+  {$data.one.#1.foo}
+
+
+
+  //
+  // now with more tests!
+  //
+
+  {* (:name "Awesome John" :age :alpha) | > :a-john ||}
+
+  {* (:name "Awesome Bobs" :age :beta) | > :a-bobs ||}
+
+  {* (:name "Awesome Mary" :age :gamma) | > :a-mary ||}
+
+  {* (:name "Awesome Stev" :age :delta) | > :a-stev ||}
+
+  {($a-john $a-bobs $a-mary $a-stev) | > :awesome_people ||}
+
+  {* (:name "Cool John" :age :alpha) | > :c-john ||}
+
+  {* (:name "Cool Bobs" :age :beta) | > :c-bobs ||}
+
+  {* (:name "Cool Mary" :age :gamma) | > :c-mary ||}
+
+  {* (:name "Cool Stev" :age :delta) | > :c-stev ||}
+
+  {($c-john $c-bobs $c-mary $c-stev) | > :cool_people ||}
+
+  {* (:name "Neat John" :age :alpha) | > :n-john ||}
+
+  {* (:name "Neat Bobs" :age :beta) | > :n-bobs ||}
+
+  {* (:name "Neat Mary" :age :gamma) | > :n-mary ||}
+
+  {* (:name "Neat Stev" :age :delta) | > :n-stev ||}
+
+  {($n-john $n-bobs $n-mary $n-stev) | > :neat_people ||}
+
+  {( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | > :companies ||}
+
+  /* 
+    write tests:
+    - find by number then name (companies.#-2.boss.name)
+    - find by range (companies.employees) [all employees]
+    - find by range-and-key (companies.employees.name) [all employee names]
+    - find by range-and-key-and-number (companies.employees.#2.name) [name of second employee at each company? nope, it's the second employee overall]
+  */
+
+   {$companies.#-2.boss.name}
+   Cool John
+
+   {$companies.employees}
+   [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
+
+   {$companies.employees.name}
+   ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
+
+   {$companies.employees.#2.name}
+   Awesome Bobs
+
+
+
+
+
+
+
+
+LIST COMMANDS
+
+
+  SOME DATA
+    {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | > :klist}
+      [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
+    
+    {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
+    
+    {* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
   
-  One valued 'or' looks at each item in the list
-    {($false 1 2 3) | or}
-      1
+   
+  COUNT
 
-    {or ($false 1 2 3)}
-      1
-
-    {or ($false 0 "" :true)}
-      true
-
-  With two values it just considers each in toto
-    {5 | or 10}
+    {(1 2 3) | list count}
+      3
+    {$data | list count}
+      3
+    {$dlist | count}
+      2
+    {$klist | count}
       5
-  
-    {$false | or :true}
-      true
 
-    {(0 0) | or 1}
-      [0,0]
 
-    {$false | or (0 0)}
-      [0,0]
-
-  ~~~ AND only returns true or false ~~~
-
-  One valued 'and' looks at each item in the list
-    {($false 1 2 3) | and | then :true else :false}
-      false
+  FILTER
+    
+    NOTE: these used to be extract, but we're going to handle that differently in the future. There's a filter function that does what it says on the tin, and a 'treewalk' function that allows you to dive into data and filter it from the inside. these two together can probably replace the old extract/prune functionality, maybe.
+    
+    {$klist | filter block "{__.x | eq 2}"}
+      [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    {and ($false 1 2 3) | then :true else :false}
-      false
+    NOTE: __.* is not yet implemented  
+    
+    {$klist | __.* | filter block "{__ | eq :d}"}
+      ["d","d"]
       
-    {and ($false 0 "" :true) | then :true else :false}
-      false
+    {$dlist | __.* | filter block "{__ | less than :4 | then 1}"}
+      [2,3,1,3,3,1,3]
+    
+    {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3}"}
+      [2,3,5]
+    
+
+  INTERSECT
+  
+    {( (1 2 3) (2 3 4) ) | list intersect}
+      [2,3]
+    {( (1 2 3) (2 3 4) (3 4 5) ) | list intersect}
+      [3]
+    {* (:a (1 2 3) :b (3 4 5)) | list intersect}
+      [3]
+    {list intersect values ($data.1.two (:hi :hello :gogo))}
+      ["hi","hello"]
       
-    {(1 2 3) | and | then :true else :false}
-      true
+  note that the return list is always unkeyed:
+    {list intersect values ($data.1 {* (:one :first :four :nothing)})}
+      ["first"]
 
-    // NOTE: the below fail due to faulty piping that sets 'also' to 'false'. 
 
-    {and (1 2 3) | then :true else :false}
-      true
+  JSON
 
-    {and ("asdf" :true) | then :true else :false}
-      true
+    {begin list | list from_json}[["one","row"],["second","row"]]{end list}
+      [["one","row"],["second","row"]]
 
-  With two values it just considers each in toto
-    {5 | and 10 | then :true else :false}
-      true
+    {begin list | list from_json}{"one":"row","second":"row"}{end list}
+      {"one":"row","second":"row"}
+
+    {((:one :row) (:second :row)) | list to_json}
+      [["one","row"],["second","row"]]
+
+    {{* (:one :row :second :row)} | list to_json}
+      {"one":"row","second":"row"}
+
+    {((:one :row) (:second :row)) | list to_json | list from_json}
+      [["one","row"],["second","row"]]
+
+    {{* (:one :row :second :row)} | list to_json | list from_json}
+      {"one":"row","second":"row"}
+
+
+  KEYS
   
-    {$false | and :true | then :true else :false}
-      false
+    {(1 2 3) | list keys}
+      ["0","1","2"]
+    {* (:x 1 :y 2 :z 3) | list keys}
+      ["x","y","z"]
+    {$data | list keys}
+      ["1","2","3"]
+    {$dlist | list keys}
+      ["0","1"]
+    {$klist.#1 | list keys}
+      ["x","y"]
 
-    {(0 0) | and 10 | then :true else :false}
-      true
 
-    {$false | and (0 0) | then :true else :false}
-      false
-
-{if :true then :awesome}
-  awesome
-
-{if "" then "not awesome"}
+  PATHFIND
   
-{if $false then "not awesome"}
+    {(1 2 3) | __.#2}
+      2
+    {(1 2 3) | list pathfind path "#2"}
+      2
+    {laksjdflkjsadf}
+      lkjasldk
+    ...
+
+  RANGE
+    
+    {range 100 | add}
+      5050
+    {100 | range 5}
+      [100,101,102,103,104]
+    {list range length 5 start 100}
+      [100,101,102,103,104]
+    {100 | range 5 step 2}
+      [100,102,104,106,108]
+    
+    {list range length 5 start 100 step -1}
+      [100,99,98,97,96]
   
-{if {not ""} then :awesome}
-  awesome
+  
+  REDUCE
+  
+    {(1 2 3) | reduce block "{add _value to _total}"} 
+      6
+    {(1 2 3) | reduce block "{__ | add to _total}"} 
+      6
+
+
+  REKEY
+  
+      key: 'value',
+      desc: 'The data to rekey',
+      type: 'list', // TODO: hash or list... what do we call that? [Just a list, thank you.]
+      required: true,
+    },
+    
+      key: 'path',
+      desc: 'A data path, like _id or my.user.group. Leave out to convert to list.',
+      type: 'string',
+      fallback: false,
+    },
+    
+      key: 'stack',
+      desc: 'Returns a hash of lists of data items by stacking like-keyed items',
+    
+    {* (:x 3 :y 2 :z 4 :q 1) | list rekey}
+      [3,2,4,1]
+  
+  
+  {* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
+  
+    {$data | list rekey path :one}
+      {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+      
+    {$data | list rekey path :one stack :true}
+      {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+
+    {$data | list rekey path :three stack :true}
+      {"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+
+
+  REMOVE
+
+    {$data | list remove path :2}
+      {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+
+    {$data | list remove path "*.two"}
+      {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+
+    {(:one :two :three) | list remove path :one}
+      ["two","three"] 
+
+
+  REVERSE
+  
+    {(3 2 4 1) | list reverse}
+      [1,4,2,3]
+    {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
+      {"q":1,"z":4,"y":2,"x":3}
+    
+
+  SORTING
+  
+    {(3 2 4 1) | list sort}
+      [1,2,3,4]
+    {(3 2 4 1) | list sort | list reverse}
+      [4,3,2,1]
+      
+    {$klist | list sort by :x | __.x}
+      [1,2,2,3,4]
+    {$klist | list sort by :y | list reverse | __.y}
+      ["d","d","c","b","a"]
+
+    {$data | list sort by :one}
+      [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
+
+  multiple keys
+    {$data | list sort by {* (:three :desc :one :asc)} | __.one}
+      ["second","first","third"]
+    {$data | list sort by {* (:three :desc :one :desc)} | __.one}
+      ["second","third","first"]
+    {$data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
+      ["third","second","first"]
+    {$data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
+      ["second","third","first"]
+
+  with a pipeline
+    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{__.x}{__.y} "}
+      1d 2c 2d 3a 4b
+    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
+      ["a3","b4","c2","d1","d2"]
+
+    {* (:c 1 :b 2 :a 3) | list sort}
+      {"a":3,"b":2,"c":1}
+    
+
+  UNION
+  
+    {list union value ($data (:1 :2 :four))}
+      [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
 
-{if {and ({not ""} {not $false})} then :awesome}
-  awesome
+    {list union value ($data {*(:1 {* (:one :lovely :four :goodness)})})}
+      [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
-{if {and ({or ({not $false} $false)} $x)} then :awesome}
-  awesome
 
-{if {and ({$false} {$x})} then :awesome}
+  UNIQUE
+  
+    {(:hi :hi :puffy :ami :yumi) | list unique}
+      {"0":"hi","2":"puffy","3":"ami","4":"yumi"}
 
-{if {and (:great "not bad!")} then :awesome}
-  awesome
 
-{if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
-  awesome
 
-{:true | if __ then :neat}
-  neat
+  Older sort commands that probably won't exist anymore but we still need to handle these cases somehow
+    
+    // {((:one :row) (:second :row)) | list to_csv}
+    //   one,row\nsecond,row
 
-{:true | else "bad"}
-  true
+    // organize
+    // {$data | list organize command "sort:one,desc;"}
+    // {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+    // 
+    // {$data | list organize command "stack:three;"}
+    // {"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
+    // 
+    // {$data | list organize command "sort:one,desc;stack:three;"}
+    // {"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
 
-{$false | else "good"}
-  good
+    // // prune
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {__ | less than :4} path "*.*"}
+    // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
+    // 
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {_parent.parent.one.1 | eq :3} path "*.*"}
+    // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
+    //
+    // prune
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+    //   [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
+    // 
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
+    //   [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
+    // 
+    // // extract
+    // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+    //   ["2","3","1","3","3","1","3"]
+    // 
+    // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
+    //   ["2","3","5"]
+    
 
-{:asdf | is in (:foo :bar :asdf) | then :great}
-  great
 
-{:asdf | is in (:foo :bar) | then "bad" else :great}
-  great
+MISC STUFF CLEAN IT UP 
 
-{:burgers | eq "urge" | then "uh-oh" else :super}
-  super
+  {(1 2) | __.#1 | add 7}
+    8
 
-{:burgers | is like "/urge/" | then :super else "uh-oh"}
-  super
 
-{:burgers | is like "/URGE/i" | then :super else "uh-oh"}
-  super
 
-{:burgers | is like "/URGE/" | then "oh no!" else :super}
-  super
 
-{:burgers | is like "/^urge/" | then "oh no!" else :super}
-  super
+KNOWN BUGS
 
-{$false | not | then :true else :false}
-  true
 
-{:true | not | then :true else :false}
-  false
+  Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
+    {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
+      {"xyz":"z","10":"z","3":"z","1":"z","a":"z"} 
+    {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
+      {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
 
-{not $false | then :true else :false}
-  true
+  Whitespace in braces is weird:
+    { }
+    
+  
 
-{not :true | then :true else :false}
-  false
 
-{cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
-  good
-
-{cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
-  good
-
-{cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
-  good
-
-{cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
-  yep
-
-// {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
-//  hey
-
-
-// PARAMS
-
-
-{* (:one :one :two :two :three :three) | > :numbers ||}
-
-{* (:one :hashly :two :bashly :three :crashly) | > :hash ||}
-
-{* (:one :local :two "surprise local!" :foo :bar :bar $foo :hash $hash) | > :locals ||}
-
-{( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | > :data ||}
-
-
-{$hash.one}
-hashly
-                 
-// replacement with command parsing
-{$data.{"1"}.one}
-second
-
-{$data.{1}.{$numbers.one}}
-second
-
-// careful with numerical tests!
-{$data.1.one}
-second
-
-{$data.#1.one}
-first
-
-{$data.#-1.one}
-third
-
-{$data.#12.one}
-
-{$data.#-33.one}
-
-// check iteration
-{$data.one}
-["first","second","third"]
-
-{$data.locals.hash.one}
-["hashly","hashly","hashly"]
-
-{$data.locals.foo}
-["bar","bar","bar"]
-
-// check stars
-{$data | list count}
-3
-
-{$data.* | list count}
-9
-
-{$data.*.* | list count}
-15
-
-{$data.*.*.* | list count}
-9
-
-{$data.*.*.*.*}
-
-{$data.*.one}
-first
-
-{$data.*.*.one}
-local
-
-{$data.*.*.*.one}
-hashly
-
-{$data.foo.*}
-
-{$data.one.foo}
-
-{$data.one.#1.foo}
-
-
-
-//
-// now with more tests!
-//
-
-{* (:name "Awesome John" :age :alpha) | > :a-john ||}
-
-{* (:name "Awesome Bobs" :age :beta) | > :a-bobs ||}
-
-{* (:name "Awesome Mary" :age :gamma) | > :a-mary ||}
-
-{* (:name "Awesome Stev" :age :delta) | > :a-stev ||}
-
-{($a-john $a-bobs $a-mary $a-stev) | > :awesome_people ||}
-
-{* (:name "Cool John" :age :alpha) | > :c-john ||}
-
-{* (:name "Cool Bobs" :age :beta) | > :c-bobs ||}
-
-{* (:name "Cool Mary" :age :gamma) | > :c-mary ||}
-
-{* (:name "Cool Stev" :age :delta) | > :c-stev ||}
-
-{($c-john $c-bobs $c-mary $c-stev) | > :cool_people ||}
-
-{* (:name "Neat John" :age :alpha) | > :n-john ||}
-
-{* (:name "Neat Bobs" :age :beta) | > :n-bobs ||}
-
-{* (:name "Neat Mary" :age :gamma) | > :n-mary ||}
-
-{* (:name "Neat Stev" :age :delta) | > :n-stev ||}
-
-{($n-john $n-bobs $n-mary $n-stev) | > :neat_people ||}
-
-{( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | > :companies ||}
-
-/* 
-  write tests:
-  - find by number then name (companies.#-2.boss.name)
-  - find by range (companies.employees) [all employees]
-  - find by range-and-key (companies.employees.name) [all employee names]
-  - find by range-and-key-and-number (companies.employees.#2.name) [name of second employee at each company? nope, it's the second employee overall]
-*/
-
- {$companies.#-2.boss.name}
- Cool John
- 
- {$companies.employees}
- [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
- 
- {$companies.employees.name}
- ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
- 
- {$companies.employees.#2.name}
- Awesome Bobs
-
+THAT'S ALL, FOLKS!

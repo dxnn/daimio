@@ -145,19 +145,26 @@
         // console.log(x.reduce(function(string, row) {return string += "\n" + row.join('')}, ''))
       }
       
+      get_blank_box = function(w, h) {
+        var blank = Array(w+1).join(' ').split('')
+        return Array(h).join('*').split('*').map(function() {return blank})
+      }
+      
       // TODO: lib me!
       draw_box = function(w, h) {
         // returns an array of strings representing rows
         
-        // draw sides and blanks
-        var blank = '|' + Array(w-1).join(' ') + '|'
-          , box = Array(h).join('*').split('*').map(function() {return blank}) // herp derp halp
+        // build blank box
+        var box = get_blank_box(w, h)
 
         // draw bottom
-        box[h-1] = '|' + Array(w-1).join('_') + '|'
+        box[h-1] = Array(w+1).join('_').split('')
+
+        // draw sides
+        box = box.map(function(row) {return ['|'].concat(row.slice(2), '|')})
 
         // draw top
-        box[0] = ' ' + Array(w-1).join('_') + ' '
+        box[0] = [' '].concat(Array(w-1).join('_').split(''), [' '])
         
         return box
       }
@@ -171,10 +178,10 @@
         var box = draw_box(len + 6, 4)
         
         // mangle sides
-        box[0] = '  '  + box[0].slice(2, -2) + '  '
-        box[1] = ' /'  + box[1].slice(2, -2) + '\\ '
-        box[2] = '(  ' + block.slice(0, len) + '  )'
-        box[3] = ' \\' + box[3].slice(2, -2) + '/ '
+        box[0] = ['',''].concat(box[0].slice(2, -2), ['',''])
+        box[1] = ['','/'].concat(box[1].slice(2, -2), ['\\',''])
+        box[2] = ['(',' ',' '].concat(block.slice(0, len).split(''), [' ',' ',')'])
+        box[3] = ['','\\'].concat(box[3].slice(2, -2), ['/',''])
         
         return box
       }
@@ -184,8 +191,6 @@
         
         var w = box[0].length - 1
           , h = box.length - 1
-        
-        box = box.map(function(row) {return row.split('')}) // OPT: use .slice instead
         
         ports.forEach(function(port) {
           var relp = port.pos / 100
@@ -203,7 +208,7 @@
             box[h][relw] = 'o'
         })
         
-        return box.map(function(row) {return row.join('')})
+        return box
       }
       
       add_path = function(box, x1, y1, x2, y2) {
@@ -246,36 +251,69 @@
       }
       
       add_hor_line = function(box, x1, y1, x2, y2) {
-        box[y1] = box[y1].split('').map(function(ch, i) {return i >= x1 && i <= x2 ? '-' : ch }).join('')
+        box[y1] = box[y1].map(function(ch, i) {return i >= x1 && i <= x2 ? '-' : ch })
         return box
       }
       
       add_ver_line = function(box, x1, y1, x2, y2) {
         return box.map(function(row, iy) {
-          return row.split('').map(function(ch, ix) {
-            return ix == x1 && iy >= y1 && iy <= y2 ? '|' : ch }).join('')})
+          return row.map(function(ch, ix) {
+            return ix == x1 && iy >= y1 && iy <= y2 ? '|' : ch })})
       }
       
       add_dia_line = function(box, x1, y1, x2, y2) {
         var xdiff = Math.abs(x1 - x2)
           , ydiff = Math.abs(y1 - y2)
-          , line = y1 < y2 ? '\\' : '/'
-          , yless = y1 < y2 ? y1 : y2
-          , ymore = y1 < y2 ? y2 : y1
+          , xmod = x1 < x2 ? 1 : -1
+          , ymod = y1 < y2 ? 1 : -1
+          , ch = y1 < y2 ? '\\' : '/'
         
         if(xdiff != ydiff)
           return box // TODO: throw error
         
-        return box.map(function(row, iy) {
-          return row.split('').map(function(ch, ix) {
-            return ymore - iy >= yless && ix >= x1 && ix <= x2 && iy - yless == ix - x1 ? line : ch }).join('')})
+        for(var i=0; i < xdiff; i++)
+          box[y1 + i*ymod][x1 + i*xmod] = ch
+        
+        return box
       }
+      
+      composite = function(outer, inner, xoffset, yoffset) {
+        // stick the inner box in the outer box
+        outer = DAML.clone(outer)
+        
+        inner.forEach(function(row, yindex) {
+          var yar = yindex + yoffset
+          outer[yar] = outer[yar].slice(0, xoffset).concat(row, outer[yar].slice(xoffset+row.length))
+        })
+
+        return outer
+      }
+      
+      box_to_string = function(box) {
+        var string = ''
+        box.forEach(function(row) {
+          row.forEach(function(ch) {string += ch ? ch : ' '})
+          string += "\n"
+        })
+        return string
+      }
+      
+      
       
       draw_seedlike(seedlikes.outer, get_seedlike_positions(seedlikes.outer))
 
     ports = [{dir:'in', pos:20},{dir:'in', pos:70},{dir:'out', pos:50},{dir:'up', pos:30},{dir:'down', pos:60}]
     x = draw_box(80,10)
     q = add_ports(x, ports)
+    w = add_path(q, 1, 3, 79, 7)
+    e = add_path(w, 1, 7, 78, 1)
+    
+    
+    z = document.getElementsByTagName('code')[1]
+    r = draw_station('{__ | add $count | $>count}')
+    x = function() {z.innerHTML = box_to_string(composite(e, r, Math.floor(Math.random() * 30), Math.floor(Math.random()*6)))}
+    c = function() {setTimeout(function() {x();i++;if(i<100) c()},0)}
+    i = -1000
     
     })
     
