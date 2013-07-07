@@ -2046,7 +2046,7 @@ LIST COMMANDS
     
     {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | > :dlist ||}
     
-    {* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
+    {* (:two {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} :one {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} :three {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
   
    
   COUNT
@@ -2088,12 +2088,14 @@ LIST COMMANDS
       [3]
     {* (:a (1 2 3) :b (3 4 5)) | list intersect}
       [3]
-    {list intersect values ($data.1.two (:hi :hello :gogo))}
+    {list intersect data ($data.1.two (:hi :hello :gogo))}
       ["hi","hello"]
       
   note that the return list is always unkeyed:
-    {list intersect values ($data.1 {* (:one :first :four :nothing)})}
+    {list intersect data ($data.1 {* (:one :first :four :nothing)})}
       ["first"]
+    {list intersect data (1 2 3) also (3 4 5)}
+      [3]
 
 
   JSON
@@ -2166,35 +2168,22 @@ LIST COMMANDS
 
   REKEY
   
-      key: 'value',
-      desc: 'The data to rekey',
-      type: 'list', // TODO: hash or list... what do we call that? [Just a list, thank you.]
-      required: true,
-    },
-    
-      key: 'path',
-      desc: 'A data path, like _id or my.user.group. Leave out to convert to list.',
-      type: 'string',
-      fallback: false,
-    },
-    
-      key: 'stack',
-      desc: 'Returns a hash of lists of data items by stacking like-keyed items',
-    
+    {(:x :y :z :q) | list rekey}
+      {"0":"x","1":"y","2":"z","3":"q"}
     {* (:x 3 :y 2 :z 4 :q 1) | list rekey}
-      [3,2,4,1]
+      {"0":3,"1":2,"2":4,"3":1}
   
   
-  {* (2 {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} 1 {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} 3 {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | > :data ||}
-  
-    {$data | list rekey path :one}
-      {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+    {$data | list rekey by :one}
+      {"second":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"first":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"third":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
       
-    {$data | list rekey path :one stack :true}
-      {"second":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"first":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"}],"third":[{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+      
+      
+    {$data | list rekey by "{__.one}"}
+      {"second":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"first":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"third":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
-    {$data | list rekey path :three stack :true}
-      {"odd":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}],"even":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}
+    {$data | list rekey by :three}
+      {"odd":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"even":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
 
   REMOVE
@@ -2213,6 +2202,7 @@ LIST COMMANDS
   
     {(3 2 4 1) | list reverse}
       [1,4,2,3]
+  TODO: This smashes keys currently:
     {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
       {"q":1,"z":4,"y":2,"x":3}
     
@@ -2232,7 +2222,7 @@ LIST COMMANDS
     {$data | list sort by :one}
       [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
-  multiple keys
+  TODO: multiple keys (these don't work currently)
     {$data | list sort by {* (:three :desc :one :asc)} | __.one}
       ["second","first","third"]
     {$data | list sort by {* (:three :desc :one :desc)} | __.one}
@@ -2253,11 +2243,16 @@ LIST COMMANDS
     
 
   UNION
+    
+    {(1 2 3) | list union data (4 5 6)}
+      [1,2,3,4,5,6]
+    {(1 2 3) | list union also (4 5 6)}
+      [4,5,6,1,2,3]
   
-    {list union value ($data (:1 :2 :four))}
+    {list union data ($data (:1 :2 :four))}
       [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
 
-    {list union value ($data {*(:1 {* (:one :lovely :four :goodness)})})}
+    {list union data ($data {*(:1 {* (:one :lovely :four :goodness)})})}
       [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
 
@@ -2326,6 +2321,8 @@ KNOWN BUGS
   Whitespace in braces is weird:
     { }
     
+  Most list commands eat keys:
+  
   
 
 
