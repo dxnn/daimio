@@ -1,14 +1,14 @@
-WELCOME TO DAML
+WELCOME TO DAIMIO
 
 <!--
 
-This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the DAML language.
+This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the Daimio language.
 
-DAML is a thin, narrow, safe language designed as a container for your application's functionality, to allow scripting and templating by people who aren't you. It's thin in the sense that the base language is right under the surface, narrow in that it only has five elements (strings, numbers, lists, commands, and pipes), and safe as in untrusted code can be run on your server.
+Daimio is a thin, narrow, safe language designed as a container for your application's functionality, to allow scripting and templating by people who aren't you. It's thin in the sense that the base language is right under the surface, narrow in that it only has five elements (strings, numbers, lists, commands, and pipes), and safe as in untrusted code can be run on your server.
 
-All DAML commands are wrapped in braces. Within this test document the line directly beneath a DAML command is the expected output, and a test will fail if it isn't matched.
+All Daimio commands are wrapped in braces. Within this test document the line directly beneath a Daimio command is the expected output, and a test will fail if it isn't matched.
 
-At one point in the development of DAML I managed to reduce the entire language to numbers, strings, and commands. Blocks, pipes, and variables were all parse-equivalent to commands: string join, process pipe and variable get, respectively. I've since brought those features further down into the parsing/interpreting process for efficiency's sake, but there's nothing in the language definition itself that would require that, and in fact it's a fairly quick way to get DAML running on another platform.
+At one point in the development of Daimio I managed to reduce the entire language to numbers, strings, and commands. Blocks, pipes, and variables were all parse-equivalent to commands: string join, process pipe and variable get, respectively. I've since brought those features further down into the parsing/interpreting process for efficiency's sake, but there's nothing in the language definition itself that would require that, and in fact it's a fairly quick way to get Daimio running on another platform.
 
 // TODO:
  - have an 'event' tag for commands, which pushes the command (plus date, user, etc) into the history: this can be replayed later to rebuild the entire application state. Only things that record their own history (audit answers, maybe) and things that don't change state (find commands) should not have this. Could record it like {house paint hue 128 saturation 100} ==> {h: "house", m: "paint", p: {hue: 128, saturation: 100}} ... [can imported commands have tags? like, for marking a sequence of actions as a 'composite' in some sense, or like a transaction... because you might add a new thing, with a lot of content, but each item of content is added as a separate command. so you might want to 'cluster' that somehow...]
@@ -43,18 +43,640 @@ pattern matching over trees... i have a tree of this shape, and if you find it w
 
 
 
-Tests in DAML:
+Tests in Daimio:
 - are end-to-end integration tests
 - unit test your methods
 - serve as documentation
 - run on client and server
 - serve as scaffolding for building models
-  [write DAML first]
+  [write Daimio first]
 - can be tested for coverage
 - 
 
 
 -->
+
+
+
+:::The Five Elements of Daimio:::
+
+Element 1: Numbers
+
+  Wrap a number in braces and you've got a Daimio number. We use IEEE floating point under the hood (same as JS, among other languages), which has its pros and wats. [move all that to an appendectomy]
+  Note that while hex number formating works, it isn't required in the spec. Avoid it where possible.
+
+    Naturals:
+      {0}
+        0
+      {1}
+        1
+      {65535}
+        65535
+  
+    Floats:
+      {3.141591}
+        3.141591
+      {4.669200}
+        4.6692
+      {2.685451}
+        2.685451
+    
+    Negatives:
+      {-0}
+        0
+      {-65535}
+        -65535
+      {-3.14159}
+        -3.14159
+    
+    IEEE implications:
+      {11111111111111111111111}
+        1.1111111111111111e+22
+      {3.141592653589793238}
+        3.141592653589793
+  
+    Exponential notation:
+      {3e10}
+        30000000000
+      {3e+10}
+        30000000000
+      {3e-3}
+        0.003
+      {3e80}
+        3e+80
+    
+    Hex converts: 
+      {0x777}
+        1911
+    Octal doesn't:
+      {0777}
+        777
+    
+
+Element 2: Strings
+
+  Primitive strings are quite simple. We'll see a way of handling complicated strings (with embedded quotes, e.g.) later.
+  
+    Strings are enclosed in double-quotes:
+      {"hello world"}
+        hello world
+    A single word can be colon-quoted:
+      {:xyzzy}
+        xyzzy
+
+
+Element 3: Lists
+  
+  Lists are the basic data structure of Daimio. Spaces separate items. List items can be any valid expression.
+  Notice that data structures are implicitly converted to JSON when forced to take string form.
+  
+    A list of random numbers:
+      {(8 6 7 5 3 0 9)}
+        [8,6,7,5,3,0,9]
+  
+    A list of pleonasms:
+      {("free gift" "true fact" "revert back" "hot water heater" "tired cliche")}
+        ["free gift","true fact","revert back","hot water heater","tired cliche"]
+  
+    Numbers and strings:
+      {(1 "a sandbox" 2 "a sandbox")}
+        [1,"a sandbox",2,"a sandbox"]
+    
+    A list of lists:
+      {((1 2 3) (:once :twice :thrice) (:primary :secondary :tertiary))}
+        [[1,2,3],["once","twice","thrice"],["primary","secondary","tertiary"]]
+
+    The first three ordinals:
+      {( () (()) (() (())) )}
+        [[],[[]],[[],[[]]]]
+  
+
+Element 4: Commands
+
+  The essence of Daimio is commands. Every command has a model (the first word) and a function (the second).
+
+    The simplest command would look like this:
+      {fruit slice}
+  
+  But because we haven't published the 'fruit' model into this Daimio dialect that won't do anything.
+  
+  Most commands take parameters, which are named. A parameter value can be a string, a number, a list or a command. [THINK: can it be a block??]
+
+    A slightly fancier (but still non-functional) command:
+      {fruit slice with :katana}
+
+  The following commands use models that are published by default.
+  
+    Join a list of strings:
+      {string join value (:barbera :belvest :brioni)}
+        barberabelvestbrioni
+  
+    With the optional 'on' parameter:
+      {string join value (:barbera :belvest :brioni) on ", "}
+        barbera, belvest, brioni
+  
+    Parameter order is arbitrary:
+      {string join on " > " value (:barbera :belvest :brioni)}
+        barbera > belvest > brioni
+  
+    We can split things, too:
+      {string split value "selvedge balmoral aglet placket plimsolls" on " "}
+        ["selvedge","balmoral","aglet","placket","plimsolls"]
+
+
+Element 5: The pipe operator
+
+  You can use the pipe ('|') to pass the output of one command into an input of another.
+  
+    Split, then join:
+      {string split value "shantung weft repp slub" on " " | string join on ", "}
+        shantung, weft, repp, slub
+  
+    Split, filter, join:
+      {string split value "shantung weft repp slub" on " " | string grep on :s | string join on ", "}
+        shantung, slub
+  
+  
+  In some ways the pipe is syntactic sugar for *commands as parameter values*, though the two differ slightly in implementation. The following commands are essentially equivalent to the above pipelines.
+  
+    Split, then join:
+      {string join on ", " value {string split value "shantung weft repp slub" on " "}}
+        shantung, weft, repp, slub
+  
+    Split, filter, join:
+      {string join on ", " value {string grep on :s value {string split value "shantung weft repp slub" on " "}}}
+        shantung, slub
+
+  Pipelines can make complicated Daimio statements much easier to read, and lend themselves to dataflow-style programming. They're generally preferred over embedded commands.
+  
+    You can also pipe parameters, which sometimes improves readability:
+      {(:bebop :hardbop :cool :swing) | string join on ", "}
+        bebop, hardbop, cool, swing
+
+    A single pipe at the end of a command passes the value through:
+      {:mypipes|}
+        mypipes
+
+    A double pipe in a command squelches the pipe value:
+      {:doublepipes ||}
+      
+    
+    Which is equivalent to:
+      {:asdf | ""}
+      
+    
+    Squelching is useful sometimes, when you want to continue a pipeline without passing the previous value:
+      {:asdf | string join value (:one :two)}
+        oneasdftwo
+      {:asdf || string join value (:one :two)}
+        onetwo
+    
+    Though you could also do that like this:
+      {:asdf ||}{string join value (:one :two)}
+        onetwo
+  
+
+:::Quick Notes:::
+
+If you're familiar with other programming languages you'll notice that Daimio seems to be missing many basic necessities: control statements like if-then-else, loop statements, function declaration, variable assignment, and the list goes on. These facilities exist within Daimio as commands. This means that for-loops, for example, return a value (as do all commands). It also means that you can add new basic concepts to the language just by publishing new commands.
+
+
+:::Sugary Snacks:::
+
+Daimio provides some syntactic sugar for simplifying certain common operations.
+
+Snack 1: Variables
+
+  Variables in Daimio aren't built-in -- they're actually provided by commands published from the base language. Some sugar is provided to make accessing variable values easier.
+
+    You can use this command to set a variable:
+      {variable set path :bar value (:one :two :three)}
+        ["one","two","three"]
+  
+    And this command retrieves the variable value:
+      {variable get name :bar}
+        ["one","two","three"]
+  
+    But you can also use this shorter form:
+      {$bar}
+        ["one","two","three"]
+  
+    You can push things deeper into a variable using a dot ('.'):
+      {variable set path :foo.one value :xyzzy}
+        xyzzy
+  
+    You can reach in to variables the same way:
+      {$foo.one}
+        xyzzy
+
+    Use an octothorp to find the Nth value in a list:
+      {$bar.#2}
+        two
+  
+    Negative indices are also supported:
+      {$bar.#-1}
+        three
+  
+  We'll see some more ways to reach into variables in a bit.
+  
+
+Snack 2: Blocks
+
+  A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
+  
+  Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
+  
+    Here's a simple block:
+      {begin foo}Some text{end foo}
+        Some text
+  
+    That just returns whatever we put in -- not particularly useful. What if we pipe it into a command?
+      {begin foo | string split on " "}Some text{end foo}
+        ["Some","text"]
+    
+    The block can also be stored as a variable:
+      {begin foo | > :foo ||}Some text{end foo}{$foo}
+        Some text
+      {begin foo | > :foo | $foo}Some text{end foo}
+        Some text
+
+  We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
+  
+    Using a block we've previously built:
+      {$foo | string split on " "}
+        ["Some","text"]
+    
+    Blocks can also contain Daimio:
+      {begin foo | > :foo}x{_value}-{end foo}
+        x-
+    
+    The each command invokes a Daimio string for every element of a list. These are all equivalent:
+      {each block "x{__}-" data (1 2 3)}
+        x1-x2-x3-
+      {each block {"x{__}-"} data (1 2 3)}
+        x1-x2-x3-
+      {each block {{"x{__}-"}} data (1 2 3)}
+        x1-x2-x3-
+      
+    This one also behaves the same, but the extra quotes slow things down.
+      {each block {"{"x{__}-"}"} data (1 2 3)}
+        x1-x2-x3-
+      
+    These works like you would expect -- each iteration returns a list, which is JSONified internally.
+      {each block "{(:x {string join value {__}} "-")}" data (1 2 3)}
+        ["x","1","-"]["x","2","-"]["x","3","-"]
+      {each block {"{(:x {string join value {__}} "-")}"} data (1 2 3)}
+        ["x","1","-"]["x","2","-"]["x","3","-"]
+    
+    These show the strange, sad results of trying to coerce a list into a template.
+      {:hey | > :value}
+        hey
+      {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2)}
+        ["x","hey","hey","{$value}","{$value}"]["x","hey","hey","{$value}","{$value}"]
+      {each block (:x {string join value {$value}}) data (1 2 3)}
+        ["x","hey"]["x","hey"]["x","hey"]
+      {each block {(:x $value "-")} data (1 2 3)}
+        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
+      {:hey | > :value}
+        hey
+    
+    Pipeline variables, including magic pipes, are reduced prior to templatization. 
+    --> in general, don't use lists as templates.
+      {(7 8) | each block (1 __ "{__}")}
+        [1,[7,8],"{__}"][1,[7,8],"{__}"] 
+        
+//      {each block (1 __) data (7 8)}
+//        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
+//      {each block (:x {string join value {__}}) data (1 2 3)}
+//        ["x","hey"]["x","hey"]["x","hey"]
+//      {each block {(:x __ "-")} data (1 2 3)}
+//        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
+
+      {({:8} {8})}
+        ["8",8]
+    
+  [TODO: upgrade the test suite to allow blocks to spread over lines.]
+
+    These two things are almost equivalent:
+      {begin foo}One{"1 2 3" | string split on " "}Two{end foo}
+        One["1","2","3"]Two
+
+      {string join value (:One {"1 2 3" | string split on " "} :Two)}
+        One["1","2","3"]Two
+
+Snack 3: Aliases
+
+  Many commands have a shorter form that can be used in their place.
+    
+    Remember our variable setting command?
+      {variable set path :bar value (:one :two :three)}
+        ["one","two","three"]
+    
+    These both do the same thing as the preceding command:
+      {> :bar value (:one :two :three)}
+        ["one","two","three"]
+      {(:one :two :three) | > :bar}
+        ["one","two","three"]
+  
+  Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
+  
+  You can also create aliases at runtime. This is useful when paired with command creation.
+    
+    Create a new command:
+      {daml import block "hey {$name}!" into :string as :greet params :name}
+        
+      {string greet name "yourself"}
+        hey yourself!
+    
+    Alias it:
+      {daml alias string "string greet name" as :greet}
+        
+      {greet "Jacobinius"}
+        hey Jacobinius!
+      
+    // TODO: it looks like this doesn't pop the var context stack like it should...
+    
+
+:::Quick Notes 2:::
+
+A few small tidbits that don't fit elsewhere.
+
+Quick 1: Comments
+
+    Comments are like this:
+      {/string join}
+
+    This works too:
+      {/{hey now}}
+
+    You can get fancy:
+      {// {hey now} //}
+
+Quick 2: Embedded blocks
+
+    I put a block in a block for you:
+      {begin outer}qq {begin inner | add 321}123{end inner} pp {end outer}
+        qq 444 pp
+
+  (Blocks with the same name can't be nested. That would just be weird.)
+
+Quick 3: Commands in lists
+
+    A list can have commands in it
+      {({string split value "shantung weft repp slub" on " "} 1 2 4 8)}
+        [["shantung","weft","repp","slub"],1,2,4,8]
+
+Quick 4: Quotes in braces
+
+    If the nested quotes are in braces, you don't need to use a block:
+      {string split on " " value {("inside" "here") | string join on " "}}
+        ["inside","here"]
+        
+    Sometimes nesting quotes in braces and braces in quotes works well:
+      {string split on " " value {"{("Much" "nesting") | string join on " "} is divinest sense" | run}}
+        ["Much","nesting","is","divinest","sense"]
+
+
+:::In Depth:::
+
+We've seen the 5 elements of Daimio (three primitive types, commands, and the pipe operator). We've also seen 3 types of sugar that can be applied (variables, blocks, and aliases). Here we'll examine some of those areas in more depth.
+
+Depth 1: Blocks and scope
+
+  so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
+  
+  space vars are mutable and persistent. they model state within the space. you should only use them when necessary, and maybe not even then.
+
+    TODO: fix this section!
+
+//    A pipeline variable created in a block goes away when that block ends:
+//      {begin block ||}{123 | > :foo}{end block}{foo}
+//        123
+//  
+//    Variables beginning with '@' are global:
+//      {begin block}{123 | > :foo}{end block}{$foo}
+//        123
+//    
+//    Blocks create a new variable:
+//      {begin block}Hey there{end block}{$block}
+//        Hey there
+//    
+//    Nested blocks are only accessible inside their parent block:
+//      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
+//        
+//      
+//    Use a global if you need access to it later:
+//      {begin outer}{begin inner | > :inner}123{end inner}{end outer}{$inner}
+//        123
+//    
+//    Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
+//      {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
+//      123
+//    
+//    But they aren't actually globals:
+//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
+//      456123
+//  
+//  See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
+//  
+//    Contrast that with a global:
+//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
+//      456456
+//  
+//  Changing a global changes it everywhere, regardless of scope. 
+//  
+//  Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, Daimio isn't general purpose. In Daimio globals are cute and cuddly and always floss.
+//  
+//    Blocks establish a new variable scope:
+//      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
+//  
+//    But variables starting with '@' are global:
+//      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
+
+
+Depth 2: Keyed lists
+  TODO: this whole section needs changing to conform with the new 'list' data type.
+
+  A keyed list (aka hash, map, hash map, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. Every list in Daimio can take keys. There's a special command for transforming an unkeyed list into a new keyed list called 'list pair'.
+  
+    Here is the command written out:
+      {list pair data (:one :first :two :second)}
+        {"one":"first","two":"second"}
+      
+    And in its much more common aliased form:
+      {* (:one :first :two :second)}
+        {"one":"first","two":"second"}
+    
+  As you can see, the * operator (which is really just an alias for a command) uses the first value in the list as a key, the second as its value, the third as the second key, the fourth as its value, and so on. While this seems a bit messy on a single line, with proper whitespacing it's very easy to read. 
+
+    Lists -- including keyed lists -- are always sorted, so we can use the #N notation on them:
+      {* (:one :first :two :second) | > :x || $x.#2}
+        second
+    
+    [Integer keys in maps can mess up the sorting in the JS implementation]
+  
+    a list of hashes:
+      {( {* (:one 1 :two 2)}  {* (:three 3 :four 4)} )}
+        [{"one":1,"two":2},{"three":3,"four":4}]
+        
+    a nested hash:
+      {* (:A {* (:one 1 :two 2)} :B {* (:three 3 :four 4)})}
+        {"A":{"one":1,"two":2},"B":{"three":3,"four":4}}
+  
+
+Depth 3: Further fun with variables
+  
+  
+  
+  .*
+  AoH
+  #vars
+  
+  
+  
+  FIX THIS!!!!!
+  
+  
+
+//    ALL-CAPS variables are write-once read-many (WORM):
+//      {128 | > :MY.id}
+//        128
+//      {256 | > :MY.id}
+//        128
+//      // the above also throws an error...
+//
+//      Request variables come from POST and the querystring. Reference them like this:
+//      {REQUEST.foo}
+//
+//      Or use the short form:
+//      {#foo}
+//
+    Dot values. You can reach inside variables in a variety of ways. Here's a list.
+
+      A named parameter:
+        {* (:one 1 :two 2 :three 3) | > :x | $x.two}
+          2
+
+      A numbered parameter (notice numbering is 1-indexed):
+        {$x.#1}
+          1
+        {$x.#5}
+
+      You can also go negative:
+        {$x.#-2}
+          2
+        
+        {$x.#-5}
+
+    You can use the magic character ('__') to access the pipe value.
+
+      ex1: single pipe
+      ex2: double pipe -- both params
+      ex3: param -> pipe scrape
+
+    And back to vars:
+
+      Reaching into a list of hashes brings back a list:
+        {( {* (:one 1 :two 2)}  {* (:one 10 :two 20)} ) | __.one}
+          [1,10]
+
+
+      //  {($bar $hash) | > :bundle}
+      //    alkdfj
+      //  {begin block | merge block $bundle} {_one} {end block}
+
+
+      ex: double dipping, like __.companies.employees
+
+      ex: using .*. formation
+
+      ex: using .{}. notation
+      {$bundle.{$bar.one}.one | eq :1}
+
+      //
+      // test Daimio path setting
+      //
+
+//      {:ash | > :hash.{"two"}} {$hash}
+//        ash {"two":"ash"}
+//
+//      {:ash | > :hash.{"two"}.monkey.flu} {$hash}
+//        ash {"two":{"monkey":{"flu":"ash"}}}
+
+
+Depth 4: Creating commands
+  
+Depth 5: Creating aliases
+
+FIX ME!!!!!
+
+//  Get all current aliases: 
+//    {alias find}
+//  
+//  Make an alias yourself:
+//    {alias add string "string join" as :join}
+//
+//  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
+//    {begin j}string join on ", "{end j}{alias add string j as :stick}
+//
+//
+//:::Bindings and such:::
+//
+//    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
+//      
+//    {:a | > :test}
+//      a
+//      
+//    {$count1}
+//      1
+//    
+//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
+//    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
+//      
+//    {:b | > :test}
+//      b
+//      
+//    {$count1} x {$count2}
+//      2 x 1
+//      
+//    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
+//  
+//    {:c | > :test}
+//      c
+//      
+//    {$count1} x {$count2}
+//      2 x 2
+//    
+//    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
+//    
+//    {:x | > :testx.y.z}
+//      x
+//    
+//    {$count1} x {$count2}
+//      2 x 4
+//    
+//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
+//    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
+//    
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,2]
+//  
+//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
+//    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
+//
+//    {(7 2) | > :foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,9]
+//      
+  // THINK: make a different test suite for the dom handler and interactive stuff.
+
+
+
 
 SOME STUFF THAT'S HERE FOR NOW
 
@@ -233,30 +855,6 @@ Extra braces don't matter. extra quotes do, but are generally ok.
     [5,6]
     
 
-unionizer: 
-  {(1 2 3) | union (4 5 6)}
-  [1,2,3,4,5,6]
-  
-  {union ((1 2 3) (4 5 6))}
-  [1,2,3,4,5,6]
-  
-  {* (:x 1 :y 2) | union {* (:z 3 :a 4)} }
-  {"x":1,"y":2,"z":3,"a":4}
-  
-
-block problem:
-  { ((1 2 3) 2 3) | filter block "{and (1 1)}"}
-    [[1,2,3],2,3]
-
-// counting problem (should count non-lists as 0): // your face has a counting problem
-// truthy non-lists count as 1
-  { ((1 2 3) 2 3) | filter block "{__ | count}"}
-    [[1,2,3],2,3]
-  { ((1 2 3) 2 3) | filter block "{__ | count | eq 1}"}
-    [2,3]
-  { ((1 2 3) 2 3) | filter block "{__ | count | less than 2 | not}"}
-    [[1,2,3]]
-
 Tests for switch
   ham?
     {logic switch on 2 value (1 :one 2 :two 3 :three)}
@@ -359,7 +957,7 @@ Tests for falseness
 
 
 
-Tests for pass-by-value. Changing a DAML variable shouldn't change other variables, either in DAML or in the base language.
+Tests for pass-by-value. Changing a Daimio variable shouldn't change other variables, either in Daimio or in the base language.
   {(1 2 3 4) | > :x}
     [1,2,3,4]
     
@@ -413,7 +1011,7 @@ Tests for weird variables and stuff:
 {:dann | > :name}
   dann
 
-Quoting a string passes the DAML through unscathed.
+Quoting a string passes the Daimio through unscathed.
   {"hi {$name}" | quote}
     hi {$name}
 
@@ -421,7 +1019,7 @@ Additional braces are irrelevant. (Internal braces are merely for grouping.)
   {{"hi {$name}"} | quote}
     hi {$name}
 
-Running the DAML first changes the output.
+Running the Daimio first changes the output.
   {"hi {$name}" | run | quote}
     hi dann
 
@@ -432,48 +1030,6 @@ The quote command also works on lists.
   {"hi {$name}" | string split on " " | quote}
     ["hi","{$name}"]
 
-
-Once more, with feeling
-
-
-{({* (:name :youhoo)}) | > :names}
-[{"name":"youhoo"}]
-
-{"hey {_name}!" | > :foo}
-hey !
-
-{:blargh | > :name}
-blargh
-
-{merge data $names block $foo}           {/ var get => block}
-hey youhoo!         
-                    
-{merge data $names block {$foo}}         {/ same}
-hey youhoo!
-           
-{merge data $names block "{$foo}"}       {/ new block => var get => old block}
-hey youhoo!
-  
-{merge data $names block {"{$foo}"}}     {/ same}
-hey youhoo!
-  
-{merge data $names block "{$foo} x"}     {/ different new block}
-hey youhoo! x
-  
-{merge data $names block {"{$foo} x"}}   {/ same different new block}
-hey youhoo! x
-    
-{merge data $names block {$foo | run}}   {/ var get => block => defunc => string}
-hey blargh!
-
-
---> merge over a keyed list of keyed lists
-
-{* (:one {* (:name :youhoo)} ) | > :names}
-  {"one":{"name":"youhoo"}}
-
-{merge data $names block $foo}
-  hey youhoo!  
 
 
 ---> inside a parameter, braces around quotes are redundant. 
@@ -523,22 +1079,22 @@ Here's the use cases, from the user's perspective:
   {"food mood wood" | string transform from "/oo/g" to "{__ | string uppercase}"}
     fOOd mOOd wOOd
 
-- I put a DAML string in with escape characters, and want the raw DAML string out.
-  ---- WELL ACTUALLY: DAML doesn't have escape characters anymore.
+- I put a Daimio string in with escape characters, and want the raw Daimio string out.
+  ---- WELL ACTUALLY: Daimio doesn't have escape characters anymore.
   {// {"\{asdf\}"} //}
     
 
-- I pass/pipe a DAML string in to the quote command, and want the raw DAML string out.
+- I pass/pipe a Daimio string in to the quote command, and want the raw Daimio string out.
   {daml quote value "{$asdf}"}
     {$asdf}
   {"{$asdf}" | daml quote}
     {$asdf}
 
-- I put a DAML string in, and want the processed output.
+- I put a Daimio string in, and want the processed output.
   {"{$foo}x"}
     123x
 
-- I put a DAML string in, get the processed output, and put that in a variable.
+- I put a Daimio string in, get the processed output, and put that in a variable.
   {variable set path :x value {"{$foo}x" | run}}
     123x
   {$x}
@@ -548,7 +1104,7 @@ Here's the use cases, from the user's perspective:
   {$x}
     123x
 
-- I put a DAML string in to a variable, then invoke that variable later (getting the processed output in each new context).
+- I put a Daimio string in to a variable, then invoke that variable later (getting the processed output in each new context).
   {variable set path :x value "{$foo}x"}
     321x
   {$x}
@@ -558,17 +1114,17 @@ Here's the use cases, from the user's perspective:
   {$x}
     123x
 
-- I put a DAML string in to a variable, then use that variable as a template for merging.
+- I put a Daimio string in to a variable, then use that variable as a template for merging.
   {variable set path :z value "~{__}~"}
     ~~
   {each block $z data (1 2 3)}
     ~1~~2~~3~
   
-- I pass a DAML string in as a template for merging.
+- I pass a Daimio string in as a template for merging.
   {each block "~{__}~" data (1 2 3)}
     ~1~~2~~3~
   
-- I create a DAML string, do substitutions on it, and then pass it in as a template for merging.
+- I create a Daimio string, do substitutions on it, and then pass it in as a template for merging.
 -----> this one is weird, because the inner command should *fully* process the string.
 ---- note the 'unquote' command, which processes the tainted strings.
   {each block {string transform value "~{__}~" from "~" to "!" | unquote} data (1 2 3)}
@@ -578,7 +1134,7 @@ Here's the use cases, from the user's perspective:
   {"~{__}~" | string transform from "~" to "!" | unquote | each data (1 2 3)}
     !1!!2!!3!
   
-- I take a DAML string, get its ptree, do some mangling (macros), then get the processed output.
+- I take a Daimio string, get its ptree, do some mangling (macros), then get the processed output.
 ------> THINK: do we want this in here? I'm taking it out for now because it's kind of silly.
 //  {daml parse string "x{foo}y"}
 //    {"m":"string","f":"join","p":{"value":["x",{"m":"variable","f":"get","p":{"path":"foo"}},"y"]}}
@@ -589,7 +1145,7 @@ Here's the use cases, from the user's perspective:
 //  {xy}
 //    x123z
 
-- I take a DAML string, pass it to the server, capture the (possibly object) return value and use it.
+- I take a Daimio string, pass it to the server, capture the (possibly object) return value and use it.
 
   
 
@@ -609,7 +1165,7 @@ Here's the use cases, from the user's perspective:
   {> :key value "KEY"}
     KEY
 
-  ---- this section highlights the new 'tainting' aspect of DAML. Strings from foreign sources (db, user input, etc) aren't processed unless explicitly instructed. Also, string transformations taint the source string, and will only process when requested. 
+  ---- this section highlights the new 'tainting' aspect of Daimio. Strings from foreign sources (db, user input, etc) aren't processed unless explicitly instructed. Also, string transformations taint the source string, and will only process when requested. 
   
   For reference, this is how you immediately run tainted strings:
     {"x{$key}y{$z}" | string transform from "{$key}" to 123 | run}
@@ -779,7 +1335,7 @@ z
 {1 | > :x}
 1
 
--- note here that the entire list gets processed before the 'on' param's DAML is processed. this is due to the internal mechanics of 'string join': some commands may behave differently. 
+-- note here that the entire list gets processed before the 'on' param's Daimio is processed. this is due to the internal mechanics of 'string join': some commands may behave differently. 
 {($asdf {"{$x}" | > :asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} "}
 1dog 1 1 1 zxcv 1 1 1 1
 
@@ -789,765 +1345,6 @@ z
 END STUFF
 
 
-:::The Five Elements of DAML:::
-
-Element 1: Numbers
-
-  Wrap a number in braces and you've got a DAML number. Note that while the exponential and hex number formats work, they aren't required in the spec. Avoid them where possible.
-
-    Ints n' floats:
-      {0}
-      0
-      {65535}
-      65535
-      {3.14159}
-      3.14159
-  
-    Negatives:
-      {-0}
-      0
-      {-65535}
-      -65535
-      {-3.14159}
-      -3.14159
-  
-    Exponential notation:
-      {3e10}
-      30000000000
-      {3e+10}
-      30000000000
-      {3e-3}
-      0.003
-      {3e80}
-      3e+80
-    Hex converts: 
-      {0x777}
-      1911
-    Octal doesn't:
-      {0777}
-      777
-    
-
-Element 2: Strings
-
-  Primitive strings are quite simple. We'll see a way of handling complicated strings (with embedded quotes, e.g.) later.
-  
-    Strings are enclosed in double-quotes:
-      {"hello world"}
-      hello world
-    A single word can be colon-quoted:
-      {:xyzzy}
-      xyzzy
-
-
-Element 3: Lists
-  
-  Lists are the basic data structure of DAML. Spaces separate items. List items can be any valid expression.
-  Notice that data structures are implicitly converted to JSON when forced to take string form.
-  
-    A list of random numbers:
-      {(8 6 7 5 3 0 9)}
-      [8,6,7,5,3,0,9]
-  
-    A list of pleonasms:
-      {("free gift" "true fact" "revert back" "hot water heater" "tired cliche")}
-      ["free gift","true fact","revert back","hot water heater","tired cliche"]
-  
-    Numbers and strings:
-      {(1 "a sandbox" 2 "a sandbox")}
-      [1,"a sandbox",2,"a sandbox"]
-    
-    A list of lists:
-      {((1 2 3) (:once :twice :thrice) (:primary :secondary :tertiary))}
-      [[1,2,3],["once","twice","thrice"],["primary","secondary","tertiary"]]
-
-    The first three ordinals:
-      {( () (()) (() (())) )}
-      [[],[[]],[[],[[]]]]
-  
-
-Element 4: Commands
-
-  The essence of DAML is commands. Every command has a model (the first word) and a function (the second).
-
-    The simplest command would look like this:
-      {fruit slice}
-  
-  But because we haven't published the 'fruit' model into this DAML dialect that won't do anything.
-  
-  Most commands take parameters, which are named. A parameter value can be a string, a number, a list or a command. [THINK: can it be a block??]
-
-    A slightly fancier (but still non-functional) command:
-      {fruit slice with :katana}
-
-  The following commands use models that are published by default.
-  
-    Join a list of strings:
-      {string join value (:barbera :belvest :brioni)}
-      barberabelvestbrioni
-  
-    With the optional 'on' parameter:
-      {string join value (:barbera :belvest :brioni) on ", "}
-      barbera, belvest, brioni
-  
-    Parameter order is arbitrary:
-      {string join on " > " value (:barbera :belvest :brioni)}
-      barbera > belvest > brioni
-  
-    We can split things, too:
-      {string split value "selvedge balmoral aglet placket plimsolls" on " "}
-      ["selvedge","balmoral","aglet","placket","plimsolls"]
-
-
-Element 5: The pipe operator
-
-  You can use the pipe ('|') to pass the output of one command into an input of another.
-  
-    Split, then join:
-      {string split value "shantung weft repp slub" on " " | string join on ", "}
-      shantung, weft, repp, slub
-  
-    Split, filter, join:
-      {string split value "shantung weft repp slub" on " " | string grep on :s | string join on ", "}
-      shantung, slub
-  
-  
-  In some ways the pipe is syntactic sugar for *commands as parameter values*, though the two differ slightly in implementation. The following commands are essentially equivalent to the above pipelines.
-  
-    Split, then join:
-      {string join on ", " value {string split value "shantung weft repp slub" on " "}}
-      shantung, weft, repp, slub
-  
-    Split, filter, join:
-      {string join on ", " value {string grep on :s value {string split value "shantung weft repp slub" on " "}}}
-      shantung, slub
-
-  Pipelines can make complicated DAML statements much easier to read, and lend themselves to dataflow-style programming. They're generally preferred over embedded commands.
-  
-    You can also pipe parameters, which sometimes improves readability:
-      {(:bebop :hardbop :cool :swing) | string join on ", "}
-      bebop, hardbop, cool, swing
-
-    A single pipe at the end of a command passes the value through:
-      {:mypipes|}
-      mypipes
-
-    A double pipe in a command squelches the pipe value:
-      {:doublepipes ||}
-      
-    
-    Which is equivalent to:
-      {:asdf | ""}
-      
-    
-    Squelching is useful sometimes, when you want to continue a pipeline without passing the previous value:
-      {:asdf | string join value (:one :two)}
-      oneasdftwo
-      {:asdf || string join value (:one :two)}
-      onetwo
-    
-    Though you could also do that like this:
-      {:asdf ||}{string join value (:one :two)}
-      onetwo
-  
-
-:::Quick Notes:::
-
-If you're familiar with other programming languages you'll notice that DAML seems to be missing many basic necessities: control statements like if-then-else, loop statements, function declaration, variable assignment, and the list goes on. These facilities exist within DAML as commands. This means that for-loops, for example, return a value (as do all commands). It also means that you can add new basic concepts to the language just by publishing new commands.
-
-
-:::Sugary Snacks:::
-
-DAML provides some syntactic sugar for simplifying certain common operations.
-
-Snack 1: Variables
-
-  Variables in DAML aren't built-in -- they're actually provided by commands published from the base language. Some sugar is provided to make accessing variable values easier.
-
-    You can use this command to set a variable:
-      {variable set path :bar value (:one :two :three)}
-      ["one","two","three"]
-  
-    And this command retrieves the variable value:
-      {variable get name :bar}
-      ["one","two","three"]
-  
-    But you can also use this shorter form:
-      {$bar}
-      ["one","two","three"]
-  
-    You can push things deeper into a variable using a dot ('.'):
-      {variable set path :foo.one value :xyzzy}
-      xyzzy
-  
-    You can reach in to variables the same way:
-      {$foo.one}
-      xyzzy
-
-    Use an octothorp to find the Nth value in a list:
-      {$bar.#2}
-      two
-  
-    Negative indices are also supported:
-      {$bar.#-1}
-      three
-  
-  We'll see some more ways to reach into variables in a bit.
-  
-
-Snack 2: Blocks
-
-  A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
-  
-  Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
-  
-    Here's a simple block:
-      {begin foo}Some text{end foo}
-        Some text
-  
-    That just returns whatever we put in -- not particularly useful. What if we pipe it into a command?
-      {begin foo | string split on " "}Some text{end foo}
-        ["Some","text"]
-    
-    The block can also be stored as a variable:
-      {begin foo | > :foo ||}Some text{end foo}{$foo}
-      Some text
-      {begin foo | > :foo | $foo}Some text{end foo}
-      Some text
-
-  We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
-  
-    Using a block we've previously built:
-      {$foo | string split on " "}
-      ["Some","text"]
-    
-    Blocks can also contain DAML:
-      {begin foo | > :foo}x{_value}-{end foo}
-        x-
-    
-    The each command invokes a DAML string for every element of a list. These are all equivalent:
-      {each block "x{__}-" data (1 2 3)}
-      x1-x2-x3-
-      {each block {"x{__}-"} data (1 2 3)}
-      x1-x2-x3-
-      {each block {{"x{__}-"}} data (1 2 3)}
-      x1-x2-x3-
-      
-    This one also behaves the same, but the extra quotes slow things down.
-      {each block {"{"x{__}-"}"} data (1 2 3)}
-      x1-x2-x3-
-      
-    These works like you would expect -- each iteration returns a list, which is JSONified internally.
-      {each block "{(:x {string join value {__}} "-")}" data (1 2 3)}
-      ["x","1","-"]["x","2","-"]["x","3","-"]
-      {each block {"{(:x {string join value {__}} "-")}"} data (1 2 3)}
-      ["x","1","-"]["x","2","-"]["x","3","-"]
-    
-    These show the strange, sad results of trying to coerce a list into a template.
-      {:hey | > :value}
-        hey
-      {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2)}
-        ["x","hey","hey","{$value}","{$value}"]["x","hey","hey","{$value}","{$value}"]
-      {each block (:x {string join value {$value}}) data (1 2 3)}
-        ["x","hey"]["x","hey"]["x","hey"]
-      {each block {(:x $value "-")} data (1 2 3)}
-        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
-      {:hey | > :value}
-        hey
-    
-    Pipeline variables, including magic pipes, are reduced prior to templatization. 
-    --> in general, don't use lists as templates.
-      {(7 8) | each block (1 __ "{__}")}
-        [1,[7,8],"{__}"][1,[7,8],"{__}"] 
-        
-//      {each block (1 __) data (7 8)}
-//        ["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]["x","hey","hey","hey","hey"]
-//      {each block (:x {string join value {__}}) data (1 2 3)}
-//        ["x","hey"]["x","hey"]["x","hey"]
-//      {each block {(:x __ "-")} data (1 2 3)}
-//        ["x","hey","-"]["x","hey","-"]["x","hey","-"]
-
-    More maps
-      {map block "{__ | add 1}" data (1 2 3)}
-        [2,3,4]
-      {map block "{__}x" data (1 2 3)}
-        ["1x","2x","3x"]
-      {map block "{__}" data (1 2 3)}
-        [1,2,3]
-      {map block "x{__}" data (1 2 3)}
-        ["x1","x2","x3"]
-
-    It pairs nicely with blocks:
-      {each block $foo data (1 2 3)}
-        x1-x2-x3-
-      {$foo | each data (1 2 3)}
-        x1-x2-x3-
-      {begin foo | each data (1 2 3)}x{__}-{end foo}
-        x1-x2-x3-
-      
-      {({:8} {8})}
-        ["8",8]
-    
-  [TODO: upgrade the test suite to allow blocks to spread over lines.]
-
-    These two things are almost equivalent:
-      {begin foo}One{"1 2 3" | string split on " "}Two{end foo}
-      One["1","2","3"]Two
-
-      {string join value (:One {"1 2 3" | string split on " "} :Two)}
-      One["1","2","3"]Two
-
-Snack 3: Aliases
-
-  Many commands have a shorter form that can be used in their place.
-    
-    Remember our variable setting command?
-      {variable set path :bar value (:one :two :three)}
-      ["one","two","three"]
-    
-    These both do the same thing as the preceding command:
-      {> :bar value (:one :two :three)}
-      ["one","two","three"]
-      {(:one :two :three) | > :bar}
-      ["one","two","three"]
-  
-  Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
-  
-  You can also create aliases at runtime. This is useful when paired with command creation.
-    
-    Create a new command:
-      {daml import block "hey {$name}!" into :string as :greet params :name}
-        
-      {string greet name "yourself"}
-        hey yourself!
-    
-    Alias it:
-      {daml alias string "string greet name" as :greet}
-        
-      {greet "Jacobinius"}
-        hey Jacobinius!
-      
-    // TODO: it looks like this doesn't pop the var context stack like it should...
-    
-
-:::Quick Notes 2:::
-
-A few small tidbits that don't fit elsewhere.
-
-Quick 1: Comments
-
-    Comments are like this:
-      {/string join}
-
-    This works too:
-      {/{hey now}}
-
-    You can get fancy:
-      {// {hey now} //}
-
-Quick 2: Embedded blocks
-
-    I put a block in a block for you:
-      {begin outer}qq {begin inner | add 321}123{end inner} pp {end outer}
-        qq 444 pp
-
-  (Blocks with the same name can't be nested. That would just be weird.)
-
-Quick 3: Commands in lists
-
-    A list can have commands in it
-      {({string split value "shantung weft repp slub" on " "} 1 2 4 8)}
-        [["shantung","weft","repp","slub"],1,2,4,8]
-
-Quick 4: Quotes in braces
-
-    If the nested quotes are in braces, you don't need to use a block:
-      {string split on " " value {("inside" "here") | string join on " "}}
-        ["inside","here"]
-        
-    Sometimes nesting quotes in braces and braces in quotes works well:
-      {string split on " " value {"{("Much" "nesting") | string join on " "} is divinest sense" | run}}
-        ["Much","nesting","is","divinest","sense"]
-
-
-:::In Depth:::
-
-We've seen the 5 elements of DAML (three primitive types, commands, and the pipe operator). We've also seen 3 types of sugar that can be applied (variables, blocks, and aliases). Here we'll examine some of those areas in more depth.
-
-Depth 1: Blocks and scope
-
-  so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
-  
-  space vars are mutable and persistent. they model state within the space. you should only use them when necessary, and maybe not even then.
-
-    TODO: fix this section!
-
-//    A pipeline variable created in a block goes away when that block ends:
-//      {begin block ||}{123 | > :foo}{end block}{foo}
-//        123
-//  
-//    Variables beginning with '@' are global:
-//      {begin block}{123 | > :foo}{end block}{$foo}
-//        123
-//    
-//    Blocks create a new variable:
-//      {begin block}Hey there{end block}{$block}
-//        Hey there
-//    
-//    Nested blocks are only accessible inside their parent block:
-//      {begin outer}{begin inner}123{end inner}{end outer}{$inner}
-//        
-//      
-//    Use a global if you need access to it later:
-//      {begin outer}{begin inner | > :inner}123{end inner}{end outer}{$inner}
-//        123
-//    
-//    Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
-//      {123 | > :x ||}{begin foo}{$x}{end foo}{$x}
-//      123
-//    
-//    But they aren't actually globals:
-//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
-//      456123
-//  
-//  See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
-//  
-//    Contrast that with a global:
-//      {123 | > :x ||}{begin foo |}{456 | > :x ||}{$x}{end foo}{$x}
-//      456456
-//  
-//  Changing a global changes it everywhere, regardless of scope. 
-//  
-//  Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, DAML isn't general purpose. In DAML globals are cute and cuddly and always floss.
-//  
-//    Blocks establish a new variable scope:
-//      {"asdf" | > :x}{begin foo}{123 | > :x || $x}{end foo}{$x}
-//  
-//    But variables starting with '@' are global:
-//      {"asdf" | > :@x}{begin foo}{123 | > :@x || @x}{end foo}{@x}
-
-
-Depth 2: Keyed lists
-  TODO: this whole section needs changing to conform with the new 'list' data type.
-
-  A keyed list (aka hash, map, hash map, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. Every list in Daimio can take keys. There's a special command for transforming an unkeyed list into a new keyed list called 'list pair'.
-  
-    Here is the command written out:
-      {list pair value (:one :first :two :second)}
-      {"one":"first","two":"second"}
-      
-    And in its much more common aliased form:
-      {* (:one :first :two :second)}
-      {"one":"first","two":"second"}
-    
-  As you can see, the * operator (which is really just an alias for a command) uses the first value in the list as a key, the second as its value, the third as the second key, the fourth as its value, and so on. While this seems a bit messy on a single line, with proper whitespacing it's very easy to read. 
-
-    Lists -- including keyed lists -- are always sorted, so we can use the #N notation on them:
-      {* (:one :first :two :second) | > :x || $x.#2}
-      second
-    
-    [Integer keys in maps can mess up the sorting in the JS implementation]
-  
-    a list of hashes:
-      {( {* (:one 1 :two 2)}  {* (:three 3 :four 4)} )}
-        [{"one":1,"two":2},{"three":3,"four":4}]
-        
-    a nested hash:
-      {* (:A {* (:one 1 :two 2)} :B {* (:three 3 :four 4)})}
-        {"A":{"one":1,"two":2},"B":{"three":3,"four":4}}
-  
-
-Depth 3: Further fun with variables
-  
-  
-  
-  .*
-  AoH
-  #vars
-  
-  
-  
-  FIX THIS!!!!!
-  
-  
-
-//    ALL-CAPS variables are write-once read-many (WORM):
-//      {128 | > :MY.id}
-//        128
-//      {256 | > :MY.id}
-//        128
-//      // the above also throws an error...
-//
-//      Request variables come from POST and the querystring. Reference them like this:
-//      {REQUEST.foo}
-//
-//      Or use the short form:
-//      {#foo}
-//
-    Dot values. You can reach inside variables in a variety of ways. Here's a list.
-
-      A named parameter:
-        {* (:one 1 :two 2 :three 3) | > :x | $x.two}
-          2
-
-      A numbered parameter (notice numbering is 1-indexed):
-        {$x.#1}
-          1
-        {$x.#5}
-
-      You can also go negative:
-        {$x.#-2}
-          2
-        
-        {$x.#-5}
-
-    You can use the magic character ('__') to access the pipe value.
-
-      ex1: single pipe
-      ex2: double pipe -- both params
-      ex3: param -> pipe scrape
-
-    And back to vars:
-
-      Reaching into a list of hashes brings back a list:
-        {( {* (:one 1 :two 2)}  {* (:one 10 :two 20)} ) | __.one}
-          [1,10]
-
-      ex: double dipping, like __.companies.employees
-
-      ex: using .*. formation
-
-      ex: using .{}. notation
-      {$bundle.{$bar.one}.one | eq :1}
-
-      //
-      // test DAML path setting
-      //
-
-//      {:ash | > :hash.{"two"}} {$hash}
-//        ash {"two":"ash"}
-//
-//      {:ash | > :hash.{"two"}.monkey.flu} {$hash}
-//        ash {"two":{"monkey":{"flu":"ash"}}}
-
-
-Depth 4: Creating commands
-  
-Depth 5: Creating aliases
-
-FIX ME!!!!!
-
-//  Get all current aliases: 
-//    {alias find}
-//  
-//  Make an alias yourself:
-//    {alias add string "string join" as :join}
-//
-//  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
-//    {begin j}string join on ", "{end j}{alias add string j as :stick}
-//
-//
-//:::Bindings and such:::
-//
-//    {variable bind path :test block "{$count1 | add 1 | > :count1}"}
-//      
-//    {:a | > :test}
-//      a
-//      
-//    {$count1}
-//      1
-//    
-//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-//    {variable bind path :test block "{$count2 | add 1 | > :count2}"}
-//      
-//    {:b | > :test}
-//      b
-//      
-//    {$count1} x {$count2}
-//      2 x 1
-//      
-//    {variable unbind path :test block "{$count1 | add 1 | > :count1}"}
-//  
-//    {:c | > :test}
-//      c
-//      
-//    {$count1} x {$count2}
-//      2 x 2
-//    
-//    {variable bind path :testx.y.z block "{$count2 | add 2 | > :count2}"}
-//    
-//    {:x | > :testx.y.z}
-//      x
-//    
-//    {$count1} x {$count2}
-//      2 x 4
-//    
-//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
-//    {variable bind path :foox block "{__var.#1 | add 2 | > :foox.0}"}
-//    
-//    {(7 2) | > :foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,2]
-//  
-//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-//    {variable bind path :foox block "{__var.#1 | add __var.#2 | > :foox.1}"}
-//
-//    {(7 2) | > :foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,9]
-//      
-  // THINK: make a different test suite for the dom handler and interactive stuff.
-  
-:::Common Commands:::
-  
-This section covers a variety of commonly-used commands. 
-
-CC 1: Math commands
-
-  // TODO: move this
-  Ensure values are properly finagled. 
-    {1 | > :x | 2 | > :y | 3 | > :z | ($x $y $z) | add}
-      6
-      
-     --> these don't exist anymore, add aliases!
-//    Increment:
-//      {math increment value 222}
-//      223
-//      {inc 222}
-//      223
-//      {222 | inc}
-//      223
-//    
-//    Decrement:
-//      {math decrement value 222}
-//      221
-//      {dec 222}
-//      221
-//      {222 | dec}
-//      221
-    
-    Add:
-      {math add value 123 to 321}
-        444
-      {add 123 to 321}
-        444
-      {321 | add 123}
-        444
-  
-    The addition command is fairly versatile:
-      {math add value (1 2 3)}
-        6
-      {math add value 1 to (4 5 6)}
-        [5,6,7]
-      {math add value (4 5 6) to 1}
-        [5,6,7]
-      {math add value (3 2 1) to (4 5 6)}
-        [7,7,7]
-      
-    Subtract
-      {subtract 4 from :7}
-        3
-      {:7 | subtract 4}
-        3
-      {subtract (:100 :2 3 :4 5)}
-        86
-      {(1 3 5 7) | subtract 3}
-        [-2,0,2,4]
-      {math subtract value (6 5 4) from (1 2 3)}
-        [-5,-3,-1]
-      
-    Multiply
-      {multiply 4 by 7}
-        28
-      {:7 | multiply :4}
-        28
-      {multiply (:1 2 :3)}
-        6
-      {(1 :2 3) | multiply 3}
-        [3,6,9]
-      {math multiply value (1 2 3) by (6 5 4)}
-        [6,10,12]
-      
-    Divide // NOTE that this shortcut is different!
-      {divide value 7 by 4}
-        1.75
-      {:7 | divide by :4}
-        1.75
-      {divide value (:1 2 :3) | map block "{__ | round to 2}"}
-        [0.17]
-      {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
-        [0.33,0.67,1]
-      {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
-        [0.17,0.4,0.75]
-      
-      // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
-      
-      
-    Mod
-      {math mod value 7 by 2}
-        1
-      {:7 | mod :2}
-        1
-      
-    Pow
-      {math pow value 2 exp 8}
-        256
-      {:5 | math pow exp :3}
-        125
-      {5 | math pow exp 0.5}
-        2.23606797749979
-    
-    Less? // THINK: should less be logic?
-    Random?
-    
-    Round
-      {123.456 | math round}
-        123
-      {123.456 | math round to -2}
-        100
-      {123.456 | math round to 2}
-        123.46
-        
-  
-  
-CC 2: Looping
-  
-  There are two primary loop commands in DAML: each and merge. They require a string (the template) and a list or map (the data). Both work by variablizing each element of data in turn and running the template over it.
-  
-    Foreach pushes each element into a variable called 'value':
-      {each data (1 2 3) block "{__}x"}
-      1x2x3x
-    
-    The each command also pushes the value's key into a variable called 'key':
-      {each data {* (:one 1 :two 2 :three 3)} block "{_key}x"}
-      onextwoxthreex
-    
-    It works on blocks, too, naturally. Here we use the common alias form:
-      {begin loop | each data {* (:one 1 :two 2 :three 3)}} {_key}: {__} {end loop}
-      one: 1  two: 2  three: 3
-  
-  Merge is a little more complicated
-  
-  
-  A 'each' will take each element of a list or map and push it into a variable called 'value'
-  A 'merge' will push
-  
-  merging...
-//  {($bar $hash) | > :bundle}
-//    alkdfj
-//  {begin block | merge block $bundle} {_one} {end block}
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -1662,9 +1459,9 @@ Basic blocks and vars:
   
 // STRINGS
 
-  -- internal strings containing DAML are considered 'alive'. among other things, this means that they will eventually be processed.
+  -- internal strings containing Daimio are considered 'alive'. among other things, this means that they will eventually be processed.
   -- data coming from outside the processed string (db, user, etc) is 'dead'. dead string won't be processed.
-  -- strings w/o DAML are dead.
+  -- strings w/o Daimio are dead.
   -- the 'quote' command kills a live string.
   -- the 'unquote' command resuscitates a dead string.
   -- you can put a live string in a variable, and reference it many different times. each will be processed according to the customs of its time.
@@ -1736,160 +1533,6 @@ y
   stupid local surprise local! local y
 {"{"stupid {"{$x.one} {$x.two} {$x.bogus.foo}"}"} {$x.one}"} y
   stupid local surprise local!  local y
-
-
-
-
-
-
-
-
-
-
-  // LOGIC COMMANDS
-
-
-    ~~~ OR returns the first true value it finds ~~~
-
-    One valued 'or' looks at each item in the list
-      {($false 1 2 3) | or}
-        1
-
-      {or ($false 1 2 3)}
-        1
-
-      {or ($false 0 "" :true)}
-        true
-
-    With two values it just considers each in toto
-      {5 | or 10}
-        5
-
-      {$false | or :true}
-        true
-
-      {(0 0) | or 1}
-        [0,0]
-
-      {$false | or (0 0)}
-        [0,0]
-
-    ~~~ AND only returns true or false ~~~
-
-    One valued 'and' looks at each item in the list
-      {($false 1 2 3) | and | then :true else :false}
-        false
-
-      {and ($false 1 2 3) | then :true else :false}
-        false
-
-      {and ($false 0 "" :true) | then :true else :false}
-        false
-
-      {(1 2 3) | and | then :true else :false}
-        true
-
-      // NOTE: the below fail due to faulty piping that sets 'also' to 'false'. 
-
-      {and (1 2 3) | then :true else :false}
-        true
-
-      {and ("asdf" :true) | then :true else :false}
-        true
-
-    With two values it just considers each in toto
-      {5 | and 10 | then :true else :false}
-        true
-
-      {$false | and :true | then :true else :false}
-        false
-
-      {(0 0) | and 10 | then :true else :false}
-        true
-
-      {$false | and (0 0) | then :true else :false}
-        false
-
-  {if :true then :awesome}
-    awesome
-
-  {if "" then "not awesome"}
-
-  {if $false then "not awesome"}
-
-  {if {not ""} then :awesome}
-    awesome
-
-  {if {and ({not ""} {not $false})} then :awesome}
-    awesome
-
-  {if {and ({or ({not $false} $false)} $x)} then :awesome}
-    awesome
-
-  {if {and ({$false} {$x})} then :awesome}
-
-  {if {and (:great "not bad!")} then :awesome}
-    awesome
-
-  {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
-    awesome
-
-  {:true | if __ then :neat}
-    neat
-
-  {:true | else "bad"}
-    true
-
-  {$false | else "good"}
-    good
-
-  {:asdf | is in (:foo :bar :asdf) | then :great}
-    great
-
-  {:asdf | is in (:foo :bar) | then "bad" else :great}
-    great
-
-  {:burgers | eq "urge" | then "uh-oh" else :super}
-    super
-
-  {:burgers | is like "/urge/" | then :super else "uh-oh"}
-    super
-
-  {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
-    super
-
-  {:burgers | is like "/URGE/" | then "oh no!" else :super}
-    super
-
-  {:burgers | is like "/^urge/" | then "oh no!" else :super}
-    super
-
-  {$false | not | then :true else :false}
-    true
-
-  {:true | not | then :true else :false}
-    false
-
-  {not $false | then :true else :false}
-    true
-
-  {not :true | then :true else :false}
-    false
-
-  {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
-    good
-
-  {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
-    good
-
-  {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
-    good
-
-  {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
-    yep
-
-  // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
-  //  hey
 
 
   // PARAMS
@@ -2037,6 +1680,273 @@ y
 
 
 
+
+
+LOGIC COMMANDS
+
+
+     ~~~ OR returns the first true value it finds ~~~
+
+     One valued 'or' looks at each item in the list
+       {($false 1 2 3) | or}
+         1
+
+       {or ($false 1 2 3)}
+         1
+
+       {or ($false 0 "" :true)}
+         true
+
+     With two values it just considers each in toto
+       {5 | or 10}
+         5
+
+       {$false | or :true}
+         true
+
+       {(0 0) | or 1}
+         [0,0]
+
+       {$false | or (0 0)}
+         [0,0]
+
+     ~~~ AND only returns true or false ~~~
+
+     One valued 'and' looks at each item in the list
+       {($false 1 2 3) | and | then :true else :false}
+         false
+
+       {and ($false 1 2 3) | then :true else :false}
+         false
+
+       {and ($false 0 "" :true) | then :true else :false}
+         false
+
+       {(1 2 3) | and | then :true else :false}
+         true
+
+       // NOTE: the below fail due to faulty piping that sets 'also' to 'false'. 
+
+       {and (1 2 3) | then :true else :false}
+         true
+
+       {and ("asdf" :true) | then :true else :false}
+         true
+
+     With two values it just considers each in toto
+       {5 | and 10 | then :true else :false}
+         true
+
+       {$false | and :true | then :true else :false}
+         false
+
+       {(0 0) | and 10 | then :true else :false}
+         true
+
+       {$false | and (0 0) | then :true else :false}
+         false
+
+   {if :true then :awesome}
+     awesome
+
+   {if "" then "not awesome"}
+
+   {if $false then "not awesome"}
+
+   {if {not ""} then :awesome}
+     awesome
+
+   {if {and ({not ""} {not $false})} then :awesome}
+     awesome
+
+   {if {and ({or ({not $false} $false)} $x)} then :awesome}
+     awesome
+
+   {if {and ({$false} {$x})} then :awesome}
+
+   {if {and (:great "not bad!")} then :awesome}
+     awesome
+
+   {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
+     awesome
+
+   {:true | if __ then :neat}
+     neat
+
+   {:true | else "bad"}
+     true
+
+   {$false | else "good"}
+     good
+
+   {:asdf | is in (:foo :bar :asdf) | then :great}
+     great
+
+   {:asdf | is in (:foo :bar) | then "bad" else :great}
+     great
+
+   {:burgers | eq "urge" | then "uh-oh" else :super}
+     super
+
+   {:burgers | is like "/urge/" | then :super else "uh-oh"}
+     super
+
+   {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
+     super
+
+   {:burgers | is like "/URGE/" | then "oh no!" else :super}
+     super
+
+   {:burgers | is like "/^urge/" | then "oh no!" else :super}
+     super
+
+   {$false | not | then :true else :false}
+     true
+
+   {:true | not | then :true else :false}
+     false
+
+   {not $false | then :true else :false}
+     true
+
+   {not :true | then :true else :false}
+     false
+
+   {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
+     good
+
+   {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
+     good
+
+   {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+     good
+
+   {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
+     yep
+
+   // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | > :bat} "too far"))}
+   //  hey
+
+
+
+
+
+
+MATH COMMANDS
+
+     // TODO: move this
+     Ensure values are properly finagled. 
+       {1 | > :x | 2 | > :y | 3 | > :z | ($x $y $z) | add}
+         6
+
+        --> these don't exist anymore, add aliases!
+   //    Increment:
+   //      {math increment value 222}
+   //      223
+   //      {inc 222}
+   //      223
+   //      {222 | inc}
+   //      223
+   //    
+   //    Decrement:
+   //      {math decrement value 222}
+   //      221
+   //      {dec 222}
+   //      221
+   //      {222 | dec}
+   //      221
+
+       Add:
+         {math add value 123 to 321}
+           444
+         {add 123 to 321}
+           444
+         {321 | add 123}
+           444
+
+       The addition command is fairly versatile:
+         {math add value (1 2 3)}
+           6
+         {math add value 1 to (4 5 6)}
+           [5,6,7]
+         {math add value (4 5 6) to 1}
+           [5,6,7]
+         {math add value (3 2 1) to (4 5 6)}
+           [7,7,7]
+
+       Subtract
+         {subtract 4 from :7}
+           3
+         {:7 | subtract 4}
+           3
+         {subtract (:100 :2 3 :4 5)}
+           86
+         {(1 3 5 7) | subtract 3}
+           [-2,0,2,4]
+         {math subtract value (6 5 4) from (1 2 3)}
+           [-5,-3,-1]
+
+       Multiply
+         {multiply 4 by 7}
+           28
+         {:7 | multiply :4}
+           28
+         {multiply (:1 2 :3)}
+           6
+         {(1 :2 3) | multiply 3}
+           [3,6,9]
+         {math multiply value (1 2 3) by (6 5 4)}
+           [6,10,12]
+
+       Divide // NOTE that this shortcut is different!
+         {divide value 7 by 4}
+           1.75
+         {:7 | divide by :4}
+           1.75
+         {divide value (:1 2 :3) | map block "{__ | round to 2}"}
+           [0.17]
+         {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
+           [0.33,0.67,1]
+         {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
+           [0.17,0.4,0.75]
+
+         // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
+
+
+       Mod
+         {math mod value 7 by 2}
+           1
+         {:7 | mod :2}
+           1
+
+       Pow
+         {math pow value 2 exp 8}
+           256
+         {:5 | math pow exp :3}
+           125
+         {5 | math pow exp 0.5}
+           2.23606797749979
+
+       Less? // THINK: should less be logic?
+       Random?
+
+       Round
+         {123.456 | math round}
+           123
+         {123.456 | math round to -2}
+           100
+         {123.456 | math round to 2}
+           123.46
+
+
+
+
+
+
+
+
+
+
 LIST COMMANDS
 
 
@@ -2060,6 +1970,23 @@ LIST COMMANDS
     {$klist | count}
       5
 
+  EACH
+  
+    {each data (1 2 3) block "{__}x "}
+     1x 2x 3x
+    {each data {* (:one 1 :two 2 :three 3)} block "{_key}x "}
+      onex twox threex
+
+    {begin loop | each data {* (:one 1 :two 2 :three 3)}} {_key}: {__} {end loop}
+      one: 1  two: 2  three: 3
+  
+    {each block "x{__}-" data (1 2 3)}
+      x1-x2-x3-
+    {"x{__}-" | each data (1 2 3)}
+      x1-x2-x3-
+    {begin foo | each data (1 2 3)}x{__}-{end foo}
+      x1-x2-x3-
+
 
   FILTER
     
@@ -2079,6 +2006,35 @@ LIST COMMANDS
     {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3}"}
       [2,3,5]
     
+    {( (1 2 3) 2 3 ) | filter block "{and (1 1)}"}
+      [[1,2,3],2,3]
+
+  THINK: how do we filter out non-lists? is this actually an issue, since 3 casts to (3) whenever needed?
+    {( (1 2 3) 2 3 ) | filter block "{__ | count}"}
+      [[1,2,3],2,3]
+    {( (1 2 3) 2 3 ) | filter block "{__ | count | eq 1}"}
+      [2,3]
+    {( (1 2 3) 2 3 ) | filter block "{__ | count | less than 2 | not}"}
+      [[1,2,3]]
+
+
+  GROUP
+  
+    // THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly.
+  
+    {(1 2 3 4 5 6) | list group by "{__ | mod 2}"}
+      [[1,3,5],[2,4,6]]
+    {( {* (:a 1)} {* (:a 4)} {* (:a 3)} {* (:a 1)} ) | list group by :a}
+      {1:[{a:1},{a:1}],3:[{a:3}],4:[{a:4}]}
+    {(1 2 3 4 5 6 7 8) | list group by "{__ | mod 4}"}
+      [[1,5],[2,6],[3,7],[4,8]]
+    {(1 2 3 4 5 6 7 8) | list group by "{__ | mod 4}" | list group by "{__.#1 | mod 2}"}
+      [[[1,5],[3,7]],[[2,6],[4,8]]]
+    {(1 2 3 4 5 6 7 8) | list group by "{__ | mod 4}" | sort by "{__.#1}" | list reverse | list group by "{__.#1 | mod 2}"}
+      [[[3,7],[1,5]],[[4,8],[2,6]]]
+      
+    {( {* (:a :x :b 1)} {* (:a :z :b 2)} {* (:a :x :b 3)} {* (:a :z :b 4)} {* (:a :y :b 5)} ) | list group by :a}
+      {"x":[{"a":"x","b":1},{"a":"x","b":3}],"z":[{"a":"z","b":2},{"a":"z","b":4}],"y":[{"a":"y","b":5}]}
 
   INTERSECT
   
@@ -2088,11 +2044,18 @@ LIST COMMANDS
       [3]
     {* (:a (1 2 3) :b (3 4 5)) | list intersect}
       [3]
-    {list intersect data ($data.1.two (:hi :hello :gogo))}
+    {list intersect data ($data.one.two (:hi :hello :gogo))}
       ["hi","hello"]
       
-  note that the return list is always unkeyed:
-    {list intersect data ($data.1 {* (:one :first :four :nothing)})}
+    {(1 2 3) | list intersect data (2 3 4)}
+      [2,3]
+    {(1 2 3) | list intersect also (2 3 4)}
+      [2,3]
+    {list intersect data (1 2 3) also (2 3 4)}
+      [2,3]
+      
+  think: the return list is always unkeyed
+    {list intersect data ($data.one {* (:one :first :four :nothing)})}
       ["first"]
     {list intersect data (1 2 3) also (3 4 5)}
       [3]
@@ -2126,11 +2089,66 @@ LIST COMMANDS
     {* (:x 1 :y 2 :z 3) | list keys}
       ["x","y","z"]
     {$data | list keys}
-      ["1","2","3"]
+      ["two","one","three"]
     {$dlist | list keys}
       ["0","1"]
     {$klist.#1 | list keys}
       ["x","y"]
+
+  MAP
+
+    {map block "{__ | add 1}" data (1 2 3)}
+      [2,3,4]
+    {map block "{__}x" data (1 2 3)}
+      ["1x","2x","3x"]
+    {map block "{__}" data (1 2 3)}
+      [1,2,3]
+    {map block "x{__}" data (1 2 3)}
+      ["x1","x2","x3"]
+
+    {* (:a 1 :b 2 :c 3) | map block "{__ | times __}"}
+      {"a":1,"b":4,"c":9}
+  
+  MERGE
+    
+    {merge data ({* (:name :you)}) block "hey {_name}!"}
+      hey you!
+    {merge data {* (:one {* (:name :you)} )} block "hey {_name}!"}
+      hey you!
+      
+    {begin block | merge data ( {* (:one 12)} {* (:one 24)} )} {_one} {end block}
+      12  24
+
+
+    {({* (:name :youhoo)}) | > :names}
+    [{"name":"youhoo"}]
+    
+    {"hey {_name}!" | > :foo}
+    hey !
+    
+    {:blargh | > :name}
+    blargh
+    
+    {merge data $names block $foo}           {/ var get => block}
+    hey youhoo!         
+    
+    {merge data $names block {$foo}}         {/ same}
+    hey youhoo!
+    
+    {merge data $names block "{$foo}"}       {/ new block => var get => old block}
+    hey youhoo!
+    
+    {merge data $names block {"{$foo}"}}     {/ same}
+    hey youhoo!
+    
+    {merge data $names block "{$foo} x"}     {/ different new block}
+    hey youhoo! x
+    
+    {merge data $names block {"{$foo} x"}}   {/ same different new block}
+    hey youhoo! x
+    
+    {merge data $names block {$foo | run}}   {/ var get => block => defunc => string}
+    hey blargh!
 
 
   PATHFIND
@@ -2186,18 +2204,6 @@ LIST COMMANDS
       {"odd":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"even":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
 
-  REMOVE
-
-    {$data | list remove path :2}
-      {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-
-    {$data | list remove path "*.two"}
-      {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-
-    {(:one :two :three) | list remove path :one}
-      ["two","three"] 
-
-
   REVERSE
   
     {(3 2 4 1) | list reverse}
@@ -2238,8 +2244,10 @@ LIST COMMANDS
     {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
       ["a3","b4","c2","d1","d2"]
 
-    {* (:c 1 :b 2 :a 3) | list sort}
-      {"a":3,"b":2,"c":1}
+  think: how would you sort by keys?
+  
+    {* (:c 3 :b 2 :a 1) | list sort}
+      {"a":1,"b":2,"c":3}
     
 
   UNION
@@ -2248,21 +2256,32 @@ LIST COMMANDS
       [1,2,3,4,5,6]
     {(1 2 3) | list union also (4 5 6)}
       [4,5,6,1,2,3]
-  
-    {list union data ($data (:1 :2 :four))}
-      [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"},"1","2","four"]
-
-    {list union data ($data {*(:1 {* (:one :lovely :four :goodness)})})}
-      [{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
-
+    {(1 2 3) | union (4 5 6)}
+      [1,2,3,4,5,6]
+    {union ((1 2 3) (4 5 6))}
+      [1,2,3,4,5,6]
+    {list union data ((1 2) (:1 :2))}
+      [1,2,"1","2"]
+      
+    {list union data ( (1 2) {* (:a :1 :b :2)} )}
+      {"0":1,"1":2,"a":"1","b":"2"}
+    {* (:x 1 :y 2) | union {* (:z 3 :a 4)} }
+      {"x":1,"y":2,"z":3,"a":4}
+    {list union data ( {* (:a :1 :b :2)} {* (:a {* (:one :lovely :four :goodness)} )} )}
+      {"a":{"0":"1","one":"lovely","four":"goodness"},"b":"2"}
 
   UNIQUE
   
     {(:hi :hi :puffy :ami :yumi) | list unique}
       {"0":"hi","2":"puffy","3":"ami","4":"yumi"}
+    {* (:a :hi :b :hi :c :puffy :d :ami :e :hi :f :yumi) | list unique}
+      {"a":"hi","c":"puffy","d":"ami","f":"yumi"}
+    {((1) (2) (1) (3)) | list unique}
+      {"0":[1],"1":[2],"3":[3]}
 
 
-
+<!--
+  
   Older sort commands that probably won't exist anymore but we still need to handle these cases somehow
     
     // {((:one :row) (:second :row)) | list to_csv}
@@ -2298,7 +2317,19 @@ LIST COMMANDS
     // 
     // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
     //   ["2","3","5"]
+    // 
+    // REMOVE
+    // 
+    //   {$data | list remove path :2}
+    //     {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+    // 
+    //   {$data | list remove path "*.two"}
+    //     {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
+    // 
+    //   {(:one :two :three) | list remove path :one}
+    //     ["two","three"] 
     
+-->
 
 
 MISC STUFF CLEAN IT UP 
@@ -2325,5 +2356,30 @@ KNOWN BUGS
   
   
 
+DECISIONS TO BE MADE
+  In order of importance... write about these when you make them.
+
+  Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
+
+  How do we refer to the previous segment from within a list? e.g. {123 | ({__ | add 2} {__ | add 1})}
+
+  How do space vars work? Are get/set commands? 
+    - What about setting into a sub item, like $>foo.x.y? 
+    - What about getting a variable subitem, like $foo.{_x}.{_y}? use pathfind / walk?
+
+  Objects vs Arrays in JSON output: 
+    - which commands retain keys? all that possibly can?
+    - when are objects converted back into arrays? only on demand? not specified? anytime there's integer keys? finally a use for to_json?
+  
+  How do we walk a tree to prune things, extract things, etc?
+  
+  
+  
+  
+
+
+
+
 
 THAT'S ALL, FOLKS!
+!!!!!!
