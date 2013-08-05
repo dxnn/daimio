@@ -1950,6 +1950,9 @@ MATH COMMANDS
 LIST COMMANDS
 
 
+  // TODO: tests for block executing in same space (re: spacevar scoping)
+
+
   SOME DATA
     {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | > :klist}
       [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
