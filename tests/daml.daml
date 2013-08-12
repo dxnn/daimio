@@ -1,5 +1,6 @@
 WELCOME TO DAIMIO
 
+
 <!--
 
 This document servers as a primer, tutorial, reference, test suite and specification for future implementations of the Daimio language.
@@ -741,6 +742,34 @@ MAGIC PIPE TESTS
 
 
   Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
+  
+    ----- thoughts on this:
+    - if we made 'process input' a different symbol we wouldn't have embedded pipeline reference issues 
+      - referencing the previous segment from inside a list is an important case
+      - is it the only case??
+    - starting a pipeline with __ is beautifully simple
+      - it clearly indicates the intention of pulling in outside input
+      - it demonstrates the linear nature of a pipeline: one thing in, one thing out
+      - we lose this if we allow references inside a pipeline (oh we're doing that already oh dear)
+    - the block case with multiple pipelines each referencing input is important, because
+      - we want those to be able to run in parallel
+      - a given pipeline should work the same regardless of context
+      - so we can't just rely on 'first use' of __ and alias it after
+    
+    so it sounds like a different symbol is in order to refer universally to the input.
+    OR we do something fiddly like {__} means input if it's outermost but embedded it never does (yuck).
+    //   {__ | add 1}
+    //   {_in | add 1}
+    //   {*in | add 1}
+    //   {___ | add 1}
+    
+    er... if it's inside a string, it maps to '*in'.
+    if it's inside a list, it maps to prevval.
+    is it that simple?
+    
+    
+    
+  
     {(1 2 3) | map block "{__ | add 4}"}
       [5,6,7]
     {(1 2 3) | map block "{add __ to 4}"}
@@ -778,38 +807,49 @@ MAGIC PIPE TESTS
         [4,4,4]
     
     
-    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
-    
-THINK: how does this square off with __.foo? that essentially becomes {__ | list pathfind path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
+////    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
+////THINK: how does this square off with __.foo? that essentially becomes {__ | list pathfind path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
+////If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
 
-      {20 | add {__ | add 1} // bad}
-        21
-      {20 | add {__ | add 1} to __ // bad}
-        21
 
-      {20 | add 1 | add __ to __}
+    NEW RULES!
+    - "{__}" links to process input
+    - {__} links to previous value
+    so: if it's in a string, it's input.
+        if it's in a list or param value it's previous value.
+
+
+      {20 | add {__ | add 2}}
         42
-        
-    If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
+      {20 | add {__ | add 2} to __}
+        42
+    
       {21 | join (__ " " __) on ""}
         21 21
-      {21 | join ({__ | add 1} " " {__ | add 2})   // bad}
-        1 2
-      {21 | join ({add 1 to __} " " {add __ to 2})  // bad}
-        1 2
-      {21 | >_a | join ({_a | add 1} " " {_a | add 2})}
+      {21 | ( {__ | add 1} " " {__ | add 2} ) | join}
         22 23
-      
-    The above also applies to the empty pipe:
-      {21 | add {__} to 7 // bad}
-        7
-      {21 | add {__} to __ // bad}
-        21
-      {21 | add __ to {__} // bad}
-        21
-      {20 | ({__} 1 __)}
-        ["",1,20]
+      {21 | ( {add 1 to __} " " {add __ to 2} ) | join}
+        22 23
+      {21 | _>a | ( {_a | add 1} " " {_a | add 2} ) | join}
+        22 23
   
+      {40 | add {__} to 2}
+        42
+      {21 | add {__} to __}
+        42
+      {21 | add __ to {__}}
+        42
+      {21 | add {__} to {__}}
+        42
+      {20 | ( {__} 2 __ ) | add}
+        42
+      {20 | ( __ 2 {__} ) | add}
+        42
+      {20 | ( {__} 2 {__} ) | add}
+        42
+
+
+    
     Double pipes are also used to squelch output from a pipeline:
       {42 ||}
         
@@ -2205,6 +2245,35 @@ LIST COMMANDS
     {(1 2 3) | reduce block "{__ | add to _total}"} 
       6
 
+  REMOVE
+  
+    {(1 2 3 2 1) | list remove by_value 2}
+      [1,3,1]
+    {(1 2 3 2 1) | list remove by_value (2 3)}
+      [1,1]
+    {(1 2 3 2 1) | list remove by_key 2}
+      [1,2,2,1]
+    {(1 2 3 2 1) | list remove by_key (2 3)}
+      [1,2,1]
+
+    {* (:a 1 :b 2 :c 3) | list remove by_value 2}
+      {"a":1,"c":3}
+    {* (:a 1 :b 2 :c 3) | list remove by_value (2 3)}
+      {"a":1}
+    {* (:a 1 :b 2 :c 3) | list remove by_key :a}
+      {"b":2,"c":3}
+    {* (:a 1 :b 2 :c 3) | list remove by_key (:a :c)}
+      {"b":2}
+
+    {( (1 2) (3) (2 1) ) | list remove by_value ( (2 1) )}
+      [[1,2],[3]]
+    {( (1 2) (3) (2 1) ) | list remove by_value ( (1 2) (3) )}
+      [[2,1]]
+    
+    // to remove by value ignoring order
+    {( (1 2) (3) (2 1) ) | filter block "{__ | sort | eq (1 2) | not}"}
+      [[3]]
+
 
   REKEY
   
@@ -2291,6 +2360,14 @@ LIST COMMANDS
       {"x":1,"y":2,"z":3,"a":4}
     {list union data ( {* (:a :1 :b :2)} {* (:a {* (:one :lovely :four :goodness)} )} )}
       {"a":{"0":"1","one":"lovely","four":"goodness"},"b":"2"}
+
+    {1 | union (2 3)}
+      [1,2,3]
+    {$ffff | union (2 3)}
+      [2,3]
+    {(2 3) | union $ffff}
+      [2,3]
+
 
   UNIQUE
   
