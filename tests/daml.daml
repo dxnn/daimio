@@ -1929,11 +1929,11 @@ MATH COMMANDS
        Multiply
          {multiply 4 by 7}
            28
-         {:7 | multiply :4}
+         {:7 | times :4}
            28
          {multiply (:1 2 :3)}
            6
-         {(1 :2 3) | multiply 3}
+         {(1 :2 3) | times 3}
            [3,6,9]
          {math multiply value (1 2 3) by (6 5 4)}
            [6,10,12]
@@ -1949,8 +1949,6 @@ MATH COMMANDS
            [0.33,0.67,1]
          {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
            [0.17,0.4,0.75]
-
-         // THINK: it's a little weird that the above return as strings. consider allowing the outputter to release numbers.
 
 
        Mod
