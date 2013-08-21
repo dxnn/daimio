@@ -7,6 +7,7 @@
  */
 CodeMirror.defineMode("daml", function() {
   
+  
   // this parser doesn't work without a live DAML install. We use the internal DAML parser directly, and the local dialect of DAML commands, aliases, terminators, etc.
   if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
 
