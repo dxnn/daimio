@@ -220,7 +220,7 @@ Variable Cases:
    - know ahead of time? 
    - conflicts with imported?
   
-6. imported vars
+6. imported vars -:::: what about "scoped vars"?
   {5 | _>a | (1 2 3) | map block "{_value | add *a}" with {* (:a _a :b _a)}}
   - pulled into a block from the local scope
 
