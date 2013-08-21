@@ -1,0 +1,230 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CodeMirror: DAML mode</title>
+
+    <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
+    <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+    
+    <link rel="stylesheet" href="../../lib/codemirror.css">
+    <script src="../../lib/codemirror.js"></script>
+    <script src="daml.js"></script>
+    <script src="daml-hint.js"></script>
+    
+    <link rel="stylesheet" href="../../lib/util/simple-hint.css">
+    <script src="../../lib/util/daml-hint.js"></script>
+    
+    <style>.CodeMirror {background: #f8f8f8;}</style>
+    <link rel="stylesheet" href="../../doc/docs.css">
+  </head>
+  <body>
+    <h1>CodeMirror: DAML mode</h1>
+    <form><textarea id="code" name="code">
+
+Problems:
+ugh local vars and aliases can collide ugh ugh
+this is actually quite bad, potentially. should we mark all variables with glyphs? leave it to the IDE to prompt users when they make mistakes? we have @channels for communicating between processes. we have __ etc for unsettable references. CONSTs for immutable values. but we're going to need temp vars for linking pipelines and storing "mutable" state in a var space. 
+
+I think AT tests would be a lot easier if I could import commands right now. having some encapsulation (and param binding) would be really nice. param binding because then the names inside the function are generic, and the names outside are specific, and the two don't have to be the same (because conceptually they aren't). 
+
+Special vars that can only be set once in the context of a pipeline and disappear after -- to help make chaining simpler.
+
+{noun find
+^ _this.out-edges | add _this.in-edges
+^_^ ^0 | map daml ^1}
+
+{^ _memo | add _this ^_^ range 100 | reduce daml ^1}
+{range 100 | reduce daml "{_memo | add _this}"}
+
+Fixed:
+{begin x | sort}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
+{// comments | hey now //}  --- fix terminators n' comments
+{mfoo foo baz}  --- foo and baz should be errors
+{"<a href="malarky">foo</a>"}  --- quotes in angle brackets don't count
+{/()} {/(} outside {/)}  --- broken lists bork lights
+
+
+{... | @> :foo.x} write to channel (pub)
+{... | !@> :foo.x} bind to channel pre-write (guard)
+{... | <@ :foo.x} bind to channel post-write (sub)
+{... | <@! :foo.x} bind to channel pre-read (generator)
+{@foo.x} read from channel
+
+^0 gives lift input?
+
+client-side gui 'walk-back' control... like, ^b goes backward through windows and examples and selections and whatnot. not really undoing, more like redoing the gui operations in reverse. unwinding, maybe. ^z would still properly undo things (but might not have the gui unwinding effects, since ^z only walks the event log, which is only for persistent actions). (also, how does ^b avoid undoing actions? maybe it's a short-term queue that only stores recent things -- a selection doesn't make sense once that bit of code changes.)
+anyway, we record these events (even soft ones like unwinding the gui, although that doesn't persist). and when we go backward and then forward again, overwriting our earlier changes, you can think of that as creating a new branch, but you could also think of it as creating a 'loop', where we connect the last non-undone event and the first post-undoing event: a tesseract, or code folding trick to skip those intermediate steps. they're still there on the event log, and we can walk into them if we want, but in general we 'fold over' and skip the do/undo steps.
+[it makes kind of a boomerang shape, the doing/undoing, since the undos are the reverse of the dos. hence code folding. can we detect this and do it at the interface layer, or does it have to be stored in the log? i think it can be detected, maybe... although marking the undos could be good anyway.]
+
+lack of dynamic dispatch (or any type of dispatch, really) means you need unique aliases for verbs for e.g. list, string and numeric commands. which really means you should use unique verbs in those handlers to begin with, because those in particular will almost always be aliased. which is ok -- i think the simplicity of the model is worth the cost of uniqueness (harder to find good verb words, but easier to reason about since there's no polymorphism). 
+
+
+
+Some external strings. Someday, a <em>test</em> of mixed mode editing.
+{mfoo foo}
+{math foo x 123}
+{math round value 101.01}
+{math round value 101.01 x :foo}
+{math round value 101.01 to 2}
+{math round value 101.01 x :foo to 2}
+
+{math round 
+  value 101.01 to 2}
+
+{:xyzzy}
+{"xyzzy"}
+{"xyzzy
+  xyx"}
+
+1 {2} 3
+1 {/asdf asdf} 3
+1 {/asdf 
+    asdf} 3
+
+Also external.
+
+{(1 2 3)}
+{(1 2 (3))}
+{(1 2 {list pair value (1 2 3 4)} )}
+{(1 2 {list pair value (1 2 3 4)} ) | list union}
+{(1 2 
+  {list pair value (1 2 3 4) 
+  | list union} 
+  5 6) 
+| list union}
+
+{"oh hi"}
+{"oh hi, {name}"}
+{"oh hi, {"name"}"}
+{"oh hi, {"my good {:sir | if male else :ma'am}" | if friendly else name}"}
+{(1 3 "asdf)} asdf")}
+
+{* (1 2 3 :foo :baz)}
+
+{story find
+^ sort by :date | slice 10
+^ sort by :tags
+  // A comment terminator
+  ^^ extract "{:foo | is in this.tags}"
+  ^^ extract "{:baz | is in this.tags}"
+  ^^ extract "{:xyz | is in this.tags}"
+  ^__^ (^_1 ^_2 ^_3) // you could skip this line w/o change
+^ extract "{(:foo :baz :xyz) | intersect this.tags | not}"
+^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala}
+
+{story find by_ids #id
+^ sort by :date | reverse | slice 10
+^ sort by :tags | slice 20
+^_^ if #sort | is like :tags | then ^_2 else ^_1
+} {// note laziness -- the lifted pipelines are actually blocks //}
+
+Destructuring:
+{(1 2 3) | > (:a :b :c)}
+
+these are equal:
+{* (:k1 2 :k2 4 :k3 8) | > (:a :b :c)}
+{* (:k1 2 :k2 4 :k3 8) | > {* (:k2 :b :k1 :a :k3 :c)}}
+
+Also:
+{({* (:k1 2 :k2 4 :k3 8)} {* (:k1 14 :k2 18 :k3 116)}) | __.(:k2 :k3)}
+  ((4 8) (18 116))... er. no, not quite.
+
+
+maybe lifts can do this:
+{verb find
+^ sort by :name | group by "{__.name | string truncate length 1}"
+^ __._id | sort order :desc
+^_^ merge}
+And the ^1 is piped as merge's first param, and ^2 is piped as the second.
+
+{rule change_ham id @mech_rr ham {
+  @pf.primerule.#1
+  ^double __
+    ^^ __.#1
+      ^^^ is like "*" | then @pq_st_ids
+      ^^^ array filter value @pq_st_ids
+      ^___^ ^1 | else ^2 | else ()
+    ^^ __.#2
+      ^^^ is like "*" | then @rule_st_ids
+      ^^^ array filter value @rule_st_ids
+      ^___^ ^1 | else ^2 | else ()
+    // alternate take below. could munge above like 'each (@pq_st_ids @rule_st_ids)' etc. 
+    // using lifts this way requires copy on lift entry, since the incoming value is ref'd multiple times.
+    // this does not really read or write simpler than using temp vars... 
+    // but maybe the control flow read is nicer? like right-to-left on the graph?
+    // oy. really, this is not seeming to help. redo?
+    ^^ __.#2 | is like "*" | then @rule_st_ids 
+    | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+    | else ()
+    ^__^ (^1 ^2) | array union
+  ^bigstar @rule_st_ids | else @pq_st_ids
+  ^self __
+  ^_^ ^self | is like "*" | then ^bigstar else ^double}
+| then "" else "Invalid ham "}
+
+{rule change_ham id @mech_rr 
+  ham {@pf.primerule.#1 | is like "*" | then "{@rule_st_ids | else @pq_st_ids}"
+      | else "
+        (
+          {@pf.primerule.#1.#1 | is like "*" | then @pq_st_ids 
+          | else "{@pf.primerule.#1.#1 | array filter value @pq_st_ids}" 
+          | else ()
+          }
+          {@pf.primerule.#1.#2 | is like "*" | then @rule_st_ids 
+          | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+          | else ()
+          }
+        ) | array union"}
+| then "" else "Invalid ham "}
+
+
+{my set for @user_id in :profiles path :firstname value #firstname}
+{my set for @user_id in :profiles path :lastname value #lastname}
+{my set for @user_id in :profiles path :activity.registered value #registered}
+{my set for @user_id in :profiles path :activity.plan value :cohort}
+{my set for @user_id in :profiles path :signup.intent value :cohort}          
+
+// can we curry over this, like:
+{"{my set for @user_id in :profiles}"
+| apply values (
+    {* (:path :firstname value #firstname)}
+    {* (:path :lastname value #lastname)}
+    etc...
+)}
+
+
+or maybe 
+{process apply over block on (:path :value) values (:firstname #firstname :lastname #lastname)}
+
+maybe ^_^ keeps lifted sections as blocks, and ^_- runs each once in 'parallel' and pushes the results into ^_1 etc. so you can use them as blocks, lazily, in if/then/else etc, or use one multiple times as a template with different env state, but you can also just make a bunch of calls to e.g. the server (though if sending to a single server then just sending a single compound DAML block is much faster)
+
+
+  <=>  >=<  >=>  <=^=<  *>> >^^< [=]  ]=[
+
+    </textarea></form>
+
+    <h3>Results</h3>
+    <div id="results"></div>
+
+    <script>
+      var gid = document.getElementById.bind(document)
+        , results = gid('results')
+        , code = gid('code')
+        , editor = CodeMirror.fromTextArea(code, {})
+      
+      CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
+      editor.setOption('extraKeys', {"Esc": "autocomplete"})
+      editor.setOption('lineNumbers', true)
+      editor.setOption('matchBrackets', true)
+      
+      DAML.run(code.value, function(result) {
+        results.innerHTML = result
+      })
+
+    </script>
+
+    <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>
+
+  </body>
+</html>
