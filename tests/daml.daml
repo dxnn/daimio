@@ -6,99 +6,113 @@ Daimio is a framework for building programmable web applications, as well as the
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. All output is converted to JSON for display.
 
-Primer:
-  Numbers are natural
-    {1}
-      1
+---- Daimio Primer ----
+
+  numbers, natural and otherwise
     {65535}
       65535
-      
-  But some also float
-    {3.141591}
-      3.141591
     {4.669200}
       4.6692
-  
-  And other are quite negative
     {-3.14159}
       -3.14159
-    {-12345}
-      -12345
   
-  Strings are double quoted for protection
+  strings are double quoted for protection
     {"Help I'm trapped in a string factory"}
       Help I'm trapped in a string factory
   
-  Or colonized, if they're small
+  or colonized if they're small
     {:Liechtenstein}
       Liechtenstein
   
-  Lists use parens and whitespace
+  lists use parens and whitespace
     {( 2 3 5 )}
       [2,3,5]
     {(:one 1 :two 2)}
       ["one",1,"two",2]
   
-  Sometimes lists sneak inside other lists
+  sometimes lists sneak inside other lists
     {( (2 3 5 7) (4 6 8 9) )}
       [[2,3,5,7],[4,6,8,9]]
     {( () (()) (() (())) )}
       [[],[[]],[[],[[]]]]
+  
+  commands have a handler and a method
+    {list count}
+      0
+  
+  and named parameters
+    {list count data (13 17 19)}
+      3
+    {math add value 22 to 23}
+      55
+  
+  pipes link commands
+    {(13 17 19) | list count}
+      3
+    {22 | math add to 23}
+      55
+  
+  aliases reduce typing
+    {(13 17 19) | count}
+      3
+    {22 | add 23}
+      55
+  
+  double underscore is magical
+    {21 | add __}
+      42
+    {21 | add 21 to __}
+      42
+    {21 | add __ to 21}
+      42
+    {21 | add __ to __}
+      42
+
+  more magic
+    {21 | (__ __) | add}
+      42
+    {20 | (__ __) | add 1 | add}
+      42
+    {10 | (__ __) | add __ | add 1 | add}
+      42
+
+  pipe values can be labeled for later use
+    {8 | _>eight | (_eight _eight 2) | add _eight | add}
+      42
+    
+  (so pipelines are actually DAGs)
+  (those labels are only valid inside the block)
+  (and can only be set once)
+  
+  a block contains some Daimio code
+    {begin foo}{alkdsfjasldkjf}{end foo}
+    
+  blocks can mix strings and code
+    {begin block}
+      {:hello} world
+    {end block}
+    
+  inline blocks look a bit like strings
     
   
+  magic in front grabs input
   
-Commands go in braces
-{-----}
-use pipes to separate commands
-{----|-----|-----}
-begin and end denote blocks
-{begin foo} ------ {end foo}
-reference blocks with $
-{$foo}
-commands have four parts
-{handler method param value}
-multiple parameters
-{handler method param1 value1 param2 value2}
-values can be fancy
-{handler method param $foo}
-even other commands
-{handler method param {-----}}
-this is a list
-(one two three)
-a list of strings
-("one" "two" "three")
-also a list of strings
-(:one :two :three)
-a list used as a parameter value
-{variable set path :bar value (:one :two :three)}
-lists are accessed with @
-{@bar}
-another way to set @bar
-{(:one :two :three) | > :bar}
-list items can be fancy
-($foo @bar)
-even other lists
-((:one :two) (:three :four))
-or commands
-({-----} {-----})
-this is a hash
-{* (:one :1 :two :2)}
-this is a hash assigned to bar
-{* (:one :1 :two :2) | > :bar}
-reference hashes with @ too
-{@bar}
-this is a hash value
-{@bar.one}
-a list of hashes is a bundle
-{(@bar @hash) | > :bundle}
-merging over a bundle
-{begin block | merge with @bundle} {one} {end block}
-this is a local variable
-{one}
-this is true
-{@bar.one | is like :1}
-within the above merge, also true
-{one | is like :1}
+  
+
+  coercion is easy: no polymorphism => no confusion
+    {( 0 1 "" "0" () (()) ) | add 0}
+
+    {( 0 1 "" "0" () (()) ) | map block "{__ | then :t else :f}"}
+    
+    {( 0 1 "" "1" "x" () (1) (() ()) ) | add 0}
+      [1,2,1,2,1,1,1,1]
+
+    
+    Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
+      {42 || add __}
+        42
+      {21 || add 21 to __}
+        42
 references are flexible
 {@bundle.#1.one | is like :1}
 very flexible
@@ -230,6 +244,8 @@ Variable Cases:
 - add __in, just because we can
 - kill __* other than __in (parse error)
 - 
+
+- ensure you can save and load data from the repl over multiple sessions (like bash's history)
 
 -->
 
