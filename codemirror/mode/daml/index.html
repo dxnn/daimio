@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <title>CodeMirror: DAML mode</title>
-    <link rel="stylesheet" href="../../lib/codemirror.css">
-    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__jquery.js"></script>
-    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/public/js/__underscore.js"></script>
-    <script type="text/javascript" src="http://sherpa.local/~dann/thingviz/get.php?file=node_modules/daml"></script>
+
+    <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
+    <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
     
+    <link rel="stylesheet" href="../../lib/codemirror.css">
     <script src="../../lib/codemirror.js"></script>
     <script src="daml.js"></script>
     
@@ -207,14 +207,20 @@ maybe ^_^ keeps lifted sections as blocks, and ^_- runs each once in 'parallel' 
     <div id="results"></div>
 
     <script>
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {})
+      var gid = document.getElementById.bind(document)
+        , results = gid('results')
+        , code = gid('code')
+        , editor = CodeMirror.fromTextArea(code, {})
       
       CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
       editor.setOption('extraKeys', {"Esc": "autocomplete"})
       editor.setOption('lineNumbers', true)
       editor.setOption('matchBrackets', true)
       
-      $('#results').html(DAML.run($('#code').val()))
+      DAML.run(code.value, function(result) {
+        results.innerHTML = result
+      })
+
     </script>
 
     <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>

@@ -73,8 +73,8 @@
         setTimeout(function() {editor.focus()}, 50)
       }
       
-      CodeMirror.connect(sel, "blur", hide);
-      CodeMirror.connect(sel, "keydown", function(event) {
+      CodeMirror.on(sel, "blur", hide);
+      CodeMirror.on(sel, "keydown", function(event) {
         var code = event.keyCode;
         // Enter or space
         if (code == 13 || code == 32) {CodeMirror.e_stop(event); pick({}, ' ');}
@@ -87,7 +87,7 @@
           setTimeout(function(){collectHints(tempToken)}, 50)
         }
       });
-      CodeMirror.connect(sel, "dblclick", pick);
+      CodeMirror.on(sel, "dblclick", pick);
 
       sel.focus();
       // Opera sometimes ignores focusing a freshly created node

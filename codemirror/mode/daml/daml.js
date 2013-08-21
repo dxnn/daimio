@@ -168,9 +168,9 @@ CodeMirror.defineMode("daml", function() {
 
         // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
         // good alias
-        else if(DAML.aliases[word]) { 
+        else if(DAML.AliasMap[word]) { 
           returnType = ALIAS
-          var words = DAML.aliases[word].split(' ').reverse() 
+          var words = DAML.AliasMap[word].split(' ').reverse() 
           word = words.pop()
           data.handler = word
           now.verb = 'methodize'
