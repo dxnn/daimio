@@ -17,16 +17,13 @@
     
     <link rel="stylesheet" href="../../lib/codemirror.css">
     <script src="../../lib/codemirror.js"></script>
-    <script src="daml.js"></script>
+    <script src="daimio.js"></script>
     
     <link rel="stylesheet" href="../../addon/hint/show-hint.css">
     <script src="../../addon/hint/show-hint.js"></script>
     <script src="../../addon/hint/daimio-hint.js"></script>
     
     <script src="../../addon/emmet/emmet.js"></script>
-    
-    <!-- <link rel="stylesheet" href="../../lib/util/simple-hint.css">
-    <script src="../../lib/util/daml-hint.js"></script> -->
     
     <style>.CodeMirror {background: #f8f8f8;}</style>
     <link rel="stylesheet" href="../../doc/docs.css">
@@ -35,19 +32,35 @@
     <h1>CodeMirror: DAML mode</h1>
     <form><textarea id="code" name="code">
 
-Problems:
+TODOS:
 
-I think AT tests would be a lot easier if I could import commands right now. 
-having some encapsulation (and param binding) would be really nice. 
-param binding because then the names inside the function are generic, 
-and the names outside are specific, and the two don't have to be the same (because conceptually they aren't). 
+-- Esc autocomplete for methods and param names and pvals
+-- space to a/c
+-- make a single-line version
+- add space after a/c'ing
+- always-on a/c
+- upward a/c
+- console area
+- searchable history
+- use the real daimio parser
+- allowed editing of files [db?]
+- a/c aliases
+- run selected in repl from textarea
+- select outward 
+
+- list of tech
+- list of deliverables
+- finish tests page
+- write hard fun
+- kill bad tests
+
 
 {noun find
 ^ _this.out-edges | add _this.in-edges
-^_^ ^0 | map daml ^1}
+^_^ ^0 | map block ^1}
 
-{^ _memo | add _this ^_^ range 100 | reduce daml ^1}
-{range 100 | reduce daml "{_memo | add _this}"}
+{^ _memo | add _this ^_^ range 100 | reduce block ^1}
+{range 100 | reduce block "{_memo | add _this}"}
 
 Fixed:
 {begin x | sort}y{begin _y}z{end _y}{end z}{end x}  -- blocks have special syntax, anon blocks, bad ends are errors
@@ -96,10 +109,10 @@ Also external.
 
 {(1 2 3)}
 {(1 2 (3))}
-{(1 2 {list pair value (1 2 3 4)} )}
-{(1 2 {list pair value (1 2 3 4)} ) | list union}
+{(1 2 {list pair data (1 2 3 4)} )}
+{(1 2 {list pair data (1 2 3 4)} ) | list union}
 {(1 2 
-  {list pair value (1 2 3 4) 
+  {list pair data (1 2 3 4) 
   | list union} 
   5 6) 
 | list union}
@@ -116,11 +129,11 @@ Also external.
 ^ sort by :date | slice 10
 ^ sort by :tags
   // A comment terminator
-  ^^ extract "{:foo | is in this.tags}"
-  ^^ extract "{:baz | is in this.tags}"
-  ^^ extract "{:xyz | is in this.tags}"
+  ^^ filter block "{:foo | is in this.tags}"
+  ^^ filter block "{:baz | is in this.tags}"
+  ^^ filter block "{:xyz | is in this.tags}"
   ^__^ (^_1 ^_2 ^_3) // you could skip this line w/o change
-^ extract "{(:foo :baz :xyz) | intersect this.tags | not}"
+^ filter block "{(:foo :baz :xyz) | list intersect data this.tags | not}"
 ^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala}
 
 {story find by_ids #id
@@ -130,11 +143,11 @@ Also external.
 } {// note laziness -- the lifted pipelines are actually blocks //}
 
 Destructuring:
-{(1 2 3) | > (:a :b :c)}
+{(1 2 3) | >(:a :b :c)}
 
 these are equal:
-{* (:k1 2 :k2 4 :k3 8) | > (:a :b :c)}
-{* (:k1 2 :k2 4 :k3 8) | > {* (:k2 :b :k1 :a :k3 :c)}}
+{* (:k1 2 :k2 4 :k3 8) | >(:a :b :c)}
+{* (:k1 2 :k2 4 :k3 8) | >{* (:k2 :b :k1 :a :k3 :c)}}
 
 Also:
 {({* (:k1 2 :k2 4 :k3 8)} {* (:k1 14 :k2 18 :k3 116)}) | __.(:k2 :k3)}
@@ -153,11 +166,11 @@ And the ^1 is piped as merge's first param, and ^2 is piped as the second.
   ^double __
     ^^ __.#1
       ^^^ is like "*" | then @pq_st_ids
-      ^^^ array filter value @pq_st_ids
+      ^^^ list filter data @pq_st_ids
       ^___^ ^1 | else ^2 | else ()
     ^^ __.#2
       ^^^ is like "*" | then @rule_st_ids
-      ^^^ array filter value @rule_st_ids
+      ^^^ list filter data @rule_st_ids
       ^___^ ^1 | else ^2 | else ()
     // alternate take below. could munge above like 'each (@pq_st_ids @rule_st_ids)' etc. 
     // using lifts this way requires copy on lift entry, since the incoming value is ref'd multiple times.
@@ -165,9 +178,9 @@ And the ^1 is piped as merge's first param, and ^2 is piped as the second.
     // but maybe the control flow read is nicer? like right-to-left on the graph?
     // oy. really, this is not seeming to help. redo?
     ^^ __.#2 | is like "*" | then @rule_st_ids 
-    | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+    | else "{@pf.primerule.#1.#2 | list filter data @rule_st_ids}"
     | else ()
-    ^__^ (^1 ^2) | array union
+    ^__^ (^1 ^2) | list union
   ^bigstar @rule_st_ids | else @pq_st_ids
   ^self __
   ^_^ ^self | is like "*" | then ^bigstar else ^double}
@@ -178,22 +191,16 @@ And the ^1 is piped as merge's first param, and ^2 is piped as the second.
       | else "
         (
           {@pf.primerule.#1.#1 | is like "*" | then @pq_st_ids 
-          | else "{@pf.primerule.#1.#1 | array filter value @pq_st_ids}" 
+          | else "{@pf.primerule.#1.#1 | list filter data @pq_st_ids}" 
           | else ()
           }
           {@pf.primerule.#1.#2 | is like "*" | then @rule_st_ids 
-          | else "{@pf.primerule.#1.#2 | array filter value @rule_st_ids}"
+          | else "{@pf.primerule.#1.#2 | list filter data @rule_st_ids}"
           | else ()
           }
-        ) | array union"}
+        ) | list union"}
 | then "" else "Invalid ham "}
 
-
-{my set for @user_id in :profiles path :firstname value #firstname}
-{my set for @user_id in :profiles path :lastname value #lastname}
-{my set for @user_id in :profiles path :activity.registered value #registered}
-{my set for @user_id in :profiles path :activity.plan value :cohort}
-{my set for @user_id in :profiles path :signup.intent value :cohort}          
 
 // can we curry over this, like:
 {"{my set for @user_id in :profiles}"
@@ -224,10 +231,12 @@ maybe ^_^ keeps lifted sections as blocks, and ^_- runs each once in 'parallel' 
         , editor = CodeMirror.fromTextArea(code, {})
       
       CodeMirror.commands.autocomplete = function(cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.daimio);
+        CodeMirror.showHint(cm, CodeMirror.hint.daimio, {
+          extraKeys: {'Space': function(cm, hint) {hint.pick()}}
+        , completeSingle: true
+        })
       }
       
-      // CodeMirror.commands.autocomplete = function(cm) {CodeMirror.damlHint(cm)}    
       editor.setOption('extraKeys', {"Esc": "autocomplete"})
       editor.setOption('lineNumbers', true)
       editor.setOption('matchBrackets', true)
@@ -238,7 +247,7 @@ maybe ^_^ keeps lifted sections as blocks, and ^_- runs each once in 'parallel' 
 
     </script>
 
-    <p><strong>MIME types defined:</strong> <code>text/x-daml</code>.</p>
+    <p><strong>MIME types defined:</strong> <code>text/x-daimio</code>.</p>
 
   </body>
 </html>

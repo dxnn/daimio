@@ -177,12 +177,80 @@
   
   <div id="tests"></div>
   
-  <form id="commanddiv" style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
+  <form style="width: 99%; position: fixed; bottom: 0px; margin: 0px"><textarea id="code" name="code" rows="1"></textarea></form>
+  
+  <!-- <form id="commanddiv" style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
     <div id="desc" style="display: none; bottom: 40px; z-index:10;"></div>
     <div id="response" style="display: none; bottom: 40px; z-index:11;"></div>
     <div id="autofill" style="display: none; z-index:12; width: 200px; bottom: 40px; position: fixed; margin: 0px;"></div>
     <input type="text" id="commander" style="width: 100%; font-size: 20px; margin: 0px;">
-  </form>
+  </form> -->
+  
+  
+  <script>
+    // NOTE: this has to be set before emmet is loaded
+    emmetKeymap = {
+  		'Ctrl-E': 'expand_abbreviation',
+  		'Shift-Ctrl-D': 'match_pair_outward',
+    }
+  </script>
+
+  <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
+  <script src="../codemirror/lib/codemirror.js"></script>
+  <script src="../codemirror/mode/daimio/daimio.js"></script>
+  
+  <link rel="stylesheet" href="../codemirror/addon/hint/show-hint.css">
+  <script src="../codemirror/addon/hint/show-hint.js"></script>
+  <script src="../codemirror/addon/hint/daimio-hint.js"></script>
+  
+  <script src="../codemirror/addon/emmet/emmet.js"></script>
+  
+  <!-- <link rel="stylesheet" href="../codemirror/doc/docs.css"> -->
+  
+  <script>    
+    var gid = document.getElementById.bind(document)
+      , results = gid('results')
+      , code = gid('code')
+      , editor = CodeMirror.fromTextArea(code, {})
+    
+    CodeMirror.commands.autocomplete = function(cm) {
+      CodeMirror.showHint(cm, CodeMirror.hint.daimio)
+    }
+    
+    editor.setOption('extraKeys', {"Esc": "autocomplete"})
+    editor.setOption('lineNumbers', true)
+    editor.setOption('matchBrackets', true)
+    
+    DAML.run(code.value, function(result) {
+      results.innerHTML = result
+    })
+    
+    // gogogadget oneline cm
+    var cm = editor
+    cm.setSize(200, cm.defaultTextHeight() + 2 * 4);
+    // 200 is the preferable width of text field in pixels,
+    // 4 is default CM padding (which depends on the theme you're using)
+
+    // now disallow adding newlines in the following simple way
+    cm.on("beforeChange", function(instance, change) {
+        var newtext = change.text.join("").replace(/\n/g, ""); // remove ALL \n !
+        change.update(change.from, change.to, [newtext]);
+        return true;
+    });
+
+    // and then hide ugly horizontal scrollbar
+    cm.on("change", function(instance, change) {
+        $(".CodeMirror-hscrollbar").css('display', 'none');
+        // (!) this code is using jQuery and the selector is quite imperfect if
+        // you're using more than one CodeMirror on your page. you're free to
+        // change it appealing to your page structure.
+    });
+
+    // the following line fixes a bug I've encountered in CodeMirror 3.1
+    $(".CodeMirror-scroll").css('overflow', 'hidden');
+    // jQuery again! be careful with selector or move this to .css file
+
+  </script>
   
 </body>
 </html>
