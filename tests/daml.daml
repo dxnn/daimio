@@ -43,20 +43,20 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   and named parameters
     {list count data (13 17 19)}
       3
-    {math add value 22 to 23}
-      55
+    {math add value 22 to 20}
+      42
   
   pipes link commands
     {(13 17 19) | list count}
       3
-    {22 | math add to 23}
-      55
+    {22 | math add to 20}
+      42
   
   aliases reduce typing
     {(13 17 19) | count}
       3
-    {22 | add 23}
-      55
+    {22 | add 20}
+      42
   
   double underscore is magical
     {21 | add __}
@@ -77,46 +77,135 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       42
 
   pipe values can be labeled for later use
-    {8 | _>eight | (_eight _eight 2) | add _eight | add}
+    {8 | >eight | (_eight _eight 2) | add _eight | add}
       42
     
   (so pipelines are actually DAGs)
   (those labels are only valid inside the block)
   (and can only be set once)
   
+  
+  
   a block contains some Daimio code
-    {begin foo}{alkdsfjasldkjf}{end foo}
+    {begin foo}{21 | add 21}{end foo}
+      42
     
-  blocks can mix strings and code
+  or a string [inlined for the test harness]
+    [if you put in linebreaks, the output has them also, and then things get weird]
+    {begin foo}some long multiline string{end foo}
+      some long multiline string
+    
+  or both
     {begin block}
       {:hello} world
     {end block}
+      hello world
+  
+  which is about the same as
+    {( {:hello} " world" ) | join}
+      hello world
+  
+  (except with some extra delayed-execution magic)
+  
+  pipe a block to capture its value
+    {begin block | each data 1} 
+      {:hello} world 
+    {end block}
+      hello world
     
   inline blocks look a bit like strings
+    {"{:hello} world" | each data 1}
+      hello world
+    {1 | each block "{:hello} world"}
+      hello world
     
-  
-  magic in front grabs input
-  
-  
 
-  coercion is easy: no polymorphism => no confusion
-    {( 0 1 "" "0" () (()) ) | add 0}
-
-    {( 0 1 "" "0" () (()) ) | map block "{__ | then :t else :f}"}
+  __in is the process input
+    {( 1 2 3 ) | map block "{__in | add 1}"}
+      [2,3,4]
+  
+  as sugar __ defaults to __in at the top of a block
+    {( 1 2 3 ) | map block "{__ | add 1}"}
+      [2,3,4]
+  
+  but not anywhere else
+    {( 1 2 3 ) | map block "{__ | add 5 | (__ __in)}"}
+      [[6,1],[7,2],[8,3]]
+  
+      
+  double pipe prevents implicit connection
+    {21 | add __}
+      42
+    {42 || add __}
+      42
+    {21 || add 21 to __}
+      42
+  
+  
+  a space var -- mutable, stores state, encapsulated in a single space
+  (this test framework does everything in one space)
+    {( 1 2 3 ) | $>foo}
+      [1,2,3]
+    {$foo | add $foo}
+      [2,4,6]
+  
+  a keyed list (converted to JSON on output)
+    {* (:a 1 :b 2 :c 3)}
+      {"a":1,"b":2,"c":3}
     
-    {( 0 1 "" "1" "x" () (1) (() ()) ) | add 0}
-      [1,2,1,2,1,1,1,1]
+  peek at internal values
+    {* (:a 1 :b 2 :c 3) | list peek path :b}
+      2
+    {(2 4 6) | list peek path "#1"}
+      2
+    {* (:a (1 2) :b (2 3) :c (3 4)) | list peek path (:b "#1")}
+      2
 
+  sugar for peek
+    {(1 2 3) | __.#2}
+      2
+    {* (:a (1 2) :b (2 3) :c (3 4)) | __.b.#1}
+      2
     
-    Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
-      {42 || add __}
-        42
-      {21 || add 21 to __}
-        42
-references are flexible
-{@bundle.#1.one | is like :1}
-very flexible
-{@bundle.{@bar.one}.one | is like :1}
+
+
+[appendix this]
+when a block is coerced into a string it isn't processed
+  {"{:hello} world" | string split on " "}
+    ["{:hello}","world"]
+
+so you have to do that manually 
+  {"{:hello} world" | run | string split on " "}
+    ["hello","world"]
+(any string containing valid Daimio code is converted to a block at compile time)
+(strings from the outside world aren't compiled unless you explicitly request it)
+
+
+
+(implicit coercion between data types is usually evil, but Daimio has no polymorphism)
+
+0, "", and () are the (identity / falsy) values in their respective classes. 
+coercion mostly does exactly what you'd want, as long as you don't double jump.
+list -> 0
+list -> JSON
+number -> "number"
+number -> (number)
+string -> parseFloat(string)
+string -> (string)
+
+coercion is easy: no polymorphism => no confusion
+  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | add 0}
+    [0,1,0,1,0,0,0,0,0]
+
+  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | then 1 else 0}"}
+    [0,1,0,1,1,1,0,1,1]
+  
+  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | string lowercase}"}
+    ["0","1","","1","x","[]","[]","[1]","[[],[]]"]
+
+  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | map block "{__}" }"}
+    [[0],[1],[""],["1"],["x"],["[]"],[],[1],[[],[]]]
+
 
 
 
@@ -136,7 +225,6 @@ At one point in the development of Daimio I managed to reduce the entire languag
 // TODO:
  - have an 'event' tag for commands, which pushes the command (plus date, user, etc) into the history: this can be replayed later to rebuild the entire application state. Only things that record their own history (audit answers, maybe) and things that don't change state (find commands) should not have this. Could record it like {house paint hue 128 saturation 100} ==> {h: "house", m: "paint", p: {hue: 128, saturation: 100}} ... [can imported commands have tags? like, for marking a sequence of actions as a 'composite' in some sense, or like a transaction... because you might add a new thing, with a lot of content, but each item of content is added as a separate command. so you might want to 'cluster' that somehow...]
  - blessing happens at the content level, probably... which makes content pretty important.
- - maybe no commands touch external gateways (payment, email, etc) directly... those could go through hippos / AQ instead. which makes it easier to turn those off when replaying event sequences, and manipulate them on local/staging/demo etc. but what about a command that has to return the result of performing an external action?
  
  To notebook: use space+key as meta, pointless programming (no variables), help dictionary for keybindings (emacs), more recursive combinators in daml, monads in daml for guarding variables etc?, virtual edge when you click a port that tracks your mouse, ...
  
@@ -150,6 +238,36 @@ orthogonal setters vs unified add: always use empty add + validator. data schema
 let -> daml import into :etc key 
 plus aliasing...
 / {@count | plural}
+
+// or... {let :plural be "{__ | eq :1 | not | then :s}"}
+// (what about pipeline var collisions?)
+// {let :pp be "{__ | eq :1 | >foo | not | then :s else _foo}"}
+// {44 | >foo | pp} 
+// then... the inner _foo and the outer _foo are two totally different things, right? yeah. ok!
+
+// what about:
+
+/ {123 | >foo | add 1 | $$>foo | add _foo | $$>foo | add $foo}
+just to *really* reinforce the ugliness of space vars and the niceness of pipeline vars?
+[every time someone complains about this i add another dollar sign]
+
+// what about:
+
+/ {begin | >foo}
+/     (:single :pipeline :form)
+/   | join on " "
+/   | split on "i"
+/ {end}
+
+hmmmm. it's a little quirky... is it better than:
+/ {>foo "{
+/     (:single :pipeline :form)
+/   | join on " "
+/   | split on "i"
+/ }"}
+?
+not really. but that {>foo "..."} syntax is really weird. maybe don't do that.
+
 
 did i mention that fancy handlers return a function that takes into account the local scope, var name/path, etc and that a call to this fancy function is placed in the block but then it could be pre-run in the stack? 
 
@@ -183,47 +301,47 @@ Tests in Daimio:
 
 <!--
 
-Variable Cases:
-
-1. Pipeline vars
-  {(1 2 3) | _>foo | (_foo _foo)}
-   - convert to wiring by compiler
-   - SSA (re-setting throws compile error)
-
-2. Space vars
-  {(1 2 3) | $>foo | ($foo $foo) | $>foo}
-   - shared by different stations and blocks within the space
-   - encapsulated by space boundaries
-   - can be reset to a different value
-   - persist through execution lifetime
-   
-3. __pipe, AKA __
-  {(1 2 3) | (__ __)}
-   - value of previous segment
-   - compiled down to wiring
-
-4. __in, AKA __
-  {__ | (__ __)}
-  {(1 2 3) | map block "{__ | add 1}"}
-   - points to process input
-   - compiled down to wiring
-   - only applies to "first segment of a block"
-   
-5. injected vars
-  {(1 2 3) | map block "{_value | add 1}"}
-  
-  { ( {* (:a 1 :b 2)} 
-      {* (:a 3 :b 4)} ) 
-  | merge block "{_a | add _b}"}
-  
-   - merge, each, reduce etc need to provide more than one input value
-   - know ahead of time? 
-   - conflicts with imported?
-  
-6. imported vars -:::: what about "scoped vars"?
-  {5 | _>a | (1 2 3) | map block "{_value | add *a}" with {* (:a _a :b _a)}}
-  - pulled into a block from the local scope
-
+/       Variable Cases:
+/       
+/       1. Pipeline vars
+/         {(1 2 3) | _>foo | (_foo _foo)}
+/          - convert to wiring by compiler
+/          - SSA (re-setting throws compile error)
+/       
+/       2. Space vars
+/         {(1 2 3) | $>foo | ($foo $foo) | $>foo}
+/          - shared by different stations and blocks within the space
+/          - encapsulated by space boundaries
+/          - can be reset to a different value
+/          - persist through execution lifetime
+/          
+/       3. __pipe, AKA __
+/         {(1 2 3) | (__ __)}
+/          - value of previous segment
+/          - compiled down to wiring
+/       
+/       4. __in, AKA __
+/         {__ | (__ __)}
+/         {(1 2 3) | map block "{__ | add 1}"}
+/          - points to process input
+/          - compiled down to wiring
+/          - only applies to "first segment of a block"
+/          
+/       5. injected vars
+/         {(1 2 3) | map block "{_value | add 1}"}
+/         
+/         { ( {* (:a 1 :b 2)} 
+/             {* (:a 3 :b 4)} ) 
+/         | merge block "{_a | add _b}"}
+/         
+/          - merge, each, reduce etc need to provide more than one input value
+/          - know ahead of time? 
+/          - conflicts with imported?
+/         
+/       6. imported vars -:::: what about "scoped vars"?
+/         {5 | _>a | (1 2 3) | map block "{_value | add *a}" with {* (:a _a :b _a)}}
+/         - pulled into a block from the local scope
+/       
 
 ------ conclusions:
 
@@ -231,23 +349,29 @@ Variable Cases:
 - Add __in but keep using __ as an alias [YAGNI?]
 - Block vs pipeline is really confusing scope-wise... this might be a terminology problem, though (because 'pipeline' vars are actually block-scoped, as there are no real 'pipeline's per-se)
 - merge is bad because it injects random vars, but maybe that's ok... or get rid of it.
-- non-merge injected/imported/pipeline var collisions are compile time errors -- that's handy
+- non-merge injected/scoped/pipeline var collisions are compile time errors -- that's handy
 - denote injected vars in commands always (so drop merge?)
 - make scoping really really easy to understand
 - aggressively eliminate boilerplate
 
 ------ to-dos:
 
-- add "imported vars" via 'with' param to each, reduce, map, merge, etc.
+- add "scoped vars" via 'with' param to each, reduce, map, merge, etc.
 - denote injected vars on those commands
 - add {list poke} for $>foo.x.y.z
-- add __in, just because we can
-- kill __* other than __in (parse error)
-- 
+-- add __in, just because we can
+-- kill __* other than __in (parse error)
+-- switch to >foo instead of _>foo
+- {list peek} handles $foo.{_x}.{_y} (the dots are just sugar)
+
+ 
 
 - ensure you can save and load data from the repl over multiple sessions (like bash's history)
 
 -->
+
+
+
 
 
 
@@ -440,23 +564,27 @@ Daimio provides some syntactic sugar for simplifying certain common operations.
 
 Snack 1: Variables
 
-  Variables in Daimio aren't built-in -- they're actually provided by commands published from the base language. Some sugar is provided to make accessing variable values easier.
+//  Variables in Daimio aren't built-in -- they're actually provided by commands published from the base language. Some sugar is provided to make accessing variable values easier.
+//
+//    You can use this command to set a variable:
+//      {variable set path :bar value (:one :two :three)}
+//        ["one","two","three"]
+//  
+//    And this command retrieves the variable value:
+//      {variable get name :bar}
+//        ["one","two","three"]
+//  
+    {(:one :two :three) | $>bar}
 
-    You can use this command to set a variable:
-      {variable set path :bar value (:one :two :three)}
-        ["one","two","three"]
-  
-    And this command retrieves the variable value:
-      {variable get name :bar}
-        ["one","two","three"]
-  
     But you can also use this shorter form:
       {$bar}
         ["one","two","three"]
   
     You can push things deeper into a variable using a dot ('.'):
-      {variable set path :foo.one value :xyzzy}
-        xyzzy
+//      {variable set path :foo.one value :xyzzy}
+//        xyzzy
+  
+    
   
     You can reach in to variables the same way:
       {$foo.one}
@@ -503,7 +631,7 @@ Snack 2: Blocks
       {begin foo | $>foo}x{_value}-{end foo}
         x-
     
-    The each command invokes a Daimio string for every element of a list. These are all equivalent:
+    The each command invokes a Daimio string for every element of a list. These are all equivalent -- the compiler removes the extraneous braces.
       {each block "x{__}-" data (1 2 3)}
         x1-x2-x3-
       {each block {"x{__}-"} data (1 2 3)}
@@ -511,14 +639,18 @@ Snack 2: Blocks
       {each block {{"x{__}-"}} data (1 2 3)}
         x1-x2-x3-
       
-    This one also behaves the same, but the extra quotes slow things down.
+    This one works differently, because the inner block isn't processed by 'each' and gets escaped into a string on output.
       {each block {"{"x{__}-"}"} data (1 2 3)}
-        x1-x2-x3-
-      
+        x{__}-x{__}-x{__}-
+        
+    The inner block retains its blockiness though:
+      { "{ "x{__}y" }" | map data 1 | __.#1 | map data 42}
+        ["x42y"]
+    
     These works like you would expect -- each iteration returns a list, which is JSONified internally.
       {each block "{(:x {string join value {__}} "-")}" data (1 2 3)}
         ["x","1","-"]["x","2","-"]["x","3","-"]
-      {each block {"{(:x {string join value {__}} "-")}"} data (1 2 3)}
+      {each block {"{(:x {__ | join} "-")}"} data (1 2 3)}
         ["x","1","-"]["x","2","-"]["x","3","-"]
     
     These show the strange, sad results of trying to coerce a list into a template.
@@ -534,7 +666,7 @@ Snack 2: Blocks
         hey
     
     Pipeline variables, including magic pipes, are reduced prior to templatization. 
-    --> in general, don't use lists as templates.
+    --> don't use lists as templates!
       {(7 8) | each block (1 __ "{__}")}
         [1,[7,8],"{__}"][1,[7,8],"{__}"] 
         
@@ -561,33 +693,35 @@ Snack 3: Aliases
 
   Many commands have a shorter form that can be used in their place.
     
-    Remember our variable setting command?
-      {variable set path :bar value (:one :two :three)}
-        ["one","two","three"]
-    
-    These both do the same thing as the preceding command:
-      {> :bar value (:one :two :three)}
-        ["one","two","three"]
+//    Remember our variable setting command?
+//      {variable set path :bar value (:one :two :three)}
+//        ["one","two","three"]
+//    
+//    These both do the same thing as the preceding command:
+//      {> :bar value (:one :two :three)}
+//        ["one","two","three"]
+
+
       {(:one :two :three) | $>bar}
         ["one","two","three"]
   
   Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
   
-  You can also create aliases at runtime. This is useful when paired with command creation.
-    
-    Create a new command:
-      {daml import block "hey {$name}!" into :string as :greet params :name}
-        
-      {string greet name "yourself"}
-        hey yourself!
-    
-    Alias it:
-      {daml alias string "string greet name" as :greet}
-        
-      {greet "Jacobinius"}
-        hey Jacobinius!
-      
-    // TODO: it looks like this doesn't pop the var context stack like it should...
+//  You can also create aliases at runtime. This is useful when paired with command creation.
+//    
+//    Create a new command:
+//      {daml import block "hey {$name}!" into :string as :greet params :name}
+//        
+//      {string greet name "yourself"}
+//        hey yourself!
+//    
+//    Alias it:
+//      {daml alias string "string greet name" as :greet}
+//        
+//      {greet "Jacobinius"}
+//        hey Jacobinius!
+//      
+//    // TODO: it looks like this doesn't pop the var context stack like it should...
     
 
 :::Quick Notes 2:::
@@ -626,8 +760,11 @@ Quick 4: Quotes in braces
         ["inside","here"]
         
     Sometimes nesting quotes in braces and braces in quotes works well:
-      {string split on " " value {"{("Much" "nesting") | string join on " "} is divinest sense" | run}}
+      {join {string split on " " value {"{("Much" "nesting") | string join on " "} is divinest sense" | run}} on " "}
         ["Much","nesting","is","divinest","sense"]
+
+    But of course this is prettier
+      {"{("Much" "nesting") | string join on " "} is divinest sense" | run | split on " " | join on " "}
 
 
 :::In Depth:::
@@ -1000,7 +1137,7 @@ MAGIC PIPE TESTS
     
     
 ////    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
-////THINK: how does this square off with __.foo? that essentially becomes {__ | list pathfind path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
+////THINK: how does this square off with __.foo? that essentially becomes {__ | list peek path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
 ////If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
 
 
@@ -1022,7 +1159,7 @@ MAGIC PIPE TESTS
         22 23
       {21 | ( {add 1 to __} " " {add __ to 2} ) | join}
         22 23
-      {21 | _>a | ( {_a | add 1} " " {_a | add 2} ) | join}
+      {21 | >a | ( {_a | add 1} " " {_a | add 2} ) | join}
         22 23
   
       {40 | add {__} to 2}
@@ -1160,14 +1297,18 @@ Tests for falseness
   Empty strings, lists, and keyed lists are false, as is the number zero and unset vars.
     {"" | then :true else :false}
       false
-    {0 | then :true else :false}
-      false
-    {$x | then :true else :false}
-      false
     {() | then :true else :false}
       false
-//    {* () | then :true else :false}
-//      false
+    {* () | then :true else :false}
+      false
+    {0 | then :true else :false}
+      false
+    {$g | then :true else :false}
+      false
+    {_g | then :true else :false}
+      false
+    {__ | then :true else :false}
+      false
 // TODO: make a hash, then remove the key (the above errors, because you have to have at least two values to pair)
 // OOOOOOR... allow empty hashes (and one-val'd hashes), which make an empty fillable object thing.
   
@@ -1183,11 +1324,6 @@ Tests for falseness
     {* (0 $false) | then :true else :false}
       true
 
-  Some parameters are required to have a non-false value. The below fails with an error.
-    {3 | > ""}
-
-
-
 
 Tests for pass-by-value. Changing a Daimio variable shouldn't change other variables, either in Daimio or in the base language.
   {(1 2 3 4) | $>x}
@@ -1196,12 +1332,17 @@ Tests for pass-by-value. Changing a Daimio variable shouldn't change other varia
   {$x | $>y}
     [1,2,3,4]
     
-  {5 | > {"x.{$x | count}" | run}}
-    5
+//  {5 | > {"x.{$x | count}" | run}}
+//    5
     
 //  yuck -- should be 
 //  {5 | $>x.{$x.count}}
 //    5
+
+//  {$x | list poke path {$x | count} value 5 | $>x}
+
+  {$x | union 5 | $>x}
+    [1,2,3,4,5]
     
   {$x} x {$y}
     [1,2,3,4,5] x [1,2,3,4]
@@ -1392,15 +1533,19 @@ Here's the use cases, from the user's perspective:
     {"{"{1} 2"} 3"} 4
   
 - ensure strings stay as strings:
-  {> :z value "z"}
+//  {> :z value "z"}
+//    z
+//  {> :key value "KEY"}
+//    KEY
+  {:z | $>z}
     z
-  {> :key value "KEY"}
+  {:KEY | $>key}
     KEY
 
   ---- this section highlights the new 'tainting' aspect of Daimio. Strings from foreign sources (db, user input, etc) aren't processed unless explicitly instructed. Also, string transformations taint the source string, and will only process when requested. 
   
   For reference, this is how you immediately run tainted strings:
-    {"x{$key}y{$z}" | string transform from "{$key}" to 123 | run}
+    {"x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote | run}
       x123yz
 
   And this is how you prep them for running eventually:
@@ -1415,7 +1560,7 @@ Here's the use cases, from the user's perspective:
     x123y{$z}
   {$block | string transform from "{$key}" to 123}
     x123y{$z}
-  {> :x value "x{$key}y{$z}" | string transform from "{$key}" to 123} {// as a var}
+  {"x{$key}y{$z}" | $>x | string transform from "{$key}" to 123} {// as a var}
     x123y{$z}
   {"x{$key}y{$z}" | $>x1 | string transform from "{$key}" to 123} {// through a pipe}
     x123y{$z}
@@ -1461,7 +1606,7 @@ Here's the use cases, from the user's perspective:
     x0yzx1yz
   {$block | each data (1 2)}
     x0yzx1yz
-  {> :x value "x{_key}y{$z}" | each data (1 2)} {// as a var}
+  {"x{_key}y{$z}" | $>x | each data (1 2)} {// as a var}
     x0yzx1yz
   {"x{_key}y{$z}" | $>x1 | each data (1 2)} {// var via pipe}
     x0yzx1yz
@@ -1492,9 +1637,12 @@ Here's the use cases, from the user's perspective:
 
 ----- Loading value into the value variable creates a self-referencing block, which affects us later... 
 // what we want to show here is that editing a block changes it back into just a regular 'dead' string.
+{:hey | $>value}
+  hey
 {begin x_to_y | $>x_to_y}{string transform value $value from $x to $y}{end x_to_y}
-
+  hey
 {$x_to_y}
+  hey
 
 {"axy fix hex hoax" | $>value || :x | $>x || :y | $>y || $x_to_y}
   ayy fiy hey hoay
@@ -1519,10 +1667,10 @@ Here's the use cases, from the user's perspective:
 
 
 // run the process instantly
-{"axy fix hex hoax" | $>value || :x | $>x || :y | $>y || $y_to_x | run}
+{"axy fix hex hoax" | $>value || :x | $>x || :y | $>y || $y_to_x | unquote | run}
   axx fix hex hoax
 
-{$y_to_x | run | quote}
+{$y_to_x | unquote | run | quote}
   axx fix hex hoax
 
 
@@ -1543,36 +1691,42 @@ Here's the use cases, from the user's perspective:
 -- let's examine strings in strings in braces etc
 
 {:z | $>z}
-z
+  z
 {"" | $>y}
 
 // this one's pretty easy -- just make sure you fully process before you finish
 {"1 {$z} {"2 {$z} {"3 {$z}"}"}"}
-1 z 2 z 3 z
+  1 z 2 z 3 z
 
 // this one's a bit harder -- once it starts running, the first command should fully proc before the next one
 {"1 {"{$y} 2 {$z | $>y} 3"} {$y}"}
-1  2 z 3 z
+  1  2 z 3 z
 
 // ho ho ho
 {1 | $>x}
-1
+  1
 
 {({"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " "}
-1 zxcv 1 1
+  {$x} zxcv {$x} {$x}
+{({"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " " | unquote}
+  1 zxcv 1 1
 
 {({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " "}
-1dog 1dog 8 8dog
-    
-{1 | $>x}
-1
+  {$x}dog {$x}dog 8 {$x}dog
+{1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " " | unquote}
+  1dog 1dog 8 8dog
+
 
 -- note here that the entire list gets processed before the 'on' param's Daimio is processed. this is due to the internal mechanics of 'string join': some commands may behave differently. 
 {($asdf {"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} "}
-1dog 1 1 1 zxcv 1 1 1 1
+  {$x}dog {$asdf} {$x} {$asdf} zxcv {$asdf} {$x} {$asdf} {$x}
+{1 | $>x | ($asdf {"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} " | unquote}
+  1dog 1 1 1 zxcv 1 1 1 1
 
 {({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} "}
-1dog 8 1dog 8 8 8 8dog
+  {$x}dog {$x} {$x}dog {$x} 8 {$x} {$x}dog
+{1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} " | unquote}
+  1dog 8 1dog 8 8 8 8dog
     
 END STUFF
 
@@ -1652,7 +1806,7 @@ Basic blocks and vars:
 {begin foo | $>foo ||}hello{end foo}{$foo | grep :llo}
 ["hello"]
 
-{> :x value (:foo :buzz :bizz :bazz) | grep :zz value $x}
+{(:foo :buzz :bizz :bazz) | $>x | grep :zz value $x}
 ["buzz","bizz","bazz"]
 
 {begin foo | string split on " " | $>x ||}hello hey zebra squid{end foo}{$x | grep :h}
@@ -1676,19 +1830,10 @@ Basic blocks and vars:
     {( {$a} {4 | $>a} {$a} )}
       [2,4,4]
 
-  This also does what you'd want:
-    {( "{$a}" {8 | $>a} {$a} )}
-      ["4",8,8]
+  Here the block is processed after $a is reset
+    {( "{$a}" {8 | $>a} {$a} ) | unquote}
+      ["8",8,8]
 
-  This, however, is a little different. 
-    {( "{$a}" {16 | $>a} {$a} ) | __}
-      ["8",16,16]
-    {( "{$a}" {32 | $>a} {$a} ) | __}
-      ["16",32,32]
-    
-  That's probably a bug. it really shouldn't be ["8",32,32]...
-  // TODO: remove above; this is fixed now.
-  
 // STRINGS
 
   -- internal strings containing Daimio are considered 'alive'. among other things, this means that they will eventually be processed.
@@ -2403,14 +2548,12 @@ LIST COMMANDS
     hey blargh!
 
 
-  PATHFIND
+  PEEK
   
     {(1 2 3) | __.#2}
       2
-    {(1 2 3) | list pathfind path "#2"}
+    {(1 2 3) | list peek path "#2"}
       2
-    {laksjdflkjsadf}
-      lkjasldk
     ...
 
   RANGE
@@ -2638,23 +2781,15 @@ KNOWN BUGS
     {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
       {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
 
-  Whitespace in braces is weird:
-    { }
     
   Most list commands eat keys:
-  
+    sort, reverse, etc
   
 
 DECISIONS TO BE MADE
   In order of importance... write about these when you make them.
 
   Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
-
-  How do we refer to the previous segment from within a list? e.g. {123 | ({__ | add 2} {__ | add 1})}
-
-  How do space vars work? Are get/set commands? 
-    - What about setting into a sub item, like $>foo.x.y? 
-    - What about getting a variable subitem, like $foo.{_x}.{_y}? use pathfind / walk?
 
   Objects vs Arrays in JSON output: 
     - which commands retain keys? all that possibly can?

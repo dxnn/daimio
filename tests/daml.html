@@ -36,10 +36,10 @@
       mode='text'
       block_name=''
       code_value=''
+      code_string=''
       
       DAML.dataTrampoline(lines, eat_line, DAML.string_concat, function() {}, done)
       // eat_lines()
-      
     })
     
     // eat_lines = function(value) {
@@ -57,8 +57,8 @@
     //   done()
     // }
     
-    eat_line = function(value, prior_starter) {
-      var whitespace='', wscount=0, code_string=''
+    function eat_line(value, prior_starter) {
+      var whitespace='', wscount=0
         , line = lines.pop()
         
       /*
@@ -90,7 +90,7 @@
       
       // continue the block
       if(mode == 'block') {
-        code_string += line
+        code_string += "\n" + line
 
         // end the block
         if(new RegExp("\{end " + block_name + '\}').test(line)) {
@@ -155,7 +155,7 @@
       return true
     }
     
-    done = function() {
+    function done() {
       var endtime = new Date().getTime()
 
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
