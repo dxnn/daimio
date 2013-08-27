@@ -564,27 +564,11 @@ Daimio provides some syntactic sugar for simplifying certain common operations.
 
 Snack 1: Variables
 
-//  Variables in Daimio aren't built-in -- they're actually provided by commands published from the base language. Some sugar is provided to make accessing variable values easier.
-//
-//    You can use this command to set a variable:
-//      {variable set path :bar value (:one :two :three)}
-//        ["one","two","three"]
-//  
-//    And this command retrieves the variable value:
-//      {variable get name :bar}
-//        ["one","two","three"]
-//  
     {(:one :two :three) | $>bar}
 
     But you can also use this shorter form:
       {$bar}
         ["one","two","three"]
-  
-    You can push things deeper into a variable using a dot ('.'):
-//      {variable set path :foo.one value :xyzzy}
-//        xyzzy
-  
-    
   
     You can reach in to variables the same way:
       {$foo.one}
@@ -693,17 +677,6 @@ Snack 3: Aliases
 
   Many commands have a shorter form that can be used in their place.
     
-//    Remember our variable setting command?
-//      {variable set path :bar value (:one :two :three)}
-//        ["one","two","three"]
-//    
-//    These both do the same thing as the preceding command:
-//      {> :bar value (:one :two :three)}
-//        ["one","two","three"]
-
-
-      {(:one :two :three) | $>bar}
-        ["one","two","three"]
   
   Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
   
@@ -1407,19 +1380,19 @@ The quote command also works on lists.
 
 ---> inside a parameter, braces around quotes are redundant. 
 
-{variable set path :foo value 123}
+{123 | $>foo}
 123
 
-{variable set path :string_foo value "{$foo} ~"} 
+{"{$foo} ~" | $>string_foo} 
 123 ~
 
-{variable set path :run_foo value {"~ {$foo}"}}
+{ {"~ {$foo}"} | $>run_foo}
 ~ 123
 
 {$string_foo}{$run_foo}
 123 ~~ 123
 
-{variable set path :foo value :asdf}
+{:asdf | $>foo}
 asdf
 
 {$string_foo}{$run_foo} 
@@ -1427,7 +1400,7 @@ asdf ~~ asdf
 
 
 Here's the use cases, from the user's perspective:
-{variable set path :foo value 123}
+{123 | $>foo}
   123
 
 - I put a simple string in, I want the same string out.
@@ -1468,27 +1441,27 @@ Here's the use cases, from the user's perspective:
     123x
 
 - I put a Daimio string in, get the processed output, and put that in a variable.
-  {variable set path :x value {"{$foo}x" | run}}
+  {"{$foo}x" | run | $>x}
     123x
   {$x}
     123x
-  {variable set path :foo value 321}
+  {321 | $>foo}
     321
   {$x}
     123x
 
 - I put a Daimio string in to a variable, then invoke that variable later (getting the processed output in each new context).
-  {variable set path :x value "{$foo}x"}
+  {"{$foo}x" | $>x}
     321x
   {$x}
     321x
-  {variable set path :foo value 123}
+  {123 | $>foo}
     123
   {$x}
     123x
 
 - I put a Daimio string in to a variable, then use that variable as a template for merging.
-  {variable set path :z value "~{__}~"}
+  {"~{__}~" | $>z}
     ~~
   {each block $z data (1 2 3)}
     ~1~~2~~3~
@@ -2123,86 +2096,114 @@ LOGIC COMMANDS
        {$false | and (0 0) | then :true else :false}
          false
 
-   {if :true then :awesome}
-     awesome
+  IF
+    Note that both 'if' and 'cond' take a 'with' param, which includes pipeline variables in the block scope.
+    If the 'with' param is provided the selected block will be executed. Otherwise it will be returned as is.
+    The magic key __in becomes the process input, if 'with' is a keyed list. If 'with' is scalar the value is taken to be __in. If 'with' is an unkeyed list the effects are chaotic-evil.
+    Note that the short form of e.g. "with __" can only be used if __ is scalar: otherwise, use "with {* (:__in __)}"
 
-   {if "" then "not awesome"}
+    {1 | else "{fff fff}" | add 1}
+      2
+  // TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. 
+           same thing happens for 'then', and probably other aliases. might be a symptom of the recent pipe troubles. put some more tests in to check for it and set it right.
+    {0 | else "{9}" | add 1}
+      1
+    {0 | else "{9}" with :foo | add 1}
+      10
+    {10 | then "{__}" with __ | add 1}
+      11
+    {10 | then "{__}" with {* ("__in" __)} | add 1}
+      11
+    {10 | then "{_x}" with {* (:x __)} | add 1}
+      11
 
-   {if $false then "not awesome"}
+    {1 | else "{fff fff}" | add 1}
+      2
+    {0 | else "{9}" | add 1}
+      10
 
-   {if {not ""} then :awesome}
-     awesome
+     {if :true then :awesome}
+       awesome
 
-   {if {and ({not ""} {not $false})} then :awesome}
-     awesome
+     {if "" then "not awesome"}
 
-   {if {and ({or ({not $false} $false)} $x)} then :awesome}
-     awesome
+     {if $false then "not awesome"}
 
-   {if {and ({$false} {$x})} then :awesome}
+     {if {not ""} then :awesome}
+       awesome
 
-   {if {and (:great "not bad!")} then :awesome}
-     awesome
+     {if {and ({not ""} {not $false})} then :awesome}
+       awesome
 
-   {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
-     awesome
+     {if {and ({or ({not $false} $false)} $x)} then :awesome}
+       awesome
 
-   {:true | if __ then :neat}
-     neat
+     {if {and ({$false} {$x})} then :awesome}
 
-   {:true | else "bad"}
-     true
+     {if {and (:great "not bad!")} then :awesome}
+       awesome
 
-   {$false | else "good"}
-     good
+     {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
+       awesome
 
-   {:asdf | is in (:foo :bar :asdf) | then :great}
-     great
+     {:true | if __ then :neat}
+       neat
 
-   {:asdf | is in (:foo :bar) | then "bad" else :great}
-     great
+     {:true | else "bad"}
+       true
 
-   {:burgers | eq "urge" | then "uh-oh" else :super}
-     super
+     {$false | else "good"}
+       good
 
-   {:burgers | is like "/urge/" | then :super else "uh-oh"}
-     super
+     {:asdf | is in (:foo :bar :asdf) | then :great}
+       great
 
-   {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
-     super
+     {:asdf | is in (:foo :bar) | then "bad" else :great}
+       great
 
-   {:burgers | is like "/URGE/" | then "oh no!" else :super}
-     super
+     {:burgers | eq "urge" | then "uh-oh" else :super}
+       super
 
-   {:burgers | is like "/^urge/" | then "oh no!" else :super}
-     super
+     {:burgers | is like "/urge/" | then :super else "uh-oh"}
+       super
 
-   {$false | not | then :true else :false}
-     true
+     {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
+       super
 
-   {:true | not | then :true else :false}
-     false
+     {:burgers | is like "/URGE/" | then "oh no!" else :super}
+       super
 
-   {not $false | then :true else :false}
-     true
+     {:burgers | is like "/^urge/" | then "oh no!" else :super}
+       super
 
-   {not :true | then :true else :false}
-     false
+     {$false | not | then :true else :false}
+       true
 
-   {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
-     good
+     {:true | not | then :true else :false}
+       false
 
-   {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
-     good
+     {not $false | then :true else :false}
+       true
 
-   {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
-     good
+     {not :true | then :true else :false}
+       false
 
-   {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
-     yep
+  COND
 
-   // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | $>bat} "too far"))}
-   //  hey
+     {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
+       good
+
+     {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
+       good
+
+     {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+       good
+
+     {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
+       yep
+
+     // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | $>bat} "too far"))}
+     //  hey
 
 
 
