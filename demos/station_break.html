@@ -1,0 +1,55 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Station Break</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+</head>
+
+<body>
+
+  <div>
+    <p>A test for diverging station outputs: <span id="result"></span></p>
+  </div>
+  
+  <form id="button1">
+    <p><input type="submit" value="send foo"></p>
+  </form>
+  
+  <form id="button2">
+    <p><input type="submit" value="send bar"></p>
+  </form>
+  
+  <script type="text/daml" id="spaceseeds">
+
+    outer
+      @result  dom-set-text
+      @button1 dom-on-submit
+      @button2 dom-on-submit
+      
+      filter  {__ | then "{__ | @>foo}" else "{__ | @>bar}" with __}
+      
+      @button1 -> {1} -> filter
+      @button2 -> {0} -> filter
+      filter.foo -> @result
+      filter.foo -> {:foo | log}
+      filter.bar -> @result
+      filter.bar -> {:bar | log}
+
+  </script>
+   
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = DAML.make_some_space(seedlikes)
+      OuterSpace = new DAML.Space(outerseed) // published for debug
+
+      // var code = document.getElementById('hello_daimio')
+      // DAML.run(code.text, function() {})
+    })
+  </script>
+  
+</body>
+</html>
