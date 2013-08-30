@@ -42,11 +42,11 @@
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc      {__ | add $count | > :count}
+      inc      {__ | add $count | $>count}
       block    {$count | then "{process sleep for 10000000}" | run} 
       
-      @time-in -> {__ | > :time} -> @time-out
-      @step-in -> {__ | > :step} -> @step-out
+      @time-in -> {__ | $>time} -> @time-out
+      @step-in -> {__ | $>step} -> @step-out
       
       @button -> block -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
@@ -60,7 +60,7 @@
     |                                                           |
     |             ______________________________                |
     |            /                              \               |
-    o-----------(  {__ | add $count | > :count}  )--------------o
+    o-----------(  {__ | add $count | $>count}  )--------------o
     |     |      \______________________________/      |        |
     |     ^                                            v        |
     |     ^                                            v        |
@@ -72,11 +72,11 @@
     |                                                           |
     |                   _________________                       |
     |                  /                 \                      |
-    o-----------------(  {__ | > :time}   )---------------------o
+    o-----------------(  {__ | $>time}   )---------------------o
     |                  \_________________/                      |
     |                   _________________                       |
     |                  /                 \                      |
-    o-----------------(  {__ | > :step}   )---------------------o
+    o-----------------(  {__ | $>step}   )---------------------o
     |                  \_________________/                      |
     |___________________________________________________________|
     
@@ -98,15 +98,15 @@
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc      {__ | add $count | > :count}
+      inc      {__ | add $count | $>count}
       block    
         {$count 
         | then "{process sleep for 10000000}" 
         | run} 
       // FIXME: block is very very silly
       
-      @time-in -> {__ | > :time} -> @time-out
-      @step-in -> {__ | > :step} -> @step-out
+      @time-in -> {__ | $>time} -> @time-out
+      @step-in -> {__ | $>step} -> @step-out
       
       @button -> block -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
