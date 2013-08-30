@@ -2105,7 +2105,8 @@ LOGIC COMMANDS
     {1 | else "{fff fff}" | add 1}
       2
   // TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. 
-           same thing happens for 'then', and probably other aliases. might be a symptom of the recent pipe troubles. put some more tests in to check for it and set it right.
+           same thing happens for 'then', and probably other aliases. might be a symptom of the recent 
+           pipe troubles. put some more tests in to check for it and set it right.
     {0 | else "{9}" | add 1}
       1
     {0 | else "{9}" with :foo | add 1}
@@ -2495,6 +2496,16 @@ LIST COMMANDS
 
   MAP
 
+    // this isn't really a test for map, but is pretty weird
+    {* (:a 12 :b 33) | map block "{__}"}
+      {"a":12,"b":33}
+    {* (:a 12 :b 33) | map block "{__ | >foo}"}
+      {"a":12,"b":33}
+    {* (:a 12 :b 33) | map block "{__ | >foo | add 1}"}
+      {"a":12,"b":33}
+    {* (:a 12 :b 33) | map block "{__ | add 1 | >foo}"}
+      {"a":12,"b":33} 
+      
     {map block "{__ | add 1}" data (1 2 3)}
       [2,3,4]
     {map block "{__}x" data (1 2 3)}
