@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-framework="javascript">
 <head>
-  <title>Good Ideas</title>
+  <title>Excitable Media</title>
   <script type="text/javascript" src="../node_modules/underscore/underscore.js"></script>
   <script type="text/javascript" src="../get.php?file=node_modules/daml"></script>
 </head>
@@ -13,8 +13,8 @@
   <script type="text/daml" class="spaceseeds">
 
     outer
-      $colors ["#000", "#999", "#FFF"]
-      $time 10
+      $colors ["#339", "#66B", "#66F", "#BBF", "#EEF"]
+      $time 30
       $cells []
       
       // INIT
@@ -22,7 +22,7 @@
       changed {__}
       show {__}
       initializer
-        {20 | range | map block "{20 | range | map block "{256 | math random | math pow exp 0.125 | math round}"}" | $>cells}
+        {20 | range | map block "{20 | range | map block 0}" | $>cells}
       
       @init -> initializer -> process -> changed
 
@@ -33,23 +33,36 @@
             __ | map with {* (:row _key)} block "{
               __ | switch (
                 0 { $cells.{_row | add -1 | range 3}.*.{_key | add -1 | range 3}.*
-                  | math max | eq 2 | then 2 else 0}
+                  | math max | >max | _max | less than 3 | then 0 else _max}
                 1 0 
-                2 1)}"}"
+                2 1
+                3 2
+                4 3)}"}"
         | $>cells}
 
       process -> {process sleep for $time} -> process
       
+      
+      // INPUT
+      @touched dom-on-click .touch
+      activate
+        {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 4 else __in}"}" | $>cells}
+
+// {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
+
+
+      @touched -> activate -> changed
+
 
       // SHOW
       @house  dom-set-html
       
       show-cells
-        <table border="0">
+        <table border="0" cellspacing="0" cellpadding="0">
           {begin row | map data $cells | join}
             <tr>
-              {begin item | map data __in | join}
-                <td style="background-color:{$colors.{__}}">{__}</td>
+              {begin item | map data __in with {* (:row _key)} | join}
+                <td class="touch" data-value="{_row}x{_key}" style="width:20px;height:20px;background-color:{$colors.{__}}"></td>
               {end item}
           	</tr>
         	{end row}
@@ -62,6 +75,7 @@
    
   
   <script type="text/javascript">    
+    // {64 | math random | math pow exp 0.1666 | math round}
     
     document.addEventListener('DOMContentLoaded', function() {
       var seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
