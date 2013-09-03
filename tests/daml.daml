@@ -564,23 +564,37 @@ Daimio provides some syntactic sugar for simplifying certain common operations.
 
 Snack 1: Variables
 
-    {(:one :two :three) | $>bar}
+    Set a space var like this:
+      {(:one :two :three) | $>bar}
+        ["one","two","three"]
+      {* (:one 1 :two 2 :three 3) | $>foo}
+        {"one":1,"two":2,"three":3}
 
-    But you can also use this shorter form:
+    Reference like so:
       {$bar}
         ["one","two","three"]
   
-    You can reach in to variables the same way:
+    Reach inside:
       {$foo.one}
-        xyzzy
+        1
+      {$foo | list peek path :one}
+        1
 
     Use an octothorp to find the Nth value in a list:
       {$bar.#2}
+        two
+      {$bar | list peek path "#2"}
         two
   
     Negative indices are also supported:
       {$bar.#-1}
         three
+      {$bar | list peek path "#-1"}
+        three
+    
+    Works on keyed lists also:
+      {$foo.#2}
+        2
   
   We'll see some more ways to reach into variables in a bit.
   
@@ -734,11 +748,11 @@ Quick 4: Quotes in braces
         
     Sometimes nesting quotes in braces and braces in quotes works well:
       {join {string split on " " value {"{("Much" "nesting") | string join on " "} is divinest sense" | run}} on " "}
-        ["Much","nesting","is","divinest","sense"]
+        Much nesting is divinest sense
 
     But of course this is prettier
       {"{("Much" "nesting") | string join on " "} is divinest sense" | run | split on " " | join on " "}
-
+        Much nesting is divinest sense
 
 :::In Depth:::
 
@@ -880,7 +894,7 @@ Depth 3: Further fun with variables
     And back to vars:
 
       Reaching into a list of hashes brings back a list:
-        {( {* (:one 1 :two 2)}  {* (:one 10 :two 20)} ) | __.one}
+        {( {* (:one 1 :two 2)}  {* (:one 10 :two 20)} ) | __.*.one}
           [1,10]
 
 
@@ -1898,72 +1912,127 @@ y
 
 
   {$hash.one}
-  hashly
+    hashly
 
   // replacement with command parsing
   {$data.{"1"}.one}
-  second
+    second
 
   {$data.{1}.{$numbers.one}}
-  second
+    second
 
   // careful with numerical tests!
   {$data.1.one}
-  second
+    second
 
   {$data.#1.one}
-  first
+    first
 
   {$data.#-1.one}
-  third
+    third
 
   {$data.#12.one}
 
   {$data.#-33.one}
 
   // check iteration
-  {$data.one}
-  ["first","second","third"]
+  {$data.*.one}
+    ["first","second","third"]
 
-  {$data.locals.hash.one}
-  ["hashly","hashly","hashly"]
+  {$data.*.locals.hash.one}
+    ["hashly","hashly","hashly"]
 
-  {$data.locals.foo}
-  ["bar","bar","bar"]
+  {$data.*.locals.foo}
+    ["bar","bar","bar"]
+
+  {$data | eq $data.* | then :true else :false}
+    true
+  {$data.one | eq $data.*.one | then :true else :false}
+    false
+
+  NOTE ON STARS
+    $data and $data.* return exactly the same result, but $data.one and $data.*.one return different results. Why is that? 
+    The * pathfind operator lifts the 'guts' of a list up one level, and exposes those items to future pathfinders. So while $data.one finds nothing -- because $data has no key of 'one' -- $data.*.one finds three things, because each item in $data has a key of 'one'.
+    If however you merely return those lifted results without further operation then this is equivalent to simply removing the keys from the list -- and in $data's case it has no keys, so the two are equal.
+    
+    {(1 2) | __.*}
+      [1,2]
+    {* (:a 1 :b 2) | __.*}
+      [1,2]
 
   // check stars
   {$data | list count}
-  3
-
-
-  // NOTE: $foo.* is not implemented yet
-
+    3
 
   {$data.* | list count}
-  9
+    3
 
   {$data.*.* | list count}
-  15
+    9
 
   {$data.*.*.* | list count}
-  9
+    15
 
-  {$data.*.*.*.*}
+  {$data.*.*.*.* | list count}
+    9
+
+  {$data.one}
 
   {$data.*.one}
-  first
+    ["first","second","third"]
 
   {$data.*.*.one}
-  local
+    ["local","local","local"] 
 
   {$data.*.*.*.one}
-  hashly
+    ["hashly","hashly","hashly"]
 
-  {$data.foo.*}
+  {$data.*.*.*.*.one}
+    []
 
-  {$data.one.foo}
 
-  {$data.one.#1.foo}
+  MORE NOTES ON STARS
+    Since * exposes its inputs internals to the next operator, you can think of it as a map over the list with the rest of the operators as the block for that map, or the identity block if there are no further operators. This occasionally leads to counterintuitive results like the following, and generally means that * and #N don't play nicely together.
+    
+    // THINK: is this really what we want? should #N return [] on non-list values?
+
+    {$data.*.*.*.*}
+      ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
+      
+    {$data.*.*.*.*.#1}
+      ["h","b","c","h","b","c","h","b","c"]
+    {$data.*.*.*.* | __.#1}
+      hashly
+      
+    {$data.*.*.*.#1}
+      ["l","s","b","h","hashly","l","s","b","h","hashly","l","s","b","h","hashly"] 
+    {$data.*.*.* | __.#1}
+      local
+  
+    {$data.*.*.#1}
+      ["f","s","local","s","s","local","t","s","local"]
+    {$data.*.* | __.#1}
+      first
+    
+    {$data.*.#1}
+      ["first","second","third"]
+    {$data.* | __.#1}
+      {"one":"first","two":"surprise array!","locals":{"one":"local","two":"surprise local!","foo":"bar","bar":"hello","hash":{"one":"hashly","two":"bashly","three":"crashly"}}} 
+
+
+  STILL MORE NOTES ON STARS
+    If you use a * or () pathfind operator, the result will ALWAYS be a list.
+
+    {$data.*.*.*.*.*}
+      []
+    {$data.*.*.*.*.*.#1}
+      []
+    {$data.foo.*}
+      []
+    {$data.*.one.foo}
+      []
+    {$data.*.one.#1.foo}
+      []
 
 
 
@@ -2011,20 +2080,20 @@ y
     - find by range-and-key-and-number (companies.employees.#2.name) [name of second employee at each company? nope, it's the second employee overall]
   */
 
-   {$companies.#-2.boss.name}
-   Cool John
+  {$companies.#-2.boss.name}
+    Cool John
 
-   {$companies.employees}
-   [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
+  {$companies.*.employees}
+    [[{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"}],[{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"}],[{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]]
 
-   {$companies.employees.name}
-   ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
+  {$companies.*.employees.*.name}
+    ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
 
-   {$companies.employees.#2.name}
-   Awesome Bobs
+  {$companies.*.employees.* | __.#2.name}
+    Awesome Bobs
 
-
-
+  {$companies.(*.employees.*).#2.name}
+    Awesome Bobs
 
 
 
@@ -2086,6 +2155,9 @@ LOGIC COMMANDS
      With two values it just considers each in toto
        {5 | and 10 | then :true else :false}
          true
+
+       {5 | and 0 | then :true else :false}
+         false
 
        {$false | and :true | then :true else :false}
          false
@@ -2375,13 +2447,13 @@ LIST COMMANDS
     {$klist | filter block "{__.x | eq 2}"}
       [{"x":2,"y":"d"},{"x":2,"y":"c"}]
       
-    NOTE: __.* is not yet implemented  
-    
-    {$klist | __.* | filter block "{__ | eq :d}"}
+    {$klist | __.*.* | filter block "{__ | eq :d}"}
       ["d","d"]
       
-    {$dlist | __.* | filter block "{__ | less than :4 | then 1}"}
+    {$dlist | __.*.*.* | filter block "{__ | less than :4}"}
       [2,3,1,3,3,1,3]
+    
+    // NOTE: no _parent is exposed in filter
     
     {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3}"}
       [2,3,5]
@@ -2495,6 +2567,8 @@ LIST COMMANDS
       ["x","y"]
 
   MAP
+  
+    // TODO: add _with tests for {list ...} and {logic cond} 
 
     // this isn't really a test for map, but is pretty weird
     {* (:a 12 :b 33) | map block "{__}"}
@@ -2514,6 +2588,11 @@ LIST COMMANDS
       [1,2,3]
     {map block "x{__}" data (1 2 3)}
       ["x1","x2","x3"]
+
+    {5 | >foo | (1 2 3) | map block "{__ | add _foo}"}
+      [1,2,3]
+    {5 | >foo | (1 2 3) | map block "{__ | add _foo}" with {* (:foo _foo)}}
+      [6,7,8]
 
     {* (:a 1 :b 2 :c 3) | map block "{__ | times __}"}
       {"a":1,"b":4,"c":9}
@@ -2566,7 +2645,33 @@ LIST COMMANDS
       2
     {(1 2 3) | list peek path "#2"}
       2
-    ...
+
+    {( (1 2) (3 4) (5 6) ) | list peek path ("#2" "#1")}
+      3
+    {( (1 2) (3 4) (5 6) ) | __.#2.#1}
+      3
+
+    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "#2" )}
+      [[1,2]]
+    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "*" "#2" )}
+      [4,2]
+    
+    // sugar for peek
+    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.#2}
+      [[1,2]]
+    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.*.#2}
+      [4,2]
+      
+    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "*" (1 0) )}
+      [[4,3],[2,1]]
+    {( (1 2) (3 4) (5 6) ) | list peek path ( "*" (1 0) )}
+      [[2,1],[4,3],[6,5]]
+
+    // more sugar
+    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.*.{(1 0)} }
+      [[4,3],[2,1]]
+    {( (1 2) (3 4) (5 6) ) | __.*.{(1 0)} }
+      [[2,1],[4,3],[6,5]]
 
   RANGE
     
@@ -2656,22 +2761,22 @@ LIST COMMANDS
     {(3 2 4 1) | list sort | list reverse}
       [4,3,2,1]
       
-    {$klist | list sort by :x | __.x}
+    {$klist | list sort by :x | __.*.x}
       [1,2,2,3,4]
-    {$klist | list sort by :y | list reverse | __.y}
+    {$klist | list sort by :y | list reverse | __.*.y}
       ["d","d","c","b","a"]
 
     {$data | list sort by :one}
       [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
   TODO: multiple keys (these don't work currently)
-    {$data | list sort by {* (:three :desc :one :asc)} | __.one}
+    {$data | list sort by {* (:three :desc :one :asc)} | __.*.one}
       ["second","first","third"]
-    {$data | list sort by {* (:three :desc :one :desc)} | __.one}
+    {$data | list sort by {* (:three :desc :one :desc)} | __.*.one}
       ["second","third","first"]
-    {$data | list sort by {* (:two.#2 :desc :one :desc)} | __.one}
+    {$data | list sort by {* (:two.#2 :desc :one :desc)} | __.*.one}
       ["third","second","first"]
-    {$data | list sort by {* (:two.#2 :desc :one :asc)} | __.one}
+    {$data | list sort by {* (:two.#2 :desc :one :asc)} | __.*.one}
       ["second","third","first"]
 
   with a pipeline
