@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" data-framework="javascript">
+<head>
+  <title>Good Ideas</title>
+  <script type="text/javascript" src="../node_modules/underscore/underscore.js"></script>
+  <script type="text/javascript" src="../get.php?file=node_modules/daml"></script>
+</head>
+<body>
+  
+  <div id="house"></div>
+  
+  
+  <script type="text/daml" class="spaceseeds">
+
+    outer
+      $colors ["#000", "#999", "#FFF"]
+      $time 10
+      $cells []
+      
+      // INIT
+      @init  from-js
+      changed {__}
+      show {__}
+      initializer
+        {20 | range | map block "{20 | range | map block "{256 | math random | math pow exp 0.125 | math round}"}" | $>cells}
+      
+      @init -> initializer -> process -> changed
+
+
+      // LOOP
+      process 
+        { $cells | map block "{
+            __ | map with {* (:row _key)} block "{
+              __ | switch (
+                0 { $cells.{_row | add -1 | range 3}.*.{_key | add -1 | range 3}.*
+                  | math max | eq 2 | then 2 else 0}
+                1 0 
+                2 1)}"}"
+        | $>cells}
+
+      process -> {process sleep for $time} -> process
+      
+
+      // SHOW
+      @house  dom-set-html
+      
+      show-cells
+        <table border="0">
+          {begin row | map data $cells | join}
+            <tr>
+              {begin item | map data __in | join}
+                <td style="background-color:{$colors.{__}}">{__}</td>
+              {end item}
+          	</tr>
+        	{end row}
+        </table>
+      
+      changed -> show
+      show -> show-cells -> @house
+      
+  </script>
+   
+  
+  <script type="text/javascript">    
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
+                              .map(function(node) {return node.text})
+                             .join("\n")
+      
+      var outerseed = DAML.make_some_space(seedlikes)
+      OuterSpace = new DAML.Space(outerseed) // published for debug
+    
+      // activate init
+      DAML.send_value_to_js_port('init', 1)
+    })
+        
+  </script>
+  
+</body>
+</html>
