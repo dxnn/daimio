@@ -15,7 +15,7 @@
 
 // LE PRELUDE
 
-var D = require('daml')
+var D = require('daimio')
 
 ERRORS = []
 

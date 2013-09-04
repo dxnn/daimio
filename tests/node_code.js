@@ -1,6 +1,6 @@
 /*
 
-  This is a set of js tests for ensuring various things about the daml interpreter.
+  This is a set of js tests for ensuring various things about the daimio interpreter.
   
   Todo:
   -- write string->ABlock tests
@@ -34,7 +34,7 @@
 
 // LE PRELUDE
 
-var D = require('daml')
+var D = require('daimio')
 
 ERRORS = []
 

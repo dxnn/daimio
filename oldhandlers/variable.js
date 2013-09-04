@@ -131,7 +131,7 @@ D.import_models({
             - go back to block scope
             - use caution with @vars (top scope)
             - once declared, always scoped at that level (simpler, no hiding) [merge destruction?]
-            - mirror objects magically bridge the daml world and the mundane world [top level, global, Firstcap, flagged as magical, handled outside this system so as not to trigger bindings when set from inside]
+            - mirror objects magically bridge the daimio world and the mundane world [top level, global, Firstcap, flagged as magical, handled outside this system so as not to trigger bindings when set from inside]
           */
           
         },

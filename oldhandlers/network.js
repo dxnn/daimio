@@ -48,15 +48,15 @@ D.import_models({
         desc: 'Bounce it around',
         params: [
           {
-            key: 'daml',
+            key: 'daimio',
             desc: 'A string, usually of D',
             type: 'string',
             required: true,
           },
         ],
-        fun: function(daml) {
+        fun: function(daimio) {
           if(socket) 
-            socket.emit('bounce', {daml: daml})
+            socket.emit('bounce', {daimio: daimio})
         },
       },
       

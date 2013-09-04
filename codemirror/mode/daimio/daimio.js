@@ -5,7 +5,7 @@
  *    (branched from Scheme mode by Koh Zi Han 
  *      (based on implementation by Koh Zi Chun)))
  */
-CodeMirror.defineMode("daml", function() {
+CodeMirror.defineMode("daimio", function() {
   
   
   // this parser doesn't work without a live D install. We use the internal D parser directly, and the local dialect of D commands, aliases, terminators, etc.
@@ -535,4 +535,4 @@ CodeMirror.defineMode("daml", function() {
   }
 })
 
-CodeMirror.defineMIME("text/x-daml", "daml")
+CodeMirror.defineMIME("text/x-daimio", "daimio")

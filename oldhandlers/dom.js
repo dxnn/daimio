@@ -28,7 +28,7 @@
 //             falsy: false,
 //           },
 //           {
-//             key: 'daml',
+//             key: 'daimio',
 //             desc: "A D template",
 //             type: 'block',
 //           },
@@ -43,7 +43,7 @@
 //             type: 'string',
 //           },
 //         ],
-//         fun: function(event, id, daml, filter, _continue) {
+//         fun: function(event, id, daimio, filter, _continue) {
 //           var fun = function(e) {
 //             var faux_this = {}
 //             
@@ -69,7 +69,7 @@
 //               }
 //             }
 //             
-//             D.run(daml)
+//             D.run(daimio)
 //             return !!_continue;
 //           };
 //           
@@ -151,7 +151,7 @@
 //             falsy: false,
 //           },
 //           {
-//             key: 'daml',
+//             key: 'daimio',
 //             desc: "A D template",
 //             type: 'block',
 //             required: true,
@@ -164,7 +164,7 @@
 //             falsy: false,
 //           },
 //         ],
-//         fun: function(key, daml, type) {
+//         fun: function(key, daimio, type) {
 //           // TODO: merge this with the 'on' fun, somehow
 //           key = key.charCodeAt(0)
 //           
@@ -186,7 +186,7 @@
 //             
 //             D.import_var('this', faux_this)
 //             
-//             D.run(daml)
+//             D.run(daimio)
 //             return false
 //           }
 //           
@@ -209,15 +209,15 @@
 //             falsy: false,
 //           },
 //           {
-//             key: 'daml',
+//             key: 'daimio',
 //             desc: "A D template",
 //             type: 'block',
 //             required: true,
 //           },
 //         ],
-//         fun: function(id, daml) {
-//           this.vars.bindings[id] = daml.toFun()
-//           return daml
+//         fun: function(id, daimio) {
+//           this.vars.bindings[id] = daimio.toFun()
+//           return daimio
 //         },
 //       },
 //       

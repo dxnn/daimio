@@ -226,7 +226,7 @@ At one point in the development of Daimio I managed to reduce the entire languag
  - have an 'event' tag for commands, which pushes the command (plus date, user, etc) into the history: this can be replayed later to rebuild the entire application state. Only things that record their own history (audit answers, maybe) and things that don't change state (find commands) should not have this. Could record it like {house paint hue 128 saturation 100} ==> {h: "house", m: "paint", p: {hue: 128, saturation: 100}} ... [can imported commands have tags? like, for marking a sequence of actions as a 'composite' in some sense, or like a transaction... because you might add a new thing, with a lot of content, but each item of content is added as a separate command. so you might want to 'cluster' that somehow...]
  - blessing happens at the content level, probably... which makes content pretty important.
  
- To notebook: use space+key as meta, pointless programming (no variables), help dictionary for keybindings (emacs), more recursive combinators in daml, monads in daml for guarding variables etc?, virtual edge when you click a port that tracks your mouse, ...
+ To notebook: use space+key as meta, pointless programming (no variables), help dictionary for keybindings (emacs), more recursive combinators in daimio, monads in daimio for guarding variables etc?, virtual edge when you click a port that tracks your mouse, ...
  
 Keyed lists: the position of an item in the list is not a key. Items can always be retrieved by positional index. Items can also be keyed. Sorting, grouping, and other such operations preserve keys. Remember to use #N to access by position. @foo.{"#{pos}"} works also. @foo.(:#2 :#4 :alpha 7) also works, though this also means you can never key a list with '#N' where N is an integer, so... actually, that's probably fine.
 
@@ -235,7 +235,7 @@ Schema: a list of collections and the mechanical fields (ie non-attr, non-perm) 
 orthogonal setters vs unified add: always use empty add + validator. data schema may help with that.
 
 / {let :plural on :value be "{value | is like :1 | not | then :s}"}
-let -> daml import into :etc key 
+let -> daimio import into :etc key 
 plus aliasing...
 / {@count | plural}
 
@@ -697,13 +697,13 @@ Snack 3: Aliases
 //  You can also create aliases at runtime. This is useful when paired with command creation.
 //    
 //    Create a new command:
-//      {daml import block "hey {$name}!" into :string as :greet params :name}
+//      {daimio import block "hey {$name}!" into :string as :greet params :name}
 //        
 //      {string greet name "yourself"}
 //        hey yourself!
 //    
 //    Alias it:
-//      {daml alias string "string greet name" as :greet}
+//      {daimio alias string "string greet name" as :greet}
 //        
 //      {greet "Jacobinius"}
 //        hey Jacobinius!
@@ -950,7 +950,7 @@ FIX ME!!!!!
 //    {$count1} x {$count2}
 //      2 x 4
 //    
-//  You can edit the bound var directly in the daml -- infinite recursion is prevented.
+//  You can edit the bound var directly in the daimio -- infinite recursion is prevented.
 //    {variable bind path :foox block "{__var.#1 | add 2 | $>foox.0}"}
 //    
 //    {(7 2) | $>foox}
@@ -1413,7 +1413,7 @@ Here's the use cases, from the user's perspective:
   {string transform value "asdfdd" from "/[d]/g" to "x"}
     asxfxx
 
-- transformations can accept daml, also. the 'this' variable is loaded with matches.
+- transformations can accept daimio, also. the 'this' variable is loaded with matches.
   {"food mood wood" | string transform from "/oo/g" to "{__ | string uppercase}"}
     fOOd mOOd wOOd
 
@@ -1423,9 +1423,9 @@ Here's the use cases, from the user's perspective:
     
 
 - I pass/pipe a Daimio string in to the quote command, and want the raw Daimio string out.
-  {daml quote value "{$asdf}"}
+  {daimio quote value "{$asdf}"}
     {$asdf}
-  {"{$asdf}" | daml quote}
+  {"{$asdf}" | daimio quote}
     {$asdf}
 
 - I put a Daimio string in, and want the processed output.
@@ -1474,9 +1474,9 @@ Here's the use cases, from the user's perspective:
   
 - I take a Daimio string, get its ptree, do some mangling (macros), then get the processed output.
 ------> THINK: do we want this in here? I'm taking it out for now because it's kind of silly.
-//  {daml parse string "x{foo}y"}
+//  {daimio parse string "x{foo}y"}
 //    {"m":"string","f":"join","p":{"value":["x",{"m":"variable","f":"get","p":{"path":"foo"}},"y"]}}
-//  {variable set path :xy value {daml parse string "x{foo}y"}}
+//  {variable set path :xy value {daimio parse string "x{foo}y"}}
 //    {"m":"string","f":"join","p":{"value":["x",{"m":"variable","f":"get","p":{"path":"foo"}},"y"]}}
 //  {variable set path :xy.p.value.#3 value "z"}
 //    z

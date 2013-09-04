@@ -3,7 +3,7 @@
 <head> 
   <title>Push My Button!</title>
   <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daml"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daimio"></script>
   <script src="/socket.io/socket.io.js"></script>
 </head>
 
@@ -17,7 +17,7 @@
     <p><input type="submit" value="Click me!!"></p>
   </form>
   
-  <script type="text/daml" id="hello_daimio">
+  <script type="text/daimio" id="hello_daimio">
     {//begin $count-S}
       {//__ | run | out}
     {//end $count-S}
@@ -147,7 +147,7 @@
   
     socket.on('bounced', function (data) {
       console.log(data)
-      var output = D.run(data.daml, data.context)
+      var output = D.run(data.daimio, data.context)
       // var new_span = $('<span></span>').text(output)
       // $('#stuff').append($('<p>' + data.context.name + ': </p>').append(new_span))
     });
