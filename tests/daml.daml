@@ -843,31 +843,6 @@ Depth 2: Keyed lists
 
 Depth 3: Further fun with variables
   
-  
-  
-  .*
-  AoH
-  #vars
-  
-  
-  
-  FIX THIS!!!!!
-  
-  
-
-//    ALL-CAPS variables are write-once read-many (WORM):
-//      {128 | $>MY.id}
-//        128
-//      {256 | $>MY.id}
-//        128
-//      // the above also throws an error...
-//
-//      Request variables come from POST and the querystring. Reference them like this:
-//      {REQUEST.foo}
-//
-//      Or use the short form:
-//      {#foo}
-//
     Dot values. You can reach inside variables in a variety of ways. Here's a list.
 
       A named parameter:
@@ -914,11 +889,14 @@ Depth 3: Further fun with variables
       // test Daimio path setting
       //
 
-//      {:ash | $>hash.{"two"}} {$hash}
-//        ash {"two":"ash"}
-//
-//      {:ash | $>hash.{"two"}.monkey.flu} {$hash}
-//        ash {"two":{"monkey":{"flu":"ash"}}}
+      {:ash | $>hash.{"two"}} {$hash}
+        ash {"two":"ash"}
+
+      {:ash | $>hash.{"two"}.monkey.flu} {$hash}
+        ash {"two":{"monkey":{"flu":"ash"}}}
+
+      {:ash | $>hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
+        ash {"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
 
 
 Depth 4: Creating commands
@@ -1776,28 +1754,24 @@ END STUFF
 
 
 Tests for command + string
-{foo asdf} bax
- bax
+  {foo asdf} bax
+    bax
  
-{string split value "foo bat" on " "} baz
-["foo","bat"] baz
-
-Regex for grep:
-{string grep value (:hello :world) on "/.llo/"}
-["hello"]
+  {string split value "foo bat" on " "} baz
+    ["foo","bat"] baz
 
 Basic blocks and vars:
-{begin foo | string split on " " | grep :h}hello how are you?{end foo}
-["hello","how"]
+  {begin foo | string split on " " | grep :h}hello how are you?{end foo}
+    ["hello","how"]
 
-{begin foo | $>foo ||}hello{end foo}{$foo | grep :llo}
-["hello"]
+  {begin foo | $>foo ||}hello{end foo}{$foo | grep :llo}
+    ["hello"]
 
-{(:foo :buzz :bizz :bazz) | $>x | grep :zz value $x}
-["buzz","bizz","bazz"]
+  {(:foo :buzz :bizz :bazz) | $>x | grep :zz value $x}
+    ["buzz","bizz","bazz"]
 
-{begin foo | string split on " " | $>x ||}hello hey zebra squid{end foo}{$x | grep :h}
-["hello","hey"]
+  {begin foo | string split on " " | $>x ||}hello hey zebra squid{end foo}{$x | grep :h}
+    ["hello","hey"]
 
 
 
@@ -1899,7 +1873,13 @@ y
   stupid local surprise local!  local y
 
 
-  // PARAMS
+
+PEEK AND POKE
+
+
+This is a section all about how my list searching got twisted all upside down. It includes the majority of the peek & poke tests just so they're in one place instead of two.
+
+
 
 
   {* (:one :one :two :two :three :three) | $>numbers ||}
@@ -1994,23 +1974,39 @@ y
   MORE NOTES ON STARS
     Since * exposes its inputs internals to the next operator, you can think of it as a map over the list with the rest of the operators as the block for that map, or the identity block if there are no further operators. This occasionally leads to counterintuitive results like the following, and generally means that * and #N don't play nicely together.
     
-    // THINK: is this really what we want? should #N return [] on non-list values?
+  Note that the positional pathfinder #N coerces scalar items into a singleton list, so #1 will continue returning a valid value. This differs from '0' -- the key-based pathfinder -- for unkeyed lists, as 0 does no coercion.
+    {(1 2 3) | __.0}
+      1
+    {(1 2 3) | __.0.0}
+    
+    {(1 2 3) | __.#1}
+      1
+    {(1 2 3) | __.#1.#1}
+      1
+    {(1 2 3) | __.#1.#1.#1}
+      1
+    
 
     {$data.*.*.*.*}
       ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
-      
+
+  Remember, the star operator exposes the list internals to future operators in parallel, so #1 here eats nine scalar values.
     {$data.*.*.*.*.#1}
-      ["h","b","c","h","b","c","h","b","c"]
+      ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
     {$data.*.*.*.* | __.#1}
       hashly
       
+  With star boxing you don't have to split the segments, but remember that the output is always wrapped in a list.
+    {$data.{(("*" "*" "*" "*"))}.#1}
+      ["hashly"]
+      
     {$data.*.*.*.#1}
-      ["l","s","b","h","hashly","l","s","b","h","hashly","l","s","b","h","hashly"] 
+      ["local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly"] 
     {$data.*.*.* | __.#1}
       local
   
     {$data.*.*.#1}
-      ["f","s","local","s","s","local","t","s","local"]
+      ["first","surprise array!","local","second","surprise number also!","local","third","surprise me too!","local"]
     {$data.*.* | __.#1}
       first
     
@@ -2036,9 +2032,7 @@ y
 
 
 
-  //
-  // now with more tests!
-  //
+  TREE SHAPING
 
   {* (:name "Awesome John" :age :alpha) | $>a-john ||}
 
@@ -2072,31 +2066,171 @@ y
 
   {( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | $>companies ||}
 
-  /* 
-    write tests:
-    - find by number then name (companies.#-2.boss.name)
-    - find by range (companies.employees) [all employees]
-    - find by range-and-key (companies.employees.name) [all employee names]
-    - find by range-and-key-and-number (companies.employees.#2.name) [name of second employee at each company? nope, it's the second employee overall]
-  */
+  NOW QUERY IT
+  
+  Find by position, then by property names:
+    {$companies.#-2.boss.name}
+      Cool John
 
-  {$companies.#-2.boss.name}
-    Cool John
+  All employees, grouped by employer
+    {$companies.*.employees}
+      [[{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"}],[{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"}],[{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]]
 
-  {$companies.*.employees}
-    [[{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"}],[{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"}],[{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]]
+  A flat list of all employees
+    {$companies.*.employees.*}
+      [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
 
-  {$companies.*.employees.*.name}
-    ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
+  All employee names
+    {$companies.*.employees.*.name}
+      ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
 
-  {$companies.*.employees.* | __.#2.name}
-    Awesome Bobs
+  All employee names of the second company
+    {$companies.#2.employees.*.name}
+      ["Cool John","Cool Bobs","Cool Mary","Cool Stev"]
+  
+  Second employee name of each company
+    {$companies.*.employees.#2.name}
+      ["Awesome Bobs","Cool Bobs","Neat Bobs"]
+  
+  Second employee name over all
+    {$companies.*.employees.* | __.#2.name}
+      Awesome Bobs
 
-  {$companies.(*.employees.*).#2.name}
-    Awesome Bobs
+  Star boxing gives us the second name with a single {list peek} call, but remember that it always returns a list.
+    {$companies.{(("*" "employees" "*"))}.#2.name}
+      ["Awesome Bobs"]
 
+  Without star boxing it looks in all the wrong places
+    {$companies.*.employees.*.#2.name}
+      []
+    {$companies.*.employees.*.name.#2}
+      []
 
+  Pairs of commands: the dot-form and the list peek form, side by side.
+  
+    {(1 2 3) | __.#2}
+      2
+    {(1 2 3) | list peek path "#2"}
+      2
 
+    {( (1 2) (3 4) ) | __.#2.#1}
+      3
+    {( (1 2) (3 4) ) | list peek path ("#2" "#1")}
+      3
+
+    {( (1 2) (3 4) ) | __.{("#2" "#1")}.#2}
+      [4,2]
+    {( (1 2) (3 4) ) | list peek path ( ("#2" "#1") "#2" )}
+      [4,2]
+
+    {( (1 2) (3 4) ) | __.{("#2" "#1")}.{(1 0)} }
+      [4,3,2,1]
+    {( (1 2) (3 4) ) | list peek path ( ("#2" "#1") (1 0) )}
+      [4,3,2,1]
+      
+    {( (1 2) (3 4) ) | __.{("#2" "#1")}.{(((1 0)))} }
+      [[4,3],[2,1]]
+    {( (1 2) (3 4) ) | list peek path ( ("#2" "#1") (((1 0))) )}
+      [[4,3],[2,1]]
+
+    {( (1 2) (3 4) ) | __.*.{(1 0)} }
+      [2,1,4,3]
+    {( (1 2) (3 4) ) | list peek path ( "*" (1 0) )}
+      [2,1,4,3]
+
+    {( (1 2) (3 4) ) | __.*.{(((1 0)))} }
+      [[2,1],[4,3]] 
+    {( (1 2) (3 4) ) | list peek path ( "*" (((1 0))) )}
+      [[2,1],[4,3]] 
+      
+
+OK CHANGE GEARS
+
+  peek in series: first take the second element, then take its first element
+    {( (1 2) (3 4) ) | list peek path ( 1 0 )} 
+      3
+      
+  peek in parallel: take the second element, and the first element, and stage them for further peeking
+    {( (1 2) (3 4) ) | list peek path ( (1 0) )} 
+      [[3,4],[1,2]]
+      
+  now we've taken the second element of each of the staged items
+    {( (1 2) (3 4) ) | list peek path ( (1 0) 1 )} 
+      [4,2]
+
+  we've learned:
+  -- the first list is processed in series
+  -- sublists are processed in parallel
+  
+  now we'll see that those alternate: a sub-sub-list is processed in series.
+  
+  this takes the first element of the second element, but does it in parallel -- hence the list wrapping
+    {( (1 2) (3 4) ) | list peek path ( ((1 0)) )}
+      [3]
+
+  same, but with a second serial pathway inside the parallel one
+    {( (1 2) (3 4) ) | list peek path ( ((1 0) (1 1)) )}
+      [3,4]
+    
+  parallel + series + parallel -- each parallel layer adds another wrapper list 
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) )}
+      [[[3,4],[1,2]]]
+  
+  take the second element of our list of lists
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 )}
+      [[1,2]]
+      
+  why is it [[1,2]] instead of [1,2]? 
+  once we've gone parallel (or used "*"), the results are always wrapped in a list regardless of the number of results. 
+  if we stay serial the whole time any matching elements are returned as-is.
+  
+  now we take the first element of the above
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 0 )}
+      [1]
+  
+  the second parallel pathway here is fed our forest, and reverses the reversed order -- restoring our original input
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (1 0) )}
+      [[1,2],[3,4]]
+  
+  without the extra parallel wrapping the second pathway operates on the list elements instead of the lists
+    {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
+      [4,3,2,1]
+  
+  this time the second pathway operates serially -- same result as without the dressing
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0)) )}
+      [1]
+
+  remember that the second pathway is seeing the lists in reversed order
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0) (0 1)) )}
+      [1,4]
+      
+  same double reversal as above, but with an extra layer of wrapping
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (((1 0))) )}
+      [[[1,2],[3,4]]]
+  
+  the star unwraps staged items and feeds them to the next pathway
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" 1 )}
+      [4,2]
+
+  which is equivalent to this, for the two element case
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (0 1) 1 )}
+      [4,2]
+      
+  parallel consumption post star
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (1 0) )}
+      [4,3,2,1]
+
+  note the equivalence -- the star unwrapifies our initial double-layering
+    {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
+      [4,3,2,1]
+      
+  which here allows us to reverse the list order, then the element order
+    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (((1 0))) )}
+      [[4,3],[2,1]]
+  
+  and the simpler equivalent
+    {( (1 2) (3 4) ) | list peek path ( (1 0) (((1 0))) )}
+      [[4,3],[2,1]]
 
 
 
@@ -2285,111 +2419,101 @@ LOGIC COMMANDS
 
 MATH COMMANDS
 
-     // TODO: move this
-     Ensure values are properly finagled. 
-       {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
-         6
-
-        --> these don't exist anymore, add aliases!
-   //    Increment:
-   //      {math increment value 222}
-   //      223
-   //      {inc 222}
-   //      223
-   //      {222 | inc}
-   //      223
-   //    
-   //    Decrement:
-   //      {math decrement value 222}
-   //      221
-   //      {dec 222}
-   //      221
-   //      {222 | dec}
-   //      221
-
-       Add:
-         {math add value 123 to 321}
-           444
-         {add 123 to 321}
-           444
-         {321 | add 123}
-           444
-
-       The addition command is fairly versatile:
-         {math add value (1 2 3)}
-           6
-         {math add value 1 to (4 5 6)}
-           [5,6,7]
-         {math add value (4 5 6) to 1}
-           [5,6,7]
-         {math add value (3 2 1) to (4 5 6)}
-           [7,7,7]
-
-       Subtract
-         {subtract 4 from :7}
-           3
-         {:7 | subtract 4}
-           3
-         {subtract (:100 :2 3 :4 5)}
-           86
-         {(1 3 5 7) | subtract 3}
-           [-2,0,2,4]
-         {math subtract value (6 5 4) from (1 2 3)}
-           [-5,-3,-1]
-
-       Multiply
-         {multiply 4 by 7}
-           28
-         {:7 | times :4}
-           28
-         {multiply (:1 2 :3)}
-           6
-         {(1 :2 3) | times 3}
-           [3,6,9]
-         {math multiply value (1 2 3) by (6 5 4)}
-           [6,10,12]
-
-       Divide // NOTE that this shortcut is different!
-         {divide value 7 by 4}
-           1.75
-         {:7 | divide by :4}
-           1.75
-         {divide value (:1 2 :3) | map block "{__ | round to 2}"}
-           [0.17]
-         {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
-           [0.33,0.67,1]
-         {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
-           [0.17,0.4,0.75]
-
-
-       Mod
-         {math mod value 7 by 2}
-           1
-         {:7 | mod :2}
-           1
-
-       Pow
-         {math pow value 2 exp 8}
-           256
-         {:5 | math pow exp :3}
-           125
-         {5 | math pow exp 0.5}
-           2.23606797749979
-
-       Less? // THINK: should less be logic?
-       Random?
-
-       Round
-         {123.456 | math round}
-           123
-         {123.456 | math round to -2}
-           100
-         {123.456 | math round to 2}
-           123.46
-
-
-
-
+  Ensure values are properly finagled. 
+    {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
+      6
+   
+  ADD
+  
+    {math add value 123 to 321}
+      444
+    {add 123 to 321}
+      444
+    {321 | add 123}
+      444
+ 
+  All basic math commands are fairly versatile.
+    {math add value (1 2 3)}
+      6
+    {math add value 1 to (4 5 6)}
+      [5,6,7]
+    {math add value (4 5 6) to 1}
+      [5,6,7]
+    {math add value (3 2 1) to (4 5 6)}
+      [7,7,7]
+ 
+  SUBTRACT
+  
+    {subtract 4 from :7}
+      3
+    {:7 | subtract 4}
+      3
+    {subtract (:100 :2 3 :4 5)}
+      86
+    {(1 3 5 7) | subtract 3}
+      [-2,0,2,4]
+    {math subtract value (6 5 4) from (1 2 3)}
+      [-5,-3,-1]
+ 
+  MULTIPLY
+  
+    {multiply 4 by 7}
+      28
+    {:7 | times :4}
+      28
+    {multiply (:1 2 :3)}
+      6
+    {(1 :2 3) | times 3}
+      [3,6,9]
+    {math multiply value (1 2 3) by (6 5 4)}
+      [6,10,12]
+ 
+  DIVIDE 
+  
+    (Note that this shortcut is different.)
+    
+    {divide value 7 by 4}
+      1.75
+    {:7 | divide by :4}
+      1.75
+    {divide value (:1 2 :3) | map block "{__ | round to 2}"}
+      [0.17]
+    {(1 2 3) | divide by 3 | map block "{__ | round to 2}"}
+      [0.33,0.67,1]
+    {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
+      [0.17,0.4,0.75]
+ 
+ 
+  MOD
+  
+    {math mod value 7 by 2}
+      1
+    {:7 | mod :2}
+      1
+ 
+  POW
+  
+    {math pow value 2 exp 8}
+      256
+    {:5 | math pow exp :3}
+      125
+    {5 | math pow exp 0.5}
+      2.23606797749979
+ 
+  RANDOM
+ 
+  ROUND
+  
+    {123.456 | math round}
+      123
+    {123.456 | math round to -2}
+      100
+    {123.456 | math round to 2}
+      123.46
+ 
+ 
+   
+   
 
 
 
@@ -2397,6 +2521,31 @@ MATH COMMANDS
 
 
 LIST COMMANDS
+
+
+<!--
+  
+  Older commands that probably won't exist anymore but we still need to handle these cases somehow
+    
+    // {((:one :row) (:second :row)) | list to_csv}
+    //   one,row\nsecond,row
+
+    // {$data | list organize command "sort:one,desc;stack:three;"}
+    // {"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
+
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
+    //   [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
+    // 
+    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
+    //   [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
+    // 
+    // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
+    //   ["2","3","5"]
+    // 
+
+-->
+
+
 
 
   // TODO: tests for block executing in same space (re: spacevar scoping)
@@ -2472,6 +2621,9 @@ LIST COMMANDS
     {( {* (:x 1 :y 2)} {* (:x 11 :y 3)} {* (:x 1 :y 4)} ) | filter block "{__.x | eq 1}"}
       [{"x":1,"y":2},{"x":1,"y":4}]
   
+    {({* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))}) | __.*.*.* | filter block "{__ | less than 4}"}
+      [2,3,1,3,3,1,3]
+    
 
   FIRST
         
@@ -2640,38 +2792,8 @@ LIST COMMANDS
 
 
   PEEK
-  
-    {(1 2 3) | __.#2}
-      2
-    {(1 2 3) | list peek path "#2"}
-      2
-
-    {( (1 2) (3 4) (5 6) ) | list peek path ("#2" "#1")}
-      3
-    {( (1 2) (3 4) (5 6) ) | __.#2.#1}
-      3
-
-    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "#2" )}
-      [[1,2]]
-    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "*" "#2" )}
-      [4,2]
-    
-    // sugar for peek
-    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.#2}
-      [[1,2]]
-    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.*.#2}
-      [4,2]
-      
-    {( (1 2) (3 4) (5 6) ) | list peek path ( ("#2" "#1") "*" (1 0) )}
-      [[4,3],[2,1]]
-    {( (1 2) (3 4) (5 6) ) | list peek path ( "*" (1 0) )}
-      [[2,1],[4,3],[6,5]]
-
-    // more sugar
-    {( (1 2) (3 4) (5 6) ) | __.{("#2" "#1")}.*.{(1 0)} }
-      [[4,3],[2,1]]
-    {( (1 2) (3 4) (5 6) ) | __.*.{(1 0)} }
-      [[2,1],[4,3],[6,5]]
+  POKE
+    [see the peek&poke section above for these tests]
 
   RANGE
     
@@ -2715,14 +2837,18 @@ LIST COMMANDS
     {* (:a 1 :b 2 :c 3) | list remove by_key (:a :c)}
       {"b":2}
 
-    {( (1 2) (3) (2 1) ) | list remove by_value ( (2 1) )}
-      [[1,2],[3]]
-    {( (1 2) (3) (2 1) ) | list remove by_value ( (1 2) (3) )}
-      [[2,1]]
+    remove sublists by value, respecting order
+      {( (1 2) (3) (2 1) ) | list remove by_value ( (2 1) )}
+        [[1,2],[3]]
+      {( (1 2) (3) (2 1) ) | list remove by_value ( (1 2) (3) )}
+        [[2,1]]
     
-    // to remove by value ignoring order
-    {( (1 2) (3) (2 1) ) | filter block "{__ | sort | eq (1 2) | not}"}
-      [[3]]
+    remove sublists by value, ignoring order
+      {( (1 2) (3) (2 1) ) | filter block "{__ | sort | eq (1 2) | not}"}
+        [[3]]
+
+      //   {$data | list remove path "*.two"}
+      //     {"1":{"one":"first","three":"even"},"3":{"one":"third","three":"even"}}
 
 
   REKEY
@@ -2829,63 +2955,14 @@ LIST COMMANDS
       [[1],[2],[3]]
 
 
-<!--
-  
-  Older sort commands that probably won't exist anymore but we still need to handle these cases somehow
+STRING COMMANDS
+
+
+  GREP
+    {string grep value (:hello :world) on "/.llo/"}
+      ["hello"]
+
     
-    // {((:one :row) (:second :row)) | list to_csv}
-    //   one,row\nsecond,row
-
-    // organize
-    // {$data | list organize command "sort:one,desc;"}
-    // {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"2":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-    // 
-    // {$data | list organize command "stack:three;"}
-    // {"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]},"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]}}
-    // 
-    // {$data | list organize command "sort:one,desc;stack:three;"}
-    // {"even":{"count":2,"column":"three","value":"even","items":[{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]},"odd":{"count":1,"column":"three","value":"odd","items":[{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"}]}}
-
-    // // prune
-    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {__ | less than :4} path "*.*"}
-    // [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
-    // 
-    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {_parent.parent.one.1 | eq :3} path "*.*"}
-    // [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
-    //
-    // prune
-    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-    //   [{"one":{"2":"5"},"two":{"2":"4"}},{"one":{"1":"4","2":"5"},"two":{"2":"4"}}]
-    // 
-    // {list prune value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.*"}
-    //   [{"one":[],"two":[]},{"one":["3","4","5"],"two":["1","3","4"]}]
-    // 
-    // // extract
-    // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {this | less than :4} path "*.*"}
-    //   ["2","3","1","3","3","1","3"]
-    // 
-    // {list extract value ({* (:one (:2 :3 :5) :two (:1 :3 :4))} {* (:one (:3 :4 :5) :two (:1 :3 :4))}) expression {parent.parent.one.1 | is like :3} path "*.one"}
-    //   ["2","3","5"]
-    // 
-    // REMOVE
-    // 
-    //   {$data | list remove path :2}
-    //     {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-    // 
-    //   {$data | list remove path "*.two"}
-    //     {"1":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"3":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
-    // 
-    //   {(:one :two :three) | list remove path :one}
-    //     ["two","three"] 
-    
--->
-
-
-MISC STUFF CLEAN IT UP 
-
-  {(1 2) | __.#1 | add 7}
-    8
-
 
 
 
