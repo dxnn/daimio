@@ -43,7 +43,11 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   and named parameters
     {list count data (13 17 19)}
       3
+  
+  parameter order is irrelevant
     {math add value 22 to 20}
+      42
+    {math add to 20 value 22}
       42
   
   pipes link commands
@@ -169,7 +173,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
     
 
 
-[appendix this]
+[todo: appendix this]
 when a block is coerced into a string it isn't processed
   {"{:hello} world" | string split on " "}
     ["{:hello}","world"]
