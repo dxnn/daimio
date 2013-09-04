@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 <html> 
 <head> 
-  <title>DAML Tests</title>
+  <title>D Tests</title>
   
   <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
   <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__jquery.js"></script>
@@ -38,7 +38,7 @@
       code_value=''
       code_string=''
       
-      DAML.dataTrampoline(lines, eat_line, DAML.string_concat, function() {}, done)
+      D.dataTrampoline(lines, eat_line, D.string_concat, function() {}, done)
       // eat_lines()
     })
     
@@ -117,12 +117,12 @@
         // var callback = function(value) {
         //   eat_lines(value)
         // }
-        // DAML.run(code_string, callback)
+        // D.run(code_string, callback)
         // return NaN // signal of callback
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
-        code_value = DAML.execute_then_stringify(DAML.ExecutionSpace.execute(DAML.Parser.string_to_block_segment(code_string), null, prior_starter))
+        code_value = D.execute_then_stringify(D.ExecutionSpace.execute(D.Parser.string_to_block_segment(code_string), null, prior_starter))
         return code_value
       }
       
@@ -220,7 +220,7 @@
     editor.setOption('lineNumbers', true)
     editor.setOption('matchBrackets', true)
     
-    DAML.run(code.value, function(result) {
+    D.run(code.value, function(result) {
       results.innerHTML = result
     })
     
@@ -241,7 +241,7 @@
     
     cmi_display = function(code) {
       console.log(code)
-      DAML.run(code)
+      D.run(code)
     }
 
     // and then hide ugly horizontal scrollbar

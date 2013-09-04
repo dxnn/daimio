@@ -88,11 +88,11 @@
                               .map(function(node) {return node.text})
                              .join("\n")
       
-      var outerseed = DAML.make_some_space(seedlikes)
-      OuterSpace = new DAML.Space(outerseed) // published for debug
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
     
       // activate init
-      DAML.send_value_to_js_port('init', 1)
+      D.send_value_to_js_port('init', 1)
     })
         
   </script>

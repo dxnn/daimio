@@ -34,30 +34,30 @@
 
 // LE PRELUDE
 
-var DAML = require('daml')
+var D = require('daml')
 
 ERRORS = []
 
 s2ABt = string_to_tokens_and_segments_and_block_test = function(string, result_tokens, result_segments, result_blocks) {
-  var tokens = DAML.Parser.string_to_tokens(string)
-    , segments = DAML.Parser.string_to_segments(string)
-    , block_ref = DAML.Parser.string_to_block_segment(string)
-    , ABlocks = DAML.ABLOCKS
+  var tokens = D.Parser.string_to_tokens(string)
+    , segments = D.Parser.string_to_segments(string)
+    , block_ref = D.Parser.string_to_block_segment(string)
+    , ABlocks = D.ABLOCKS
   
-  // DAML.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
+  // D.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
   
   // if(JSON.stringify(ABlocks) == JSON.stringify(result))
   //   return false
     
   ERRORS.push({in: string, 
                out: {tokens: tokens, segments: segments, block_ref: block_ref, blocks: ABlocks}, 
-               was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks, fff: "x" + DAML.run('{(1 2 3) | math add to 4}')} })
+               was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks, fff: "x" + D.run('{(1 2 3) | math add to 4}')} })
   
-  DAML.ABLOCKS = {}
+  D.ABLOCKS = {}
 }
 
 head2pipe = function(blockhead, result) {
-  // var output = DAML.blockhead_to_pipeline(blockhead, DAML.DIALECTS.top)
+  // var output = D.blockhead_to_pipeline(blockhead, D.DIALECTS.top)
   
   if(JSON.stringify(output) == JSON.stringify(result))
     return false
@@ -66,13 +66,13 @@ head2pipe = function(blockhead, result) {
 }
 
 funtest = function(string, result) {
-  // var space = DAML.OuterSpace
-  //   , segment = DAML.Parser.string_to_block_segment(string)
-  //   , ABlocks = DAML.ABLOCKS
+  // var space = D.OuterSpace
+  //   , segment = D.Parser.string_to_block_segment(string)
+  //   , ABlocks = D.ABLOCKS
   //   , block = ABlocks[segment.value.id]
   // 
   // space.execute(block, function(output) {
-  DAML.run(string, function(output) {
+  D.run(string, function(output) {
     if(JSON.stringify(output) == JSON.stringify(result))
       return false
 
@@ -219,7 +219,7 @@ funtest = function(string, result) {
 // 
 //           [ { type: "Command"
 //             , value: {Handler:"math", Method:"add"} 
-//             , method: DAML.commands.math.methods.add
+//             , method: D.commands.math.methods.add
 //             , paramlist: [null,null] } ])
 // 
 // 
@@ -232,7 +232,7 @@ funtest = function(string, result) {
 //             , value: {Handler:"math", Method:"add"} 
 //             , params: { value: {"type":"Number","value":2}
 //                       , to: {"type":"Number","value":4} }
-//             , method: DAML.commands.math.methods.add
+//             , method: D.commands.math.methods.add
 //             , paramlist: [{"type":"Number","value":2},{"type":"Number","value":4}] } ])
 //     
 //     
@@ -244,7 +244,7 @@ funtest = function(string, result) {
 //             , value: {Handler:"math", Method:"add"} 
 //             , params: {"value":null,"__pipe__":null}
 //             , ins: {"__pipe__":0}
-//             , method: DAML.commands.math.methods.add
+//             , method: D.commands.math.methods.add
 //             , paramlist: [{"type":"Input","value":0},null] } ])
 // 
 // 
@@ -409,7 +409,7 @@ funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string upperc
 
 
 // seqfun = function(x) {
-//   return DAML.mungeLR(x, function(L, num, R) {
+//   return D.mungeLR(x, function(L, num, R) {
 //     if(num % 2) return [L.concat(num), R]
 //     if(R.length) R[0] += num/2
 //     if(L.length) {
@@ -423,8 +423,8 @@ funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string upperc
 // 
 // for(var i = 2; i<160; i+=2) {console.log(i, seqfun([1,1,i,1,1,1,1,1]))}
 
-// for(var i = 2; i<46; i+=1) {console.log(i, seqfun(DAML.commands.list.methods.range.fun(i, 1, 1)[2]))}
-// for(var i = 2; i<246; i+=1) {x = seqfun(DAML.commands.list.methods.range.fun(i, 1, 1)); if(x && x[1]) {console.log(x[1])} }
+// for(var i = 2; i<46; i+=1) {console.log(i, seqfun(D.commands.list.methods.range.fun(i, 1, 1)[2]))}
+// for(var i = 2; i<246; i+=1) {x = seqfun(D.commands.list.methods.range.fun(i, 1, 1)); if(x && x[1]) {console.log(x[1])} }
 // all 2s: 5,-,-
 // 2s w/ 1 1: 7,- or 5,-,- or -
 

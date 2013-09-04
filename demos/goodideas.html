@@ -197,7 +197,7 @@
   <script type="text/javascript">    
     
     // HACK THIS IS VERY STUPID
-    DAML.ETC.fun = {
+    D.ETC.fun = {
       'ideas-out': function(ship) {
         localStorage.setItem('ideas', JSON.stringify(ship))
       }
@@ -208,14 +208,14 @@
                               .map(function(node) {return node.text})
                              .join("\n")
       
-      var outerseed = DAML.make_some_space(seedlikes)
-      OuterSpace = new DAML.Space(outerseed) // published for debug
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
     
       // get ideas
       ideas = JSON.parse(localStorage.getItem('ideas')) || []
 
       // activate ideas-in port
-      DAML.send_value_to_js_port('ideas-in', ideas)
+      D.send_value_to_js_port('ideas-in', ideas)
     })
         
   </script>

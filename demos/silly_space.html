@@ -62,13 +62,13 @@
       // var seedlikes = JSON.parse(document.getElementById('spaceseeds').text)
       eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
       
-      var outerseed = DAML.make_some_space(seedlikes)
+      var outerseed = D.make_some_space(seedlikes)
       
-      OuterSpace = new DAML.Space(outerseed) // note published (not necessary, just here for debug)
+      OuterSpace = new D.Space(outerseed) // note published (not necessary, just here for debug)
 
 
       
-      // block = DAML.Parser.string_to_block_segment('{1 | add $count | > :count}')
+      // block = D.Parser.string_to_block_segment('{1 | add $count | > :count}')
       
       // seed = { dialect: {commands: {minus: {daml: true, dialect: true, port: true, space: true}}}
       //        , stations: [682758676]
@@ -80,11 +80,11 @@
       //        , routes: [[1,2],[3,4]]
       //        , state: {}}
       
-      // seed_id = DAML.spaceseed_add(seed)
+      // seed_id = D.spaceseed_add(seed)
       
     })
     // document.addEventListener('DOMContentLoaded', function() {
-    //   block = DAML.Parser.string_to_block_segment('{1 | add $count | > :count}')
+    //   block = D.Parser.string_to_block_segment('{1 | add $count | > :count}')
     //   
     //   seed = { dialect: {commands: {minus: {daml: true, dialect: true, port: true, space: true}}}
     //          , stations: [682758676]
@@ -96,9 +96,9 @@
     //          , routes: [[1,2],[3,4]]
     //          , state: {}}
     //   
-    //   seed_id = DAML.spaceseed_add(seed)
+    //   seed_id = D.spaceseed_add(seed)
     //   
-    //   space = new DAML.Space(seed_id)
+    //   space = new D.Space(seed_id)
     // })
   </script>
   

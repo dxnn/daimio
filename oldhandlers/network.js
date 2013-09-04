@@ -1,7 +1,7 @@
 // Commands for network access
 // (c) dann toliver 2012
 
-DAML.import_models({
+D.import_models({
   network: {
     desc: "Commands for network access",
     vars: {},
@@ -9,17 +9,17 @@ DAML.import_models({
 
       send: {
         desc: 'Send some things over the network',
-        help: "Sends a chunk o' DAML to the server, loads the returned values into their named variables (results.DATA -> DATA), and performs the 'then' DAML.",
+        help: "Sends a chunk o' D to the server, loads the returned values into their named variables (results.DATA -> DATA), and performs the 'then' D.",
         params: [
           {
             key: 'string',
-            desc: 'A string, usually of DAML',
+            desc: 'A string, usually of D',
             type: 'string',
             required: true,
           },
           {
             key: 'then',
-            desc: 'A DAML template to perform once the data returns',
+            desc: 'A D template to perform once the data returns',
             type: 'block',
           },
           {
@@ -33,13 +33,13 @@ DAML.import_models({
           //   string, 
           //   context, 
           //   function(results) {
-          //     DAML.execute('variable', 'set', ['this', results]);
+          //     D.execute('variable', 'set', ['this', results]);
           //     if(!_.isArray(results)) {
           //       for(var key in results) {
-          //         DAML.execute('variable', 'set', [key, results[key]]);
+          //         D.execute('variable', 'set', [key, results[key]]);
           //       }
           //     }
-          //     DAML.run(then);
+          //     D.run(then);
           // });
         },
       },
@@ -49,7 +49,7 @@ DAML.import_models({
         params: [
           {
             key: 'daml',
-            desc: 'A string, usually of DAML',
+            desc: 'A string, usually of D',
             type: 'string',
             required: true,
           },

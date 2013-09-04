@@ -46,9 +46,9 @@
   
   function try_state(state, start) {
     if(!state.data.handler)
-      return Object.keys(DAML.commands) // TODO: only at command start?
+      return Object.keys(D.commands) // TODO: only at command start?
     else if(!state.data.method)
-      return Object.keys(DAML.commands[state.data.handler].methods)
+      return Object.keys(D.commands[state.data.handler].methods)
     else if(state.verb == 'parametrize' && !start) // no pname
       return state.data.pnames
     else if(state.data.pname == start) // incomplete pname

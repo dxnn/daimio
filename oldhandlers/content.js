@@ -1,6 +1,6 @@
 // content commands... these might be katsu specific, maybe we should move them.
 
-DAML.import_models({
+D.import_models({
   content: {
     desc: "Some content-like things",
     methods: {
@@ -16,7 +16,7 @@ DAML.import_models({
           },
         ],
         fun: function(value) {
-          // THINK: maybe make this poke content into DAML.content instead of Katsu.content...
+          // THINK: maybe make this poke content into D.content instead of Katsu.content...
           return Katsu.content[value];
         },
       },

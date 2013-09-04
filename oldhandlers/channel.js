@@ -1,6 +1,6 @@
 // A channel has some inports, some outports, and can have values manually pushed on to it. they connect gateways to gateways
 
-DAML.import_models({
+D.import_models({
   channel: {
     desc: 'Commands for channel manipulation',
     methods: {
@@ -27,16 +27,16 @@ DAML.import_models({
           var make_me_a_gateway = function(maybe_gateway) {
             // THINK: what is an @gateway var thing? is it just an id?
             
-            if(DAML.GATEWAYS[maybe_gateway])
+            if(D.GATEWAYS[maybe_gateway])
               return maybe_gateway
 
             // so maybe_gateway is a block, but it's unfuncified... so func it.
-            // var block = DAML.TYPES['block'](maybe_gateway)
+            // var block = D.TYPES['block'](maybe_gateway)
             
             // erm... block gets space.execute'd so keep it as a segment...
             // except what if it's just a string?
             
-            return DAML.add_gateway(null, 'spaceship', {block: maybe_gateway, space: process.space}).name
+            return D.add_gateway(null, 'spaceship', {block: maybe_gateway, space: process.space}).name
           }
           
           from = from.map(make_me_a_gateway)
@@ -46,14 +46,14 @@ DAML.import_models({
           // herp derp merp berp
           
           var channel_name = 'channel:' + Math.random()
-            , channel = DAML.commands.channel.methods.add.fun(channel_name)
+            , channel = D.commands.channel.methods.add.fun(channel_name)
           
           from.forEach(function(gateway_name) {
-            DAML.commands.channel.methods['attach-to-start'].fun(channel_name, gateway_name)
+            D.commands.channel.methods['attach-to-start'].fun(channel_name, gateway_name)
           })
           
           to.forEach(function(gateway_name) {
-            DAML.commands.channel.methods['attach-to-end'].fun(channel_name, gateway_name)
+            D.commands.channel.methods['attach-to-end'].fun(channel_name, gateway_name)
           })
           
           console.log(to)
@@ -72,7 +72,7 @@ DAML.import_models({
           }, // THINK: mix/match with commas first is weird, but it's all a hack to get around needing commas in the first place.
         ],
         fun: function(name) {
-          DAML.CHANNELS[name] = {
+          D.CHANNELS[name] = {
             name: name,
             startpoints: [],
             endpoints: []
@@ -109,16 +109,16 @@ DAML.import_models({
           },
         ],
         fun: function(name, gateway_name) {
-          var channel = DAML.CHANNELS[name]
-            , gateway = DAML.GATEWAYS[gateway_name]
+          var channel = D.CHANNELS[name]
+            , gateway = D.GATEWAYS[gateway_name]
           
           if(!channel) {
-            DAML.setError('That is not a valid channel')
+            D.setError('That is not a valid channel')
             return name
           }
           
           if(!gateway) {
-            DAML.setError('That is not a valid gateway')
+            D.setError('That is not a valid gateway')
             return name
           }
           
@@ -152,16 +152,16 @@ DAML.import_models({
           },
         ],
         fun: function(name, gateway_name) {
-          var channel = DAML.CHANNELS[name]
-            , gateway = DAML.GATEWAYS[gateway_name]
+          var channel = D.CHANNELS[name]
+            , gateway = D.GATEWAYS[gateway_name]
           
           if(!channel) {
-            DAML.setError('That is not a valid channel')
+            D.setError('That is not a valid channel')
             return name
           }
           
           if(!gateway) {
-            DAML.setError('That is not a valid gateway')
+            D.setError('That is not a valid gateway')
             return name
           }
           
@@ -188,10 +188,10 @@ DAML.import_models({
           },
         ],
         fun: function(name, value, callback) {
-          var channel = DAML.CHANNELS[name]
+          var channel = D.CHANNELS[name]
           
           if(!channel) {
-            DAML.setError('That is not a valid channel')
+            D.setError('That is not a valid channel')
             return name
           }
           

@@ -1,7 +1,7 @@
 // Commands for button counts
 // (c) dann toliver 2013
 
-DAML.import_models({
+D.import_models({
   count: {
     desc: "Buttony counting commands",
     methods: {
@@ -13,7 +13,7 @@ DAML.import_models({
           
           // THINK: maybe make these gateways also???
           
-          DAML.db.collection('presses', function(err, c) {
+          D.db.collection('presses', function(err, c) {
             c.find({_id: 'global'}).toArray(function(err, items) {
               prior_starter(items[0]['count'])
             })
@@ -28,7 +28,7 @@ DAML.import_models({
         params: [],
         fun: function(name, type, data) {
 
-          DAML.db.collection('presses', function(err, c) {
+          D.db.collection('presses', function(err, c) {
             c.update({'_id': 'global'}, {'$inc': {'count': 1}}, {}, function(err, result) {});
           })
           

@@ -15,18 +15,18 @@
 
 // LE PRELUDE
 
-var DAML = require('daml')
+var D = require('daml')
 
 ERRORS = []
 
 template = function(template) {
-  var foo = DAML.spaceseed_add(template)
+  var foo = D.spaceseed_add(template)
 
-  console.log(foo, JSON.stringify(DAML.SPACESEEDS, null, 2))
+  console.log(foo, JSON.stringify(D.SPACESEEDS, null, 2))
 }
 
 dialect = function(dialect) {
-  return DAML.dialect_add(dialect)
+  return D.dialect_add(dialect)
 }
 
 // TESTS GO HERE!!!!

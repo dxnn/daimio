@@ -1,6 +1,6 @@
 /**
  * Author: dann
- * A CodeMirror mode for DAML
+ * A CodeMirror mode for D
  *  (forked from Clojure mode by Hans Engel 
  *    (branched from Scheme mode by Koh Zi Han 
  *      (based on implementation by Koh Zi Chun)))
@@ -8,8 +8,8 @@
 CodeMirror.defineMode("daml", function() {
   
   
-  // this parser doesn't work without a live DAML install. We use the internal DAML parser directly, and the local dialect of DAML commands, aliases, terminators, etc.
-  if(typeof DAML == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
+  // this parser doesn't work without a live D install. We use the internal D parser directly, and the local dialect of D commands, aliases, terminators, etc.
+  if(typeof D == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
       PAREN = "hr", PARAMNAME = "attribute", HANDLER = "builtin", METHOD = "keyword",
@@ -121,7 +121,7 @@ CodeMirror.defineMode("daml", function() {
         now.verb = 'close'
         segue = true
       }
-      else if(DAML.terminators[peek]) {
+      else if(D.terminators[peek]) {
         onTerminate(state)
         now.verb = 'handle'
         goThere(state, 'terminator')
@@ -168,17 +168,17 @@ CodeMirror.defineMode("daml", function() {
 
         // TODO: this assumes well-formed aliases, and will bomb if there's an error. make it robust!
         // good alias
-        else if(DAML.AliasMap[word]) { 
+        else if(D.AliasMap[word]) { 
           returnType = ALIAS
-          var words = DAML.AliasMap[word].split(' ').reverse() 
+          var words = D.AliasMap[word].split(' ').reverse() 
           word = words.pop()
           data.handler = word
           now.verb = 'methodize'
           
           if(words.length) {
             word = words.pop()
-            for(var i=0, l = DAML.commands[data.handler].methods[word].params.length; i < l; i++) {
-              data.pnames.push(DAML.commands[data.handler].methods[word].params[i].key)
+            for(var i=0, l = D.commands[data.handler].methods[word].params.length; i < l; i++) {
+              data.pnames.push(D.commands[data.handler].methods[word].params[i].key)
             }
             data.method = word
             now.verb = 'parametrize'
@@ -200,7 +200,7 @@ CodeMirror.defineMode("daml", function() {
         } 
         
         // good handler
-        else if(DAML.commands[word]) { 
+        else if(D.commands[word]) { 
           data.handler = word
           returnType = HANDLER
           now.verb = 'methodize'
@@ -220,7 +220,7 @@ CodeMirror.defineMode("daml", function() {
       */
       case 'methodize':
         var word = getNextWord(stream)
-        var handler = DAML.commands[data.handler]
+        var handler = D.commands[data.handler]
 
         // good method
         if(handler.methods[word]) { 
@@ -445,7 +445,7 @@ CodeMirror.defineMode("daml", function() {
       */
       case 'open':
         peek = stream.peek()
-        returnType = DAML.terminate(peek, 'eat', [stream, state])
+        returnType = D.terminate(peek, 'eat', [stream, state])
         // terminators take the previous stack and the next stack and merge them together, 
         // but here they just return a type and modify 'state'. we need to put these two things together somehow...
         now.verb = 'close'
@@ -518,7 +518,7 @@ CodeMirror.defineMode("daml", function() {
           returnType = inTerminator(stream, state)
         break
         
-        case 'outside': // outside all DAML commands
+        case 'outside': // outside all D commands
         default:
           stream.eatWhile(tests.not_open_brace)
           if(stream.peek() == '{') {

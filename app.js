@@ -8,9 +8,9 @@ var app = require('http').createServer(handler)
 
 // io.set('log level', 0)
     
-var DAML = require('daml')
-DAML.db = db
-DAML.mongo = mongo
+var D = require('daml')
+D.db = db
+D.mongo = mongo
 
 
 // var fileServer = new(static.Server)('./public')
@@ -53,14 +53,14 @@ function handler (req, res) {
   //     global.output = [];
   //     
   //     // if(POST.daml) {
-  //       // this_html += DAML.run(POST.daml);
+  //       // this_html += D.run(POST.daml);
   //       // TODO: allow text through here, not just json
   //     // } 
   //     
   //     res.writeHead(200, {"Content-Type": "application/json"});
   // 
-  //     // DAML.add_global('POST', POST);
-  //     DAML.run(POST.daml, function(value) {
+  //     // D.add_global('POST', POST);
+  //     D.run(POST.daml, function(value) {
   //       res.end(JSON.stringify(global.output));
   //     });
   //     
@@ -98,7 +98,7 @@ io.on('connection', function (socket) {
     //   if(!data.daml) 
     //     return false
     //   
-    //   DAML.run(data.daml, function(value) { // TODO: add 'context' for run
+    //   D.run(data.daml, function(value) { // TODO: add 'context' for run
     //     io.sockets.emit('return', value) // TODO: return just to asker [maybe use jDaimio for this?]
     //   })
     // })

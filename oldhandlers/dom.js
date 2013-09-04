@@ -1,6 +1,6 @@
 // // fiddly DOM connection commands
 // 
-// DAML.import_models({
+// D.import_models({
 //   dom: {
 //     desc: "Basic DOM commands",
 //     help: "This is a bit wonky at the moment. Maybe it always will be, due to the wonkiness of the DOM.",
@@ -10,7 +10,7 @@
 //       // BINDINGS AND WHATNOT
 // 
 //       on: {
-//         desc: "Attach a DAML action to an event on a DOM element.",
+//         desc: "Attach a D action to an event on a DOM element.",
 //         help: "See http://api.jquery.com/on/ for more details.",
 //         params: [
 //           {
@@ -29,7 +29,7 @@
 //           },
 //           {
 //             key: 'daml',
-//             desc: "A DAML template",
+//             desc: "A D template",
 //             type: 'block',
 //           },
 //           {
@@ -56,20 +56,20 @@
 //             faux_this.pageY = e.pageY
 //             faux_this.type = e.type
 //             
-//             DAML.import_var('this', faux_this) // THINK: make this __this or something???
+//             D.import_var('this', faux_this) // THINK: make this __this or something???
 //             
 //             if(event.slice(0,6) == 'submit') {
 //               var commands = ''
 //               $.each($(this).serializeArray(), function(i, field) {
-//                 DAML.import_var(field.name, field.value)
+//                 D.import_var(field.name, field.value)
 //                 if(field.name == 'commands') commands = field.value
 //               })
 //               if(commands) {
-//                 DAML.run(commands)
+//                 D.run(commands)
 //               }
 //             }
 //             
-//             DAML.run(daml)
+//             D.run(daml)
 //             return !!_continue;
 //           };
 //           
@@ -82,7 +82,7 @@
 //       },
 //       
 //       off: {
-//         desc: "Remove a DAML action from an event on a DOM element.",
+//         desc: "Remove a D action from an event on a DOM element.",
 //         help: "See http://api.jquery.com/off/ for more details.",
 //         params: [
 //           {
@@ -152,7 +152,7 @@
 //           },
 //           {
 //             key: 'daml',
-//             desc: "A DAML template",
+//             desc: "A D template",
 //             type: 'block',
 //             required: true,
 //           },
@@ -184,9 +184,9 @@
 //             faux_this.pageY = e.pageY
 //             faux_this.type = e.type
 //             
-//             DAML.import_var('this', faux_this)
+//             D.import_var('this', faux_this)
 //             
-//             DAML.run(daml)
+//             D.run(daml)
 //             return false
 //           }
 //           
@@ -210,7 +210,7 @@
 //           },
 //           {
 //             key: 'daml',
-//             desc: "A DAML template",
+//             desc: "A D template",
 //             type: 'block',
 //             required: true,
 //           },
@@ -234,12 +234,12 @@
 //         ],
 //         fun: function(id) {
 //           var template = this.vars.bindings[id]
-//           if(!template) return DAML.onerror(id, "You must bind the element before you refresh it. Use {dom set} to set an element's content.")
+//           if(!template) return D.onerror(id, "You must bind the element before you refresh it. Use {dom set} to set an element's content.")
 //           
 //           var el = document.getElementById(id)
-//           if(!el) return DAML.onerror(id, "Invalid element id.")
+//           if(!el) return D.onerror(id, "Invalid element id.")
 //           
-//           el.innerHTML = DAML.run(template).replace(/^\s+|\s+$/g, '') // FIXME: this shouldn't have to trim!
+//           el.innerHTML = D.run(template).replace(/^\s+|\s+$/g, '') // FIXME: this shouldn't have to trim!
 //         },
 //       },
 //       
@@ -256,7 +256,7 @@
 //         ],
 //         fun: function(id) {
 //           var el = document.getElementById(id)
-//           if(!el) return DAML.onerror(id, "Invalid element id.")
+//           if(!el) return D.onerror(id, "Invalid element id.")
 //           
 //           return el.value
 //         },
@@ -281,7 +281,7 @@
 //         ],
 //         fun: function(id, to) {
 //           var el = document.getElementById(id)
-//           if(!el) return DAML.onerror(id, "Invalid element id.")
+//           if(!el) return D.onerror(id, "Invalid element id.")
 //           
 //           return el.value = to
 //         },
@@ -300,7 +300,7 @@
 //         ],
 //         fun: function(id) {
 //           var el = document.getElementById(id)
-//           if(!el) return DAML.onerror(id, "Invalid element id.")
+//           if(!el) return D.onerror(id, "Invalid element id.")
 //           
 //           return el.innerHTML
 //         },
@@ -325,7 +325,7 @@
 //         ],
 //         fun: function(id, to) {
 //           var el = document.getElementById(id)
-//           if(!el) return DAML.onerror(id, "Invalid element id.")
+//           if(!el) return D.onerror(id, "Invalid element id.")
 //           
 //           el.innerHTML = to
 //         },

@@ -1,6 +1,6 @@
 // commands for variables
 
-DAML.import_models({
+D.import_models({
   variable: {
     desc: "Commands for spacial variable manipulation",
     vars: {counter: 0, paths: [], bindings: {}, bindhashes: {}, activepaths: {}},
@@ -45,32 +45,32 @@ DAML.import_models({
           }
           
           else 
-            return DAML.setError('Invalid variable type')
+            return D.setError('Invalid variable type')
           
           value = state[name]
           
-          if(!DAML.isNice(value))
+          if(!D.isNice(value))
             return false
           
-          return DAML.deep_copy(value) // OPT: this is HUGELY wasteful in cpu and memory, and rarely needed...
+          return D.deep_copy(value) // OPT: this is HUGELY wasteful in cpu and memory, and rarely needed...
           
           
           // var variables, output;
           // // if(this.vars.paths.indexOf(path) != -1) return false;
           // 
           // if(/^(@.+|[A-Z]+)$/.test(path.split('.', 1)[0])) {
-          //   // variables = DAML.Vglobals; // @ and uppercase vars are global (UC vars are read-only)
+          //   // variables = D.Vglobals; // @ and uppercase vars are global (UC vars are read-only)
           // } else {
           //   // if(scope) {
-          //   //   variables = _.find(DAML.Vstack, function(context) {return context.key == scope}); // fixed scope
+          //   //   variables = _.find(D.Vstack, function(context) {return context.key == scope}); // fixed scope
           //   // } else {
-          //     variables = DAML.VARS; // regular vars
+          //     variables = D.VARS; // regular vars
           //   // }
           // }
           // 
           // // this.vars.paths.push(path); // prevents 'poison pipe' infinite recursion, where the function representing {variable get path "__"} is set as the value of {__}. (it happens surprisingly often, indirectly.)
           // 
-          // output = DAML.resolve_path(path, variables);
+          // output = D.resolve_path(path, variables);
           // 
           // // this.vars.paths.pop();
           // 
@@ -98,29 +98,29 @@ DAML.import_models({
         ],
         fun: function(path, value, prior_starter, process) {
           if(!path)
-            return DAML.setError('Invalid path')
+            return D.setError('Invalid path')
           
           if(!process)
-            return DAML.setError('Invalid process')
+            return D.setError('Invalid process')
           
           if(!process.space)
-            return DAML.setError('Invalid process space')
+            return D.setError('Invalid process space')
           
           var state = process.space.state
             , words = path.split('.')
-            , value_copy = DAML.deep_copy(value)
+            , value_copy = D.deep_copy(value)
             
           if(words.length == 1) {
             state[path] = value_copy;
           } else {
-            // see note at resolve_path re DAML in paths
-            DAML.recursive_insert(state, words, value_copy);
+            // see note at resolve_path re D in paths
+            D.recursive_insert(state, words, value_copy);
           }
           
           return value;
           
           
-          // // THINK: we deep copy objects on the way in, so we don't A) tweak other variables by reference and B) leak out of DAML into the base language by accident, but it's kind of slow.
+          // // THINK: we deep copy objects on the way in, so we don't A) tweak other variables by reference and B) leak out of D into the base language by accident, but it's kind of slow.
 
           // TODO: make this WORMy for pipe vars and constants
           // both uppercase and only letters (no # or _ or $ or @)

@@ -1,7 +1,7 @@
 // Commands for D3
 // (c) dann toliver 2012
 
-DAML.import_models({
+D.import_models({
   ddd: {
     desc: "A helper for doing D3 stuff",
     help: "",
@@ -32,12 +32,12 @@ DAML.import_models({
         ],
         fun: function(action, params, options) {
           // FIXME: this is pretty stupid
-          if(typeof DAML.ETC.d3[action] != 'function') return DAML.onerror('That is not a valid action');
+          if(typeof D.ETC.d3[action] != 'function') return D.onerror('That is not a valid action');
           params.unshift(options[2]);
           params.unshift(options[1]);
           params.unshift(options[0]);
           // fix option length
-          DAML.ETC.d3[action].apply(this, params);
+          D.ETC.d3[action].apply(this, params);
         },
       },
     
@@ -45,4 +45,4 @@ DAML.import_models({
   }
 });
 
-DAML.ETC.d3 = {};
+D.ETC.d3 = {};

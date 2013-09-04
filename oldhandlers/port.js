@@ -1,6 +1,6 @@
 // Ports are the only way in or out of a space
 
-DAML.import_models({
+D.import_models({
   port: {
     desc: 'Space ports are a good deal',
     methods: {
@@ -27,7 +27,7 @@ DAML.import_models({
           }
         ],
         fun: function(direction, type, data, gateway) {
-          return DAML.add_port(direction, type, data, gateway) // GUID? int for now? 
+          return D.add_port(direction, type, data, gateway) // GUID? int for now? 
         },
       },
       
@@ -48,10 +48,10 @@ DAML.import_models({
           },
         ],
         fun: function(name, value, prior_starter, process) {
-          // var port = DAML.PORTS[id] // TODO: erp make this context(space) sensitive?
+          // var port = D.PORTS[id] // TODO: erp make this context(space) sensitive?
           
           // if(!port)
-          //   return DAML.setError('That is not a valid port')
+          //   return D.setError('That is not a valid port')
           // 
           // return port.sendMessage(value, prior_starter)
           

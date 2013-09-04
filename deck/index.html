@@ -702,7 +702,7 @@ n = 0; start = Date.now(); trampoline({fun:f, args:[function() {console.log(Date
     }, scope, process)
   }
 
-  return D.dataTrampoline(data, processfun, DAML.list_push, prior_starter)
+  return D.dataTrampoline(data, processfun, D.list_push, prior_starter)
 }
   </code></pre>
 </section>

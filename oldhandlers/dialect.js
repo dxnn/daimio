@@ -1,6 +1,6 @@
 // A dialect is a map of commands and another of aliases.
 
-DAML.import_models({
+D.import_models({
   space: {
     desc: 'Commands for dialectical manipulation',
     methods: {
@@ -19,14 +19,14 @@ DAML.import_models({
           }
         ],
         fun: function(name, dialect, block) {
-          dialect = DAML.DIALECTS.top // TODO: what should this be?
+          dialect = D.DIALECTS.top // TODO: what should this be?
           
-          block = DAML.Parser.string_to_block_segment(block)
+          block = D.Parser.string_to_block_segment(block)
           
-          if(DAML.SPACESEEDS[name])
-            return DAML.setError('That space has already been added')
+          if(D.SPACESEEDS[name])
+            return D.setError('That space has already been added')
           
-          DAML.SPACESEEDS[name] = new DAML.Space(dialect, block)
+          D.SPACESEEDS[name] = new D.Space(dialect, block)
           
           // THINK: how do we constrain which spaces have access to this gateway??
           return name

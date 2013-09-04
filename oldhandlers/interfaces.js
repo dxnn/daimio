@@ -10,9 +10,9 @@
 //   $('#commander').val(value);
 // };
 
-DAML.import_models({
+D.import_models({
   command: {
-    desc: "Interface methods for managing DAML commands.",
+    desc: "Interface methods for managing D commands.",
     methods: {
       
       init: {
@@ -28,12 +28,12 @@ DAML.import_models({
             
             var value, command = $('#commander').val();
             
-            // DAML.run(command);
-            DAML.enqueue(command);
+            // D.run(command);
+            D.enqueue(command);
 
-            // TODO: register history using a post-command hook in DAML
+            // TODO: register history using a post-command hook in D
             
-            // if(value = DAML.enqueue(DAML.parse(command, self.response_callback))) {
+            // if(value = D.enqueue(D.parse(command, self.response_callback))) {
             //   Interfaces.history.add('> ' + command); // only log valid commands
             // }
             
@@ -67,8 +67,8 @@ DAML.import_models({
 
             // switch (keyCode) {
             //   case arrow.up:
-            //     DAML.execute('history', 'get_prev', [self.search, self.current]);
-            //     // obj = DAML.commands.history.methods.get_prev(self.search, self.current);
+            //     D.execute('history', 'get_prev', [self.search, self.current]);
+            //     // obj = D.commands.history.methods.get_prev(self.search, self.current);
             //     if(obj && obj.string) {
             //       $('#commander').val(obj.string);
             //       self.current = obj.current;
@@ -76,8 +76,8 @@ DAML.import_models({
             //   break;
             //   case arrow.down:
             //     // TODO: down arrow at bottom should recover search phrase
-            //     DAML.execute('history', 'get_next', [self.search, self.current]);
-            //     // obj = DAML.commands.history.methods.get_next(self.search, self.current);
+            //     D.execute('history', 'get_next', [self.search, self.current]);
+            //     // obj = D.commands.history.methods.get_next(self.search, self.current);
             //     if(obj && obj.string) {
             //       $('#commander').val(obj.string);
             //       self.current = obj.current;
@@ -99,7 +99,7 @@ DAML.import_models({
             //     var words=[], model={}, method={}, param={}, last_param_index=0, stuff={}, autoval='';
             // 
             //     words = $('#commander').val().split(/ /);
-            //     model = DAML.commands[words[0]] || {};
+            //     model = D.commands[words[0]] || {};
             // 
             //     if(words.length == 1) {
             //       stuff = {
@@ -108,7 +108,7 @@ DAML.import_models({
             //         desc: model.desc ? model.desc : '', 
             //         auto: function(string) {
             //           var regex = new RegExp('^' + string);
-            //           return _.select(Object.keys(DAML.commands || []), function(value) {return regex.test(value);});
+            //           return _.select(Object.keys(D.commands || []), function(value) {return regex.test(value);});
             //         }(words[0]),
             //       };
             //     } 

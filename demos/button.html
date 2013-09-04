@@ -147,7 +147,7 @@
   
     socket.on('bounced', function (data) {
       console.log(data)
-      var output = DAML.run(data.daml, data.context)
+      var output = D.run(data.daml, data.context)
       // var new_span = $('<span></span>').text(output)
       // $('#stuff').append($('<p>' + data.context.name + ': </p>').append(new_span))
     });
@@ -155,20 +155,20 @@
   
     document.addEventListener('DOMContentLoaded', function() {
       var code = document.getElementById('hello_daimio')
-      DAML.run(code.text, function() {})
+      D.run(code.text, function() {})
     })
   </script>
   
   <!-- 
   
-    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}" | gateway add name :tickergateway type :space | channel attach-to-end name :button-to-space | channel attach-to-start gateway :tickergateway}')
+    D.run('{space add name :ticker block "{process sleep for 1000 then 1}" | gateway add name :tickergateway type :space | channel attach-to-end name :button-to-space | channel attach-to-start gateway :tickergateway}')
     
-    DAML.run('{space add name :ticker block "{process sleep for 1000 then 1}"}')
-    DAML.run('{gateway add name :tickergateway type :space thing :ticker}')
-    DAML.run('{channel attach-to-end name :button-to-space gateway :tickergateway}')
-    DAML.run('{channel attach-to-start name :button-to-space gateway :tickergateway}')
+    D.run('{space add name :ticker block "{process sleep for 1000 then 1}"}')
+    D.run('{gateway add name :tickergateway type :space thing :ticker}')
+    D.run('{channel attach-to-end name :button-to-space gateway :tickergateway}')
+    D.run('{channel attach-to-start name :button-to-space gateway :tickergateway}')
   
-    DAML.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
+    D.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
     {//3 | process wait for 1000 | add 99}
     {3 | process wait for 1000 then "{__}" | add 99}
     
