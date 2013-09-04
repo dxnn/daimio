@@ -14,17 +14,18 @@
 
     outer
       $colors ["#339", "#66B", "#66F", "#BBF", "#EEF"]
-      $time 30
-      $cells []
+      $time   30
+      $cells  []
       
       // INIT
-      @init  from-js
+      @init   from-js
       changed {__}
-      show {__}
+      show    {__}
       initializer
         {20 | range | map block "{20 | range | map block 0}" | $>cells}
+  // {0 | $>cells.{20 | range}.{range 20}}
       
-      @init -> initializer -> process -> changed
+      @init -> initializer
 
 
       // LOOP
@@ -38,6 +39,7 @@
                 2 1)}"}"
         | $>cells}
 
+      initializer -> process -> changed
       process -> {process sleep for $time} -> process
       
       
@@ -47,9 +49,6 @@
         {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 2 else __in}"}" | $>cells}
 
 // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
-
-
-// {0 | $>cells.{20 | range}.{range 20}}
 
 // HEY YOU! Make the above line work. Then make {(1 2 3) | >(:a :b :c)} work. Then add a REPL and editor to this page!
 // Then later maybe finish off todomvc w/ pushstate and filters and editing/display-ports.
