@@ -1,11 +1,11 @@
 # Daimio is for lovers
 
-Daimio is a framework for making programmable applications. (Mostly web ones, at the moment.)
+Daimio is a framework for making programmable applications. (Mostly web ones for now.)
 
 To get started drop this repo into a web-accessible directory. Then point your browser at
-tests/daimio.html
-demos/excitebike.html
-demos/goodideas.html
+- tests/daimio.html
+- demos/excitebike.html
+- demos/goodideas.html
 
 You'll need a copy of CodeMirror installed to prevent the test page from complaining. 
 
