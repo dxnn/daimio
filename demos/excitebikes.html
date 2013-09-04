@@ -32,12 +32,10 @@
         { $cells | map block "{
             __ | map with {* (:row _key)} block "{
               __ | switch (
-                0 { $cells.{_row | add -1 | range 3}.*.{_key | add -1 | range 3}.*
-                  | math max | >max | _max | less than 3 | then 0 else _max}
+                0 { $cells.{_row | add -1 | range 3}.{_key | add -1 | range 3}
+                  | math max | >max | _max | less than 2 | then 0 else _max}
                 1 0 
-                2 1
-                3 2
-                4 3)}"}"
+                2 1)}"}"
         | $>cells}
 
       process -> {process sleep for $time} -> process
@@ -46,9 +44,17 @@
       // INPUT
       @touched dom-on-click .touch
       activate
-        {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 4 else __in}"}" | $>cells}
+        {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 2 else __in}"}" | $>cells}
 
 // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
+
+
+// {0 | $>cells.{20 | range}.{range 20}}
+
+// HEY YOU! Make the above line work. Then make {(1 2 3) | >(:a :b :c)} work. Then add a REPL and editor to this page!
+// Then later maybe finish off todomvc w/ pushstate and filters and editing/display-ports.
+
+
 
 
       @touched -> activate -> changed
