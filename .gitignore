@@ -1,4 +1,5 @@
 codemirror
 deck
-node_modules
 ninspector
+node_modules/*
+!node_modules/daimio
