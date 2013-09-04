@@ -3,9 +3,7 @@
 <head> 
   <title>Daimio Tests</title>
   
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/katsu/nodely/__jquery.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daimio&x=1"></script>
+  <script type="text/javascript" src="../get.php?file=node_modules/daimio&x=1"></script>
   
   <style type="text/css" media="screen">
     code {
@@ -25,7 +23,19 @@
 
   <script type="text/javascript" charset="utf-8">
     // load daimio file
-    $.get('daimio.dm', function(data) {
+    function xhr_get(target, callback) {
+      var xhr = new XMLHttpRequest()
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          callback(xhr.responseText)
+        }
+      }
+      xhr.open('GET', target, true)
+      xhr.send(null)
+    }
+    
+    
+    xhr_get('daimio.dm', function(data) {
       
       // these globals are kind of a hack...
       lines = data.split(/\n/).reverse()
@@ -164,8 +174,8 @@
       if(lose) stats += '<p><span class="bad">Lost ' + lose + ' tests.</span></p>'
       if(!lose) stats += '<p>You win!!!</p>'
       
-      $('#stats').html(stats)
-      $('#tests').html(html)
+      document.getElementById('stats').innerHTML = stats
+      document.getElementById('tests').innerHTML = html
     }
     
     
@@ -246,14 +256,14 @@
 
     // and then hide ugly horizontal scrollbar
     cm.on("change", function(instance, change) {
-        $(".CodeMirror-hscrollbar").css('display', 'none');
+//        $(".CodeMirror-hscrollbar").css('display', 'none');
         // (!) this code is using jQuery and the selector is quite imperfect if
         // you're using more than one CodeMirror on your page. you're free to
         // change it appealing to your page structure.
     });
 
     // the following line fixes a bug I've encountered in CodeMirror 3.1
-    $(".CodeMirror-scroll").css('overflow', 'hidden');
+//    $(".CodeMirror-scroll").css('overflow', 'hidden');
     // jQuery again! be careful with selector or move this to .css file
 
   </script>

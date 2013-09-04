@@ -1,6 +1,6 @@
 /**
  * Author: dann
- * A CodeMirror mode for D
+ * A CodeMirror mode for Daimio
  *  (forked from Clojure mode by Hans Engel 
  *    (branched from Scheme mode by Koh Zi Han 
  *      (based on implementation by Koh Zi Chun)))

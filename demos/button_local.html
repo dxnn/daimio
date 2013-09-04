@@ -3,8 +3,7 @@
 <head> 
   <meta charset="utf-8">
   <title>Push My Button!</title>
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/node_modules/underscore/underscore.js"></script>
-  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=node_modules/daimio"></script>
+  <script type="text/javascript" src="../get.php?file=node_modules/daimio"></script>
 </head>
 
 <body>
@@ -65,7 +64,8 @@
       var get_seedlike_positions = function(seed) {
         var inports = {}, outports = {}
         
-        _.each(seed.ports, function(port, portkey) {
+        // _.each(seed.ports, function(port, portkey) {
+        D.toArray(seed.ports).forEach(function(port, portkey) {
           port.dir = D.PORTFLAVOURS[port[0]].dir
           if(port.dir == 'in')
             inports[portkey] = port
