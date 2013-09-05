@@ -9,7 +9,7 @@
       , found = []
       , state = token.state.now
       , stack = token.state.stack
-      , oldstate = stack[stack.length-1]
+      , oldstate = stack[stack.length-1] || {data: []}
       , start = token.string
       , from = {line: cur.line, ch: token.start}
       , to = {line: cur.line, ch: token.end}

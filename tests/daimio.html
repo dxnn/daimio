@@ -2,9 +2,7 @@
 <html> 
 <head> 
   <title>Daimio Tests</title>
-  
   <script type="text/javascript" src="../get.php?file=daimio&x=1"></script>
-  
   <style type="text/css" media="screen">
     code {
       color: #00F;
@@ -34,9 +32,7 @@
       xhr.send(null)
     }
     
-    
     xhr_get('daimio.dm', function(data) {
-      
       // these globals are kind of a hack...
       lines = data.split(/\n/).reverse()
       starttime = new Date().getTime()
@@ -49,24 +45,8 @@
       code_string=''
       
       D.dataTrampoline(lines, eat_line, D.string_concat, function() {}, done)
-      // eat_lines()
     })
-    
-    // eat_lines = function(value) {
-    //   var output = false
-    //   
-    //   if(value !== undefined) {
-    //     code_value = value
-    //   }
-    //   
-    //   while(lines.length) {
-    //     output = eat_line()
-    //     if(output !== output) return false
-    //   }
-    // 
-    //   done()
-    // }
-    
+
     function eat_line(value, prior_starter) {
       var whitespace='', wscount=0
         , line = lines.pop()
@@ -124,15 +104,12 @@
       // handle code
       if(mode == 'code') {
         html += '<code><pre>' + code_string + '</pre></code>'
-        // var callback = function(value) {
-        //   eat_lines(value)
-        // }
-        // D.run(code_string, callback)
-        // return NaN // signal of callback
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
-        code_value = D.execute_then_stringify(D.ExecutionSpace.execute(D.Parser.string_to_block_segment(code_string), null, prior_starter))
+        code_value = D.execute_then_stringify(
+                       D.ExecutionSpace.execute(
+                         D.Parser.string_to_block_segment(code_string), null, prior_starter))
         return code_value
       }
       
@@ -178,16 +155,18 @@
       document.getElementById('tests').innerHTML = html
     }
     
-    
   </script>
   
 </head>
 <body id="">  
+  <form style="width: 99%; position: fixed; top: 0px; margin: 0px"><textarea id="code" name="code" rows="1">Try me out! Type something up here!</textarea></form>
+  
+  <p>&nbsp;</p>
+  
   <div id="stats"></div>
   
   <div id="tests"></div>
   
-  <form style="width: 99%; position: fixed; bottom: 0px; margin: 0px"><textarea id="code" name="code" rows="1"></textarea></form>
   
   <script>
     // NOTE: this has to be set before emmet is loaded
@@ -208,65 +187,94 @@
   <script src="../codemirror/addon/emmet/emmet.js"></script>
     
   <script>
-    var gid = document.getElementById.bind(document)
-      , results = gid('results')
-      , code = gid('code')
-      , editor = CodeMirror.fromTextArea(code, {})
+    var ge = document.getElementById.bind(document)
+      , results = ge('results')
+      , code = ge('code')
+      , repl = CodeMirror.fromTextArea(code, {})
+      , autocomplete_on = true
+      , last_char = ""
+      , background = '#f8f8f8'
     
-    CodeMirror.commands.autocomplete = function(cm) {
-      CodeMirror.showHint(cm, CodeMirror.hint.daimio, {
-        extraKeys: {'Space': function(cm, hint) {hint.pick()}}
+    CodeMirror.commands.autocomplete = function(instance) {
+      CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
+        extraKeys: {'Space': function(instance, hint) {hint.pick()}}
       , completeSingle: true
       })
     }
     
-    editor.setOption('extraKeys', {
-      "Esc": "autocomplete",
+    repl.setOption('extraKeys', {
+      "Esc": function(instance) {
+        autocomplete_on = !autocomplete_on
+        // THINK: do something visible...
+        repl.display.wrapper.style.backgroundColor = autocomplete_on ? background : 'pink'
+      },
       "Enter": function(instance, x, y, z) {
-        cmi_display(instance.getLine(0))
+        repl_display(instance.getLine(0))
         instance.setLine(0, '')
       }
     })
-    editor.setOption('lineNumbers', true)
-    editor.setOption('matchBrackets', true)
-    
-    D.run(code.value, function(result) {
-      results.innerHTML = result
-    })
-    
-    // gogogadget oneline cm
-    var cm = editor
-      
-    // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
-    cm.setSize("100%", cm.defaultTextHeight() + 2 * 4)
-    // 200 is the preferable width of text field in pixels,
-    // 4 is default CM padding (which depends on the theme you're using)
+    repl.setOption('lineNumbers', false)
+    repl.setOption('matchBrackets', true)
+    repl.display.wrapper.style.backgroundColor = background
+        
 
-    // now disallow adding newlines in the following simple way
-    cm.on("beforeChange", function(instance, change) {
-      var newtext = change.text.join("").replace(/\n/g, "") // remove ALL \n !
-      change.update(change.from, change.to, [newtext])
-      return true
+    repl.on("change", function(instance, change) {
+      console.log(change)
+      
+      var old_last_char = last_char
+      last_char = change.text[0]
+      
+      if(change.removed[0])
+        return true
+      
+      // if(last_char != '{' && old_last_char != ' ' && old_last_char.length == 1)
+      //   return true
+      
+      if(autocomplete_on)
+        CodeMirror.commands.autocomplete(instance)
+
+// NOTE: use cursorActivity event to link a/c for starting w/ {
+
+
+      return false
+    })
+      
+
+    repl.on("beforeChange", function(instance, change) {
+      // remove pasted newlines
+      if(/\n/.test(change.text)) {
+        var newtext = change.text.join("").replace(/\n/g, "")
+        change.update(change.from, change.to, [newtext])
+        return true
+      }
+      
+      // add space to changes caused by autocomplete
+      if(change.from.constructor != CodeMirror.Pos && !change.origin) {
+        change.update(change.from, change.to, [change.text[0] + " "])
+        return true
+      }
     })
     
-    cmi_display = function(code) {
+    repl_display = function(code) {
       console.log(code)
       D.run(code)
+      
+      // D.run(code.value, function(result) {
+      //   results.innerHTML = result
+      // })
+      
     }
 
-    // and then hide ugly horizontal scrollbar
-    cm.on("change", function(instance, change) {
-//        $(".CodeMirror-hscrollbar").css('display', 'none');
-        // (!) this code is using jQuery and the selector is quite imperfect if
-        // you're using more than one CodeMirror on your page. you're free to
-        // change it appealing to your page structure.
-    });
+    // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
+    repl.setSize("100%", repl.defaultTextHeight() + 8) // 8 for font
 
-    // the following line fixes a bug I've encountered in CodeMirror 3.1
-//    $(".CodeMirror-scroll").css('overflow', 'hidden');
-    // jQuery again! be careful with selector or move this to .css file
+
+// NOTE: saving the following lines in case they're needed later -- delete this if you haven't had any scrollbar issues, otherwise change these to repl.display.foo references
+//    cm.on("change", function(instance, change) {
+//      document.querySelector(".CodeMirror-hscrollbar").style.display = 'none'
+//    });
+//    document.querySelector(".CodeMirror-scroll").style.overflow = 'hidden'
 
   </script>
-  
 </body>
 </html>
