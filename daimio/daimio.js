@@ -3629,7 +3629,7 @@ D.Space = function(seed_id, parent) {
   
   
   // TEMP HACK!
-  this.state = this.seed.state
+  // this.state = this.seed.state
   // END HACK!
   
   
@@ -3691,7 +3691,7 @@ D.Space = function(seed_id, parent) {
 }
 
 D.Space.prototype.get_state = function(param) {
-  return typeof this.state[param] != undefined ? this.state[param] : this.seed.state[param]
+  return (typeof this.state[param] != 'undefined') ? this.state[param] : this.seed.state[param]
 }
 
 D.Space.prototype.dock = function(ship, station_id) {
@@ -4486,29 +4486,6 @@ D.ETC.niceifyish = function(value, whitespace) {
   return JSON.stringify(value, purge, whitespace)
 }
 
-// via https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/bind
-if (!Function.prototype.bind) {
-  Function.prototype.bind = function (oThis) {
-    if (typeof this !== "function") {
-      // closest thing possible to the ECMAScript 5 internal IsCallable function
-      D.setError("What is trying to be bound is not callable, and that which seeks to be called is not bindable")
-    }
- 
-    var aArgs = Array.prototype.slice.call(arguments, 1), 
-        fToBind = this, 
-        fNOP = function () {},
-        fBound = function () {
-          return fToBind.apply((this instanceof fNOP && oThis) ? this: oThis,
-                               aArgs.concat(Array.prototype.slice.call(arguments)));
-        };
- 
-    fNOP.prototype = this.prototype;
-    fBound.prototype = new fNOP();
- 
-    return fBound;
-  };
-}
-
 D.import_aliases({
   'do': 'list each block',
   'wait': 'process sleep for 0',
@@ -4606,6 +4583,15 @@ D.ExecutionSpace =
   - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | $> :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
   
   
+*/
+
+
+
+
+/*
+
+  EVERYTHING BELOW HERE IS CRAZYPANTS
+
 */
 
 
