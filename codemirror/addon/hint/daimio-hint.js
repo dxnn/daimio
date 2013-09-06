@@ -49,6 +49,8 @@
     return {list: found, from: from, to: to}
   }
   
+  // TODO: suggest params for aliases
+  
   function try_state(state, start) {
     if(!state.data.handler)
       return Object.keys(D.commands).concat(Object.keys(D.ALIASES))

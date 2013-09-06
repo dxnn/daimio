@@ -85,16 +85,12 @@
     document.addEventListener('DOMContentLoaded', function() {
           seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
                               .map(function(node) {return node.text})
-                              .join("\n")
+                              .join("\n")  // published for editor
       
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed) // published for debug
     
-      // activate init
-      D.send_value_to_js_port('init', 1)
-      
-      editor.setValue(seedlikes)
-      
+      D.send_value_to_js_port('init', 1) // activate init
     })
   </script>
   
@@ -108,8 +104,9 @@
   </form>
   
   
-  <form style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
+  <form id="updateseed" style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
     <textarea id="seedling" name="seedling"></textarea>
+    <input type="submit" name="gogogo" value="Go">
   </form>
   
   
@@ -134,116 +131,150 @@
   <script src="../codemirror/addon/emmet/emmet.js"></script>
       
   <script type="text/javascript">    
-    var ge = document.getElementById.bind(document)
-      , results = ge('results')
-      , repl = CodeMirror.fromTextArea(ge('code'), {})
-      , ac_on = true
-      , background = '#f8f8f8'
-      , history_el = ge('history')
-      , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
-      , history_buffer = ''
-      , history_cursor = 0
+    document.addEventListener('DOMContentLoaded', function() {
     
-    
-    var editor = CodeMirror.fromTextArea(ge('seedling'), {})
-    
-    // add a/c to editor
-    // button for updating seed 
-    // highlighting/ac for spacial structure
-    // daggrrrrrrrr
-    
-    
-    
-    CodeMirror.commands.autocomplete = function(instance) {
-      CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
-        extraKeys: {'Space': function(instance, hint) {hint.pick()}}
-      , completeSingle: false
-      , closeCharacters: /[\n|"]/
-      })
-    }
-    
-    repl.setOption('lineNumbers', false)
-    repl.setOption('matchBrackets', true)
-    repl.setOption('extraKeys', {
-      "Esc": function(instance) {
-        ac_on = !ac_on
-        repl.display.wrapper.style.backgroundColor = ac_on ? background : 'pink' // display for a/c on/off
-      },
-      "Enter": function(instance) {
-        repl_display(instance.getLine(0))
-        instance.setLine(0, '')
-        history_cursor = 0
-      },
-      "Up": function(instance) {
-        if(!history_cursor)
-          history_buffer = instance.getValue()
-        
-        if(!history_list.length)
-          return
-        
-        // TODO: use history_buffer as a LHS filter to search through history
-        
-        history_cursor += history_cursor < history_list.length - 1 ? 1 : 0
-        instance.setValue(history_list[history_cursor-1])
-      },
-      "Down": function(instance) {
-        if(!history_cursor)
-          return false // if we're already all the way down, don't change anything
-        
-        history_cursor--
-        var prev = ''
-        
-        if(!history_cursor) // we were at 1, so reset from our buffer
-          prev = history_buffer
-        else
-          prev = history_list[history_cursor-1]
+    // GENERAL
 
-        instance.setValue(prev)
-      },
-    })
-    repl.display.wrapper.style.backgroundColor = background
+      var ge = document.getElementById.bind(document)
+        , results = ge('results')
+        , repl = CodeMirror.fromTextArea(ge('code'), {})
+        , ac_on = true
+        , background = '#f8f8f8'
+        , history_el = ge('history')
+        , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
+        , history_buffer = ''
+        , history_cursor = 0
+    
+      CodeMirror.commands.autocomplete = function(instance) {
+        CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
+          extraKeys: {'Space': function(instance, hint) {hint.pick()}}
+        , completeSingle: false
+        , closeCharacters: /[\n|"]/
+        })
+      }
 
-    repl.on("change", function(instance, change) {
-      if(ac_on && repl.getValue() && change.origin != 'setValue')
+    
+    // EDITOR
+    
+      var editor = CodeMirror.fromTextArea(ge('seedling'), {})
+      editor.setValue(seedlikes)
+    
+      editor.on("change", function(instance, change) {
         CodeMirror.commands.autocomplete(instance)
-    })
-
-    repl.on("beforeChange", function(instance, change) {
-      // NOTE: change.text stores an array of lines, so you *have* to join to remove pasted newlines
-      if(change.update && (/\n/.test(change.text) || change.text.length > 1)) {
-        var newtext = change.text.join("").replace(/\n/g, "") // THINK: when would this replace get triggered?
-        change.update(change.from, change.to, [newtext])
-        return true
-      }
-      
-      // add space to changes caused by autocomplete
-      if(change.from.constructor != CodeMirror.Pos && !change.origin) {
-        change.update(change.from, change.to, [change.text[0] + " "])
-        return true
-      }
-    })
-    
-    repl_display = function(code) {
-      D.run(code, function(value) {
-        // preprocess history: remove existing copies of this item
-        while(history_list.indexOf(code) != -1)
-          history_list.splice(history_list.indexOf(code), 1)
-        
-        // add to history and store it
-        history_list.unshift(code)
-        localStorage.setItem('repl-history', JSON.stringify(history_list))
-        
-        // display it
-        history_el.innerHTML = '<p class="input">'  + code + '</p>'
-                          + '<p class="result">' + (value || '&nbsp;') + '</p>' 
-                          + history_el.innerHTML
       })
-    }
 
-    // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
-    repl.setSize("100%", repl.defaultTextHeight() + 8) // 8 for font
-    
+      editor.on("beforeChange", function(instance, change) {
+        // add space to changes caused by autocomplete
+        if(change.from.constructor != CodeMirror.Pos && !change.origin) {
+          change.update(change.from, change.to, [change.text[0] + " "])
+          return true
+        }
+      })
+      
+      var updater = ge('updateseed')
+      updater.addEventListener('submit', function(e) {
+        e.stopPropagation()
+        e.preventDefault()
         
+        var outerseed = D.make_some_space(editor.getValue())
+        OuterSpace.seed = D.SPACESEEDS[outerseed]
+        
+        // OuterSpace = new D.Space(outerseed) // published for debug
+
+        // D.send_value_to_js_port('init', 1) // activate init
+        
+      })
+    
+      // button for updating seed 
+      // highlighting/ac for spacial structure
+      // daggrrrrrrrr
+    
+    
+    
+    // REPL
+    
+      repl.setOption('lineNumbers', false)
+      repl.setOption('matchBrackets', true)
+      repl.setOption('extraKeys', {
+        "Esc": function(instance) {
+          ac_on = !ac_on
+          repl.display.wrapper.style.backgroundColor = ac_on ? background : 'pink' // display for a/c on/off
+        },
+        "Enter": function(instance) {
+          repl_display(instance.getLine(0))
+          instance.setLine(0, '')
+          history_cursor = 0
+        },
+        "Up": function(instance) {
+          if(!history_cursor)
+            history_buffer = instance.getValue()
+        
+          if(!history_list.length)
+            return
+        
+          // TODO: use history_buffer as a LHS filter to search through history
+        
+          history_cursor += history_cursor < history_list.length - 1 ? 1 : 0
+          instance.setValue(history_list[history_cursor-1])
+        },
+        "Down": function(instance) {
+          if(!history_cursor)
+            return false // if we're already all the way down, don't change anything
+        
+          history_cursor--
+          var prev = ''
+        
+          if(!history_cursor) // we were at 1, so reset from our buffer
+            prev = history_buffer
+          else
+            prev = history_list[history_cursor-1]
+
+          instance.setValue(prev)
+        },
+      })
+      repl.display.wrapper.style.backgroundColor = background
+
+      repl.on("change", function(instance, change) {
+        if(ac_on && repl.getValue() && change.origin != 'setValue')
+          CodeMirror.commands.autocomplete(instance)
+      })
+
+      repl.on("beforeChange", function(instance, change) {
+        // NOTE: change.text stores an array of lines, so you *have* to join to remove pasted newlines
+        if(change.update && (/\n/.test(change.text) || change.text.length > 1)) {
+          var newtext = change.text.join("").replace(/\n/g, "") // THINK: when would this replace get triggered?
+          change.update(change.from, change.to, [newtext])
+          return true
+        }
+      
+        // add space to changes caused by autocomplete
+        if(change.from.constructor != CodeMirror.Pos && !change.origin) {
+          change.update(change.from, change.to, [change.text[0] + " "])
+          return true
+        }
+      })
+    
+      repl_display = function(code) {
+        D.run(code, function(value) {
+          // preprocess history: remove existing copies of this item
+          while(history_list.indexOf(code) != -1)
+            history_list.splice(history_list.indexOf(code), 1)
+        
+          // add to history and store it
+          history_list.unshift(code)
+          localStorage.setItem('repl-history', JSON.stringify(history_list))
+        
+          // display it
+          history_el.innerHTML = '<p class="input">'  + code + '</p>'
+                            + '<p class="result">' + (value || '&nbsp;') + '</p>' 
+                            + history_el.innerHTML
+        })
+      }
+
+      // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
+      repl.setSize("100%", repl.defaultTextHeight() + 8) // 8 for font
+    
+    })
   </script>
   
 </body>
