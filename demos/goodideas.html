@@ -211,7 +211,7 @@
       OuterSpace = new D.Space(outerseed) // published for debug
     
       // get ideas
-      ideas = JSON.parse(localStorage.getItem('ideas')) || []
+      ideas = JSON.parse(localStorage.getItem('ideas')) || [] // TODO: var me
 
       // activate ideas-in port
       D.send_value_to_js_port('ideas-in', ideas)

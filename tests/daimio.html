@@ -17,6 +17,18 @@
       color: #F00;
       background-color: #FEE;
     }
+    #history p {
+      padding: 0px;
+      margin: 0px;
+    }
+    .input {
+      background-color: #FEFFDE;
+      color: #0E75C9;
+    }
+    .result {
+      background-color: #FFF;
+      color: #333;
+    }
   </style>
 
   <script type="text/javascript" charset="utf-8">
@@ -160,7 +172,7 @@
 </head>
 <body id="">  
   <form style="width: 99%; position: fixed; top: 0px; margin: 0px">
-    <textarea id="code" name="code" rows="1">Try me out! Type something up here!</textarea>
+    <textarea id="code" name="code" rows="1" placeholder="Try me out! Type something up here!"></textarea>
     <div id="history"></div>
   </form>
   
@@ -187,15 +199,20 @@
   <script src="../codemirror/addon/hint/show-hint.js"></script>
   <script src="../codemirror/addon/hint/daimio-hint.js"></script>
   
+  <script src="../codemirror/addon/display/placeholder.js"></script>
+  
   <script src="../codemirror/addon/emmet/emmet.js"></script>
     
   <script>
     var ge = document.getElementById.bind(document)
       , results = ge('results')
-      , history = ge('history')
       , repl = CodeMirror.fromTextArea(ge('code'), {})
       , ac_on = true
       , background = '#f8f8f8'
+      , history_el = ge('history')
+      , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
+      , history_buffer = ''
+      , history_cursor = 0
     
     CodeMirror.commands.autocomplete = function(instance) {
       CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
@@ -205,40 +222,56 @@
       })
     }
     
+    repl.setOption('lineNumbers', false)
+    repl.setOption('matchBrackets', true)
     repl.setOption('extraKeys', {
       "Esc": function(instance) {
         ac_on = !ac_on
-        // show whether a/c is on
-        repl.display.wrapper.style.backgroundColor = ac_on ? background : 'pink'
+        repl.display.wrapper.style.backgroundColor = ac_on ? background : 'pink' // display for a/c on/off
       },
-      "Enter": function(instance, x, y, z) {
+      "Enter": function(instance) {
         repl_display(instance.getLine(0))
-        instance.setLine(0, '{')
-      }
-    })
-    repl.setOption('lineNumbers', false)
-    repl.setOption('matchBrackets', true)
-    repl.display.wrapper.style.backgroundColor = background
+        instance.setLine(0, '')
+        history_cursor = 0
+      },
+      "Up": function(instance) {
+        if(!history_cursor)
+          history_buffer = instance.getValue()
         
+        if(!history_list.length)
+          return
+        
+        // TODO: use history_buffer as a LHS filter to search through history
+        
+        history_cursor += history_cursor < history_list.length - 1 ? 1 : 0
+        instance.setValue(history_list[history_cursor-1])
+      },
+      "Down": function(instance) {
+        if(!history_cursor)
+          return false // if we're already all the way down, don't change anything
+        
+        history_cursor--
+        var prev = ''
+        
+        if(!history_cursor) // we were at 1, so reset from our buffer
+          prev = history_buffer
+        else
+          prev = history_list[history_cursor-1]
+
+        instance.setValue(prev)
+      },
+    })
+    repl.display.wrapper.style.backgroundColor = background
 
     repl.on("change", function(instance, change) {
-      // if(change.removed[0] && !change.text[0])
-      //   return true
-      
-      // if(last_char != '{' && old_last_char != ' ' && old_last_char.length == 1)
-      //   return true
-      
-      if(ac_on)
+      if(ac_on && repl.getValue() && change.origin != 'setValue')
         CodeMirror.commands.autocomplete(instance)
-
-      return false
     })
-      
 
     repl.on("beforeChange", function(instance, change) {
-      // remove pasted newlines
-      if(/\n/.test(change.text)) {
-        var newtext = change.text.join("").replace(/\n/g, "")
+      // NOTE: change.text stores an array of lines, so you *have* to join to remove pasted newlines
+      if(change.update && (/\n/.test(change.text) || change.text.length > 1)) {
+        var newtext = change.text.join("").replace(/\n/g, "") // THINK: when would this replace get triggered?
         change.update(change.from, change.to, [newtext])
         return true
       }
@@ -251,26 +284,61 @@
     })
     
     repl_display = function(code) {
-      // history.innerHTML += '<p class="good">' + code + '</p>'
-      // history.innerHTML += '<p class="bad">' + D.run(code) + '</p>'
-
-      console.log(code)
-      D.run(code)
-      
-      // D.run(code.value, function(result) {
-      //   results.innerHTML = result
-      // })
-      
+      D.run(code, function(value) {
+        // preprocess history: remove existing copies of this item
+        while(history_list.indexOf(code) != -1)
+          history_list.splice(history_list.indexOf(code), 1)
+        
+        // add to history and store it
+        history_list.unshift(code)
+        localStorage.setItem('repl-history', JSON.stringify(history_list))
+        
+        // display it
+        history_el.innerHTML = '<p class="input">'  + code + '</p>'
+                          + '<p class="result">' + (value || '&nbsp;') + '</p>' 
+                          + history_el.innerHTML
+      })
     }
 
     // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
     repl.setSize("100%", repl.defaultTextHeight() + 8) // 8 for font
 
+    document.addEventListener('click', function(ev) {
+      if(ev.target.nodeName != 'PRE' || ev.target.parentNode.nodeName != 'CODE')
+        return true
+      
+      var code = ev.target.innerText.replace(/^\s+|\s+$/g, '')
+      repl.setValue(code)
+      repl.focus()
+      repl.setCursor(1, 1000)
+    })
+    
+//    function tempTooltip(cm, content) {
+//        var where = cm.cursorCoords();
+//        var tip = makeTooltip(where.right + 1, where.bottom, content);
+//        function clear() {
+//          if (!tip.parentNode) return;
+//          cm.off("cursorActivity", clear);
+//          fadeOut(tip);
+//        }
+//        setTimeout(clear, 1700);
+//        cm.on("cursorActivity", clear);
+//      }
+//
+//      function makeTooltip(x, y, content) {
+//        var node = elt("div", cls + "tooltip", content);
+//        node.style.left = x + "px";
+//        node.style.top = y + "px";
+//        document.body.appendChild(node);
+//        return node;
+//      }
+
+
+
+
 
 // NOTE: saving the following lines in case they're needed later -- delete this if you haven't had any scrollbar issues, otherwise change these to repl.display.foo references
-//    cm.on("change", function(instance, change) {
-//      document.querySelector(".CodeMirror-hscrollbar").style.display = 'none'
-//    });
+//    cm.on("change", function(instance, change) {document.querySelector(".CodeMirror-hscrollbar").style.display = 'none'})
 //    document.querySelector(".CodeMirror-scroll").style.overflow = 'hidden'
 
   </script>

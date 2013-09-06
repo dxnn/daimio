@@ -6,6 +6,8 @@ Daimio is a framework for building programmable web applications, as well as the
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. All output is converted to JSON for display.
 
+REPL notes: click code below to put it in the repl. use space or enter to activate autocomplete if the menu is up. start with a '{' when writing daimio commands. use up and down to cycle through your history. history is saved between sessions. use esc to toggle autocomplete on or off. 
+
 ---- Daimio Primer ----
 
   numbers, natural and otherwise
