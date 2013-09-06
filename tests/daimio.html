@@ -159,7 +159,10 @@
   
 </head>
 <body id="">  
-  <form style="width: 99%; position: fixed; top: 0px; margin: 0px"><textarea id="code" name="code" rows="1">Try me out! Type something up here!</textarea></form>
+  <form style="width: 99%; position: fixed; top: 0px; margin: 0px">
+    <textarea id="code" name="code" rows="1">Try me out! Type something up here!</textarea>
+    <div id="history"></div>
+  </form>
   
   <p>&nbsp;</p>
   
@@ -189,28 +192,28 @@
   <script>
     var ge = document.getElementById.bind(document)
       , results = ge('results')
-      , code = ge('code')
-      , repl = CodeMirror.fromTextArea(code, {})
-      , autocomplete_on = true
-      , last_char = ""
+      , history = ge('history')
+      , repl = CodeMirror.fromTextArea(ge('code'), {})
+      , ac_on = true
       , background = '#f8f8f8'
     
     CodeMirror.commands.autocomplete = function(instance) {
       CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
         extraKeys: {'Space': function(instance, hint) {hint.pick()}}
-      , completeSingle: true
+      , completeSingle: false
+      , closeCharacters: /[\n|"]/
       })
     }
     
     repl.setOption('extraKeys', {
       "Esc": function(instance) {
-        autocomplete_on = !autocomplete_on
-        // THINK: do something visible...
-        repl.display.wrapper.style.backgroundColor = autocomplete_on ? background : 'pink'
+        ac_on = !ac_on
+        // show whether a/c is on
+        repl.display.wrapper.style.backgroundColor = ac_on ? background : 'pink'
       },
       "Enter": function(instance, x, y, z) {
         repl_display(instance.getLine(0))
-        instance.setLine(0, '')
+        instance.setLine(0, '{')
       }
     })
     repl.setOption('lineNumbers', false)
@@ -219,22 +222,14 @@
         
 
     repl.on("change", function(instance, change) {
-      console.log(change)
-      
-      var old_last_char = last_char
-      last_char = change.text[0]
-      
-      if(change.removed[0])
-        return true
+      // if(change.removed[0] && !change.text[0])
+      //   return true
       
       // if(last_char != '{' && old_last_char != ' ' && old_last_char.length == 1)
       //   return true
       
-      if(autocomplete_on)
+      if(ac_on)
         CodeMirror.commands.autocomplete(instance)
-
-// NOTE: use cursorActivity event to link a/c for starting w/ {
-
 
       return false
     })
@@ -256,6 +251,9 @@
     })
     
     repl_display = function(code) {
+      // history.innerHTML += '<p class="good">' + code + '</p>'
+      // history.innerHTML += '<p class="bad">' + D.run(code) + '</p>'
+
       console.log(code)
       D.run(code)
       

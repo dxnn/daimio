@@ -14,6 +14,11 @@
       , from = {line: cur.line, ch: token.start}
       , to = {line: cur.line, ch: token.end}
     
+    if(state.where == 'pval' && state.verb == 'open' && token.type != 'error') // don't show pnames for pvals
+      return false
+    
+    if(!/^[{\w\s]*$/.test(start)) // don't show models except after '{' or ' '
+      return false
     
     if(!/^\w+$/.test(start)) { // fix the token if it's borken
       // TODO: if inside a pval, do some crazy autocompleting stuff
@@ -46,7 +51,7 @@
   
   function try_state(state, start) {
     if(!state.data.handler)
-      return Object.keys(D.commands) // TODO: only at command start?
+      return Object.keys(D.commands).concat(Object.keys(D.ALIASES))
     else if(!state.data.method)
       return Object.keys(D.commands[state.data.handler].methods)
     else if(state.verb == 'parametrize' && !start) // no pname
