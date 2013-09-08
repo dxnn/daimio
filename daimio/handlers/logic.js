@@ -335,7 +335,7 @@ D.import_models({
         fun: function(value) {
           return D.isFalse(value) ? true : false
           
-          // TODO: make this a core D method!
+          // TODO: make this a core Daimio method!
           // if(!value) return true;
           // if(typeof value == 'object' && _.isEmpty(value)) return true;
           // 

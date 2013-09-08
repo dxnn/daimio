@@ -138,7 +138,7 @@ D.clone = function(value) {
   
 */
 
-// D var keys match /^[-_A-Za-z0-9]+$/ but don't match /^[_-]+$/ -- i.e. at least one alphanumeric
+// Daimio var keys match /^[-_A-Za-z0-9]+$/ but don't match /^[_-]+$/ -- i.e. at least one alphanumeric
 // this way we've got lots of room for fancy options for keys, like #N
 // and also we can use something like {value: 5, to: {!:__}} in our pipeline vars, where the ! means 'check the state'
 
@@ -1121,7 +1121,7 @@ D.run = function(daimio, ultimate_callback, space) {
 D.resolve_path = function(words, base, fun) {
   var word, index, temp, flat_value
     
-  // TODO: we should probably allow D in the path, but we'll resolve it by translating that into a list for a filter function, where the D chunks get pulled out and processed inline with the rest of the segments instead of here in this brackish backwater 
+  // TODO: we should probably allow Daimio code in the path, but we'll resolve it by translating that into a list for a filter function, where the Daimio chunks get pulled out and processed inline with the rest of the segments instead of here in this brackish backwater 
   
   // if(path.indexOf(D.command_open) != -1) path = D.run(path);
   // if(!path) return base;
@@ -1848,8 +1848,8 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   
   first_open = next_open = next_closed = string.indexOf(D.command_open);
   
-  if(first_open == -1) return string  // no D here
-  if(first_open > 0) return string.slice(0, first_open)  // trim non-D head
+  if(first_open == -1) return string  // no Daimio here
+  if(first_open > 0) return string.slice(0, first_open)  // trim non-Daimio head
 
   do {
     next_open = string.indexOf(D.command_open, next_open + 1)
@@ -4496,7 +4496,7 @@ D.execute_then_stringify = function(value, prior_starter, process) {
 
 D.isBlock = function(value) {
   if(!value instanceof D.Segment)
-    return false // THINK: this prevents block hijacking (by making an object in D shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
+    return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
 
   return value && value.type == 'Block' && value.value && value.value.id
 }

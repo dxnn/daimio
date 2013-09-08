@@ -1,4 +1,4 @@
-// A list in D is an ordered sequence of items that are optionally keyed.
+// A list in Daimio is an ordered sequence of items that are optionally keyed.
 
 // concat, each, every, filter, forEach, indexOf,
 // insert, join, map, lastIndexOf, order, pop, push,
@@ -16,11 +16,11 @@
 D.import_models({
   list: {
     desc: 'Commands for list manipulation',
-    help: 'A list in D is an ordered sequence of items that are optionally keyed. Anything you can do with a classic list or hash you can do with a D list. It is the fundamental data structure in D.',
+    help: 'A list in Daimio is an ordered sequence of items that are optionally keyed. Anything you can do with a classic list or hash you can do with a Daimio list. It is the fundamental data structure in Daimio.',
     methods: {
       
       map: {
-        desc: 'Run D for each item, returning a list',
+        desc: 'Run Daimio for each item, returning a list',
         injects: ['value', 'key'],
         params: [
           {
@@ -178,7 +178,7 @@ D.import_models({
       },
       
       each: {
-        desc: 'Run D for each item, returning a string',
+        desc: 'Run Daimio for each item, returning a string',
         params: [
           {
             key: 'data',
@@ -878,9 +878,9 @@ D.import_models({
           // TODO: use 'data' as the primary parameter for operational data
           /*
             THINK: come up with language that distinguishes between lists, hashes, and *either* --> in D, a list and a hash are the *same* data object, which is just a mutable hash keyed by strings or consecutive integers or non-consecutive integers: we don't really care.
-            In JS, the two fundamental data structures (lists and hashes) are optimized differently under the hood. We want to take advantage of that within the D core and handlers, while still respecting the fact that they're the same data structure in D. So every operation that takes a listhash has to handle it as either a list or a hash, whichever it maps to in JS. 
-            It's really just a matter of a slight type mismatch between JS and D -- we just need good language to disambiguate. 'list' is nice, because it isn't used in JS proper, but it *really* implies an array and not a hash. 'hash' has the opposite problem.
-            The D data structure is also *always* ordered, independent of keys, which is another difference.
+            In JS, the two fundamental data structures (lists and hashes) are optimized differently under the hood. We want to take advantage of that within the Daimio core and handlers, while still respecting the fact that they're the same data structure in D. So every operation that takes a listhash has to handle it as either a list or a hash, whichever it maps to in JS. 
+            It's really just a matter of a slight type mismatch between JS and Daimio -- we just need good language to disambiguate. 'list' is nice, because it isn't used in JS proper, but it *really* implies an array and not a hash. 'hash' has the opposite problem.
+            The Daimio data structure is also *always* ordered, independent of keys, which is another difference.
             We could call it an 'association list', but: no good abbr., it's a concrete data structure (which we wouldn't use), it's not concise.
             'data'? container. 'stash? (for list-hash). stash is nice. it's a portmanteau. it means 'place to stick things'. it slightly implies array-like behavior, but that's compensated for by also being short for mustache. 
             

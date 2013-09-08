@@ -2,7 +2,7 @@
 
 D.import_models({
   daimio: {
-    desc: 'Commands for D manipulation',
+    desc: 'Commands for Daimio manipulation',
     methods: {
       
       // {daimio do handler : method : params {* ()} }
@@ -10,11 +10,11 @@ D.import_models({
       
       
       'import': {
-        desc: 'Import a set of commands into the local D dialect',
+        desc: 'Import a set of commands into the local Daimio dialect',
         params: [
           {
             key: 'block', // THINK: this should be called 'daimio'... /sigh
-            desc: 'A D string',
+            desc: 'A Daimio string',
             type: 'block',
             required: true,
           },
@@ -149,7 +149,7 @@ D.import_models({
       },
       
       // parse: {
-      //   desc: "Convert a D string's canonical ptree",
+      //   desc: "Convert a Daimio string's canonical ptree",
       //   params: [
       //     {
       //       key: 'string',

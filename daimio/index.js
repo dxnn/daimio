@@ -1,4 +1,4 @@
-// D package packer thing
+// Daimio package packer thing
 
 if (typeof exports !== 'undefined') {
 

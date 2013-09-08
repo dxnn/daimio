@@ -395,7 +395,7 @@ D.import_models({
       
       set_data: {
         desc: "Set a piece of data in the thing",
-        help: "The path can't start with a restricted key value. Existing references in D variables are unaffected, so you'll need to e.g. {dagoba find_nodes} again.",
+        help: "The path can't start with a restricted key value. Existing references in Daimio variables are unaffected, so you'll need to e.g. {dagoba find_nodes} again.",
         params: [
           {
             key: 'graph',

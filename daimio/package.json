@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "homepage": "http://daimio.in/",
   "author": "dann <dann@bentobox.net>",
-  "description": "a D parser",
+  "description": "a Daimio parser",
   "main": "./lib/daimio",
   "repository": {
     "type": "git",

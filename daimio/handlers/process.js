@@ -2,7 +2,7 @@
 
 D.import_models({
   process: {
-    desc: "Commands for processing D in various interesting ways",
+    desc: "Commands for processing Daimio in various interesting ways",
     vars: {debounces: {}},
     methods: {
       
@@ -13,7 +13,7 @@ D.import_models({
       //   params: [
       //     {
       //       key: 'value',
-      //       desc: 'A list of D commands',
+      //       desc: 'A list of Daimio commands',
       //       type: 'list',
       //       required: true
       //     },
