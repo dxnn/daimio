@@ -2865,7 +2865,7 @@ LIST COMMANDS
       {"0":3,"1":2,"2":4,"3":1}
   
   
-    {$data | list rekey by :one}
+    {$data | list rekey by "one"}
       {"second":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"first":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"third":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
       
       
@@ -2873,7 +2873,7 @@ LIST COMMANDS
     {$data | list rekey by "{__.one}"}
       {"second":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"first":{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},"third":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
-    {$data | list rekey by :three}
+    {$data | list rekey by "three"}
       {"odd":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"even":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
 

@@ -627,7 +627,7 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.resolve_path(by, item)
+              return D.peek(item, by.split('.'))
             }
           } 
           else {
@@ -691,7 +691,7 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.resolve_path(by, item)
+              return D.peek(item, by.split('.'))
             }
           } 
           else {
@@ -752,7 +752,7 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.resolve_path(by, item)
+              return D.peek(item, by.split('.'))
             }
           } 
           else {
