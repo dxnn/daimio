@@ -10,7 +10,7 @@
 //       // BINDINGS AND WHATNOT
 // 
 //       on: {
-//         desc: "Attach a D action to an event on a DOM element.",
+//         desc: "Attach a Daimio action to an event on a DOM element.",
 //         help: "See http://api.jquery.com/on/ for more details.",
 //         params: [
 //           {
@@ -29,7 +29,7 @@
 //           },
 //           {
 //             key: 'daimio',
-//             desc: "A D template",
+//             desc: "A Daimio template",
 //             type: 'block',
 //           },
 //           {
@@ -82,7 +82,7 @@
 //       },
 //       
 //       off: {
-//         desc: "Remove a D action from an event on a DOM element.",
+//         desc: "Remove a Daimio action from an event on a DOM element.",
 //         help: "See http://api.jquery.com/off/ for more details.",
 //         params: [
 //           {
@@ -152,7 +152,7 @@
 //           },
 //           {
 //             key: 'daimio',
-//             desc: "A D template",
+//             desc: "A Daimio template",
 //             type: 'block',
 //             required: true,
 //           },
@@ -210,7 +210,7 @@
 //           },
 //           {
 //             key: 'daimio',
-//             desc: "A D template",
+//             desc: "A Daimio template",
 //             type: 'block',
 //             required: true,
 //           },

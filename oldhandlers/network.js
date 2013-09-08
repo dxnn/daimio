@@ -9,17 +9,17 @@ D.import_models({
 
       send: {
         desc: 'Send some things over the network',
-        help: "Sends a chunk o' D to the server, loads the returned values into their named variables (results.DATA -> DATA), and performs the 'then' D.",
+        help: "Sends a chunk o' Daimio to the server, loads the returned values into their named variables (results.DATA -> DATA), and performs the 'then' Daimio.",
         params: [
           {
             key: 'string',
-            desc: 'A string, usually of D',
+            desc: 'A string, usually of Daimio',
             type: 'string',
             required: true,
           },
           {
             key: 'then',
-            desc: 'A D template to perform once the data returns',
+            desc: 'A Daimio template to perform once the data returns',
             type: 'block',
           },
           {
@@ -49,7 +49,7 @@ D.import_models({
         params: [
           {
             key: 'daimio',
-            desc: 'A string, usually of D',
+            desc: 'A string, usually of Daimio ',
             type: 'string',
             required: true,
           },

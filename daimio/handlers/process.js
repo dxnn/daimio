@@ -1,4 +1,4 @@
-// commands for processing D
+// commands for processing Daimio 
 
 D.import_models({
   process: {
@@ -116,7 +116,7 @@ D.import_models({
           },
         ],
         fun: function(value, passthru) {
-          // TODO: make this work server-side also (maybe a call to D, with split client/server libs)
+          // TODO: make this work server-side also (maybe a call to Daimio, with split client/server libs)
           
           // THINK: we should defunc things, or something, probably... maybe like this?
           value = (typeof value === 'function') ? value() : value

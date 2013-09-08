@@ -12,7 +12,7 @@
 
 D.import_models({
   command: {
-    desc: "Interface methods for managing D commands.",
+    desc: "Interface methods for managing Daimio commands.",
     methods: {
       
       init: {
@@ -31,8 +31,8 @@ D.import_models({
             // D.run(command);
             D.enqueue(command);
 
-            // TODO: register history using a post-command hook in D
-            
+            // TODO: register history using a post-command hook in Daimio 
+                        
             // if(value = D.enqueue(D.parse(command, self.response_callback))) {
             //   Interfaces.history.add('> ' + command); // only log valid commands
             // }

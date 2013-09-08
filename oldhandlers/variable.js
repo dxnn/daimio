@@ -113,14 +113,14 @@ D.import_models({
           if(words.length == 1) {
             state[path] = value_copy;
           } else {
-            // see note at resolve_path re D in paths
+            // see note at resolve_path re Daimio in paths
             D.recursive_insert(state, words, value_copy);
           }
           
           return value;
           
           
-          // // THINK: we deep copy objects on the way in, so we don't A) tweak other variables by reference and B) leak out of D into the base language by accident, but it's kind of slow.
+          // // THINK: we deep copy objects on the way in, so we don't A) tweak other variables by reference and B) leak out of Daimio into the base language by accident, but it's kind of slow.
 
           // TODO: make this WORMy for pipe vars and constants
           // both uppercase and only letters (no # or _ or $ or @)

@@ -94,7 +94,7 @@ D.import_models({
       },
       
       quote: {
-        desc: "Return a pure string, possibly containing D",
+        desc: "Return a pure string, possibly containing Daimio",
         params: [
           {
             key: 'value',
@@ -124,11 +124,11 @@ D.import_models({
       },
       
       run: {
-        desc: "Completely process some D",
+        desc: "Completely process some Daimio code",
         params: [
           {
             key: 'block',
-            desc: "Some D",
+            desc: "Some Daimio code",
             type: "block",
             required: true,
           },

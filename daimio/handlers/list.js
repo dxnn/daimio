@@ -877,8 +877,8 @@ D.import_models({
           // TODO: make this not change in-place -- all commands should change a copy
           // TODO: use 'data' as the primary parameter for operational data
           /*
-            THINK: come up with language that distinguishes between lists, hashes, and *either* --> in D, a list and a hash are the *same* data object, which is just a mutable hash keyed by strings or consecutive integers or non-consecutive integers: we don't really care.
-            In JS, the two fundamental data structures (lists and hashes) are optimized differently under the hood. We want to take advantage of that within the Daimio core and handlers, while still respecting the fact that they're the same data structure in D. So every operation that takes a listhash has to handle it as either a list or a hash, whichever it maps to in JS. 
+            THINK: come up with language that distinguishes between lists, hashes, and *either* --> in Daimio, a list and a hash are the *same* data object, which is just a mutable hash keyed by strings or consecutive integers or non-consecutive integers: we don't really care.
+            In JS, the two fundamental data structures (lists and hashes) are optimized differently under the hood. We want to take advantage of that within the Daimio core and handlers, while still respecting the fact that they're the same data structure in Daimio. So every operation that takes a listhash has to handle it as either a list or a hash, whichever it maps to in JS. 
             It's really just a matter of a slight type mismatch between JS and Daimio -- we just need good language to disambiguate. 'list' is nice, because it isn't used in JS proper, but it *really* implies an array and not a hash. 'hash' has the opposite problem.
             The Daimio data structure is also *always* ordered, independent of keys, which is another difference.
             We could call it an 'association list', but: no good abbr., it's a concrete data structure (which we wouldn't use), it's not concise.

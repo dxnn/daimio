@@ -229,7 +229,7 @@ D.import_models({
           thing = sheet.things[thing];
           if(!thing) return D.onerror('Invalid thing id');
           
-          // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through D. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
+          // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
           
           // {value | > :@Daggr.{sheet}.{thing}.key}
           // D.recursive_insert(D.Vglobals, ['@Daggr', sheet.id, thing.id, key.split('.')], value);

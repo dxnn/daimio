@@ -973,7 +973,7 @@ D.import_aliases = function(values) {
 /* TYPES! */
 
 
-// D's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
+// Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.add_type = function(key, fun) {
   // TODO: add some type checking
   D.TYPES[key] = fun
