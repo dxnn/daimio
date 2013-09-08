@@ -3628,11 +3628,6 @@ D.Space = function(seed_id, parent) {
   this.queue = []
   
   
-  // TEMP HACK!
-  // this.state = this.seed.state
-  // END HACK!
-  
-  
   // var self = this
   // this.loading = true
   // this.template = template // TODO: validate template
@@ -3864,6 +3859,9 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
     , process
     , result
   
+  result = this.try_optimize(block, scope)
+  if(result)
+    return result.value
   
   // var new_when_done = function(value) {
   //   self.cleanup(self.pid, self.last_value)
@@ -3899,7 +3897,7 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
 D.Space.prototype.cleanup = function(process, listeners) {
   if(!process.asynced) {
     this.scrub_process(process.pid)
-    this.run_listeners(process.last_value, listeners) // THINK: is process.last_value right?
+    // this.run_listeners(process.last_value, listeners) // THINK: is process.last_value right?
   }
     
   // this.run_queue()
@@ -3916,31 +3914,88 @@ D.Space.prototype.scrub_process = function(pid) {
   }
 }
 
-D.Space.prototype.run_listeners = function(value, listeners) {
-  listeners = listeners || this.listeners
-  if(value !== undefined) {
-    for(var i=0, l=listeners.length; i < l; i++) {
-      // listeners[i](value) // call the registered listeners
-      // THINK: do we really have to go async here? it's pretty costly. blech.
+// this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
+D.Space.prototype.try_optimize = function(block, scope) {
 
-      ~ function() {var fun = listeners[i]; setImmediate(function() {fun(value)} )} ()
-      // ~ function() {var fun = listeners[i]; setTimeout(function() {fun(value)}, 0)} ()
-    }
+  for(var i=0, l=D.Optimizers.length; i < l; i++) {
+    var result = D.Optimizers[i].fun(block, scope)
+    
+    if(result)
+      return result
   }
+  
+  // okay, but how do you chain multiple optimizations together? you want the later ones to accept the earlier ones as input, or something...
+  
+  return undefined
+  // return {value: 'foo'}
 }
 
-D.Space.prototype.run_queue = function() {
-  if(this.queue.length) {
-    this.queue.pop()()
+D.Optimizers = []
+D.import_optimizer = function(name, fun) {
+  var opt = {
+    name: name,
+    fun: fun
   }
+  
+  D.Optimizers.push(opt)
+  // fun returns {value: xyyzy} if it finds something, false otherwise
 }
+
+// figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
+
+//D.ETC.opt_memos = {}
+//D.import_optimizer('memoize', function(block, scope) {
+//  var memos = D.ETC.opt_memos
+//  if(!memos[block.id])
+//    memos[block.id] = {}
+//
+//  var block_memos = memos[block.id]
+//    , scope_id = murmurhash(JSON.stringify(scope))
+//    
+//  if(typeof block_memos[scope_id] == 'undefined') { // first time through primes it
+//    block_memos[scope_id] = true
+//    return false
+//  }
+//  
+//  if(!block_memos[scope_id])
+//    return false
+//  
+//  if(block_memos[scope_id] == true) { // second time runs it
+//    var result = 
+//    block_memos[scope_id] = {value: result}
+//  }
+//    
+//  return block_memos[scope_id] 
+//})
+
+
+// NOTE: these two aren't used:
+
+// D.Space.prototype.run_listeners = function(value, listeners) {
+//   listeners = listeners || this.listeners
+//   if(value !== undefined) {
+//     for(var i=0, l=listeners.length; i < l; i++) {
+//       // listeners[i](value) // call the registered listeners
+//       // THINK: do we really have to go async here? it's pretty costly. blech.
+// 
+//       ~ function() {var fun = listeners[i]; setImmediate(function() {fun(value)} )} ()
+//       // ~ function() {var fun = listeners[i]; setTimeout(function() {fun(value)}, 0)} ()
+//     }
+//   }
+// }
+
+// D.Space.prototype.run_queue = function() {
+//   if(this.queue.length) {
+//     this.queue.pop()()
+//   }
+// }
 
 
 /*
   A Process executes a single Block from start to finish, executing each segment in turn and handling the wiring.
   Returns the last value from the Block's pipeline, or passes that value to prior_starter() and returns NaN if any segments go async.
   Each Process is used only once, for that one Block execution, and then goes away.
-  A PRocess may launch sub-processes, depending on the segments in the Block.
+  A Process may launch sub-processes, depending on the segments in the Block.
 */
 
 
@@ -4382,6 +4437,7 @@ function murmurhash(key, seed) {
 
 
 // END HACK HACK HACK
+
 
 
 // HELPER FUNCTIONS
