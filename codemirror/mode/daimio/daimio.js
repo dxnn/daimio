@@ -177,6 +177,8 @@ CodeMirror.defineMode("daimio", function() {
           
           if(words.length) {
             word = words.pop()
+            if(!data.pnames)
+              data.pnames = []
             for(var i=0, l = D.commands[data.handler].methods[word].params.length; i < l; i++) {
               data.pnames.push(D.commands[data.handler].methods[word].params[i].key)
             }
@@ -194,8 +196,11 @@ CodeMirror.defineMode("daimio", function() {
                 after = 'parametrize'
               }
             }
-            if(after == 'pval') goThere(state, 'pval')
-            else now.verb = 'parametrize'
+            
+            if(after == 'pval')
+              goThere(state, 'alias_pval')
+            else
+              now.verb = 'parametrize'
           }
         } 
         
@@ -229,9 +234,10 @@ CodeMirror.defineMode("daimio", function() {
           now.verb = 'parametrize'
           returnType = METHOD 
           if(method.params) {
-            for(var i=0, l = method.params.length; i < l; i++) {
+            if(!data.pnames)
+              data.pnames = []
+            for(var i=0, l = method.params.length; i < l; i++)
               data.pnames.push(method.params[i].key)
-            }
           }
         } 
         // bad method
@@ -404,7 +410,7 @@ CodeMirror.defineMode("daimio", function() {
       */
       case 'open': 
         now.verb = 'close'
-        peek = stream.peek()
+        var peek = stream.peek()
         
         if(likeNumber(stream)) returnType = eatNumber(stream)
         else if(peek == '}') comeBack(state) // THINK: can this leak?
@@ -444,7 +450,7 @@ CodeMirror.defineMode("daimio", function() {
         eat a terminator
       */
       case 'open':
-        peek = stream.peek()
+        var peek = stream.peek()
         returnType = D.terminate(peek, 'eat', [stream, state])
         // terminators take the previous stack and the next stack and merge them together, 
         // but here they just return a type and modify 'state'. we need to put these two things together somehow...
@@ -463,6 +469,22 @@ CodeMirror.defineMode("daimio", function() {
     return returnType
   }
   
+  function inAliasPval(stream, state) {
+    var peek = stream.peek()
+    
+    comeBack(state) // one for here
+    
+    if(peek == '}' || D.terminators[peek]) {
+      comeBack(state) // another for the alias itself
+      goThere(state, 'command')
+    }
+    else {
+      goThere(state, 'pval')
+    }
+    
+    return null
+  }
+   
 
   return {
     indent: function (state, textAfter) {
@@ -516,6 +538,10 @@ CodeMirror.defineMode("daimio", function() {
         
         case 'terminator': 
           returnType = inTerminator(stream, state)
+        break
+        
+        case 'alias_pval': 
+          returnType = inAliasPval(stream, state)
         break
         
         case 'outside': // outside all D commands
