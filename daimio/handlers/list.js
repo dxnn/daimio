@@ -434,8 +434,6 @@ D.import_models({
           
           if(!path.length) 
             return data
-          if(typeof data != 'object')
-            data = D.toArray(data)
           
           return D.peek(data, path)
         },
@@ -463,14 +461,9 @@ D.import_models({
         fun: function(data, path, value) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
-
+          return D.poke(data, path, value)
           
-          
-          if(!path.length) 
-            return value
-          if(typeof data != 'object')
-            data = {}
-          
+         
           // return D.poke(path, data, function(x) {return value})
         },
       },

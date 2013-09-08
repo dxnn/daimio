@@ -1298,6 +1298,34 @@ D.import_pathfinder('list', {
     }
     
     return output
+  },
+  create: function(value, key) {
+    var output = []
+
+    for(var i=0, l=key.length; i < l; i++) {
+      var this_key = key[i]
+      if(Array.isArray(this_key)) { // outer list is parallel, inner list is serial, etc
+        output.push(D.peek(value, key[i] ))
+      } else { // scalar needs wrapping... why?
+        output.push(D.peek(value, [key[i]] ))
+      }
+    }
+    
+    return output
+  },
+  set: function(value, key, new_val) {
+    var output = []
+
+    for(var i=0, l=key.length; i < l; i++) {
+      var this_key = key[i]
+      if(Array.isArray(this_key)) { // outer list is parallel, inner list is serial, etc
+        output.push(D.peek(value, key[i] ))
+      } else { // scalar needs wrapping... why?
+        output.push(D.peek(value, [key[i]] ))
+      }
+    }
+    
+    return output
   }
 })
 
@@ -1314,6 +1342,23 @@ D.import_pathfinder('position', {
       , output = safe_value[ vkeys[ index ] ]
       
     return output ? [output] : []
+  },
+  create: function(value, key) {
+    value = D.toArray(value)
+    var position = Math.abs(+key.slice(1)) // THINK: if |value| < N for #-N then do this backward...
+    
+    for(var i=0, l=position; i <= l; i++)
+      if(typeof value[i] == 'undefined')
+        value[i] = []
+    
+    return value[position]
+  },
+  set: function(value, key, new_val) {
+    var vkeys = Object.keys(value)
+      , position = +key.slice(1)
+      , index = (position < 0) ? (vkeys.length + position) : position - 1
+
+    value[ vkeys[ index ] ] = new_val
   }
 })
 
@@ -1327,6 +1372,20 @@ D.import_pathfinder('star', {
       return D.toArray(value)
 
     return []
+  },
+  create: function(value, key) {
+    value = D.toArray(value)
+    
+    for(var i=0, l=value.length; i < l; i++)
+      if(typeof value[i] != 'object')
+        value[i] = {}
+    
+    return value
+  },
+  set: function(value, key, new_val) {
+    for(var k in value) {
+      value[k] = new_val
+    }
   }
 })
 
@@ -1341,6 +1400,16 @@ D.import_pathfinder('key', {
     return (value && value.hasOwnProperty(key)) 
            ? [value[key]] 
            : []
+  },
+  create: function(value, key) {
+    if(value.hasOwnProperty(key) && (typeof value[key] == 'object') )
+      return value[key]
+      
+    value[key] = {}
+    return [value[key]]
+  },
+  set: function(value, key, new_val) {
+    value[key] = new_val
   }
 })
 
@@ -1394,14 +1463,18 @@ D.peek = function(base, path) {
 // TODO: generalize this more so it runs a callback function instead of setting a static value
 // TODO: have a callback for branch creation as well, then combine this with peek
 // YAGNI: seriously, just get it done and stop abstracting.
+
+// NOTE: this mutates *in place* and returns the mutated base list
 D.poke = function(base, path, value) {
   path = D.toArray(path)
   
-  if(!path.length)
-    return value
+  if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
+    return base
 
+  if(typeof base != 'object')
+    base = [base]
+  
   var todo = [base]
-    , many_flag = false
   
   for(var i=0, l=path.length; i < l; i++) {
     var key = path[i]
@@ -1425,18 +1498,18 @@ D.poke = function(base, path, value) {
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
-      new_todo = new_todo.concat(pf.gather(todo[j], key))
+      if(i < l - 1) { // normal: find or create
+        new_todo = new_todo.concat(pf.create(todo[j], key))
+      }
+      else { // last time: set value
+        pf.set(todo[j], key, value)
+      }
     }
     
-    // tidy up
-    // NOTE: we don't short circuit here on empty todo because we want many_flag to be accurate -- itemless peek should return an empty list if any many_flag PFs are invoked, and false otherwise
     todo = new_todo
   }
   
-  if(many_flag)
-    return todo
-  
-  return todo.length ? todo[0] : false
+  return base
 }
 
 
