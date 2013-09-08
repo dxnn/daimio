@@ -7,13 +7,13 @@
  */
 CodeMirror.defineMode("daimio", function() {
   
+  // this parser doesn't work without a live Daimio install. We use the internal Daimio parser directly, and the local dialect of Daimio commands, aliases, terminators, etc.
   
-  // this parser doesn't work without a live D install. We use the internal D parser directly, and the local dialect of D commands, aliases, terminators, etc.
   if(typeof D == 'undefined') return {token: function(stream, state) {stream.skipToEnd(); return 'atom'}}
 
   var SYMBOL = "atom", STRING = "atom", COMMENT = "comment", NUMBER = "number", BRACE = "bracket", 
       PAREN = "hr", PARAMNAME = "attribute", HANDLER = "builtin", METHOD = "keyword",
-      ALIAS = "def", VARIABLE = "variable", ERROR = "error", BLOCK = "hr"
+      ALIAS = "def", VARIABLE = "variable-2", SPACEVARIABLE = "variable-3", ERROR = "error", BLOCK = "hr"
 
   var tests = {
     digit_or_sign: /[0-9+-]/,
@@ -31,9 +31,9 @@ CodeMirror.defineMode("daimio", function() {
 
   function eatNumber(stream) {
     var word = getNextWord(stream)
-    return (+word >= 0) ? NUMBER : ERROR
+    return (+word === +word) ? NUMBER : ERROR // NaN !== NaN
   }
-  
+
   function eatFancy(stream, state) {
     returnType = ERROR
     
@@ -44,12 +44,15 @@ CodeMirror.defineMode("daimio", function() {
       // THINK: should limit this in some fashion, but also allow :{ & :} & :" ? no, no. only lowercase alpha
       returnType = SYMBOL
     }
-    else if(ch == '@' || tests.word.test(word)) {
-      // TODO: lots to fix here....
+    else if(ch == '_' || ch == '>') {
+      // TODO: lots to fix here and below
       returnType = VARIABLE
     }
+    else if(ch == '$' || tests.word.test(word)) {
+      returnType = SPACEVARIABLE
+    }
     else if(!word && tests.word.test(ch)) {
-      returnType = VARIABLE
+      returnType = ERROR
     }
     
     return returnType
@@ -544,7 +547,7 @@ CodeMirror.defineMode("daimio", function() {
           returnType = inAliasPval(stream, state)
         break
         
-        case 'outside': // outside all D commands
+        case 'outside': // outside all Daimio commands
         default:
           stream.eatWhile(tests.not_open_brace)
           if(stream.peek() == '{') {
