@@ -28,7 +28,7 @@
       @button1 dom-on-submit
       @button2 dom-on-submit
       
-      inc  {__ | add $count | > :count}
+      inc  {__ | add $count | $>count}
       
       @button1 -> {1} -> inc -> @counter
       @button2 -> {2} -> inc
@@ -47,7 +47,7 @@
     |                 \                                         |
     |                  \     ______________________________     |
     |                   \   /                              \    |
-    |                    --(  {__ | add $count | > :count}  )---o
+    |                    --(  {__ | add $count | $>count}  )---o
     |                   /   \______________________________/    |
     |                  /                                        |
     |                 /                                         |
@@ -67,7 +67,7 @@
       @button1 dom-on-submit
       @button2 dom-on-submit
       
-      inc  {__ | add $count | > :count}
+      inc  {__ | add $count | $>count}
       
       @button1 -> {1} -> inc -> @counter
       @button2 -> {2} -> inc

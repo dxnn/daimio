@@ -7,6 +7,10 @@
 </head>
 
 <body>
+  
+  <p>
+    An old version of spacial structuring. 
+  </p>
 
   <div>
     <p>The button has been pushed <span id="counter">0</span> times!</p>
@@ -23,7 +27,7 @@
    {:button | gateway add type :dom-on-submit thing __}
 
    {@button
-     → "{1 | add $count | > :count}"
+     → "{1 | add $count | $>count}"
      → @counter}
  
   </script>
@@ -41,7 +45,7 @@
   <script type="text/json" id="spaceseeds">
     { outer: 
       { stations: 
-        { inc: "{$count | add 1 | > :count}" }
+        { inc: "{$count | add 1 | $>count}" }
       , ports: 
         { button: ["dom-on-submit", "button"]
         , counter: ["dom-set-text"] 
@@ -67,7 +71,7 @@
 
 
       
-      // block = D.Parser.string_to_block_segment('{1 | add $count | > :count}')
+      // block = D.Parser.string_to_block_segment('{1 | add $count | $>count}')
       
       // seed = { dialect: {commands: {minus: {daimio: true, dialect: true, port: true, space: true}}}
       //        , stations: [682758676]
@@ -83,7 +87,7 @@
       
     })
     // document.addEventListener('DOMContentLoaded', function() {
-    //   block = D.Parser.string_to_block_segment('{1 | add $count | > :count}')
+    //   block = D.Parser.string_to_block_segment('{1 | add $count | $>count}')
     //   
     //   seed = { dialect: {commands: {minus: {daimio: true, dialect: true, port: true, space: true}}}
     //          , stations: [682758676]

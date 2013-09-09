@@ -24,7 +24,7 @@
       @counter dom-set-text
       @button  dom-on-submit
       
-      @button -> {1 | add $count | > :count} -> @counter
+      @button -> {1 | add $count | $>count} -> @counter
   </code></pre>
   
   <h3>The spacial structure</h3>
@@ -34,7 +34,7 @@
   |                                       |  
   |     _____________________________     |  
   |    /                             \    |  
-  o---(  {1 | add $count | > :count}  )---o
+  o---(  {1 | add $count | $>count}  )---o
   |    \_____________________________/    |  
   |                                       |  
   |_______________________________________|  
@@ -46,7 +46,7 @@
       @counter dom-set-text
       @button  dom-on-submit
       
-      @button -> {1 | add $count | > :count} -> @counter
+      @button -> {1 | add $count | $>count} -> @counter
 
   </script>
    

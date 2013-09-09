@@ -34,21 +34,22 @@
       
       @time-in  dom-on-change
       @time-out dom-set-text
+      @time-in -> {__ | tap | $>time} -> @time-out
 
       @step-in  dom-on-change
       @step-out dom-set-text
+      @step-in -> {__ | $>step} -> @step-out
       
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc      {__ | add $count | $>count}
-      block    {$count | then "{process sleep for 10000000}" | run} 
+      inc    {__ | add $count | $>count}
+      block  {$count | then "" else "{1 | @>start}" with 1} 
       
-      @time-in -> {__ | $>time} -> @time-out
-      @step-in -> {__ | $>step} -> @step-out
-      
-      @button -> block -> inc -> @counter
+      @button -> block
+      block.start -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
+
   </code></pre>
   
   <h3>The spacial structure</h3>
@@ -90,24 +91,20 @@
       
       @time-in  dom-on-change
       @time-out dom-set-text
+      @time-in -> {__ | tap | $>time} -> @time-out
 
       @step-in  dom-on-change
       @step-out dom-set-text
+      @step-in -> {__ | $>step} -> @step-out
       
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc      {__ | add $count | $>count}
-      block    
-        {$count 
-        | then "{process sleep for 10000000}" 
-        | run} 
-      // FIXME: block is very very silly
+      inc    {__ | add $count | $>count}
+      block  {$count | then "" else "{1 | @>start}" with 1} 
       
-      @time-in -> {__ | $>time} -> @time-out
-      @step-in -> {__ | $>step} -> @step-out
-      
-      @button -> block -> inc -> @counter
+      @button -> block
+      block.start -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
 
   </script>

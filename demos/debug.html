@@ -7,6 +7,10 @@
 </head>
 
 <body>
+  
+  <p>
+    Used to ensure multiple identical stations don't conflict or overlap.
+  </p>
 
   <div>
     <p>The button has been pushed <span id="counter1">0</span> times!</p>
@@ -18,12 +22,9 @@
     <p><input type="submit" value="add to 1"></p>
   </form>
   
-  <h3>The code</h3>
-  
   
   <script type="text/daimio" id="spaceseeds">
 
-    outer
     outer
           
       @button1  dom-on-submit
@@ -31,8 +32,8 @@
       @counter1 dom-set-text
       @counter2 dom-set-text
 
-      inc1  {1 | add $count | > :count}
-      inc2  {1 | add $count | > :count}
+      inc1  {1 | add $count | $>count}
+      inc2  {1 | add $count | $>count}
       
       @button1 -> {1} -> inc1 -> @counter1
       inc2 -> @counter2
@@ -45,9 +46,6 @@
       var seedlikes = document.getElementById('spaceseeds').text
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed) // published for debug
-
-      // var code = document.getElementById('hello_daimio')
-      // D.run(code.text, function() {})
     })
   </script>
   

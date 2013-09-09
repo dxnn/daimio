@@ -3,10 +3,15 @@
 <head> 
   <meta charset="utf-8">
   <title>I Like Turtles</title>
-  <script type="text/javascript" src="../get.php?file=daimio"></script>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=daimio"></script>
 </head>
 
 <body>
+  
+  <!-- 
+    THIS REQUIRES SOCKET.IO, SO RUN IT AS A NODE APP
+    EDIT THE SCRIPT URL TO POINT TO YOUR LOCAL REPO (yeah yeah i know)
+  -->
 
   <svg id="mainsvg" width="800px" height="500px" viewBox="0 0 800 500"></svg>
   
@@ -105,13 +110,13 @@ Other math commands:
         , "steelblue", "teal", "tomato", "turquoise", "violet" ]
       
       turtle-fix 
-        { __ | > :ship 
-        | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color 
+        { __ | $>ship 
+        | $colors.{$ship.user | times 13 | mod {$colors | count}} | $>ship.color 
         | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) 
         | > {"turtles.{$ship.user}" | run} | $ship}
 
       turn-fix 
-        { __ | > :ship 
+        { __ | $>ship 
         | * ( :angle 
               {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} 
               :thing 
@@ -188,15 +193,15 @@ Other math commands:
 // honestly, though, the repetitive version is easier to read...
       
       forward-fix 
-        { __ | > :ship 
-        | $turtles.{$ship.user}.x | > :oldx 
-        | $turtles.{$ship.user}.y | > :oldy 
-        | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx 
+        { __ | $>ship 
+        | $turtles.{$ship.user}.x | $>oldx 
+        | $turtles.{$ship.user}.y | $>oldy 
+        | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | $>dx 
         | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
         | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
         | 750 | less than $turtles.{$ship.user}.x 
         | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} 
-        | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy 
+        | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | $>dy 
         | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} 
         | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} 
         | 450 | less than $turtles.{$ship.user}.y 
@@ -224,54 +229,13 @@ Other math commands:
       
   </script>
   
-  <script type="text/json" id="spaceseeds2">
-    { execspace:
-      { dialect: {}
-      , ports: 
-        { "execport": ["exec"]
-        , "forward": ["out"]
-        , "turn": ["out"]
-        }
-      }
-      
-    , outer: 
-      { ports: 
-        { "codeform": ["dom-on-submit"]
-        , "svg-move": ["svg-move"]
-        , "svg-rotate": ["svg-rotate"]
-        , "svg-add-line": ["svg-add-line"]
-        , "socket-add-user": ["socket-add-user"]
-        , "socket-remove-user": ["socket-remove-user"]
-        , "socket-in": ["socket-in"]
-        , "socket-out": ["socket-out"]
-        , "turtle-add": ["turtle-add"]
-        }
-      , state: 
-        { colors: ["aliceblue", "aqua", "aquamarine", "azure", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgreen", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dodgerblue", "firebrick", "forestgreen", "fuchsia", "gainsboro", "gold", "goldenrod", "green", "greenyellow", "honeydew", "hotpink", "indianred", "indigo", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lime", "limegreen", "linen", "magenta", "maroon", "midnightblue", "mintcream", "mistyrose", "moccasin", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "snow", "springgreen", "steelblue", "teal", "thistle", "tomato", "turquoise", "violet", "yellowgreen"]}
-      , subspaces: 
-        { execs: "execspace"}
-      , stations: // TODO: needs A) line breaks B) a "between" command C) var access sugar D) var setting sugar
-        { forward_fix: '{__ | > :ship | $turtles.{$ship.user}.x | > :oldx | $turtles.{$ship.user}.y | > :oldy | $turtles.{$ship.user}.angle | add 90 | math cos | times $ship.result | > :dx | add $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | less than 0 | then 0 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | 750 | less than $turtles.{$ship.user}.x | then 750 else $turtles.{$ship.user}.x | > {"turtles.{$ship.user}.x" | run} | $turtles.{$ship.user}.angle | add 90 | math sin | times $ship.result | > :dy | add $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | less than 0 | then 0 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | 450 | less than $turtles.{$ship.user}.y | then 450 else $turtles.{$ship.user}.y | > {"turtles.{$ship.user}.y" | run} | * (:y $turtles.{$ship.user}.y :x $turtles.{$ship.user}.x :thing {"turtlebox{$ship.user}" | run}) | port send name :svg-move | * (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$turtles.{$ship.user}.x | add 15} :y2 {$turtles.{$ship.user}.y | add 15} :color $turtles.{$ship.user}.color :alpha $turtles.{$ship.user}.alpha :thing :mainsvg) | port send name :svg-add-line}'
-        , turn_fix: '{__ | > :ship | * (:angle {$turtles.{$ship.user}.angle | add $ship.result | > {"turtles.{$ship.user}.angle" | run}} :thing {"turtle{$ship.user}" | run}) | @> :svg-rotate}'
-        , turtle_fix: '{__ | > :ship | $colors.{$ship.user | times 13 | mod {$colors | count}} | > :ship.color | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color $ship.color) | > {"turtles.{$ship.user}" | run} | $ship}'
-        }
-      , routes: 
-        [ ['codeform', 'socket-out']
-        // , ['cleaner.out', 'execs.execport'] 
-        , ['socket-in', 'execs.execport'] 
-        , ['execs.forward', 'forward_fix.in']
-        , ['execs.turn', 'turn_fix.in']
-        , ['socket-add-user', 'turtle_fix.in']
-        , ['turtle_fix.out', 'turtle-add']
-        ]
-      }
-    }
-    // yicky yick this is ugly
-  </script>
   
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
+      //  'forward': 'port send name :forward value',
+      //  'turn': 'port send name :turn value',
+      
       socket = io.connect('http://sherpa.local:8008') // published for demo (icky)
       
       var seedlikes = document.getElementById('spaceseeds').text

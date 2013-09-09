@@ -3,6 +3,7 @@
 <head> 
   <meta charset="utf-8">
   <title>I Like Turtles</title>
+
   <script type="text/javascript" src="../get.php?file=daimio"></script>
 </head>
 
@@ -30,9 +31,9 @@
     {* (:dy 10 :thing :turtlebox) | port send name :svg-move}
     
     {* (:dangle 25 :thing :turtle) | port send name :svg-rotate}
-    {* (:angle {$angle | add 25 | > :angle} :thing :turtle) | port send name :svg-rotate}
+    {* (:angle {$angle | add 25 | $>angle} :thing :turtle) | port send name :svg-rotate}
     
-    {range 360 | each block "{__ | > :x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+    {range 360 | each block "{__ | $>x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
         
     
     (try w/o sleep)
@@ -58,9 +59,9 @@
       , subspaces: 
         { execs: "execspace"}
       , stations: 
-        { cleaner: "{__ | > :f | * (:code $f.code :user 5)}" 
+        { cleaner: "{__ | $>f | * (:code $f.code :user 5)}" 
         , forward_fix: "{__ | * (:dx 10 :thing :turtle) | port send name :svg-move}"
-        , turn_fix: "{__ | > :val | * (:dangle __.result :thing {\"turtle-{$val.user}\"} )}"
+        , turn_fix: "{__ | $>val | * (:dangle __.result :thing {\"turtle-{$val.user}\"} )}"
         }
       , routes: 
         [ ['codeform', 'cleaner.in']

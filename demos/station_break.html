@@ -35,7 +35,7 @@
       modfive  {__ | mod 5 | then "" else :buzz}
       modtwo   {__ | mod 2 | then "{__ | @>twono}" else "{__ | @>twoyes}" with __}
       
-      twono    {""   | @>modtwo-yes | :No | @>modtwo-no}
+      twono    {""   | @>modtwo-yes | "{:No | @>modtwo-no}" | run}
       twoyes   {:Yes | @>modtwo-yes | ""  | @>modtwo-no}
       
       counter {__ | add $count | $>count}

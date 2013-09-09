@@ -25,8 +25,8 @@
       show    {__}
       initializer
         {20 | range | map block "{20 | range | map block 0}"}
-  // {0 | $>cells.{20 | range}.{range 20}}
-  // {64 | math random | math pow exp 0.1666 | math round}
+        // {64 | math random | math pow exp 0.1666 | math round}
+        // {0 | $>cells.{20 | range}.{range 20}}
       
       @init -> initializer
 
@@ -62,12 +62,6 @@
         {__ | split on "x" | * (:row __.#1 :col __.#2 :val 4) | $>change}
       @touched -> save-change
       
-      // activate
-      //   {__ | split on "x" | >coords | $cells | list poke path (_coords.#1 _coords.#2) value 4 | $>cells}
-      // @touched -> activate -> changed
-      
-// {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
-
 
       // SHOW
       @house  dom-set-html
