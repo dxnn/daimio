@@ -461,8 +461,8 @@ D.import_models({
         fun: function(data, path, value) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
-          return D.poke(data, path, value)
-          
+          D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
+          return data
          
           // return D.poke(path, data, function(x) {return value})
         },

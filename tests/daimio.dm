@@ -2239,7 +2239,112 @@ OK CHANGE GEARS
       [[4,3],[2,1]]
 
 
+Poking is a lot like peeking, except it sets a value instead of reading it and fills any gaps it encounters with empty lists.
 
+  by key:
+    {(1 2 3) | list poke path (1) value 999}
+      [1,999,3]
+    {(1 2 3) | list poke path (1 :a) value 999}
+      [1,{"a":999},3]
+    {* (:a 1 :b 2 :c 3) | list poke path (:d) value 999}
+      {"a":1,"b":2,"c":3,"d":999} 
+    {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path (:b 1) value 999}
+      {"a":[2,1],"b":[3,999],"c":[4,5]} 
+    {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path (:b 1 :d) value 999}
+      {"a":[2,1],"b":[3,{"d":999}],"c":[4,5]} 
+    {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path (:b 1 :d :e) value 999}
+      {"a":[2,1],"b":[3,{"d":{"e":999}}],"c":[4,5]} 
+    
+    when you poke by key to a non-existent key in an unkeyed list, it converts it to a keyed list. (BUG)
+      {(1 2 3) | list poke path (:a) value 999}
+        {"0":1,"1":2,"2":3,"a":999}
+
+  by position:
+    {(1 2 3) | list poke path ("#2") value 999}
+      [1,999,3]
+    {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path ("#2") value 999}
+      {"a":[2,1],"b":999,"c":[4,5]}
+    {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path ("#2" "#2") value 999}
+      {"a":[2,1],"b":[3,999],"c":[4,5]}
+  
+    the positional operator fills gaps with empty lists
+      {() | list poke path ("#2") value 999}
+        [[],999]
+      {() | list poke path ("#-2") value 999}
+        [999,[]]
+      {() | list poke path ("#-2" "#3") value 999}
+        [[[],[],999],[]] 
+      {() | list poke path ("#-2" "#3" "#-4") value 999}
+        [[[],[],[999,[],[],[]]],[]]
+
+    it mixes well with keyed lists, as long as enough elements exist. 
+      {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path ("#1" "#4") value 999}
+        {"a":[2,1,[],999],"b":[3,4],"c":[4,5]} 
+      {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path ("#1" "#-6") value 999}
+        {"a":[999,[],[],[],2,1],"b":[3,4],"c":[4,5]}        
+      {* (:a {* (:aa 1 :ab 2)} :b {* (:ba 1 :bb 2)} :c {* (:ca 1 :cb 2)}) | list poke path ("#2" "#2") value 999}
+        {"a":{"aa":1,"ab":2},"b":{"ba":1,"bb":999},"c":{"ca":1,"cb":2}} 
+    
+    but if there are gaps in your keyed list the results might be unexpected -- the generated keys are consecutive integers (offset by one million to avoid common collisions). 
+    this behavior is likely to change; please don't rely on generated keys.
+      {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999}
+        {"1000000":[],"1000001":999,"a":1,"b":2,"c":3}
+      {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999 | sort}
+        [[],1,2,3,999]
+      
+      
+  by star:
+    
+    {(2 3 4) | list poke path "*" value 999}
+      [999,999,999]
+    {((2 1) (3 4) (4 5)) | list poke path "*" value 999}
+      [999,999,999]
+    {((2 1) (3 4) (4 5)) | list poke path ("*" "#2") value 999}
+      [[2,999],[3,999],[4,999]]
+    {((2 1) (3 4) (4 5)) | list poke path ("#2" "*") value 999}
+      [[2,1],[999,999],[4,5]]
+    {((2 1) (3 4) (4 5)) | list poke path ("*" "*") value 999}
+      [[999,999],[999,999],[999,999]]
+      
+    stars generate a new empty list for each missing (or scalar) level. (BUG)
+      {() | list poke path ("*") value 999}
+        []
+      {() | list poke path ("*" "*") value 999}
+        [[]]
+      {(1 2 3) | list poke path ("*" "*") value 999}
+        [[],[],[]]
+      {(1 2 3) | list poke path ("*" "*" "*") value 999}
+        [[[]],[[]],[[]]]
+      {(1 2 3) | list poke path ("*" "*" "#2") value 999}
+        [[[],999],[[],999],[[],999]]
+        
+    
+  by list:
+    
+    {* (:a 1 :b 2 :c 3) | list poke path ( (:a :b) ) value 999}
+      {"a":999,"b":999,"c":3}
+    {* (:a 1 :b 2 :c 3) | list poke path ( (:d :e) ) value 999}
+      {"a":1,"b":2,"c":3,"d":999,"e":999}
+    {* (:a 1 :b 2 :c 3) | list poke path ( ("#1" "#3") ) value 999}
+      {"a":999,"b":2,"c":999}
+    {((2 1) (3 4) (4 5)) | list poke path ("*" ("#2" "#4") ) value 999}
+      [[2,999,[],999],[3,999,[],999],[4,999,[],999]]
+      
+    generating a new list
+      {* (:a 1 :b 2 :c 3) | list poke path ( "#2" ("#2" "#6" "#4") ) value 999}
+        {"a":1,"b":[[],999,[],999,[],999],"c":3}
+      
+    generating a new list (BUG)
+      {* (:a 1 :b 2 :c 3) | list poke path ( :b ("#2" "#6" "#4") ) value 999}
+        {"a":1,"b":[[],999,[],999,[],999],"c":3}
+      
+    generating a new keyed list (BUG)
+      {* (:a 1 :b 2 :c 3) | list poke path ( "#2" (:d :e) ) value 999}
+        {"a":1,"b":{"d":999,"e":999},"c":3}
+
+    double list all the way (BUG)
+      {((2 1) (3 4) (4 5)) | list poke path ( ("#1" "#3") ("#2" "#4") ) value 999}
+        [[2,999,[],999],[3,4],[4,999,[],999]]
 
 LOGIC COMMANDS
 

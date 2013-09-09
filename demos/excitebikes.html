@@ -47,7 +47,10 @@
       // INPUT
       @touched dom-on-click .touch
       activate
-        {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 4 else __in}"}" | $>cells}
+        {__ | split on "x" | >coords | $cells | list poke path (_coords.#1 _coords.#2) value 4 | $>cells}
+        
+        
+        // {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 4 else __in}"}" | $>cells}
 
 // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
 
@@ -268,7 +271,7 @@
           history_el.innerHTML = '<p class="input">'  + code + '</p>'
                             + '<p class="result">' + (value || '&nbsp;') + '</p>' 
                             + history_el.innerHTML
-        })
+        }, OuterSpace)
       }
 
       // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
