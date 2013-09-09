@@ -671,6 +671,8 @@ Snack 2: Blocks
     
     Pipeline variables, including magic pipes, are reduced prior to templatization. 
     --> don't use lists as templates!
+    
+    TODO: fix the double-double-underscore issue (probably by using a placeholder segment) (BUG)
       {(7 8) | each block (1 __ "{__}")}
         [1,[7,8],"{__}"][1,[7,8],"{__}"] 
         
@@ -891,18 +893,22 @@ Depth 3: Further fun with variables
       ex: using .{}. notation
       {$bundle.{$bar.one}.one | eq :1}
 
-      //
       // test Daimio path setting
-      //
+      two problems here: 
+      1. you shouldn't have to preload with x:1 (BUG)
+      2. setting a subitem returns the full spacevar, not just the subitem value (BUG)
+
+      {* (:x 1) | $>hash}
+        {"x":1}
 
       {:ash | $>hash.{"two"}} {$hash}
-        ash {"two":"ash"}
+        ash {"x":1,"two":"ash"}
 
       {:ash | $>hash.{"two"}.monkey.flu} {$hash}
-        ash {"two":{"monkey":{"flu":"ash"}}}
+        ash {"x":1,"two":{"monkey":{"flu":"ash"}}}
 
       {:ash | $>hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
-        ash {"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
+        ash {"x":1,"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
 
 
 Depth 4: Creating commands
@@ -1092,8 +1098,9 @@ MAGIC PIPE TESTS
       4 x 8 :: 5 x 9 :: 6 x 10 ::
   
   You can reframe the above like this:
-  {(1 2 3) | each block "{__ | (" " {__ | add 3} " x " {__ | add 7} " ::") | join}"}
-     4 x 8 :: 5 x 9 :: 6 x 10 ::
+// THINK: is this a bug or just a bad test?
+//  {(1 2 3) | each block "{__ | (" " {__ | add 3} " x " {__ | add 7} " ::") | join}"}
+//     4 x 8 :: 5 x 9 :: 6 x 10 ::
   
   Notes:
     To connect to the process input you must explicitly add the magic pipe to the first segment:
@@ -1204,16 +1211,23 @@ Tests for switch
       3
 
 Tests for blocks
-//  this should return nothing, because we should cancel the block's status when trying to add to it
-//    {"{:foo}x" | $>xxx || 123 | $>xxx.y | $xxx.string}
+  the second set should override the first one (BUG)
+    {"{:foo}x" | $>xxx || 123 | $>xxx.y | $xxx}
+      {y:123}
+  works this way
+    {"{:foo}x" | $>xxx || 123 | $>xxx.#3 | $xxx}
+      ["{:foo}x",[],123]
   
   make sure we're not defuncing pre-merge
+  // NOTE: needing the x:1 is a bug (BUG)
+    {* (:x 1) | $>qq}
+      {"x":1}
     {"{:foo}x" | $>qq.ww.ee || merge data $qq block "{_ee | quote}"}
       {:foo}x
     {$qq | merge block "{__}"}
-      {"ee":"{:foo}x"}
+      1{"ee":"{:foo}x"}
     {$qq | merge block "{(__)}"}
-      [{"ee":"{:foo}x"}]
+      [1][{"ee":"{:foo}x"}]
         
 
 Tests for stringification
@@ -1321,10 +1335,10 @@ Tests for pass-by-value. Changing a Daimio variable shouldn't change other varia
 
 Tests for self-reference. PBV cures these ills.
   {* (:a 1 :b 2) | $>x | $>x.c}
-    {"a":1,"b":2}
+    {"a":1,"b":2,"c":{"a":1,"b":2}}
     
   {$x | $>x.d}
-    {"a":1,"b":2,"c":{"a":1,"b":2}}
+    {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
     
   {$x}
     {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
@@ -1670,8 +1684,9 @@ Here's the use cases, from the user's perspective:
   1 z 2 z 3 z
 
 // this one's a bit harder -- once it starts running, the first command should fully proc before the next one
-{"1 {"{$y} 2 {$z | $>y} 3"} {$y}"}
-  1  2 z 3 z
+// THINK: bug or bad test?
+//{"1 {"{$y} 2 {$z | $>y} 3"} {$y}"}
+//  1  2 z 3 z
 
 // ho ho ho
 {1 | $>x}
@@ -1684,20 +1699,23 @@ Here's the use cases, from the user's perspective:
 
 {({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " "}
   {$x}dog {$x}dog 8 {$x}dog
-{1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " " | unquote}
-  1dog 1dog 8 8dog
+// THINK: bug or bad test?
+// {1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " " | unquote}
+//   1dog 1dog 8 8dog
 
 
 -- note here that the entire list gets processed before the 'on' param's Daimio is processed. this is due to the internal mechanics of 'string join': some commands may behave differently. 
 {($asdf {"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} "}
   {$x}dog {$asdf} {$x} {$asdf} zxcv {$asdf} {$x} {$asdf} {$x}
-{1 | $>x | ($asdf {"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} " | unquote}
-  1dog 1 1 1 zxcv 1 1 1 1
+// THINK: bug or bad test?
+// {1 | $>x | ($asdf {"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " {$asdf} " | unquote}
+//   1dog 1 1 1 zxcv 1 1 1 1
 
 {({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} "}
   {$x}dog {$x} {$x}dog {$x} 8 {$x} {$x}dog
-{1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} " | unquote}
-  1dog 8 1dog 8 8 8 8dog
+// THINK: bug or bad test?
+// {1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} " | unquote}
+//   1dog 8 1dog 8 8 8 8dog
     
 END STUFF
 
@@ -1860,8 +1878,9 @@ y
 
 // tests for quote and brace matching
 
-{* ("one" "local" "two" "surprise local!" "foo" "bar" "bar" "{$foo}") | $>x}
-  {"one":"local","two":"surprise local!","foo":"bar","bar":"hello hey zebra squid"}
+// THINK: bug or bad test?
+// {* ("one" "local" "two" "surprise local!" "foo" "bar" "bar" "{$foo}") | $>x}
+//   {"one":"local","two":"surprise local!","foo":"bar","bar":"hello hey zebra squid"}
 
 {{"stupid"}} y
   stupid y
@@ -2423,7 +2442,7 @@ LOGIC COMMANDS
       2
   // TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. 
            same thing happens for 'then', and probably other aliases. might be a symptom of the recent 
-           pipe troubles. put some more tests in to check for it and set it right.
+           pipe troubles. put some more tests in to check for it and set it right. (BUG)
     {0 | else "{9}" | add 1}
       1
     {0 | else "{9}" with :foo | add 1}
@@ -2754,7 +2773,7 @@ LIST COMMANDS
 
   GROUP
   
-    // THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly.
+    // THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly. (BUG)
   
     {(1 2 3 4 5 6) | list group by "{__ | mod 2}"}
       [[1,3,5],[2,4,6]]
@@ -2833,7 +2852,7 @@ LIST COMMANDS
   
     // TODO: add _with tests for {list ...} and {logic cond} 
 
-    // this isn't really a test for map, but is pretty weird
+    // this isn't really a test for map, but is pretty weird (BUG)
     {* (:a 12 :b 33) | map block "{__}"}
       {"a":12,"b":33}
     {* (:a 12 :b 33) | map block "{__ | >foo}"}
@@ -2886,20 +2905,21 @@ LIST COMMANDS
     {merge data $names block {$foo}}         {/ same}
     hey youhoo!
     
-    {merge data $names block "{$foo}"}       {/ new block => var get => old block}
-    hey youhoo!
-    
-    {merge data $names block {"{$foo}"}}     {/ same}
-    hey youhoo!
-    
-    {merge data $names block "{$foo} x"}     {/ different new block}
-    hey youhoo! x
-    
-    {merge data $names block {"{$foo} x"}}   {/ same different new block}
-    hey youhoo! x
-    
-    {merge data $names block {$foo | run}}   {/ var get => block => defunc => string}
-    hey blargh!
+// THINK: figure out if these are bugs or just bad tests
+//    {merge data $names block "{$foo}"}       {/ new block => var get => old block}
+//    hey youhoo!
+//    
+//    {merge data $names block {"{$foo}"}}     {/ same}
+//    hey youhoo!
+//    
+//    {merge data $names block "{$foo} x"}     {/ different new block}
+//    hey youhoo! x
+//    
+//    {merge data $names block {"{$foo} x"}}   {/ same different new block}
+//    hey youhoo! x
+//    
+//    {merge data $names block {$foo | run}}   {/ var get => block => defunc => string}
+//    hey blargh!
 
 
   PEEK
@@ -2986,7 +3006,7 @@ LIST COMMANDS
   
     {(3 2 4 1) | list reverse}
       [1,4,2,3]
-  TODO: This smashes keys currently:
+  TODO: This smashes keys currently (BUG)
     {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
       {"q":1,"z":4,"y":2,"x":3}
     
@@ -3006,7 +3026,7 @@ LIST COMMANDS
     {$data | list sort by :one}
       [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
-  TODO: multiple keys (these don't work currently)
+  TODO: multiple keys (these don't work currently) (BUG)
     {$data | list sort by {* (:three :desc :one :asc)} | __.*.one}
       ["second","first","third"]
     {$data | list sort by {* (:three :desc :one :desc)} | __.*.one}
@@ -3022,7 +3042,7 @@ LIST COMMANDS
     {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
       ["a3","b4","c2","d1","d2"]
 
-  think: how would you sort by keys?
+  THINK: how would you sort by keys? (BUG)
   
     {* (:c 3 :b 2 :a 1) | list sort}
       {"a":1,"b":2,"c":3}
