@@ -90,7 +90,7 @@ D.onerror = function(command, error) {
 }
 
 D.clone = function(value) {
-  if(value.toJSON)
+  if(value && value.toJSON)
     return D.deep_copy(value)
 
   try {
@@ -756,26 +756,6 @@ D.import_port_type('svg-add-line', {
 
 
 
-D.eat_fancy_var_pieces = function(pieces, token) {
-  if(!pieces.length)
-    return []
-  
-  // inline peek filtering    
-  pieces = pieces.map(function(item) {
-    return item[0] != '{' 
-         ? '"' + item + '"'
-         : item
-  })
-  
-  var path = new D.Token('List', pieces.join(' '))
-    , peeker = new D.Token('Command', 'list peek')
-    
-  peeker.names = ['data', 'path']
-  peeker.inputs = [token.key, path.key]
-  
-  return [path, peeker]
-}
-
 /* FANCIES! */
 
 D.FANCIES = {}
@@ -821,10 +801,33 @@ D.import_fancy('$>', {
     
     // TODO: change path to name, make $>foo set foo, make $>foo.baz.baa -> list poke path (:baz :baa) data $foo value __ | $>foo
     
-    token.type = 'VariableSet'
-    token.value = {type: 'space', name: token.value.slice(2)}
+    var pieces = D.Parser.split_on(token.value, '.')
+      , name = pieces.shift().slice(2)
+      , poke_tokens = []
     
-    return [token]
+    token.type = 'VariableSet'
+    token.value = {type: 'space', name: name}
+    
+    if(pieces.length) {
+      pieces = pieces.map(function(item) {
+        return item[0] != '{' 
+             ? '"' + item + '"'
+             : item
+      })
+
+      var path = new D.Token('List', pieces.join(' '))
+        , poker = new D.Token('Command', 'list poke data $' + name)
+
+      poker.names = ['path', 'value']
+      poker.inputs = [path.key, token.prevkey]
+
+      token.names = ['value']
+      token.inputs = [poker.key]
+
+      poke_tokens = [path, poker]
+    }
+    
+    return poke_tokens.concat(token)
   }
 })
 
@@ -883,6 +886,28 @@ D.eat_fancy_var = function(token, type) {
 
   return [token].concat(D.eat_fancy_var_pieces(pieces, token))
 } 
+
+D.eat_fancy_var_pieces = function(pieces, token) {
+  if(!pieces.length)
+    return []
+  
+  // inline peek filtering    
+  pieces = pieces.map(function(item) {
+    return item[0] != '{' 
+         ? '"' + item + '"'
+         : item
+  })
+  
+  var path = new D.Token('List', pieces.join(' '))
+    , peeker = new D.Token('Command', 'list peek')
+    
+  peeker.names = ['data', 'path']
+  peeker.inputs = [token.key, path.key]
+  
+  return [path, peeker]
+}
+
+
 
 /* TERMINATORS! */
 
