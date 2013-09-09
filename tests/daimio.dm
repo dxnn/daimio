@@ -277,7 +277,7 @@ not really. but that {>foo "..."} syntax is really weird. maybe don't do that.
 
 did i mention that fancy handlers return a function that takes into account the local scope, var name/path, etc and that a call to this fancy function is placed in the block but then it could be pre-run in the stack? 
 
-/ {(1 2 3) | > (:a :b :c)}
+/ {(1 2 3) | >(:a :b :c)}
 / {(1 2 3 4 5) | > (:first "..." :last)}
 / {(1 2 3 4 5) | > (:head "...tail")}
 ---- look up more destructuring examples

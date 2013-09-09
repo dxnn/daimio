@@ -22,7 +22,8 @@
       show    {__}
       initializer
         {20 | range | map block "{20 | range | map block 0}" | $>cells}
-  // {0 | $>cells.{20 | range}.{range 20}}
+        // {64 | math random | math pow exp 0.1666 | math round}
+        // {0 | $>cells.{20 | range}.{range 20}}
       
       @init -> initializer
 
@@ -48,20 +49,9 @@
       @touched dom-on-click .touch
       activate
         {__ | split on "x" | >coords | $cells | list poke path (_coords.#1 _coords.#2) value 4 | $>cells}
-        
-        
-        // {__ | split on "x" | $>coords | $cells | map block "{__ | map with {* (:row _key)} block "{_row | eq $coords.#1 | and {_key | eq $coords.#2} | then 4 else __in}"}" | $>cells}
-
-// {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
-
-// HEY YOU! Make the above line work. Then make {(1 2 3) | >(:a :b :c)} work. Then add a REPL and editor to this page!
-// Then later maybe finish off todomvc w/ pushstate and filters and editing/display-ports.
-
-
-
-
+        // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
       @touched -> activate -> changed
-
+        
 
       // SHOW
       @house  dom-set-html
@@ -83,8 +73,6 @@
   </script>
 
   <script type="text/javascript">    
-    // {64 | math random | math pow exp 0.1666 | math round}
-    
     document.addEventListener('DOMContentLoaded', function() {
           seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
                               .map(function(node) {return node.text})
