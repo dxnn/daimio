@@ -90,11 +90,13 @@ D.onerror = function(command, error) {
 }
 
 D.clone = function(value) {
-  
+  if(value.toJSON)
+    return D.deep_copy(value)
+
   try {
-    return JSON.parse(JSON.stringify(value)); 
+    return JSON.parse(JSON.stringify(value))
   } catch (e) {
-    return D.deep_copy(value);
+    return D.deep_copy(value)
   }
 }
 
@@ -2791,8 +2793,8 @@ D.SegmentTypes.VariableSet = {
       
     // state[name] = inputs[0] // OPT: only copy if you have to
 
-    // state[name] = D.clone(inputs[0]) 
-    state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
+    state[name] = D.clone(inputs[0]) 
+    // state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
     
     return inputs[0]
   }
@@ -2871,8 +2873,8 @@ D.SegmentTypes.Variable = {
       return false
     
     // return value // OPT: cloning each time is terrible
-    // return D.clone(value)
-    return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
+    return D.clone(value)
+    // return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
   }
 }
 
