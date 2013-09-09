@@ -64,13 +64,8 @@ D.noop = function() {}
 D.identity = function(x) {return x}
 D.concat = function(a,b) {return a.concat(b)}
 
-D.ETC.regex_escape = function(str) {
-  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
-  return str.replace(specials, "\\$&")
-}
 
-
-/////// SOME HELPER METHODS PUUKE ///////////
+/////// SOME HELPER METHODS ///////////
 
 // TODO: clean up this error stuff... 
 
@@ -98,6 +93,11 @@ D.clone = function(value) {
   } catch (e) {
     return D.deep_copy(value)
   }
+}
+
+D.ETC.regex_escape = function(str) {
+  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
+  return str.replace(specials, "\\$&")
 }
 
 
@@ -262,6 +262,7 @@ D.track_event = function(type, target, callback) {
         var value = 
           ( target.attributes['data-value'] 
             && target.attributes['data-value'].value) // THINK: no empty strings allowed...
+          || ( target.value != undefined && target.value )
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
         listener(value, event)
@@ -2845,6 +2846,8 @@ D.SegmentTypes.PortSend = {
                  return (port.name == to && port.station == my_station) 
                })[0] 
     
+    // TODO: check not only this station but outer stations as well, so we can send to ports from within inner blocks. but first think about how this affects safety and whatnot
+    
     if(port)
       port.exit(inputs[0], process) 
     else
@@ -4552,11 +4555,13 @@ D.mungeLR = function(items, fun) {
       }
     }
   }
+  
+  if(typeof window != 'undefined') {
+    window.addEventListener("message", handleMessage, true);
 
-  window.addEventListener("message", handleMessage, true);
-
-  // Add the one thing we want added to the window object.
-  window.setImmediate = setImmediate;
+    // Add the one thing we want added to the window object.
+    window.setImmediate = setImmediate;
+  }
 }();
 
 // we should include the murmurhash lib instead of inlining it here... :[
@@ -4722,11 +4727,7 @@ D.ETC.niceifyish = function(value, whitespace) {
 D.import_aliases({
   'do': 'list each block',
   'wait': 'process sleep for 0',
-//  '@>': 'port send name',
-//  'forward': 'port send name :forward value',
-//  'turn': 'port send name :turn value',
 
-//  '>': 'variable set path',
   'grep': 'string grep on',
   'join': 'string join value',
   'split': 'string split value',
@@ -4751,16 +4752,14 @@ D.import_aliases({
   'range': 'list range length',
   'first': 'list first',
   
-  // '%': 'content get value',
-  
-  'eq': 'logic is like',
-  'is': 'logic is', // for 'is in'
-  'if': 'logic if value',
+  'eq':   'logic is like',
+  'is':   'logic is', // for 'is in'
+  'if':   'logic if value',
   'then': 'logic if value __ then',
   'else': 'logic if value __ then __ else',
-  'and': 'logic and value',
-  'or': 'logic or value',
-  'not': 'logic not value',
+  'and':  'logic and value',
+  'or':   'logic or value',
+  'not':  'logic not value',
   'cond': 'logic cond value',
   'switch': 'logic switch value',
   
@@ -4973,7 +4972,7 @@ D.seedlikes_from_string = function(stringlike) {
                                                 ? this_seed.stations[name].extraports.concat([port])
                                                 : [port]
           } else {
-            this_seed.subspaces[spacename] = spacename // TODO: foo.in, foo-1.in, foo-2.in, etc
+            this_seed.subspaces[name] = name // TODO: foo.in, foo-1.in, foo-2.in, etc
           }
           route.push(part) // THINK: for a station port this is always 'out' (or down)
         } 
