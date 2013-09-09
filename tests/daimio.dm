@@ -1879,8 +1879,11 @@ y
 // tests for quote and brace matching
 
 // THINK: bug or bad test?
-// {* ("one" "local" "two" "surprise local!" "foo" "bar" "bar" "{$foo}") | $>x}
-//   {"one":"local","two":"surprise local!","foo":"bar","bar":"hello hey zebra squid"}
+// {* ("bar" "{$foo}") | $>x}
+//   {"bar":"hello hey zebra squid"}
+
+{* ("one" "local" "two" "surprise local!" "foo" "bar") | $>x}
+  {"one":"local","two":"surprise local!","foo":"bar"}
 
 {{"stupid"}} y
   stupid y
@@ -3106,6 +3109,13 @@ KNOWN BUGS
     {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
       {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
 
+  Blocks inside lists that get cloned become quoted. This might be considered a *feature* in some circles, but it makes a fairly valid use case (sticking blocks inside a keyed list as quasi-object methods) more difficult.
+    {("foo" "{2 | add 7}") | map block "{__ | run}"}
+      ["foo",9]
+    {("foo" "{2 | add 7}") | $>foo | map block "{__ | run}"}
+      ["foo",9]
+    {("foo" "{2 | add 7}") | $>foo || $foo | map block "{__ | run}"}
+      ["foo",9]
     
   Most list commands eat keys:
     sort, reverse, etc
@@ -3122,8 +3132,14 @@ DECISIONS TO BE MADE
   
   How do we walk a tree to prune things, extract things, etc?
   
+  Port creation / port invocation / command invocation are all very similar. 
+  - can we consolidate them?
+  - how do we give port creation/invocation the same degree of helpful insight commands have?
   
-  
+  If all side effects are in outside ports, commands become pure and controlling access to them is less necessary. 
+  - how do we limit access to outside ports in a safe and progressively available way?
+  - do dialects matter? can we compile down based on a particular "library" of commands we expect to have available anywhere the code is executed?
+  - we'll still want to overwrite commands and possible white/black list them, but it's really the ports we're limiting... do commands contain ports? can we pull this back in to the command level in some way? do we want to?
   
 
 
