@@ -3838,7 +3838,7 @@ D.Space = function(seed_id, parent) {
 }
 
 D.Space.prototype.get_state = function(param) {
-  return (typeof this.state[param] != 'undefined') ? this.state[param] : this.seed.state[param]
+  return (typeof this.state[param] != 'undefined') ? this.state[param] : (this.seed.state[param] || "")
 }
 
 D.Space.prototype.dock = function(ship, station_id) {
