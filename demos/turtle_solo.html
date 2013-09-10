@@ -3,64 +3,197 @@
 <head> 
   <meta charset="utf-8">
   <title>I Like Turtles</title>
-
   <script type="text/javascript" src="../get.php?file=daimio"></script>
 </head>
 
 <body>
+  
+  <svg id="mainsvg" width="800px" height="500px" viewBox="0 0 800 500"></svg>
+  
+  <div style="float:right; width: 320px; overflow: auto">
+    <pre id="hints">
+      
+{forward 10} {turn 10}
 
-  MAKE ME A TURTLE
+{forward 10 | turn 10}
+
+{10 | forward | turn}
+
+{ 120 | forward | turn 
+| forward | turn | forward | turn}
+
+{90 | forward | turn}
+
+{range 4 | do "{90 | forward | turn}"}
+
+Other math commands:
+{math mod value 7 by 2}
+{math pow value 2 exp 8}
+{math sin value 90}
+{math cos value 90}
+{math round value 1.234}
+
+    </pre>
+  </div>
   
-  <pre id="turtlepower">
-    /-\_
-    \-/
-  </pre>
-  
-  <form id="button">
-    <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
+  <form id="codeform">
+    <div><textarea id="code" name="code" rows="4" cols="100"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
   
-  <svg id="mainsvg" width="200px" height="200px" viewBox="0 0 200 200">
-    <g id="turtlebox" transform="translate(30,30)">
-      <rect width="30" height="50" id="turtle"></rect>
-    </g>
-  </svg>
-  
-  <pre id="hints">
-    {* (:dy 10 :thing :turtlebox) | gateway send name :svg-move}
-    
-    {* (:dangle 25 :thing :turtle) | gateway send name :svg-rotate}
-    {* (:angle {$angle | add 25 | $>angle} :thing :turtle) | gateway send name :svg-rotate}
-    
-    {range 360 | each block "{__ | $>x | process sleep | * (:dangle $x :thing :turtle) | gateway send name :svg-rotate}"}
+  <pre id="morehints">
+{range 5 | do "{144 | forward | turn}"}
+
+{range 5 | do "{turn 10 | range 5 | do "{ 144 | forward | turn | wait}"}"}
+
+{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 | wait}"}"}
+
+{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 |  turn 270 | forward 20 | wait}"}"}
+
+{range 8 |  do "{turn 45 | range 5 | do "{turn 90 | forward 50 | turn 270 | forward 50 |  turn 270 | forward 50 | wait}"}"}"}
+
+{range 36 | do "{turn 10 | range 4 | do "{90 | forward | turn | wait}"}"}
+
+{range 400 | do "{__ | times 0.04 | add 3.2 | forward | turn 14.2 | wait}"}
+
+{7 | range 200 | do "{__ | divide value 200 | forward | turn -16.3 | wait}"}
+
+{range 12 | do "{7 | range 100 | do "{__ | divide value 100 | forward | turn -14.1 | wait}"}"}
+
+{range 10 | do "{range 9 | do "{forward 100 | turn 200 | wait}" | turn 36}"}
+
+{range 4 | do "{range 100 | list reverse | do "{__ | turn | forward 10 | wait}" | turn 60}"}
+
+{range 400 | do "{forward 5 | math random max 4 | times 90 | turn | wait}"}
+
   </pre>
   
-  <pre id="output"></pre>
+  <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
+  
+  <script type="text/daimio" id="spaceseeds">
+    execspace
+      {"minus": {}}
+      @execport exec
+      @forward out
+      @turn out
+      
+    outer
+      $turtles {}
+      $colors 
+        [ "blue", "blueviolet", "cadetblue", "chartreuse", "coral", "cornflowerblue"
+        , "crimson", "cyan", "darkblue", "darkcyan", "firebrick", "forestgreen", "fuchsia"
+        , "gainsboro", "goldenrod", "green", "greenyellow", "hotpink", "indianred", "indigo"
+        , "lavenderblush", "lawngreen", "limegreen", "linen", "magenta", "moccasin", "navy"
+        , "olive", "olivedrab", "orange", "orangered", "peru", "pink", "plum", "purple", "red"
+        , "rosybrown", "royalblue", "salmon", "sandybrown", "seagreen", "slateblue", "springgreen"
+        , "steelblue", "teal", "tomato", "turquoise", "violet" ]
+      
+      // INIT
+      @codeform dom-on-submit
+      @init from-js
+      
+      turtle-fix 
+        { __ | tap | >ship
+        | $colors.{_ship.user | times 11 | mod {$colors | count}} | >color 
+        | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color _color) 
+        | $>turtles.{_ship.user}
+        | _ship | list poke path :color value _color}
 
-  <script type="text/daimio" id="hello_daimio">
-    
-    { :code        | gateway add thing __ type :dom-on-change
-    | :output      | gateway add thing __ type :dom-set-text
-    | :button      | gateway add thing __ type :dom-on-submit 
-    | :svg-move    | gateway add type __ 
-    | :svg-rotate  | gateway add type __ 
-    | :svg-addline | gateway add type __ }
-    
-    { @code
-      → "{__ | $>code}"}
-    
-    { @button
-      → "{$code | unquote | run}"
-      → @output }
-    
+      @init -> {* (:user 1)} -> turtle-fix -> @turtle-add
+      @codeform -> {__ | list poke path :user value 1 | tap} -> execspace.execport
+      
+      
+      // MOVEMENT
+      @svg-move
+      @svg-rotate
+      @svg-add-line
+      @turtle-add
+      
+      turn-fix 
+        { __ | tap | >ship 
+        | * ( :angle  {$turtles.{_ship.user}.angle | add _ship.result | >angle | _angle | $>turtles.{_ship.user}.angle | _angle} 
+              :thing  {("turtle" _ship.user) | join} ) }
+        
+      forward-fix 
+        { __ | tap | >ship
+        | $turtles.{_ship.user} | >turtle 
+        
+        | log (_ship _turtle)
+        
+        | _turtle.angle | add 90 | math cos | times _ship.result
+        | add _turtle.x | >tempx 
+        | less than 0 | then 0 else _tempx
+        | 750 | less than _tempx 
+        | then 750 else _tempx | >newx | _newx | tap
+        | $>turtles.{_ship.user}.x 
+        // add {math bound by (0 750)} command
+        
+        | _turtle.angle | add 90 | math sin | times _ship.result
+        | add _turtle.y | >tempy 
+        | less than 0 | then 0 else _tempy
+        | 450 | less than _tempy 
+        | then 450 else _tempy | >newy | _newy | tap 
+        | $>turtles.{_ship.user}.y
+        
+        | * (:y _newy :x _newx :thing {("turtlebox" _ship.user) | join})
+        | @>svg-move 
+        
+        | * ( :x1 {_turtle.x | add 15} 
+              :y1 {_turtle.y | add 15} 
+              :x2 {_newx | add 15} 
+              :y2 {_newy | add 15} 
+              :color _turtle.color 
+              :alpha _turtle.alpha 
+              :thing :mainsvg) 
+        | @>svg-add-line}
+      
+      
+      execspace.forward -> forward-fix
+      forward-fix.svg-move -> @svg-move 
+      forward-fix.svg-add-line -> @svg-add-line
+      execspace.turn -> turn-fix -> {__ | tap} -> @svg-rotate
+      
   </script>
   
-  <script type="text/javascript">    
-    document.addEventListener('DOMContentLoaded', function() {
-      var code = document.getElementById('hello_daimio')
-      D.run(code.text, function() {})
+  
+  <script type="text/javascript">   
+    D.import_port_type('turtle-add', {
+      dir: 'out',
+      outside_exit: function(ship) {
+        var mainsvg = document.getElementById('mainsvg')
+
+        if(!mainsvg)
+          return D.setError('Your svg is out of alignment')
+
+        D.ETC.turtles = D.ETC.turtles || {} // le sigh
+
+        if(!ship.user)
+          return D.setError('There is no user in that ship')
+
+        if(D.ETC.turtles[ship.user])
+          return D.setError('You already have a turtle')
+
+        var string = '<g id="turtlebox' + ship.user + '" transform="translate(200,200)"><rect width="30" height="50" id="turtle' + ship.user + '" style="fill:' + ship.color  + '"></rect></g>'
+          , frag = D.string_to_svg_frag(string)
+
+        var el = mainsvg.appendChild(frag)
+
+        D.ETC.turtles[ship.user] = el
+      }
     })
+    
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      //  'forward': 'port send name :forward value',
+      //  'turn': 'port send name :turn value',
+      
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
+      
+      D.send_value_to_js_port('init', 1) // activate init
+    })
+    
   </script>
   
 </body>
