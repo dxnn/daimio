@@ -16,7 +16,7 @@ D.mongo = mongo
 // var fileServer = new(static.Server)('./public')
 // var html = fs.readFileSync(__dirname+'/public/index.html.js', 'utf8')
 
-var html = fs.readFileSync(__dirname+'/demos/silly_turtle3.html', 'utf8')
+var html = fs.readFileSync(__dirname+'/demos/turtle_net.html', 'utf8')
 
 var onerror = function(err) {
   return console.log(err)
