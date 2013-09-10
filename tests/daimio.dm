@@ -2397,6 +2397,7 @@ LOGIC COMMANDS
          [0,0]
 
      ~~~ AND only returns true or false ~~~
+     // THINK: why not return the last value in the list if everything is truthy?
 
      One valued 'and' looks at each item in the list
        {($false 1 2 3) | and | then :true else :false}
@@ -2434,6 +2435,15 @@ LOGIC COMMANDS
 
        {$false | and (0 0) | then :true else :false}
          false
+
+    and/or use standard Daimio conception of falsiness:
+      {( () ) | and | then :true else :false}
+        false
+      {() | and () | then :true else :false}
+        false
+      {( () "" 0 ) | or | then :true else :false}
+        false
+        
 
   IF
     Note that both 'if' and 'cond' take a 'with' param, which includes pipeline variables in the block scope.

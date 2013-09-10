@@ -166,7 +166,7 @@ D.import_models({
             if(bool !== bool) 
               return NaN
             
-            if(!D.isFalse(bool))
+            if(!D.isFalse(bool)) // because bool isn't really a bool, ya know?
               found = count+1
             
             return null
@@ -246,9 +246,9 @@ D.import_models({
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
             // var test = D.run(value[i])
-            if(test == on) {
+
+            if(test == on)
               return value[i+1]
-            }
           }
           
           return false
@@ -272,17 +272,16 @@ D.import_models({
           },
         ],
         fun: function(value, also) {
-          if(typeof also != 'undefined') {
-            return !!value && !!also
-          }
+          if(typeof also != 'undefined')
+            return !(D.isFalse(value) || D.isFalse(also))
           
           // value = D.toArray(value)
           
-          for(var key in value) {
-            if(!value[key]) return false
-          }
+          for(var key in value)
+            if(D.isFalse(value[key])) return false
           
-          return true
+          // THINK: why not return the last value in the list if everything is truthy?
+          return true //value[key]
         },
       },
       
@@ -315,9 +314,8 @@ D.import_models({
           
           if(typeof also != 'undefined') return value
 
-          for(var key in value) {
-            if(value[key]) return value[key]
-          }
+          for(var key in value)
+            if(!D.isFalse(value[key])) return value[key]
           
           return false
         },
