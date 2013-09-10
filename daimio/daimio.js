@@ -280,6 +280,8 @@ D.track_event = function(type, target, callback) {
 }
 
 D.send_value_to_js_port = function(to, value) {
+  // THINK: this should require a space... right?
+  
   try {
     document.dispatchEvent(new CustomEvent(to, { 'detail': value }))
   } catch(e) {
@@ -614,31 +616,6 @@ D.import_port_type('exec', {
 
 
 
-/// HACKHACKHACK
-D.import_port_type('turtle-add', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    var mainsvg = document.getElementById('mainsvg')
-
-    if(!mainsvg)
-      return D.setError('Your svg is out of alignment')
-    
-    D.ETC.turtles = D.ETC.turtles || {} // le sigh
-    
-    if(!ship.user)
-      return D.setError('There is no user in that ship')
-      
-    if(D.ETC.turtles[ship.user])
-      return D.setError('You already have a turtle')
-    
-    var string = '<g id="turtlebox' + ship.user + '" transform="translate(200,200)"><rect width="30" height="50" id="turtle' + ship.user + '" style="fill:' + ship.color  + '"></rect></g>'
-      , frag = D.string_to_svg_frag(string)
-    
-    el = mainsvg.appendChild(frag)
-    
-    D.ETC.turtles[ship.user] = el
-  }
-})
 
 // ugh hack ugh
 D.string_to_svg_frag = function(string) {
@@ -990,7 +967,7 @@ D.import_aliases = function(values) {
   // THINK: this only accepts fully-formed handler/method combos, with simple params (no new ablocks). is that ideal?
   D.extend(D.AliasMap, values)
   
-  for(key in values) {
+  for(var key in values) {
     var value = values[key]
     value = D.Parser.string_to_tokens('{' + value + '}')
     D.ALIASES[key] = value // do some checking or something
@@ -2843,15 +2820,21 @@ D.SegmentTypes.PortSend = {
     var to  = segment.value.to
       , my_station = process.space.station_id
       , port = process.space.ports.filter(function(port) {
-                 return (port.name == to && port.station == my_station) 
+                 return (port.name == to && port.station === my_station) // triple so undefined != 0
                })[0] 
     
     // TODO: check not only this station but outer stations as well, so we can send to ports from within inner blocks. but first think about how this affects safety and whatnot
     
-    if(port)
-      port.exit(inputs[0], process) 
-    else
+    if(port) {
+      if(my_station === undefined) { // HACK
+        port.enter(inputs[0], process) // weird hack for exec spaces
+      } else {
+        port.exit(inputs[0], process) 
+      }
+    }
+    else {
       D.setError('Invalid port detected')
+    }
     
     return inputs[0]
   }
@@ -2872,6 +2855,7 @@ D.SegmentTypes.Variable = {
   
   var my_key = segment.key
     , new_key = segment.value.prevkey
+    , key_index
 
   if(!new_key && !R.length) // some pipeline vars have to be collected then too
     return [L.concat(segment), R]
@@ -3700,7 +3684,7 @@ D.Port = function(port_template, space) {
   port.name = name
   port.space = space 
   port.flavour = flavour
-  port.station = station || false
+  port.station = station || undefined
   port.typehint = typehint
   port.settings = D.isNice(settings) ? settings : {}
   
