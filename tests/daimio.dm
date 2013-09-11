@@ -2626,6 +2626,31 @@ MATH COMMANDS
     {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
       [0.17,0.4,0.75]
  
+  MAX
+  
+    {max (1 2 3)}
+      3
+    {3 | max 1}
+      3
+    {3 | max (11 12)}
+      12
+    {13 | max (11 12)}
+      13
+    {0 | max -1}
+      0
+ 
+  MIN
+  
+    {min (11 22 3)}
+      3
+    {3 | min 11}
+      3
+    {13 | min (111 12)}
+      12
+    {13 | min (111 112)}
+      13
+    {0 | min 1}
+      0
  
   MOD
   
@@ -2866,14 +2891,14 @@ LIST COMMANDS
     // TODO: add _with tests for {list ...} and {logic cond} 
 
     // this isn't really a test for map, but is pretty weird (BUG)
-    {* (:a 12 :b 33) | map block "{__}"}
-      {"a":12,"b":33}
-    {* (:a 12 :b 33) | map block "{__ | >foo}"}
-      {"a":12,"b":33}
-    {* (:a 12 :b 33) | map block "{__ | >foo | add 1}"}
-      {"a":12,"b":33}
-    {* (:a 12 :b 33) | map block "{__ | add 1 | >foo}"}
-      {"a":12,"b":33} 
+    {(12 34) | map block "{__}"}
+      [12,34]
+    {(12 34) | map block "{__ | >foo}"}
+      [12,34]
+    {(12 34) | map block "{__ | >foo | add 1}"}
+      [13,35]
+    {(12 34) | map block "{__ | add 1 | >foo}"}
+      [13,35] 
       
     {map block "{__ | add 1}" data (1 2 3)}
       [2,3,4]

@@ -34,9 +34,8 @@ D.import_models({
           if(!_with)
             return branch
           
-          if(branch.constructor == D.Segment) { // TODO: remove me when "block|anything" is supported
+          if(branch.constructor == D.Segment) // TODO: remove me when "block|anything" is supported
             branch = D.TYPES['block'](branch)
-          }
           
           if(typeof branch != 'function')
             return branch

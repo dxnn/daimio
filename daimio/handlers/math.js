@@ -320,11 +320,23 @@ D.import_models({
         params: [
           {
             key: 'value',
-            desc: 'A list of numbers',
-            type: 'array', // [number]
+            desc: 'A number or list of numbers',
+            type: 'anything', // [number] | number
+            required: true
+          },
+          {
+            key: 'also',
+            desc: 'A number',
+            type: 'number',
+            undefined: true
           },
         ],
-        fun: function(value) {
+        fun: function(value, also) {
+          value = D.toArray(value)
+
+          if(also != undefined)
+            value.push(also)
+          
           return Math.min.apply(null, value) || 0
         },
       },
@@ -335,10 +347,22 @@ D.import_models({
           {
             key: 'value',
             desc: 'A list of numbers',
-            type: 'array', // [number]
+            type: 'anything', // [number] | number
+            required: true
+          },
+          {
+            key: 'also',
+            desc: 'A number',
+            type: 'number',
+            undefined: true
           },
         ],
-        fun: function(value) {
+        fun: function(value, also) {
+          value = D.toArray(value)
+
+          if(also != undefined)
+            value.push(also)
+          
           return Math.max.apply(null, value) || 0
         },
       },
