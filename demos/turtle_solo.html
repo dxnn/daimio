@@ -93,14 +93,14 @@ Other math commands:
       @init from-js
       
       turtle-fix 
-        { __ | tap | >ship
+        { __ | >ship
         | $colors.{_ship.user | times 11 | mod {$colors | count}} | >color 
         | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color _color) 
         | $>turtles.{_ship.user}
         | _ship | list poke path :color value _color}
 
       @init -> {* (:user 1)} -> turtle-fix -> @turtle-add
-      @codeform -> {__ | list poke path :user value 1 | tap} -> execspace.execport
+      @codeform -> {__ | list poke path :user value 1} -> execspace.execport
       
       
       // MOVEMENT
@@ -110,29 +110,19 @@ Other math commands:
       @turtle-add
       
       turn-fix 
-        { __ | tap | >ship 
-        | * ( :angle  {$turtles.{_ship.user}.angle | add _ship.result | >angle | _angle | $>turtles.{_ship.user}.angle | _angle} 
+        { __ | >ship | tap
+        | * ( :angle  { $turtles.{_ship.user}.angle | add _ship.result | $>turtles.{_ship.user}.angle} 
               :thing  {("turtle" _ship.user) | join} ) }
         
       forward-fix 
-        { __ | tap | >ship
-        | $turtles.{_ship.user} | >turtle 
-        
-        | log (_ship _turtle)
+        { __ | >ship | $turtles.{_ship.user} | >turtle 
         
         | _turtle.angle | add 90 | math cos | times _ship.result
-        | add _turtle.x | >tempx 
-        | less than 0 | then 0 else _tempx
-        | 750 | less than _tempx 
-        | then 750 else _tempx | >newx | _newx | tap
+        | add _turtle.x | max 0 | min 750 | >newx
         | $>turtles.{_ship.user}.x 
-        // add {math bound by (0 750)} command
         
         | _turtle.angle | add 90 | math sin | times _ship.result
-        | add _turtle.y | >tempy 
-        | less than 0 | then 0 else _tempy
-        | 450 | less than _tempy 
-        | then 450 else _tempy | >newy | _newy | tap 
+        | add _turtle.y | max 0 | min 450 | >newy
         | $>turtles.{_ship.user}.y
         
         | * (:y _newy :x _newx :thing {("turtlebox" _ship.user) | join})
@@ -150,8 +140,9 @@ Other math commands:
       
       execspace.forward -> forward-fix
       forward-fix.svg-move -> @svg-move 
-      forward-fix.svg-add-line -> @svg-add-line
-      execspace.turn -> turn-fix -> {__ | tap} -> @svg-rotate
+      forward-fix.svg-add-line -> {__ | tap} -> @svg-add-line
+      
+      execspace.turn -> turn-fix -> @svg-rotate
       
   </script>
   
