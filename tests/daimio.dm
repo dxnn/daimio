@@ -1443,9 +1443,9 @@ Here's the use cases, from the user's perspective:
     
 
 - I pass/pipe a Daimio string in to the quote command, and want the raw Daimio string out.
-  {daimio quote value "{$asdf}"}
+  {process quote value "{$asdf}"}
     {$asdf}
-  {"{$asdf}" | daimio quote}
+  {"{$asdf}" | process quote}
     {$asdf}
 
 - I put a Daimio string in, and want the processed output.
@@ -3124,6 +3124,7 @@ LIST COMMANDS
       [[1],[2],[3]]
 
 
+
 STRING COMMANDS
 
 
@@ -3133,6 +3134,18 @@ STRING COMMANDS
 
     
 
+PROCESS COMMANDS
+
+  
+  RUN
+    { "{12 | add 1}" | run}
+      13
+    {("{1 | add 2}" "{2 | add 7}") | map block "{__ | run}"}
+      [3,9]
+    { "{__ | add 1}" | run with 7}
+      8
+    { "{_foo | add 1}" | run with {* (:foo 91)}}
+      92
 
 
 KNOWN BUGS

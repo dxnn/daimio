@@ -3,70 +3,7 @@
 D.import_models({
   process: {
     desc: "Commands for processing Daimio in various interesting ways",
-    vars: {debounces: {}},
     methods: {
-      
-      // THINK: we should have another function like the pipe that takes a list of commands to run in parallel...
-      
-      // pipe: {
-      //   desc: "Execute a pipeline",
-      //   params: [
-      //     {
-      //       key: 'value',
-      //       desc: 'A list of Daimio commands',
-      //       type: 'list',
-      //       required: true
-      //     },
-      //   ],
-      //   fun: function(value) {
-      //     var output, pipeval
-      // 
-      //     // store old pipe value
-      //     pipeval = D.VARS['__']
-      //     D.VARS['__'] = undefined
-      //     
-      //     for(var i=0, l=value.length; i < l; i++) {
-      //       output = D.fun_run(value[i])
-      //       
-      //       // set pipe value
-      //       if(i != l-1) {
-      //         D.execute('variable', 'set', ['__', output])
-      //       }
-      //     }
-      // 
-      //     // restore old pipe value
-      //     D.execute('variable', 'set', ['__', pipeval]) // we have to use {var set}, otherwise the Vstack gets corrupted.
-      // 
-      //     return output
-      //   },
-      // },
-      
-      // send: {
-      //   desc: "Send something back to the server or whatever",
-      //   help: "This breaks out of the temporal flow. It's good for events and DOM manipulation, but might wreak havoc with templates and REPL.",
-      //   params: [
-      //     {
-      //       key: 'daimio',
-      //       desc: 'A command to send',
-      //       type: 'block',
-      //       required: true
-      //     },
-      //     {
-      //       key: 'then',
-      //       desc: "Something to do after. Data is pushed into 'this'",
-      //       type: 'block',
-      //     },
-      //   ],
-      //   fun: function(daimio, then) {
-      //     jDaimio.process(
-      //       daimio.toString(), 
-      //       function(data, response, vars) {
-      //         D.import_var('this', data);
-      //         D.run(then);
-      //       }
-      //     );
-      //   },
-      // },
       
       sleep: {
         desc: "'Did I fall asleep? Shall I go now?'",
@@ -163,34 +100,69 @@ D.import_models({
         },
       },
       
+      quote: {
+        desc: "Return a pure string, possibly containing Daimio",
+        params: [
+          {
+            key: 'value',
+            desc: "A string",
+            type: "string",
+            required: true,
+          },
+        ],
+        fun: function(value) {
+          return value // type system handles the escaping
+        },
+      },
       
-      // debounce: {
-      //   desc: "Run a block if it hasn't been run recently",
-      //   help: "This runs the block 'time' milliseconds after the last time you call it. Note that it breaks out of program flow, like {process wait}, and also that all copies of a given block are treated identically (i.e. if @a and @b are string-equivalent blocks, they'll use the same timer).",
-      //   params: [
-      //     {
-      //       key: 'value',
-      //       desc: 'The block to run',
-      //       type: 'block',
-      //       required: true,
-      //     },
-      //     {
-      //       key: 'time',
-      //       desc: 'Milliseconds to wait (defaults to 500)',
-      //       type: 'number',
-      //       required: true,
-      //       fallback: '500',
-      //     },
-      //   ],
-      //   fun: function(value, time) {
-      //     var hash = value.hash
-      //     if(!hash) return D.onerror('Value must be a valid block')
-      //     
-      //     clearTimeout(this.vars.debounces[hash])
-      //     this.vars.debounces[hash] = setTimeout(value.toFun(), time)
-      //   },
-      // },
+      unquote: {
+        desc: "Convert a string into a block. This will eventually execute (it's a bit like a delayed run), so use it carefully",
+        params: [
+          {
+            key: 'value',
+            desc: "A string",
+            type: "string",
+            required: true,
+          },
+        ],
+        fun: function(value) {
+          return D.Parser.string_to_block_segment(value)
+        },
+      },
       
+      run: {
+        desc: "Completely process some Daimio code",
+        params: [
+          {
+            key: 'block',
+            desc: "Some Daimio code",
+            type: "block",
+            required: true,
+          },
+          {
+            key: 'with',
+            desc: 'If provided values are imported into the block scope.',
+            help: 'The magic key __in becomes the process input. If scalar the value is taken to be __in.',
+            type: 'maybe-list'
+          },
+        ],
+        fun: function(block, _with, prior_starter, process) {
+          if(Array.isArray(_with))
+            _with = {'__in': _with[0]}
+          
+          return block(function(value) {
+            prior_starter(value)
+          }, (_with || {}), process)
+          
+          // return NaN
+          
+          // var space = D.OuterSpace
+          // space.REAL_execute(value, callback) 
+          // TODO: fix me this is stupid it needs the right space
+          
+          // return D.run(value)
+        },
+      },
       
     }
   }

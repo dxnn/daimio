@@ -4723,10 +4723,6 @@ D.import_aliases({
   'join':   'string join value',
   'split':  'string split value',
   
-  'run':    'daimio run block',
-  'quote':  'daimio quote',
-  'unquote': 'daimio unquote',
-  
   '*':      'list pair data',
   'merge':  'list merge',
   'each':   'list each',
@@ -4765,9 +4761,12 @@ D.import_aliases({
   'min':      'math min value',
   'max':      'math max value',
   
-  'log':    'process log value',
-  'tap':    'process log passthru 1 value',
-  'tapper': 'process log value :asdf passthru',
+  'run':      'process run block',
+  'quote':    'process quote',
+  'unquote':  'process unquote',
+  'log':      'process log value',
+  'tap':      'process log passthru 1 value',
+  'tapper':   'process log value :asdf passthru',
 })
 
 
