@@ -2774,7 +2774,8 @@ D.SegmentTypes.VariableSet = {
     var type = segment.value.type
       , name = segment.value.name
       , my_key = segment.key
-      , new_key = segment.prevkey
+      , new_key = segment.inputs[0]  //segment.prevkey
+      , key_index
   
     if(type == 'space') // space vars have to be set at runtime
       return [L.concat(segment), R]
@@ -2788,6 +2789,12 @@ D.SegmentTypes.VariableSet = {
        future_segment.value.prevkey = new_key
      })
   
+    // and likewise for anything referencing this segment 
+    R.forEach(function(future_segment) { // but others can be converted into wiring
+      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
+        future_segment.inputs[key_index] = new_key
+    })
+    
     return [L, R]
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
@@ -2864,7 +2871,7 @@ D.SegmentTypes.Variable = {
     new_key = segment.value.name
     
   R.forEach(function(future_segment) { // but others can be converted into wiring
-    while((key_index = future_segment.inputs.indexOf(my_key)) >= 0)
+    while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
       future_segment.inputs[key_index] = new_key
   })
   
@@ -2976,7 +2983,7 @@ D.SegmentTypes.PipeVar = {
           && my_key     != future_segment.inputs[pipe_index])  // and not piped to pipevar?
         this_key = future_segment.inputs[pipe_index]           // then keep on piping 
 
-      while((key_index = future_segment.inputs.indexOf(my_key)) >= 0)
+      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = this_key
     })
     
@@ -3058,7 +3065,7 @@ D.SegmentTypes.PipeVar = {
 //        this_key = future_segment.inputs[pipe_index]            // then keep on piping (mostly for aliases)
 //      }
 //      
-//      while((key_index = future_segment.inputs.indexOf(my_key)) >= 0) {
+//      while((key_index = future_segment.inputs.indexOf(my_key)) != -1) {
 //        future_segment.inputs[key_index] = this_key
 //        // segment.inputs[key_index] =  new_key
 //      }
@@ -4709,55 +4716,57 @@ D.ETC.niceifyish = function(value, whitespace) {
 }
 
 D.import_aliases({
-  'do': 'list each block',
-  'wait': 'process sleep for 0',
+  'do':     'list each block',
+  'wait':   'process sleep for 0',
 
-  'grep': 'string grep on',
-  'join': 'string join value',
-  'split': 'string split value',
+  'grep':   'string grep on',
+  'join':   'string join value',
+  'split':  'string split value',
   
-  'run': 'daimio run block',
-  'quote': 'daimio quote',
+  'run':    'daimio run block',
+  'quote':  'daimio quote',
   'unquote': 'daimio unquote',
   
-  '*': 'list pair data',
-  'merge': 'list merge',
-  'each': 'list each',
-  'map': 'list map',
+  '*':      'list pair data',
+  'merge':  'list merge',
+  'each':   'list each',
+  'map':    'list map',
   'reduce': 'list reduce',
-  'fold': 'list reduce',
-  'sort': 'list sort',
-  'group': 'list group',
-  // 'prune': 'list prune daimio',
+  'fold':   'list reduce',
+  'sort':   'list sort',
+  'group':  'list group',
   'filter': 'list filter',
-  'count': 'list count data',
-  'union': 'list union data',
+  'count':  'list count data',
+  'union':  'list union data',
   'unique': 'list unique data',
-  'range': 'list range length',
-  'first': 'list first',
+  'range':  'list range length',
+  'first':  'list first',
   
-  'eq':   'logic is like',
-  'is':   'logic is', // for 'is in'
-  'if':   'logic if value',
-  'then': 'logic if value __ then',
-  'else': 'logic if value __ then __ else',
-  'and':  'logic and value',
-  'or':   'logic or value',
-  'not':  'logic not value',
-  'cond': 'logic cond value',
+  'eq':     'logic is like',
+  'is':     'logic is', // for 'is in'
+  'if':     'logic if value',
+  'then':   'logic if value __ then',
+  'else':   'logic if value __ then __ else',
+  'and':    'logic and value',
+  'or':     'logic or value',
+  'not':    'logic not value',
+  'cond':   'logic cond value',
   'switch': 'logic switch value',
   
-  'add': 'math add value',
-  'subtract': 'math subtract value', // 'minus' is sometimes better, but with constants we'll use 'add -N'
+  'add':      'math add value',
+  'minus':    'math subtract value', 
+  'subtract': 'math subtract value', 
   'multiply': 'math multiply value',
-  'times': 'math multiply value',
-  'divide': 'math divide', // careful, this one is different
-  'round': 'math round',
-  'mod': 'math mod by',
-  'less': 'math less',
+  'times':    'math multiply value',
+  'divide':   'math divide', // careful, this one is different
+  'round':    'math round',
+  'mod':      'math mod by',
+  'less':     'math less',
+  'min':      'math min value',
+  'max':      'math max value',
   
-  'log': 'process log value',
-  'tap': 'process log passthru 1 value',
+  'log':    'process log value',
+  'tap':    'process log passthru 1 value',
   'tapper': 'process log value :asdf passthru',
 })
 
