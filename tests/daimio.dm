@@ -2263,6 +2263,10 @@ OK CHANGE GEARS
 
 Poking is a lot like peeking, except it sets a value instead of reading it and fills any gaps it encounters with empty lists.
 
+  no path is like push
+    {(1 2 3) | list poke value 999}
+      [1,2,3,999]
+
   by key:
     {(1 2 3) | list poke path (1) value 999}
       [1,999,3]

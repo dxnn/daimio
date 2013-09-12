@@ -1483,6 +1483,8 @@ D.import_pathfinder('key', {
     //     value_object[i] = value[i]
     //   value = value_object
     // }
+
+    // TODO: array + numeric key -> sparse array. fill in the blanks with "" (all Daimio lists are dense)
     value[key] = new_val
   }
 })
@@ -1548,8 +1550,11 @@ D.peek = function(base, path) {
 D.poke = function(base, path, value) {
   path = D.toArray(path)
   
-  if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
-    return base
+  // THINK: no path works like push, because that's a reasonable use case for this...  
+  // if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
+  //   return base
+  if(!path.length)
+    path = [base.length]
 
   if(typeof base != 'object')
     base = [base]

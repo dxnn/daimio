@@ -448,17 +448,17 @@ D.import_models({
             type: 'list'
           },
           {
+            key: 'value',
+            desc: 'The new value',
+            type: 'anything'
+          },
+          {
             key: 'path',
             desc: 'A list of branch names',
             type: 'list' // list|explode-on-dot
           },
-          {
-            key: 'value',
-            desc: 'The new value',
-            type: 'anything'
-          }
         ],
-        fun: function(data, path, value) {
+        fun: function(data, value, path) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
           D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
