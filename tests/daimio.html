@@ -92,7 +92,7 @@
       
       // handle code
       if(mode == 'code') {
-        html += '<code><pre>' + code_string + '</pre></code>'
+        html += '<div class="panel panel-default"><div class="panel-body"><code><pre><span class="glyphicon glyphicon-arrow-left"></span>' + code_string + '</pre></code></div>'
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
@@ -113,18 +113,18 @@
         }
         
         if(code_value.trim() === line.trim()) {
-          result = 'good'
+          result = 'success'
           win++
         } else {
-          result = 'bad'
+          result = 'danger'
           lose++
         }
         
         // TODO: convert line and code_value to escaped html
         
-        html += '<pre class="assert ' + result + '">' + line + '</pre>'
+        html += '<div class="assert panel-footer"><small class="text-' + result + '">' + line + '</small></div></div>'
         if(result == 'bad') {
-          html += '<pre class="actual">Actual: ' + code_value + '</pre>'
+          html += '<small class="actual">Actual: ' + code_value + '</small>'
         }
       }
       
@@ -148,24 +148,69 @@
   
 </head>
 
-
-<body id="">  
+<body>  
+  <!-- NAVBAR -->  
+  <nav class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">Daimio</a>
+    </div>
+    <div class="collapse navbar-collapse navbar-ex1-collapse">
+      <ul class="nav navbar-nav">
+        <li class="active"><a href="#id_daimio_primer">Daimio Primer</a></li>
+        <li><a href="#id_cmd_examples">Command Examples</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">In Depth <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a href="#id_commands">Commands</a></li>
+            <li><a href="#id_lists">Lists</a></li>
+            <li><a href="#id_pipes">Pipes</a></li>
+            <li><a href="#id_variables">Variables</a></li>
+            <li><a href="#id_blocks">Blocks</a></li>
+            <li><a href="#id_scope">Scope</a></li>
+            <li><a href="#id_peek">Peek</a></li>
+            <li><a href="#id_poke">Poke</a></li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Appendices <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a href="#id_app" class="">Appendices</a></li>
+            <li><a href="#id_app_edge" class="">Edge Cases</a></li>
+            <li><a href="#id_app_known" class="">Known Bugs</a></li>
+            <li><a href="#id_app_dec" class="">Decisions to be Made</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </nav>
+    
   <div class="container">
     <div class="row">
       <div class="col-xs-12 col-md-6">
-        <div id="repl" data-spy="affix" class="hidden-print">
-          <div class="panel panel-default">
-            <div class="panel-body pre pre-scrollable" id="console">
-              <div id="history"></div>
-            </div>
-            <div class="panel-footer">
-              <textarea id="code" name="code" rows="1" placeholder="Try me out! Type a '{' up here to get started."></textarea>
+        <div id="sidebar" data-spy="affix" class="hidden-print hidden-xs">
+          <!-- REPL -->
+          <div id="repl">
+            <div class="panel panel-default">
+              <div class="panel-body pre pre-scrollable" id="console">
+                <div id="history"></div>
+              </div>
+              <div class="panel-footer">
+                <textarea id="code" name="code" rows="1" placeholder="Try me out! Type a '{' up here to get started."></textarea>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
       <div class="col-xs-12 col-md-6">
+        <!-- DOCUMENTATION -->
         <div id="docs">
           <p></p>
           <div id="stats"></div>  
@@ -336,12 +381,8 @@
 //    document.querySelector(".CodeMirror-scroll").style.overflow = 'hidden'
 
   </script>
-  
-      <!-- JS and analytics only. -->
-      <!-- Bootstrap core JavaScript
-  ================================================== -->
-  <!-- Placed at the end of the document so the pages load faster -->
-  <script src="../bootstrap/assets/js/jquery.js"></script>
+
+  <script src="..//js/jquery.js"></script>
   <script src="../js/bootstrap.min.js"></script>
  
 </body>
