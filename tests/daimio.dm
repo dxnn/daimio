@@ -201,64 +201,64 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   <h2>In Depth: Commands</h2>
 </div>
 
-  Commands in Daimio provide all of the functionality in the language -- everything else is just for wiring commands together. In particular, control statements (like 'if' and 'cond') and looping constructs (like 'each' and 'map') are commands rather than built-in primitives.
+    Commands in Daimio provide all of the functionality in the language -- everything else is just for wiring commands together. In particular, control statements (like 'if' and 'cond') and looping constructs (like 'each' and 'map') are commands rather than built-in primitives.
   
-  There's a few disadvantages to this approach in a traditional language, like awkward syntax for if-then-else (which becomes a function that takes a boolean expression and two callbacks). But we find that in a dataflow language like Daimio the convention is quite natural, and any semantic clumsiness is outweighed by the advantages:
-  - no distinction between built-ins and application functionality means you can easily create new low-level control constructs.
-  - "everything is a command" reduces conceptual weight: all commands return a value, all commands take named parameters, param evaluation timing is consistent, and so on.
-  - facilities that affect commands (like aliases) can be used on anything in the system -- no special cases.
+    There's a few disadvantages to this approach in a traditional language, like awkward syntax for if-then-else (which becomes a function that takes a boolean expression and two callbacks). But we find that in a dataflow language like Daimio the convention is quite natural, and any semantic clumsiness is outweighed by the advantages:
+    - no distinction between built-ins and application functionality means you can easily create new low-level control constructs.
+    - "everything is a command" reduces conceptual weight: all commands return a value, all commands take named parameters, param evaluation timing is consistent, and so on.
+    - facilities that affect commands (like aliases) can be used on anything in the system -- no special cases.
   
-  We saw in the primer that commands have a handler, a method and named parameters, and that parameter order is irrelevant.
-    {list range length 3 start 1 step 2}
-      [1,3,5]
-    {list range step 2 length 3 start 1}
-      [1,3,5]
+    We saw in the primer that commands have a handler, a method and named parameters, and that parameter order is irrelevant.
+      {list range length 3 start 1 step 2}
+        [1,3,5]
+      {list range step 2 length 3 start 1}
+        [1,3,5]
   
-  We also saw that you can pipe a value in to the command, and it will fill the "first available" empty parameter slot. 
-    {3 | list range}
-      [1,2,3]
+    We also saw that you can pipe a value in to the command, and it will fill the "first available" empty parameter slot. 
+      {3 | list range}
+        [1,2,3]
   
-  What does "first available" mean if parameter order is irrelevant? It means the order the parameters are given in the command definition, which also happens to mirror the order in the REPL's autocompletion dialog. 
-    {2 | list range length 3}
-      [2,3,4]
+    What does "first available" mean if parameter order is irrelevant? It means the order the parameters are given in the command definition, which also happens to mirror the order in the REPL's autocompletion dialog. 
+      {2 | list range length 3}
+        [2,3,4]
       
-  In the case of {list range}, the order is 'length', 'start', 'step'.
-    {3 | list range start 2}
-      [2,3,4]
-    {3 | list range start 2 length 3}
-      [2,5,8]
+    In the case of {list range}, the order is 'length', 'start', 'step'.
+      {3 | list range start 2}
+        [2,3,4]
+      {3 | list range start 2 length 3}
+        [2,5,8]
 
-  Most commands only have one parameter that would generally take a pipe value. In those cases we can use an alias that is preconfigured with that parameter name.
-    {3 | range}
-      [1,2,3]
-    {range 3}
-      [1,2,3]
+    Most commands only have one parameter that would generally take a pipe value. In those cases we can use an alias that is preconfigured with that parameter name.
+      {3 | range}
+        [1,2,3]
+      {range 3}
+        [1,2,3]
   
-  The above works because the alias 'range' is replaced with 'list range length'. Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced.
+    The above works because the alias 'range' is replaced with 'list range length'. Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced.
   
-  What if we don't supply a value for the trailing parameter name, like 'length'?
-    {range}
-      []
+    What if we don't supply a value for the trailing parameter name, like 'length'?
+      {range}
+        []
   
-  No error -- interesting. 'add' is an alias for 'math add value'.
-    {2 | add 3}
-      5
-    {add 2 to 3}
-      5
+    No error -- interesting. 'add' is an alias for 'math add value'.
+      {2 | add 3}
+        5
+      {add 2 to 3}
+        5
   
-  So what about these?
-    {5 | add}
-      5
-    {add to 5}
-      5
-    {range start 3}
-      []
-    {3 | range start 3}
-      [3,4,5]
+    So what about these?
+      {5 | add}
+        5
+      {add to 5}
+        5
+      {range start 3}
+        []
+      {3 | range start 3}
+        [3,4,5]
       
-  Ah. So it looks like the trailing param value is negated if the word after the alias is a parameter name instead of a param value. (Param names are always bare words, param values never are.) It then becomes filled in through the pipe via the natural piping process. Interesting.
+    Ah. So it looks like the trailing param value is negated if the word after the alias is a parameter name instead of a param value. (Param names are always bare words, param values never are.) It then becomes filled in through the pipe via the natural piping process. Interesting.
   
-  We just learned that param values are never bare words. What kinds of things can be param values?
+    We just learned that param values are never bare words. What kinds of things can be param values?
     
   
   
@@ -269,7 +269,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   
 
 <div class="page-header" id="id_lists">
-    <h2>In Depth: Lists</h2>
+  <h2>In Depth: Lists</h2>
 </div>
   
   Lists are the basic data structure of Daimio. Spaces separate items. List items can be any valid expression.
@@ -332,9 +332,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 
 
 <div class="page-header" id="id_pipes">
-
-    <h2>In Depth: Pipes</h2>
-
+  <h2>In Depth: Pipes</h2>
 </div>
 
   You can use the pipe ('|') to pass the output of one command into an input of another.
@@ -394,6 +392,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
           42
         {10 | (__ __) | add __ | add 1 | add}
           42
+
 MAGIC PIPE TESTS
 
   The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
@@ -570,7 +569,7 @@ MAGIC PIPE TESTS
 
 
 <div class="page-header" id="id_variables">
-    <h2>In Depth: Variables</h2>
+  <h2>In Depth: Variables</h2>
 </div>
 
   (so pipelines are actually DAGs)
@@ -623,7 +622,7 @@ MAGIC PIPE TESTS
   Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
   
   
-  or a string [inlined for the test harness]
+    or a string [inlined for the test harness]
     [if you put in linebreaks, the output has them also, and then things get weird]
     {begin foo}some long multiline string{end foo}
       some long multiline string
@@ -801,154 +800,154 @@ MAGIC PIPE TESTS
     <h2>In Depth: Peek</h2>
 </div>
 
-  This is a section all about how my list searching got flipped turned upside down. It includes the majority of the peek tests.
+    This is a section all about how my list searching got flipped turned upside down. It includes the majority of the peek tests.
 
-  {* (:one :one :two :two :three :three) | $>numbers ||}
+    {* (:one :one :two :two :three :three) | $>numbers ||}
 
-  {* (:one :hashly :two :bashly :three :crashly) | $>hash ||}
+    {* (:one :hashly :two :bashly :three :crashly) | $>hash ||}
 
-  {* (:one :local :two "surprise local!" :foo :bar :bar :hello :hash $hash) | $>locals ||}
+    {* (:one :local :two "surprise local!" :foo :bar :bar :hello :hash $hash) | $>locals ||}
 
-  {( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | $>data ||}
+    {( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | $>data ||}
 
 
-  {$hash.one}
-    hashly
+    {$hash.one}
+      hashly
 
-  // replacement with command parsing
-  {$data.{"1"}.one}
-    second
+    // replacement with command parsing
+    {$data.{"1"}.one}
+      second
 
-  {$data.{1}.{$numbers.one}}
-    second
+    {$data.{1}.{$numbers.one}}
+      second
 
-  // careful with numerical tests!
-  {$data.1.one}
-    second
+    // careful with numerical tests!
+    {$data.1.one}
+      second
 
-  {$data.#1.one}
-    first
+    {$data.#1.one}
+      first
 
-  {$data.#-1.one}
-    third
+    {$data.#-1.one}
+      third
 
-  {$data.#12.one}
+    {$data.#12.one}
 
-  {$data.#-33.one}
+    {$data.#-33.one}
 
-  // check iteration
-  {$data.*.one}
-    ["first","second","third"]
+    // check iteration
+    {$data.*.one}
+      ["first","second","third"]
 
-  {$data.*.locals.hash.one}
-    ["hashly","hashly","hashly"]
+    {$data.*.locals.hash.one}
+      ["hashly","hashly","hashly"]
 
-  {$data.*.locals.foo}
-    ["bar","bar","bar"]
+    {$data.*.locals.foo}
+      ["bar","bar","bar"]
 
-  {$data | eq $data.* | then :true else :false}
-    true
-  {$data.one | eq $data.*.one | then :true else :false}
-    false
+    {$data | eq $data.* | then :true else :false}
+      true
+    {$data.one | eq $data.*.one | then :true else :false}
+      false
 
-  NOTE ON STARS
-    $data and $data.* return exactly the same result, but $data.one and $data.*.one return different results. Why is that? 
-    The * pathfind operator lifts the 'guts' of a list up one level, and exposes those items to future pathfinders. So while $data.one finds nothing -- because $data has no key of 'one' -- $data.*.one finds three things, because each item in $data has a key of 'one'.
-    If however you merely return those lifted results without further operation then this is equivalent to simply removing the keys from the list -- and in $data's case it has no keys, so the two are equal.
+    NOTE ON STARS
+      $data and $data.* return exactly the same result, but $data.one and $data.*.one return different results. Why is that? 
+      The * pathfind operator lifts the 'guts' of a list up one level, and exposes those items to future pathfinders. So while $data.one finds nothing -- because $data has no key of 'one' -- $data.*.one finds three things, because each item in $data has a key of 'one'.
+      If however you merely return those lifted results without further operation then this is equivalent to simply removing the keys from the list -- and in $data's case it has no keys, so the two are equal.
     
-    {(1 2) | __.*}
-      [1,2]
-    {* (:a 1 :b 2) | __.*}
-      [1,2]
+      {(1 2) | __.*}
+        [1,2]
+      {* (:a 1 :b 2) | __.*}
+        [1,2]
 
-  // check stars
-  {$data | list count}
-    3
+    // check stars
+    {$data | list count}
+      3
 
-  {$data.* | list count}
-    3
+    {$data.* | list count}
+      3
 
-  {$data.*.* | list count}
-    9
+    {$data.*.* | list count}
+      9
 
-  {$data.*.*.* | list count}
-    15
+    {$data.*.*.* | list count}
+      15
 
-  {$data.*.*.*.* | list count}
-    9
+    {$data.*.*.*.* | list count}
+      9
 
-  {$data.one}
+    {$data.one}
 
-  {$data.*.one}
-    ["first","second","third"]
+    {$data.*.one}
+      ["first","second","third"]
 
-  {$data.*.*.one}
-    ["local","local","local"] 
+    {$data.*.*.one}
+      ["local","local","local"] 
 
-  {$data.*.*.*.one}
-    ["hashly","hashly","hashly"]
+    {$data.*.*.*.one}
+      ["hashly","hashly","hashly"]
 
-  {$data.*.*.*.*.one}
-    []
+    {$data.*.*.*.*.one}
+      []
 
 
   MORE NOTES ON STARS
     Since * exposes its inputs internals to the next operator, you can think of it as a map over the list with the rest of the operators as the block for that map, or the identity block if there are no further operators. This occasionally leads to counterintuitive results like the following, and generally means that * and #N don't play nicely together.
-    
-  Note that the positional pathfinder #N coerces scalar items into a singleton list, so #1 will continue returning a valid value. This differs from '0' -- the key-based pathfinder -- for unkeyed lists, as 0 does no coercion.
-    {(1 2 3) | __.0}
-      1
-    {(1 2 3) | __.0.0}
-    
-    {(1 2 3) | __.#1}
-      1
-    {(1 2 3) | __.#1.#1}
-      1
-    {(1 2 3) | __.#1.#1.#1}
-      1
-    
-    {$data.*.*.*.*}
-      ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
-
-  Remember, the star operator exposes the list internals to future operators in parallel, so #1 here eats nine scalar values.
-    {$data.*.*.*.*.#1}
-      ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
-    {$data.*.*.*.* | __.#1}
-      hashly
-      
-  With star boxing you don't have to split the segments, but remember that the output is always wrapped in a list.
-    {$data.{(("*" "*" "*" "*"))}.#1}
-      ["hashly"]
-      
-    {$data.*.*.*.#1}
-      ["local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly"] 
-    {$data.*.*.* | __.#1}
-      local
   
-    {$data.*.*.#1}
-      ["first","surprise array!","local","second","surprise number also!","local","third","surprise me too!","local"]
-    {$data.*.* | __.#1}
-      first
+    Note that the positional pathfinder #N coerces scalar items into a singleton list, so #1 will continue returning a valid value. This differs from '0' -- the key-based pathfinder -- for unkeyed lists, as 0 does no coercion.
+      {(1 2 3) | __.0}
+        1
+      {(1 2 3) | __.0.0}
     
-    {$data.*.#1}
-      ["first","second","third"]
-    {$data.* | __.#1}
-      {"one":"first","two":"surprise array!","locals":{"one":"local","two":"surprise local!","foo":"bar","bar":"hello","hash":{"one":"hashly","two":"bashly","three":"crashly"}}} 
+      {(1 2 3) | __.#1}
+        1
+      {(1 2 3) | __.#1.#1}
+        1
+      {(1 2 3) | __.#1.#1.#1}
+        1
+    
+      {$data.*.*.*.*}
+        ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
+
+    Remember, the star operator exposes the list internals to future operators in parallel, so #1 here eats nine scalar values.
+      {$data.*.*.*.*.#1}
+        ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
+      {$data.*.*.*.* | __.#1}
+        hashly
+      
+    With star boxing you don't have to split the segments, but remember that the output is always wrapped in a list.
+      {$data.{(("*" "*" "*" "*"))}.#1}
+        ["hashly"]
+      
+      {$data.*.*.*.#1}
+        ["local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly","local","surprise local!","bar","hello","hashly"] 
+      {$data.*.*.* | __.#1}
+        local
+  
+      {$data.*.*.#1}
+        ["first","surprise array!","local","second","surprise number also!","local","third","surprise me too!","local"]
+      {$data.*.* | __.#1}
+        first
+    
+      {$data.*.#1}
+        ["first","second","third"]
+      {$data.* | __.#1}
+        {"one":"first","two":"surprise array!","locals":{"one":"local","two":"surprise local!","foo":"bar","bar":"hello","hash":{"one":"hashly","two":"bashly","three":"crashly"}}} 
 
 
-  STILL MORE NOTES ON STARS
-    If you use a * or () pathfind operator, the result will ALWAYS be a list.
+    STILL MORE NOTES ON STARS
+      If you use a * or () pathfind operator, the result will ALWAYS be a list.
 
-    {$data.*.*.*.*.*}
-      []
-    {$data.*.*.*.*.*.#1}
-      []
-    {$data.foo.*}
-      []
-    {$data.*.one.foo}
-      []
-    {$data.*.one.#1.foo}
-      []
+      {$data.*.*.*.*.*}
+        []
+      {$data.*.*.*.*.*.#1}
+        []
+      {$data.foo.*}
+        []
+      {$data.*.one.foo}
+        []
+      {$data.*.one.#1.foo}
+        []
 
 <h3>Tree climbing</h3>
 
@@ -986,43 +985,43 @@ MAGIC PIPE TESTS
 
   NOW QUERY IT
   
-  Find by position, then by property names:
-    {$companies.#-2.boss.name}
-      Cool John
+    Find by position, then by property names:
+      {$companies.#-2.boss.name}
+        Cool John
 
-  All employees, grouped by employer
-    {$companies.*.employees}
-      [[{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"}],[{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"}],[{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]]
+    All employees, grouped by employer
+      {$companies.*.employees}
+        [[{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"}],[{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"}],[{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]]
 
-  A flat list of all employees
-    {$companies.*.employees.*}
-      [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
+    A flat list of all employees
+      {$companies.*.employees.*}
+        [{"name":"Awesome John","age":"alpha"},{"name":"Awesome Bobs","age":"beta"},{"name":"Awesome Mary","age":"gamma"},{"name":"Awesome Stev","age":"delta"},{"name":"Cool John","age":"alpha"},{"name":"Cool Bobs","age":"beta"},{"name":"Cool Mary","age":"gamma"},{"name":"Cool Stev","age":"delta"},{"name":"Neat John","age":"alpha"},{"name":"Neat Bobs","age":"beta"},{"name":"Neat Mary","age":"gamma"},{"name":"Neat Stev","age":"delta"}]
 
-  All employee names
-    {$companies.*.employees.*.name}
-      ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
+    All employee names
+      {$companies.*.employees.*.name}
+        ["Awesome John","Awesome Bobs","Awesome Mary","Awesome Stev","Cool John","Cool Bobs","Cool Mary","Cool Stev","Neat John","Neat Bobs","Neat Mary","Neat Stev"]
 
-  All employee names of the second company
-    {$companies.#2.employees.*.name}
-      ["Cool John","Cool Bobs","Cool Mary","Cool Stev"]
+    All employee names of the second company
+      {$companies.#2.employees.*.name}
+        ["Cool John","Cool Bobs","Cool Mary","Cool Stev"]
   
-  Second employee name of each company
-    {$companies.*.employees.#2.name}
-      ["Awesome Bobs","Cool Bobs","Neat Bobs"]
+    Second employee name of each company
+      {$companies.*.employees.#2.name}
+        ["Awesome Bobs","Cool Bobs","Neat Bobs"]
   
-  Second employee name over all
-    {$companies.*.employees.* | __.#2.name}
-      Awesome Bobs
+    Second employee name over all
+      {$companies.*.employees.* | __.#2.name}
+        Awesome Bobs
 
-  Star boxing gives us the second name with a single {list peek} call, but remember that it always returns a list.
-    {$companies.{(("*" "employees" "*"))}.#2.name}
-      ["Awesome Bobs"]
+    Star boxing gives us the second name with a single {list peek} call, but remember that it always returns a list.
+      {$companies.{(("*" "employees" "*"))}.#2.name}
+        ["Awesome Bobs"]
 
-  Without star boxing it looks in all the wrong places
-    {$companies.*.employees.*.#2.name}
-      []
-    {$companies.*.employees.*.name.#2}
-      []
+    Without star boxing it looks in all the wrong places
+      {$companies.*.employees.*.#2.name}
+        []
+      {$companies.*.employees.*.name.#2}
+        []
 
 <h3>Dot sugar</h3>
   Pairs of commands: the dot-form and the list peek form, side by side.
@@ -1064,91 +1063,91 @@ MAGIC PIPE TESTS
       
 <h3>Series and parallel</h3>
 
-  peek in series: first take the second element, then take its first element
-    {( (1 2) (3 4) ) | list peek path ( 1 0 )} 
-      3
+    peek in series: first take the second element, then take its first element
+      {( (1 2) (3 4) ) | list peek path ( 1 0 )} 
+        3
       
-  peek in parallel: take the second element, and the first element, and stage them for further peeking
-    {( (1 2) (3 4) ) | list peek path ( (1 0) )} 
-      [[3,4],[1,2]]
+    peek in parallel: take the second element, and the first element, and stage them for further peeking
+      {( (1 2) (3 4) ) | list peek path ( (1 0) )} 
+        [[3,4],[1,2]]
       
-  now we've taken the second element of each of the staged items
-    {( (1 2) (3 4) ) | list peek path ( (1 0) 1 )} 
-      [4,2]
+    now we've taken the second element of each of the staged items
+      {( (1 2) (3 4) ) | list peek path ( (1 0) 1 )} 
+        [4,2]
 
-  we've learned:
-  -- the first list is processed in series
-  -- sublists are processed in parallel
+    we've learned:
+    -- the first list is processed in series
+    -- sublists are processed in parallel
   
-  now we'll see that those alternate: a sub-sub-list is processed in series.
+    now we'll see that those alternate: a sub-sub-list is processed in series.
   
-  this takes the first element of the second element, but does it in parallel -- hence the list wrapping
-    {( (1 2) (3 4) ) | list peek path ( ((1 0)) )}
-      [3]
+    this takes the first element of the second element, but does it in parallel -- hence the list wrapping
+      {( (1 2) (3 4) ) | list peek path ( ((1 0)) )}
+        [3]
 
-  same, but with a second serial pathway inside the parallel one
-    {( (1 2) (3 4) ) | list peek path ( ((1 0) (1 1)) )}
-      [3,4]
+    same, but with a second serial pathway inside the parallel one
+      {( (1 2) (3 4) ) | list peek path ( ((1 0) (1 1)) )}
+        [3,4]
     
-  parallel + series + parallel -- each parallel layer adds another wrapper list 
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) )}
-      [[[3,4],[1,2]]]
+    parallel + series + parallel -- each parallel layer adds another wrapper list 
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) )}
+        [[[3,4],[1,2]]]
   
-  take the second element of our list of lists
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 )}
-      [[1,2]]
+    take the second element of our list of lists
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 )}
+        [[1,2]]
       
-  why is it [[1,2]] instead of [1,2]? 
-  once we've gone parallel (or used "*"), the results are always wrapped in a list regardless of the number of results. 
-  if we stay serial the whole time any matching elements are returned as-is.
+    why is it [[1,2]] instead of [1,2]? 
+    once we've gone parallel (or used "*"), the results are always wrapped in a list regardless of the number of results. 
+    if we stay serial the whole time any matching elements are returned as-is.
   
-  now we take the first element of the above
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 0 )}
-      [1]
+    now we take the first element of the above
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) 1 0 )}
+        [1]
   
-  the second parallel pathway here is fed our forest, and reverses the reversed order -- restoring our original input
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (1 0) )}
-      [[1,2],[3,4]]
+    the second parallel pathway here is fed our forest, and reverses the reversed order -- restoring our original input
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) (1 0) )}
+        [[1,2],[3,4]]
   
-  without the extra parallel wrapping the second pathway operates on the list elements instead of the lists
-    {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
-      [4,3,2,1]
+    without the extra parallel wrapping the second pathway operates on the list elements instead of the lists
+      {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
+        [4,3,2,1]
   
-  this time the second pathway operates serially -- same result as without the dressing
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0)) )}
-      [1]
+    this time the second pathway operates serially -- same result as without the dressing
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0)) )}
+        [1]
 
-  remember that the second pathway is seeing the lists in reversed order
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0) (0 1)) )}
-      [1,4]
+    remember that the second pathway is seeing the lists in reversed order
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) ((1 0) (0 1)) )}
+        [1,4]
       
-  same double reversal as above, but with an extra layer of wrapping
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (((1 0))) )}
-      [[[1,2],[3,4]]]
+    same double reversal as above, but with an extra layer of wrapping
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) (((1 0))) )}
+        [[[1,2],[3,4]]]
   
-  the star unwraps staged items and feeds them to the next pathway
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" 1 )}
-      [4,2]
+    the star unwraps staged items and feeds them to the next pathway
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" 1 )}
+        [4,2]
 
-  which is equivalent to this, for the two element case
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) (0 1) 1 )}
-      [4,2]
+    which is equivalent to this, for the two element case
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) (0 1) 1 )}
+        [4,2]
       
-  parallel consumption post star
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (1 0) )}
-      [4,3,2,1]
+    parallel consumption post star
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (1 0) )}
+        [4,3,2,1]
 
-  note the equivalence -- the star unwrapifies our initial double-layering
-    {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
-      [4,3,2,1]
+    note the equivalence -- the star unwrapifies our initial double-layering
+      {( (1 2) (3 4) ) | list peek path ( (1 0) (1 0) )}
+        [4,3,2,1]
       
-  which here allows us to reverse the list order, then the element order
-    {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (((1 0))) )}
-      [[4,3],[2,1]]
+    which here allows us to reverse the list order, then the element order
+      {( (1 2) (3 4) ) | list peek path ( (((1 0))) "*" (((1 0))) )}
+        [[4,3],[2,1]]
   
-  and the simpler equivalent
-    {( (1 2) (3 4) ) | list peek path ( (1 0) (((1 0))) )}
-      [[4,3],[2,1]]
+    and the simpler equivalent
+      {( (1 2) (3 4) ) | list peek path ( (1 0) (((1 0))) )}
+        [[4,3],[2,1]]
 
 
 <div class="page-header" id="id_poke">
@@ -1371,6 +1370,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
   <h2>Logic Commands</h2>
 </div>
 
+  <h3>OR</h3>
+  
      ~~~ OR returns the first true value it finds ~~~
 
      One valued 'or' looks at each item in the list
@@ -1445,7 +1446,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         false
         
 
-  IF
+  <h3>IF</h3>
     Note that both 'if' and 'cond' take a 'with' param, which includes pipeline variables in the block scope.
     If the 'with' param is provided the selected block will be executed. Otherwise it will be returned as is.
     The magic key __in becomes the process input, if 'with' is a keyed list. If 'with' is scalar the value is taken to be __in. If 'with' is an unkeyed list the effects are chaotic-evil.
@@ -1453,9 +1454,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
     {1 | else "{fff fff}" | add 1}
       2
-  // TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. 
-           same thing happens for 'then', and probably other aliases. might be a symptom of the recent 
-           pipe troubles. put some more tests in to check for it and set it right. (BUG)
+    
+    TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. same thing happens for 'then', and probably other aliases. might be a symptom of the recent pipe troubles. put some more tests in to check for it and set it right. (BUG)
+    
     {0 | else "{9}" | add 1}
       1
     {0 | else "{9}" with :foo | add 1}
@@ -1472,73 +1473,73 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {0 | else "{9}" | add 1}
       10
 
-     {if :true then :awesome}
-       awesome
-
-     {if "" then "not awesome"}
-
-     {if $false then "not awesome"}
-
-     {if {not ""} then :awesome}
-       awesome
-
-     {if {and ({not ""} {not $false})} then :awesome}
-       awesome
-
-     {if {and ({or ({not $false} $false)} $x)} then :awesome}
-       awesome
-
-     {if {and ({$false} {$x})} then :awesome}
-
-     {if {and (:great "not bad!")} then :awesome}
-       awesome
-
-     {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
-       awesome
-
-     {:true | if __ then :neat}
-       neat
-
-     {:true | else "bad"}
-       true
-
-     {$false | else "good"}
-       good
-
-     {:asdf | is in (:foo :bar :asdf) | then :great}
-       great
-
-     {:asdf | is in (:foo :bar) | then "bad" else :great}
-       great
-
-     {:burgers | eq "urge" | then "uh-oh" else :super}
-       super
-
-     {:burgers | is like "/urge/" | then :super else "uh-oh"}
-       super
-
-     {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
-       super
-
-     {:burgers | is like "/URGE/" | then "oh no!" else :super}
-       super
-
-     {:burgers | is like "/^urge/" | then "oh no!" else :super}
-       super
-
-     {$false | not | then :true else :false}
-       true
-
-     {:true | not | then :true else :false}
+    {if :true then :awesome}
+      awesome
+    
+    {if "" then "not awesome"}
+    
+    {if $false then "not awesome"}
+    
+    {if {not ""} then :awesome}
+      awesome
+    
+    {if {and ({not ""} {not $false})} then :awesome}
+      awesome
+    
+    {if {and ({or ({not $false} $false)} $x)} then :awesome}
+      awesome
+    
+    {if {and ({$false} {$x})} then :awesome}
+    
+    {if {and (:great "not bad!")} then :awesome}
+      awesome
+    
+    {if {and (:great "not bad!" $nothing)} then "bad" else :awesome}
+      awesome
+    
+    {:true | if __ then :neat}
+      neat
+    
+    {:true | else "bad"}
+      true
+    
+    {$false | else "good"}
+      good
+    
+    {:asdf | is in (:foo :bar :asdf) | then :great}
+      great
+    
+    {:asdf | is in (:foo :bar) | then "bad" else :great}
+      great
+    
+    {:burgers | eq "urge" | then "uh-oh" else :super}
+      super
+    
+    {:burgers | is like "/urge/" | then :super else "uh-oh"}
+      super
+    
+    {:burgers | is like "/URGE/i" | then :super else "uh-oh"}
+      super
+    
+    {:burgers | is like "/URGE/" | then "oh no!" else :super}
+      super
+    
+    {:burgers | is like "/^urge/" | then "oh no!" else :super}
+      super
+    
+    {$false | not | then :true else :false}
+      true
+    
+    {:true | not | then :true else :false}
+      false
+    
+    {not $false | then :true else :false}
+      true
+    
+    {not :true | then :true else :false}
        false
 
-     {not $false | then :true else :false}
-       true
-
-     {not :true | then :true else :false}
-       false
-
-  COND
+  <h3>COND</h3>
 
      {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
        good
@@ -1563,7 +1564,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
       6
    
-  ADD
+  <h3>ADD</h3>
   
     {math add value 123 to 321}
       444
@@ -1582,7 +1583,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {math add value (3 2 1) to (4 5 6)}
       [7,7,7]
  
-  SUBTRACT
+  <h3>SUBTRACT</h3>
   
     {subtract 4 from :7}
       3
@@ -1595,7 +1596,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {math subtract value (6 5 4) from (1 2 3)}
       [-5,-3,-1]
  
-  MULTIPLY
+  <h3>MULTIPLY</h3>
   
     {multiply 4 by 7}
       28
@@ -1608,7 +1609,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {math multiply value (1 2 3) by (6 5 4)}
       [6,10,12]
  
-  DIVIDE 
+  <h3>DIVIDE</h3> 
   
     (Note that this shortcut is different.)
     
@@ -1623,7 +1624,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
       [0.17,0.4,0.75]
  
-  MAX
+  <h3>MAX</h3>
   
     {max (1 2 3)}
       3
@@ -1636,7 +1637,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {0 | max -1}
       0
  
-  MIN
+  <h3>MIN</h3>
   
     {min (11 22 3)}
       3
@@ -1649,14 +1650,14 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {0 | min 1}
       0
  
-  MOD
+  <h3>MOD</h3>
   
     {math mod value 7 by 2}
       1
     {:7 | mod :2}
       1
  
-  POW
+  <h3>POW</h3>
   
     {math pow value 2 exp 8}
       256
@@ -1665,9 +1666,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {5 | math pow exp 0.5}
       2.23606797749979
  
-  RANDOM
+  <h3>RANDOM</h3>
  
-  ROUND
+  <h3>ROUND</h3>
   
     {123.456 | math round}
       123
@@ -1702,10 +1703,10 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 -->
 
 
-  // TODO: tests for block executing in same space (re: spacevar scoping)
+    TODO: tests for block executing in same space (re: spacevar scoping)
 
 
-  SOME DATA
+  Some data
     {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | $>klist}
       [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
     
@@ -1714,7 +1715,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {* (:two {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} :one {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} :three {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | $>data ||}
   
    
-  COUNT
+  <h3>COUNT</h3>
 
     {(1 2 3) | list count}
       3
@@ -1725,7 +1726,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {$klist | count}
       5
 
-  EACH
+  <h3>EACH</h3>
   
     {each data (1 2 3) block "{__}x "}
      1x 2x 3x
@@ -1743,7 +1744,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       x1-x2-x3-
 
 
-  FILTER
+  <h3>FILTER</h3>
     
     NOTE: these used to be extract, but we're going to handle that differently in the future. There's a filter function that does what it says on the tin, and a 'treewalk' function that allows you to dive into data and filter it from the inside. these two together can probably replace the old extract/prune functionality, maybe.
     
@@ -1764,7 +1765,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {( (1 2 3) 2 3 ) | filter block "{and (1 1)}"}
       [[1,2,3],2,3]
 
-  THINK: how do we filter out non-lists? is this actually an issue, since 3 casts to (3) whenever needed?
+    THINK: how do we filter out non-lists? is this actually an issue, since 3 casts to (3) whenever needed?
     {( (1 2 3) 2 3 ) | filter block "{__ | count}"}
       [[1,2,3],2,3]
     {( (1 2 3) 2 3 ) | filter block "{__ | count | eq 1}"}
@@ -1779,7 +1780,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       [2,3,1,3,3,1,3]
     
 
-  FIRST
+  <h3>FIRST</h3>
         
     {$klist | first block "{__.x | eq 2}"}
       {"x":2,"y":"d"}
@@ -1795,9 +1796,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {"x":1,"y":2}
 
 
-  GROUP
+  <h3>GROUP</h3>
   
-    // THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly. (BUG)
+    THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly. (BUG)
   
     {(1 2 3 4 5 6) | list group by "{__ | mod 2}"}
       [[1,3,5],[2,4,6]]
@@ -1813,7 +1814,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {( {* (:a :x :b 1)} {* (:a :z :b 2)} {* (:a :x :b 3)} {* (:a :z :b 4)} {* (:a :y :b 5)} ) | list group by :a}
       {"x":[{"a":"x","b":1},{"a":"x","b":3}],"z":[{"a":"z","b":2},{"a":"z","b":4}],"y":[{"a":"y","b":5}]}
 
-  INTERSECT
+  <h3>INTERSECT</h3>
   
     {( (1 2 3) (2 3 4) ) | list intersect}
       [2,3]
@@ -1831,14 +1832,14 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {list intersect data (1 2 3) also (2 3 4)}
       [2,3]
       
-  think: the return list is always unkeyed
+    THINK: the return list is always unkeyed
     {list intersect data ($data.one {* (:one :first :four :nothing)})}
       ["first"]
     {list intersect data (1 2 3) also (3 4 5)}
       [3]
 
 
-  JSON
+  <h3>JSON</h3>
 
     {begin list | list from_json}[["one","row"],["second","row"]]{end list}
       [["one","row"],["second","row"]]
@@ -1859,7 +1860,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {"one":"row","second":"row"}
 
 
-  KEYS
+  <h3>KEYS</h3>
   
     {(1 2 3) | list keys}
       ["0","1","2"]
@@ -1872,9 +1873,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {$klist.#1 | list keys}
       ["x","y"]
 
-  MAP
+  <h3>MAP</h3>
   
-    // TODO: add _with tests for {list ...} and {logic cond} 
+    TODO: add _with tests for {list ...} and {logic cond} 
 
     // this isn't really a test for map, but is pretty weird (BUG)
     {(12 34) | map block "{__}"}
@@ -1903,7 +1904,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {* (:a 1 :b 2 :c 3) | map block "{__ | times __}"}
       {"a":1,"b":4,"c":9}
   
-  MERGE
+  <h3>MERGE</h3>
+  
     The merge command takes a list of keyed lists and applies a template to each one. It injects each key, which means we don't know in advance which variables are injected. This messes with our ability to do static analysis over pipeline variables. Is merge really necessary, or can {list each} do the job well enough?
     
     basic operation
@@ -1932,11 +1934,10 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
 
-  PEEK
-  POKE
+  <h3>PEEK&POKE</h3>
     [see the peek&poke section above for these tests]
 
-  RANGE
+  <h3>RANGE</h3>
     
     {range 100 | add}
       5050
@@ -1951,14 +1952,14 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       [100,99,98,97,96]
   
   
-  REDUCE
+  <h3>REDUCE</h3>
   
     {(1 2 3) | reduce block "{add _value to _total}"} 
       6
     {(1 2 3) | reduce block "{__ | add to _total}"} 
       6
 
-  REMOVE
+  <h3>REMOVE</h3>
   
     {(1 2 3 2 1) | list remove by_value 2}
       [1,3,1]
@@ -1992,7 +1993,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       //     {"1":{"one":"first","three":"even"},"3":{"one":"third","three":"even"}}
 
 
-  REKEY
+  <h3>REKEY</h3>
   
     {(:x :y :z :q) | list rekey}
       {"0":"x","1":"y","2":"z","3":"q"}
@@ -2012,16 +2013,17 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {"odd":{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},"even":{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}}
 
 
-  REVERSE
+  <h3>REVERSE</h3>
   
     {(3 2 4 1) | list reverse}
       [1,4,2,3]
-  TODO: This smashes keys currently (BUG)
+    
+    TODO: This smashes keys currently (BUG)
     {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
       {"q":1,"z":4,"y":2,"x":3}
     
 
-  SORTING
+  <h3>SORTING</h3>
   
     {(3 2 4 1) | list sort}
       [1,2,3,4]
@@ -2036,32 +2038,32 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {$data | list sort by :one}
       [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
-  TODO: multiple keys (these don't work currently) (BUG)
-    {$data | list sort by {* (:three :desc :one :asc)} | __.*.one}
-      ["second","first","third"]
-    {$data | list sort by {* (:three :desc :one :desc)} | __.*.one}
-      ["second","third","first"]
-    {$data | list sort by {* (:two.#2 :desc :one :desc)} | __.*.one}
-      ["third","second","first"]
-    {$data | list sort by {* (:two.#2 :desc :one :asc)} | __.*.one}
-      ["second","third","first"]
+    TODO: multiple keys (these don't work currently) (BUG)
+      {$data | list sort by {* (:three :desc :one :asc)} | __.*.one}
+        ["second","first","third"]
+      {$data | list sort by {* (:three :desc :one :desc)} | __.*.one}
+        ["second","third","first"]
+      {$data | list sort by {* (:two.#2 :desc :one :desc)} | __.*.one}
+        ["third","second","first"]
+      {$data | list sort by {* (:two.#2 :desc :one :asc)} | __.*.one}
+        ["second","third","first"]
 
-  with a pipeline
-    {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{__.x}{__.y} "}
-      1d 2c 2d 3a 4b
-    {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
-      ["a3","b4","c2","d1","d2"]
+    with a pipeline
+      {$klist | list sort by "{(__.x __.y) | string join}" | merge block "{__.x}{__.y} "}
+        1d 2c 2d 3a 4b
+      {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
+        ["a3","b4","c2","d1","d2"]
 
-  sort by keys
-    {* (:c 3 :b 2 :a 4) | >l | list keys | sort | map block "{_l.{_value}}" with {* (:l _l)}}
-      {"a":4,"b":2,"c":3}
+    sort by keys
+      {* (:c 3 :b 2 :a 4) | >l | list keys | sort | map block "{_l.{_value}}" with {* (:l _l)}}
+        {"a":4,"b":2,"c":3}
   
-  sort should preserve keys (BUG)
-    {* (:c 3 :b 2 :a 1) | list sort}
-      {"a":1,"b":2,"c":3}
+    sort should preserve keys (BUG)
+      {* (:c 3 :b 2 :a 1) | list sort}
+        {"a":1,"b":2,"c":3}
     
 
-  UNION
+  <h3>UNION</h3>
     
     {(1 2 3) | list union data (4 5 6)}
       [1,2,3,4,5,6]
@@ -2089,7 +2091,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       [2,3]
 
 
-  UNIQUE
+  <h3>UNIQUE</h3>
   
     {(:hi :hi :puffy :ami :yumi) | list unique}
       ["hi","puffy","ami","yumi"]
@@ -2104,11 +2106,11 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 </div>
 
 
-  GREP
+  <h3>GREP</h3>
     {string grep value (:hello :world) on "/.llo/"}
       ["hello"]
 
-  TRUNCATE
+  <h3>TRUNCATE</h3>
     {"four sixsix four" | string truncate to 10}
       four
     {"four sixsix four" | string truncate to 11}
@@ -2128,7 +2130,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 </div>
 
   
-  RUN
+  <h3>RUN</h3>
     { "{12 | add 1}" | run}
       13
     {("{1 | add 2}" "{2 | add 7}") | map block "{__ | run}"}
