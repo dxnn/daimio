@@ -200,10 +200,73 @@ And that's everything there is to know about Daimio. Well, almost. Let's explore
 
 <h2>In Depth: Commands</h2>
 
-:::Quick Notes:::
+  Commands in Daimio provide all of the functionality in the language -- everything else is just for wiring commands together. In particular, control statements (like 'if' and 'cond') and looping constructs (like 'each' and 'map') are commands rather than built-in primitives.
+  
+  There's a few disadvantages to this approach in a traditional language, like awkward syntax for if-then-else (which becomes a function that takes a boolean expression and two callbacks). But we find that in a dataflow language like Daimio the convention is quite natural, and any semantic clumsiness is outweighed by the advantages:
+  - no distinction between built-ins and application functionality means you can easily create new low-level control constructs.
+  - "everything is a command" reduces conceptual weight: all commands return a value, all commands take named parameters, param evaluation timing is consistent, and so on.
+  - facilities that affect commands (like aliases) can be used on anything in the system -- no special cases.
+  
+  We saw in the primer that commands have a handler, a method and named parameters, and that parameter order is irrelevant.
+    {list range length 3 start 1 step 2}
+      [1,3,5]
+    {list range step 2 length 3 start 1}
+      [1,3,5]
+  
+  We also saw that you can pipe a value in to the command, and it will fill the "first available" empty parameter slot. 
+    {3 | list range}
+      [1,2,3]
+  
+  What does "first available" mean if parameter order is irrelevant? It means the order the parameters are given in the command definition, which also happens to mirror the order in the REPL's autocompletion dialog. 
+    {2 | list range length 3}
+      [2,3,4]
+      
+  In the case of {list range}, the order is 'length', 'start', 'step'.
+    {3 | list range start 2}
+      [2,3,4]
+    {3 | list range start 2 length 3}
+      [2,5,8]
 
-If you're familiar with other programming languages you'll notice that Daimio seems to be missing many basic necessities: control statements like if-then-else, loop statements, function declaration, variable assignment, and the list goes on. These facilities exist within Daimio as commands. This means that for-loops, for example, return a value (as do all commands). It also means that you can add new basic concepts to the language just by publishing new commands.
-
+  Most commands only have one parameter that would generally take a pipe value. In those cases we can use an alias that is preconfigured with that parameter name.
+    {3 | range}
+      [1,2,3]
+    {range 3}
+      [1,2,3]
+  
+  The above works because the alias 'range' is replaced with 'list range length'. Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced.
+  
+  What if we don't supply a value for the trailing parameter name, like 'length'?
+    {range}
+      []
+  
+  No error -- interesting. 'add' is an alias for 'math add value'.
+    {2 | add 3}
+      5
+    {add 2 to 3}
+      5
+  
+  So what about these?
+    {5 | add}
+      5
+    {add to 5}
+      5
+    {range start 3}
+      []
+    {3 | range start 3}
+      [3,4,5]
+      
+  Ah. So it looks like the trailing param value is negated if the word after the alias is a parameter name instead of a param value. (Param names are always bare words, param values never are.) It then becomes filled in through the pipe via the natural piping process. Interesting.
+  
+  We just learned that param values are never bare words. What kinds of things can be param values?
+    
+  
+(:barbera :belvest :brioni)
+["selvedge","balmoral","aglet","placket","plimsolls"]
+  
+  
+  
+  
+  
 Snack 3: Aliases
 
   Many commands have a shorter form that can be used in their place.
@@ -212,35 +275,6 @@ Snack 3: Aliases
   
   Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
 
-  The essence of Daimio is commands. Every command has a model (the first word) and a function (the second).
-
-    The simplest command would look like this:
-      {fruit slice}
-
-  But because we haven't published the 'fruit' model into this Daimio dialect that won't do anything.
-
-  Most commands take parameters, which are named. A parameter value can be a string, a number, a list or a command. [THINK: can it be a block??]
-
-    A slightly fancier (but still non-functional) command:
-      {fruit slice with :katana}
-
-  The following commands use models that are published by default.
-
-    Join a list of strings:
-      {string join value (:barbera :belvest :brioni)}
-        barberabelvestbrioni
-
-    With the optional 'on' parameter:
-      {string join value (:barbera :belvest :brioni) on ", "}
-        barbera, belvest, brioni
-
-    Parameter order is arbitrary:
-      {string join on " > " value (:barbera :belvest :brioni)}
-        barbera > belvest > brioni
-
-    We can split things, too:
-      {string split value "selvedge balmoral aglet placket plimsolls" on " "}
-        ["selvedge","balmoral","aglet","placket","plimsolls"]
 
 
 <h2>In Depth: Lists</h2>
