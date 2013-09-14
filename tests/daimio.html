@@ -3,34 +3,11 @@
 <head> 
   <title>Daimio Tests</title>
   <script type="text/javascript" src="../get.php?file=daimio&x=1"></script>
-  <style type="text/css" media="screen">
-    code {
-      color: #00F;
-    }
-    .good {
-      background-color: #EFE;
-    }
-    .bad {
-      background-color: #FEE;
-    }
-    .actual {
-      color: #F00;
-      background-color: #FEE;
-    }
-    #history p {
-      padding: 0px;
-      margin: 0px;
-    }
-    .input {
-      background-color: #FEFFDE;
-      color: #0E75C9;
-    }
-    .result {
-      background-color: #FFF;
-      color: #333;
-    }
-  </style>
 
+  <link rel="stylesheet" href="../css/styles.css" type="text/css" media="screen">
+  <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="../codemirror/addon/hint/show-hint.css">
+  
   <script type="text/javascript" charset="utf-8">
     // load daimio file
     function xhr_get(target, callback) {
@@ -158,9 +135,9 @@
       var endtime = new Date().getTime()
 
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
-      stats += '<p><span class="good">Won ' + win + ' tests.</span></p>'
+      stats += '<div class="alert alert-success">Won ' + win + ' tests.</div>'
       
-      if(lose) stats += '<p><span class="bad">Lost ' + lose + ' tests.</span></p>'
+      if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests.</div>'
       if(!lose) stats += '<p>You win!!!</p>'
       
       document.getElementById('stats').innerHTML = stats
@@ -170,17 +147,34 @@
   </script>
   
 </head>
+
+
 <body id="">  
-  <form style="width: 99%; position: fixed; top: 0px; margin: 0px">
-    <textarea id="code" name="code" rows="1" placeholder="Try me out! Type a '{' up here to get started."></textarea>
-    <div id="history"></div>
-  </form>
-  
-  <p>&nbsp;</p>
-  
-  <div id="stats"></div>
-  
-  <div id="tests"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 col-md-6">
+        <div id="repl" data-spy="affix" class="hidden-print">
+          <div class="panel panel-default">
+            <div class="panel-body pre pre-scrollable" id="console">
+              <div id="history"></div>
+            </div>
+            <div class="panel-footer">
+              <textarea id="code" name="code" rows="1" placeholder="Try me out! Type a '{' up here to get started."></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xs-12 col-md-6">
+        <div id="docs">
+          <p></p>
+          <div id="stats"></div>  
+          <div id="tests"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   
   
   <script>
@@ -191,16 +185,11 @@
     }
   </script>
 
-  <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
   <script src="../codemirror/lib/codemirror.js"></script>
   <script src="../codemirror/mode/daimio/daimio.js"></script>
-  
-  <link rel="stylesheet" href="../codemirror/addon/hint/show-hint.css">
   <script src="../codemirror/addon/hint/show-hint.js"></script>
   <script src="../codemirror/addon/hint/daimio-hint.js"></script>
-  
   <script src="../codemirror/addon/display/placeholder.js"></script>
-  
   <script src="../codemirror/addon/emmet/emmet.js"></script>
     
   <script>
@@ -208,7 +197,8 @@
       , results = ge('results')
       , repl = CodeMirror.fromTextArea(ge('code'), {})
       , ac_on = true
-      , background = '#f8f8f8'
+      , background = 'transparent'
+      , console_el = ge('console')
       , history_el = ge('history')
       , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
       , history_buffer = ''
@@ -295,9 +285,12 @@
         
         // display it
         value = D.stringify(value)
-        history_el.innerHTML = '<p class="input">'  + code + '</p>'
-                          + '<p class="result">' + (value || '&nbsp;') + '</p>' 
-                          + history_el.innerHTML
+        history_el.innerHTML = history_el.innerHTML
+                          + '<div class="cmd"><p class="input">'  + code + '</p>'
+                          + '<p class="result">' + (value || '&nbsp;') + '</p></div>' 
+
+        // TODO: select the correct element
+        $(console_el).scrollTop(1000000)
       })
     }
 
@@ -343,5 +336,13 @@
 //    document.querySelector(".CodeMirror-scroll").style.overflow = 'hidden'
 
   </script>
+  
+      <!-- JS and analytics only. -->
+      <!-- Bootstrap core JavaScript
+  ================================================== -->
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="../bootstrap/assets/js/jquery.js"></script>
+  <script src="../js/bootstrap.min.js"></script>
+ 
 </body>
 </html>

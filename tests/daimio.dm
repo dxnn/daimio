@@ -1,4 +1,6 @@
-<h1>WELCOME TO DAIMIO</h1>
+<div class="page-header">
+  <h1>Welcome to Daimio!</h1>
+</div>
 
 This document serves as a primer, tutorial, specification, test suite and REPL for the Daimio language.
 
