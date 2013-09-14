@@ -361,6 +361,179 @@ Snack 3: Aliases
           42
         {10 | (__ __) | add __ | add 1 | add}
           42
+MAGIC PIPE TESTS
+
+  The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
+
+  Case 1: explicit connection. Each of these also has an implicit connection, but only the first example uses it because the others have no additional param space (add only takes two params).
+    {21 | add __}
+      42
+    {21 | add 21 to __}
+      42
+    {21 | add __ to 21}
+      42
+    {21 | add __ to __}
+      42
+
+  Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
+    {42 || add __}
+      42
+    {21 || add 21 to __}
+      42
+
+  Case 1b: carry along. You can use a pipe to carry the value through segments.
+    {42 | __}
+      42
+    {42 | __ | __}
+      42
+    
+  Case 1c: duplication. You can use pipes in lists to duplicate the previous value
+    {42 | (__)}
+      [42]
+    {42 | (__ __)}
+      [42,42]
+    {42 | (:x __ __)}
+      ["x",42,42]
+    {42 | (__ :x __)}
+      [42,"x",42]
+    {42 | (__ __ :x)}
+      [42,42,"x"]
+    
+    {21 | add (__)}
+      [42]
+    {21 | add (__ __)}
+      [42,42]
+    {21 | add (-1 __ __)}
+      [20,42,42]
+    {21 | add (__ -1 __)}
+      [42,20,42]
+    {21 | add (__ __ -1)}
+      [42,42,20]
+
+
+  Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
+  [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
+  maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
+  and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
+  BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
+  
+
+
+
+  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
+  
+    ----- thoughts on this:
+    - if we made 'process input' a different symbol we wouldn't have embedded pipeline reference issues 
+      - referencing the previous segment from inside a list is an important case
+      - is it the only case??
+    - starting a pipeline with __ is beautifully simple
+      - it clearly indicates the intention of pulling in outside input
+      - it demonstrates the linear nature of a pipeline: one thing in, one thing out
+      - we lose this if we allow references inside a pipeline (oh we're doing that already oh dear)
+    - the block case with multiple pipelines each referencing input is important, because
+      - we want those to be able to run in parallel
+      - a given pipeline should work the same regardless of context
+      - so we can't just rely on 'first use' of __ and alias it after
+    
+    so it sounds like a different symbol is in order to refer universally to the input.
+    OR we do something fiddly like {__} means input if it's outermost but embedded it never does (yuck).
+    //   {__ | add 1}
+    //   {_in | add 1}
+    //   {*in | add 1}
+    //   {___ | add 1}
+    
+    er... if it's inside a string, it maps to '*in'.
+    if it's inside a list, it maps to prevval.
+    is it that simple?
+    // this is a pipe
+    // ceci n'est pas une pipe
+    
+    
+    
+  
+    {(1 2 3) | map block "{__ | add 4}"}
+      [5,6,7]
+    {(1 2 3) | map block "{add __ to 4}"}
+      [5,6,7]
+    {(1 2 3) | map block "{add __ to __}"}
+      [2,4,6]
+    {(1 2 3) | map block "{__}"}
+      [1,2,3]
+    {(1 2 3) | map block "{__ | __}"}
+      [1,2,3]
+    {(1 2 3) | map block "{__ | __ | add 1}"}
+      [2,3,4]
+    {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
+      [3,4,5]
+  
+  Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
+    {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
+      4 x 8 :: 5 x 9 :: 6 x 10 ::
+    {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
+      4 x 8 :: 5 x 9 :: 6 x 10 ::
+  
+  You can reframe the above like this:
+    {(1 2 3) | each block "{__ | (" " {__in | add 3} " x " {__in | add 7} " ::") | join}"}
+      4 x 8 :: 5 x 9 :: 6 x 10 ::
+  
+  Notes:
+    To connect to the process input you must explicitly add the magic pipe to the first segment:
+      {(1 2 3) | map block "{__ | add to 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add to 4}" // bad}
+        [4,4,4]
+      {(1 2 3) | map block "{__ | add 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add 4}" // bad}
+        [4,4,4]
+    
+    
+////    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
+////THINK: how does this square off with __.foo? that essentially becomes {__ | list peek path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
+////If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
+
+
+    NEW RULES!
+    - "{__}" links to process input
+    - {__} links to previous value
+    so: if it's in a string, it's input.
+        if it's in a list or param value it's previous value.
+
+
+      {20 | add {__ | add 2}}
+        42
+      {20 | add {__ | add 2} to __}
+        42
+    
+      {21 | join (__ " " __) on ""}
+        21 21
+      {21 | ( {__ | add 1} " " {__ | add 2} ) | join}
+        22 23
+      {21 | ( {add 1 to __} " " {add __ to 2} ) | join}
+        22 23
+      {21 | >a | ( {_a | add 1} " " {_a | add 2} ) | join}
+        22 23
+  
+      {40 | add {__} to 2}
+        42
+      {21 | add {__} to __}
+        42
+      {21 | add __ to {__}}
+        42
+      {21 | add {__} to {__}}
+        42
+      {20 | ( {__} 2 __ ) | add}
+        42
+      {20 | ( __ 2 {__} ) | add}
+        42
+      {20 | ( {__} 2 {__} ) | add}
+        42
+    
+    Double pipes are also used to squelch output from a pipeline:
+      {42 ||}
+        
+      {(1 2 3) | map block "{__ | add 1 ||}"}
+        ["","",""]
 
 
 <h2>In Depth: Variables</h2>
@@ -583,274 +756,7 @@ Snack 3: Aliases
 //  
 //    But variables starting with '@' are global:
 //      {"asdf" | $>@x}{begin foo}{123 | $>@x || @x}{end foo}{@x}
-
-    
-  
-
-<!-- Aliases and bindings
-
-This section is no longer applicable: alias creation doesn't work yet, and variable bindings are gone. We should probably just delete it, but we'll let this gel a bit more first.
-
-// DO THIS:
-//  Get all current aliases: 
-//    {alias find}
-
-//  You can also create aliases at runtime. This is useful when paired with command creation.
-//    
-//    Create a new command:
-//      {daimio import block "hey {$name}!" into :string as :greet params :name}
-//        
-//      {string greet name "yourself"}
-//        hey yourself!
-//    
-//    Alias it:
-//      {daimio alias string "string greet name" as :greet}
-//        
-//      {greet "Jacobinius"}
-//        hey Jacobinius!
-//      
-//    // TODO: it looks like this doesn't pop the var context stack like it should...
-
-//  Make an alias yourself:
-//    {alias add string "string join" as :join}
-//
-//  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
-//    {begin j}string join on ", "{end j}{alias add string j as :stick}
-//
-//
-//:::Bindings and such:::
-//
-//    {variable bind path :test block "{$count1 | add 1 | $>count1}"}
-//      
-//    {:a | $>test}
-//      a
-//      
-//    {$count1}
-//      1
-//    
-//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-//    {variable bind path :test block "{$count2 | add 1 | $>count2}"}
-//      
-//    {:b | $>test}
-//      b
-//      
-//    {$count1} x {$count2}
-//      2 x 1
-//      
-//    {variable unbind path :test block "{$count1 | add 1 | $>count1}"}
-//  
-//    {:c | $>test}
-//      c
-//      
-//    {$count1} x {$count2}
-//      2 x 2
-//    
-//    {variable bind path :testx.y.z block "{$count2 | add 2 | $>count2}"}
-//    
-//    {:x | $>testx.y.z}
-//      x
-//    
-//    {$count1} x {$count2}
-//      2 x 4
-//    
-//  You can edit the bound var directly in the daimio -- infinite recursion is prevented.
-//    {variable bind path :foox block "{__var.#1 | add 2 | $>foox.0}"}
-//    
-//    {(7 2) | $>foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,2]
-//  
-//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-//    {variable bind path :foox block "{__var.#1 | add __var.#2 | $>foox.1}"}
-//
-//    {(7 2) | $>foox}
-//      [7,2]
-//    
-//    {$foox}
-//      [9,9]
-//      
-  // THINK: make a different test suite for the dom handler and interactive stuff.
--->
-
-
-MAGIC PIPE TESTS
-
-  The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
-
-  Case 1: explicit connection. Each of these also has an implicit connection, but only the first example uses it because the others have no additional param space (add only takes two params).
-    {21 | add __}
-      42
-    {21 | add 21 to __}
-      42
-    {21 | add __ to 21}
-      42
-    {21 | add __ to __}
-      42
-
-  Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
-    {42 || add __}
-      42
-    {21 || add 21 to __}
-      42
-
-  Case 1b: carry along. You can use a pipe to carry the value through segments.
-    {42 | __}
-      42
-    {42 | __ | __}
-      42
-    
-  Case 1c: duplication. You can use pipes in lists to duplicate the previous value
-    {42 | (__)}
-      [42]
-    {42 | (__ __)}
-      [42,42]
-    {42 | (:x __ __)}
-      ["x",42,42]
-    {42 | (__ :x __)}
-      [42,"x",42]
-    {42 | (__ __ :x)}
-      [42,42,"x"]
-    
-    {21 | add (__)}
-      [42]
-    {21 | add (__ __)}
-      [42,42]
-    {21 | add (-1 __ __)}
-      [20,42,42]
-    {21 | add (__ -1 __)}
-      [42,20,42]
-    {21 | add (__ __ -1)}
-      [42,42,20]
-
-
-  Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
-  [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
-  maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
-  and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
-  BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
-  
-
-
-
-  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
-  
-    ----- thoughts on this:
-    - if we made 'process input' a different symbol we wouldn't have embedded pipeline reference issues 
-      - referencing the previous segment from inside a list is an important case
-      - is it the only case??
-    - starting a pipeline with __ is beautifully simple
-      - it clearly indicates the intention of pulling in outside input
-      - it demonstrates the linear nature of a pipeline: one thing in, one thing out
-      - we lose this if we allow references inside a pipeline (oh we're doing that already oh dear)
-    - the block case with multiple pipelines each referencing input is important, because
-      - we want those to be able to run in parallel
-      - a given pipeline should work the same regardless of context
-      - so we can't just rely on 'first use' of __ and alias it after
-    
-    so it sounds like a different symbol is in order to refer universally to the input.
-    OR we do something fiddly like {__} means input if it's outermost but embedded it never does (yuck).
-    //   {__ | add 1}
-    //   {_in | add 1}
-    //   {*in | add 1}
-    //   {___ | add 1}
-    
-    er... if it's inside a string, it maps to '*in'.
-    if it's inside a list, it maps to prevval.
-    is it that simple?
-    // this is a pipe
-    // ceci n'est pas une pipe
-    
-    
-    
-  
-    {(1 2 3) | map block "{__ | add 4}"}
-      [5,6,7]
-    {(1 2 3) | map block "{add __ to 4}"}
-      [5,6,7]
-    {(1 2 3) | map block "{add __ to __}"}
-      [2,4,6]
-    {(1 2 3) | map block "{__}"}
-      [1,2,3]
-    {(1 2 3) | map block "{__ | __}"}
-      [1,2,3]
-    {(1 2 3) | map block "{__ | __ | add 1}"}
-      [2,3,4]
-    {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
-      [3,4,5]
-  
-  Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
-    {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
-    {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
-  
-  You can reframe the above like this:
-    {(1 2 3) | each block "{__ | (" " {__in | add 3} " x " {__in | add 7} " ::") | join}"}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
-  
-  Notes:
-    To connect to the process input you must explicitly add the magic pipe to the first segment:
-      {(1 2 3) | map block "{__ | add to 4}"}
-        [5,6,7]
-      {(1 2 3) | map block "{add to 4}" // bad}
-        [4,4,4]
-      {(1 2 3) | map block "{__ | add 4}"}
-        [5,6,7]
-      {(1 2 3) | map block "{add 4}" // bad}
-        [4,4,4]
-    
-    
-////    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
-////THINK: how does this square off with __.foo? that essentially becomes {__ | list peek path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
-////If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
-
-
-    NEW RULES!
-    - "{__}" links to process input
-    - {__} links to previous value
-    so: if it's in a string, it's input.
-        if it's in a list or param value it's previous value.
-
-
-      {20 | add {__ | add 2}}
-        42
-      {20 | add {__ | add 2} to __}
-        42
-    
-      {21 | join (__ " " __) on ""}
-        21 21
-      {21 | ( {__ | add 1} " " {__ | add 2} ) | join}
-        22 23
-      {21 | ( {add 1 to __} " " {add __ to 2} ) | join}
-        22 23
-      {21 | >a | ( {_a | add 1} " " {_a | add 2} ) | join}
-        22 23
-  
-      {40 | add {__} to 2}
-        42
-      {21 | add {__} to __}
-        42
-      {21 | add __ to {__}}
-        42
-      {21 | add {__} to {__}}
-        42
-      {20 | ( {__} 2 __ ) | add}
-        42
-      {20 | ( __ 2 {__} ) | add}
-        42
-      {20 | ( {__} 2 {__} ) | add}
-        42
-    
-    Double pipes are also used to squelch output from a pipeline:
-      {42 ||}
-        
-      {(1 2 3) | map block "{__ | add 1 ||}"}
-        ["","",""]
-  
-  
-  
+ 
   
 <h2>In Depth: Peek</h2>
 
@@ -1003,7 +909,7 @@ MAGIC PIPE TESTS
     {$data.*.one.#1.foo}
       []
 
-<h3>TREE SHAPING</h3>
+<h3>Tree climbing</h3>
 
   {* (:name "Awesome John" :age :alpha) | $>a-john ||}
 
@@ -1325,6 +1231,96 @@ MAGIC PIPE TESTS
     double list all the way (BUG)
       {((2 1) (3 4) (4 5)) | list poke path ( ("#1" "#3") ("#2" "#4") ) value 999}
         [[2,999,[],999],[3,4],[4,999,[],999]]
+
+
+
+<!-- Aliases and bindings
+
+This section is no longer applicable: alias creation doesn't work yet, and variable bindings are gone. We should probably just delete it, but we'll let this gel a bit more first.
+
+// DO THIS:
+//  Get all current aliases: 
+//    {alias find}
+
+//  You can also create aliases at runtime. This is useful when paired with command creation.
+//    
+//    Create a new command:
+//      {daimio import block "hey {$name}!" into :string as :greet params :name}
+//        
+//      {string greet name "yourself"}
+//        hey yourself!
+//    
+//    Alias it:
+//      {daimio alias string "string greet name" as :greet}
+//        
+//      {greet "Jacobinius"}
+//        hey Jacobinius!
+//      
+//    // TODO: it looks like this doesn't pop the var context stack like it should...
+
+//  Make an alias yourself:
+//    {alias add string "string join" as :join}
+//
+//  This time we'll include the param value. Notice we wrap it in a block first, to handle the nested quotes:
+//    {begin j}string join on ", "{end j}{alias add string j as :stick}
+//
+//
+//:::Bindings and such:::
+//
+//    {variable bind path :test block "{$count1 | add 1 | $>count1}"}
+//      
+//    {:a | $>test}
+//      a
+//      
+//    {$count1}
+//      1
+//    
+//  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
+//    {variable bind path :test block "{$count2 | add 1 | $>count2}"}
+//      
+//    {:b | $>test}
+//      b
+//      
+//    {$count1} x {$count2}
+//      2 x 1
+//      
+//    {variable unbind path :test block "{$count1 | add 1 | $>count1}"}
+//  
+//    {:c | $>test}
+//      c
+//      
+//    {$count1} x {$count2}
+//      2 x 2
+//    
+//    {variable bind path :testx.y.z block "{$count2 | add 2 | $>count2}"}
+//    
+//    {:x | $>testx.y.z}
+//      x
+//    
+//    {$count1} x {$count2}
+//      2 x 4
+//    
+//  You can edit the bound var directly in the daimio -- infinite recursion is prevented.
+//    {variable bind path :foox block "{__var.#1 | add 2 | $>foox.0}"}
+//    
+//    {(7 2) | $>foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,2]
+//  
+//  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
+//    {variable bind path :foox block "{__var.#1 | add __var.#2 | $>foox.1}"}
+//
+//    {(7 2) | $>foox}
+//      [7,2]
+//    
+//    {$foox}
+//      [9,9]
+//      
+  // THINK: make a different test suite for the dom handler and interactive stuff.
+-->
+
 
 
 
