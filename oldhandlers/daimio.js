@@ -148,6 +148,18 @@ D.import_models({
         },
       },
       
+      // - I take a Daimio string, get its ptree, do some mangling (macros), then get the processed output.
+      // ------> THINK: do we want this in here? I'm taking it out for now because it's kind of silly.
+      //  {daimio parse string "x{foo}y"}
+      //    {"m":"string","f":"join","p":{"value":["x",{"m":"variable","f":"get","p":{"path":"foo"}},"y"]}}
+      //  {variable set path :xy value {daimio parse string "x{foo}y"}}
+      //    {"m":"string","f":"join","p":{"value":["x",{"m":"variable","f":"get","p":{"path":"foo"}},"y"]}}
+      //  {variable set path :xy.p.value.#3 value "z"}
+      //    z
+      //  {xy}
+      //    x123z
+      
+      
       // parse: {
       //   desc: "Convert a Daimio string's canonical ptree",
       //   params: [

@@ -80,6 +80,7 @@ D.import_models({
         ],
         fun: function(value, _in, like) {
           if(!D.isNice(like)) {
+            // TODO: indexOf doesn't coerce strings and numbers so {"2" | is in (2)} fails.
             if(D.isNice(_in)) return _in.indexOf(value) !== -1
             
             if(!Array.isArray(value)) return D.onerror("Requires 'in', 'like', or a value list")
