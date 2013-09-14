@@ -87,12 +87,12 @@
       
       // handle text
       if(mode == 'text') {
-        html += '<p class="ws' + wscount + '">' + whitespace + line + '</p>'
+        html += '<p class="ws' + wscount + '">' + line + '</p>'
       }
       
       // handle code
       if(mode == 'code') {
-        html += '<div class="panel panel-default"><div class="panel-body"><code><pre><span class="glyphicon glyphicon-arrow-left"></span>' + code_string + '</pre></code></div>'
+        html += '<div class="panel panel-default"><div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '<span class="glyphicon glyphicon-arrow-left"></span></pre></code></div>'
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
