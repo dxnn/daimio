@@ -294,6 +294,7 @@
         localStorage.setItem('repl-history', JSON.stringify(history_list))
         
         // display it
+        value = D.stringify(value)
         history_el.innerHTML = '<p class="input">'  + code + '</p>'
                           + '<p class="result">' + (value || '&nbsp;') + '</p>' 
                           + history_el.innerHTML
