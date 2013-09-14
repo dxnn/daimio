@@ -4742,6 +4742,9 @@ D.import_aliases({
   'unique': 'list unique data',
   'range':  'list range length',
   'first':  'list first',
+  'zip':    'list zip data',
+  'peek':   'list peek path',
+  'poke':   'list poke value',
   
   'eq':     'logic is like',
   'is':     'logic is', // for 'is in'

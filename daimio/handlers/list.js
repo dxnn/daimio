@@ -319,6 +319,36 @@ D.import_models({
         },
       },
       
+      zip: {
+        desc: "Zip a list of lists into tuples of elements of lists of lists",
+        params: [
+          {
+            key: 'data',
+            desc: 'The list of lists to zip',
+            type: 'array'
+          },
+          {
+            key: 'also',
+            desc: 'If present zipped with data list',
+            type: 'maybe-list'
+          }
+        ],
+        fun: function(data, also) {
+          var values = []
+          
+          if(!data && !also) return []
+          else if(!data) values = also
+          else if(also) values = [also, data]
+          else values = D.toArray(data)
+          
+          return values[0].map(function(item, key) {
+            return values.map(function(list) {
+              return list[key]
+            })
+          })
+        },
+      },
+      
       keys: {
         desc: 'Returns the keys from a list, or the integer indices if unkeyed',
         params: [
