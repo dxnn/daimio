@@ -2863,12 +2863,12 @@ D.SegmentTypes.Variable = {
   if(segment.value.type == 'space') // space vars have to be collected at runtime
     return [L.concat(segment), R]
   
-  // TODO: only single segment pipelines can't be wired. all {whatevs | _foo} should be pushed down to wiring...
-  
   var my_key = segment.key
     , new_key = segment.value.prevkey
     , key_index
 
+  // TODO: if !R.length, wire __out to the value [otherwise {2 | >foo | "" | _foo} doesn't work]
+  
   if(!new_key && !R.length) // some pipeline vars have to be collected then too
     return [L.concat(segment), R]
 
@@ -2891,7 +2891,7 @@ D.SegmentTypes.Variable = {
     if(type == 'space')
       value = process.space.get_state(name)
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
-      value = process.state[name]   // because we can't push those down to bare wiring.
+      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
       
     if(!D.isNice(value))
       return false
@@ -4774,7 +4774,6 @@ D.import_aliases({
   'unquote':  'process unquote',
   'log':      'process log value',
   'tap':      'process log passthru 1 value',
-  'tapper':   'process log value :asdf passthru',
 })
 
 
