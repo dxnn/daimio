@@ -8,197 +8,198 @@ Daimio is a framework for building programmable web applications, as well as the
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
 
-REPL notes: click code below to put it in the REPL. use space or enter to activate autocomplete if the menu is up. start with a '{' and end with a '}' when writing daimio commands. use up and down to cycle through your history. history is saved between sessions. use esc to toggle autocomplete on or off. 
+<div class="page-header" id="daimio_primer">
+  <h2>Daimio Primer</h2>
+</div>
 
-<h2>Daimio Primer</h2>
+    numbers, natural and otherwise
+      {65535}
+        65535
+      {4.669200}
+        4.6692
+      {-3.14159}
+        -3.14159
+  
+    strings are double quoted for protection
+      {"Help I'm trapped in a string factory"}
+        Help I'm trapped in a string factory
+  
+    or colonized if they're small
+      {:Liechtenstein}
+        Liechtenstein
+  
+    lists use parens and whitespace
+      {( 2 3 5 )}
+        [2,3,5]
+      {(:one 1 :two 2)}
+        ["one",1,"two",2]
+  
+    sometimes lists sneak inside other lists
+      {( (2 3 5 7) (4 6 8 9) )}
+        [[2,3,5,7],[4,6,8,9]]
+      {( () (()) (() (())) )}
+        [[],[[]],[[],[[]]]]
+  
+    list can also be keyed
+      {* (:a 1 :b 2)}
+        {"a":1,"b":2}
 
-  numbers, natural and otherwise
-    {65535}
-      65535
-    {4.669200}
-      4.6692
-    {-3.14159}
-      -3.14159
+    and heterogenous
+      {* (:a {* (:aa 1 :ab 2)} :b 2 )}
+        {"a":{"aa":1,"ab":2},"b":2}
   
-  strings are double quoted for protection
-    {"Help I'm trapped in a string factory"}
-      Help I'm trapped in a string factory
+    commands have a handler and a method
+      {list count}
+        0
   
-  or colonized if they're small
-    {:Liechtenstein}
-      Liechtenstein
+    and named parameters
+      {list count data (13 17 19)}
+        3
   
-  lists use parens and whitespace
-    {( 2 3 5 )}
-      [2,3,5]
-    {(:one 1 :two 2)}
-      ["one",1,"two",2]
+    parameter order is irrelevant
+      {math add value 22 to 20}
+        42
+      {math add to 20 value 22}
+        42
   
-  sometimes lists sneak inside other lists
-    {( (2 3 5 7) (4 6 8 9) )}
-      [[2,3,5,7],[4,6,8,9]]
-    {( () (()) (() (())) )}
-      [[],[[]],[[],[[]]]]
+    pipes link commands
+      {(13 17 19) | list count}
+        3
+      {22 | math add to 20}
+        42
   
-  list can also be keyed
-    {* (:a 1 :b 2)}
-      {"a":1,"b":2}
-
-  and heterogenous
-    {* (:a {* (:aa 1 :ab 2)} :b 2 )}
-      {"a":{"aa":1,"ab":2},"b":2}
+    aliases reduce typing
+      {(13 17 19) | count}
+        3
+      {22 | add 20}
+        42
   
-  commands have a handler and a method
-    {list count}
-      0
-  
-  and named parameters
-    {list count data (13 17 19)}
-      3
-  
-  parameter order is irrelevant
-    {math add value 22 to 20}
-      42
-    {math add to 20 value 22}
-      42
-  
-  pipes link commands
-    {(13 17 19) | list count}
-      3
-    {22 | math add to 20}
-      42
-  
-  aliases reduce typing
-    {(13 17 19) | count}
-      3
-    {22 | add 20}
-      42
-  
-  double underscore takes the previous value
-    {21 | add __}
-      42
-    {21 | add 21 to __}
-      42
-    {21 | add __ to 21}
-      42
-    {21 | add __ to __}
-      42
+    double underscore takes the previous value
+      {21 | add __}
+        42
+      {21 | add 21 to __}
+        42
+      {21 | add __ to 21}
+        42
+      {21 | add __ to __}
+        42
 
   
-  slash comments one segment
-    {/string join}
+    slash comments one segment
+      {/string join}
     
-    {401 /comment | add 1}
-      402
+      {401 /comment | add 1}
+        402
 
-  double slash comments all remaining segments
-    {401 //comment | add 1}
-      401
-    {// 401 | add 1}
+    double slash comments all remaining segments
+      {401 //comment | add 1}
+        401
+      {// 401 | add 1}
 
 
-  blocks are delimited by begin/end, and contain strings
-    {begin foo}some string{end foo}
-      some string
+    blocks are delimited by begin/end, and contain strings
+      {begin foo}some string{end foo}
+        some string
 
-  or code
-    {begin bar}{21 | add 21}{end bar}
-      42
+    or code
+      {begin bar}{21 | add 21}{end bar}
+        42
     
-  or both
-    {begin block} {:hello} world {end block}
-      hello world
+    or both
+      {begin block} {:hello} world {end block}
+        hello world
   
-  double quotes create inline blocks
-    {"{:hello} world"}
-      hello world
+    double quotes create inline blocks
+      {"{:hello} world"}
+        hello world
   
-  blocks are fed to commands
-    {"{__ | add 1}" | map data ( 1 2 3 )}
-      [2,3,4]
-    {begin block | map data ( 1 2 3 )}{__ | add 1}{end block}
-      [2,3,4]
+    blocks are fed to commands
+      {"{__ | add 1}" | map data ( 1 2 3 )}
+        [2,3,4]
+      {begin block | map data ( 1 2 3 )}{__ | add 1}{end block}
+        [2,3,4]
   
-  __in is the process input
-    {( 1 2 3 ) | map block "{__in | add 1}"}
-      [2,3,4]
+    __in is the process input
+      {( 1 2 3 ) | map block "{__in | add 1}"}
+        [2,3,4]
   
-  in first position __ is equal to __in
-    {( 1 2 3 ) | map block "{__ | add 1}"}
-      [2,3,4]
+    in first position __ is equal to __in
+      {( 1 2 3 ) | map block "{__ | add 1}"}
+        [2,3,4]
   
-  but not further inside a pipeline
-    {( 1 2 3 ) | map block "{__ | add 5 | (__ __in)}"}
-      [[6,1],[7,2],[8,3]]
+    but not further inside a pipeline
+      {( 1 2 3 ) | map block "{__ | add 5 | (__ __in)}"}
+        [[6,1],[7,2],[8,3]]
   
   
-  a piped value fills the first available parameter
-    {math add value 10 to 32}
-      42
-    {10 | math add to 32}    {// here it fills 'value'}
-      42
-    {32 | math add value 10} {// here it fills 'to'}
-      42
+    a piped value fills the first available parameter
+      {math add value 10 to 32}
+        42
+      {10 | math add to 32}    {// here it fills 'value'}
+        42
+      {32 | math add value 10} {// here it fills 'to'}
+        42
   
-  a double pipe prevents implicit param filling
-    {32 || math add value 10}   {// 'to' is unfilled}
-      10
-    {32 || math add value 10 to __}
-      42
+    a double pipe prevents implicit param filling
+      {32 || math add value 10}   {// 'to' is unfilled}
+        10
+      {32 || math add value 10 to __}
+        42
   
     
-  pipe values can be labeled for later use
-    {8 | >eight | (_eight _eight 2) | add _eight | add}
-      42
+    pipe values can be labeled for later use
+      {8 | >eight | (_eight _eight 2) | add _eight | add}
+        42
   
-  but pipeline vars only work within the same block
-    {_eight}
+    but pipeline vars only work within the same block
+      {_eight}
     
-  and can't be modified
-    {2 | >two | 4 | >two | (_two)}
-      [2]
+    and can't be modified
+      {2 | >two | 4 | >two | (_two)}
+        [2]
   
-  space variables are mutable
-    {2 | $>foo | ( 1 2 3 ) | $>foo}
-      [1,2,3]
+    space variables are mutable
+      {2 | $>foo | ( 1 2 3 ) | $>foo}
+        [1,2,3]
   
-  and available across all blocks in the same space
-    {$foo | add $foo}
-      [2,4,6]
+    and available across all blocks in the same space
+      {$foo | add $foo}
+        [2,4,6]
   
   
-  you can peek into data structures
-    {* (:a 1 :b 2 :c 3) | list peek path :b}
-      2
-    {(2 4 6) | peek "#1"}
-      2
-    {* (:a (1 2) :b (2 3) :c (3 4)) | peek (:b "#1")}
-      2
+    you can peek into data structures
+      {* (:a 1 :b 2 :c 3) | list peek path :b}
+        2
+      {(2 4 6) | peek "#1"}
+        2
+      {* (:a (1 2) :b (2 3) :c (3 4)) | peek (:b "#1")}
+        2
 
-  dots are peek sugar
-    {(1 2 3) | __.#2}
-      2
-    {* (:a (1 2) :b (2 3) :c (3 4)) | __.b.#1}
-      2
+    dots are peek sugar
+      {(1 2 3) | __.#2}
+        2
+      {* (:a (1 2) :b (2 3) :c (3 4)) | __.b.#1}
+        2
 
-  poke to push
-    {(1 2 3) | list poke value 4}
-      [1,2,3,4]
+    poke to push
+      {(1 2 3) | list poke value 4}
+        [1,2,3,4]
 
-  or otherwise modify 
-    {* (:a 1 :b 2 :c 3) | poke 4 path :d}
-      {"a":1,"b":2,"c":3,"d":4}
+    or otherwise modify 
+      {* (:a 1 :b 2 :c 3) | poke 4 path :d}
+        {"a":1,"b":2,"c":3,"d":4}
 
-  dots are poke sugar too
-    {5 | $>foo.#2}
-      [1,5,3]
-
-
-And that's everything there is to know about Daimio. Well, almost. Let's explore a couple ideas in greater depth.
+    dots are poke sugar too
+      {5 | $>foo.#2}
+        [1,5,3]
 
 
+  And that's everything there is to know about Daimio. Well, almost. Let's explore a couple ideas in greater depth.
 
-<h2>In Depth: Commands</h2>
+
+<div class="page-header" id="id_commands">
+  <h2>In Depth: Commands</h2>
+</div>
 
   Commands in Daimio provide all of the functionality in the language -- everything else is just for wiring commands together. In particular, control statements (like 'if' and 'cond') and looping constructs (like 'each' and 'map') are commands rather than built-in primitives.
   
@@ -260,24 +261,16 @@ And that's everything there is to know about Daimio. Well, almost. Let's explore
   We just learned that param values are never bare words. What kinds of things can be param values?
     
   
+  
+<!--
 (:barbera :belvest :brioni)
 ["selvedge","balmoral","aglet","placket","plimsolls"]
+-->
   
-  
-  
-  
-  
-Snack 3: Aliases
 
-  Many commands have a shorter form that can be used in their place.
-  
-  ----- talk about what can go in a param value slot  
-  
-  Aliases work by simple substitution: if the first word of a command matches something in the alias list, it is replaced. (Here "word" is fairly liberal, and includes symbols but not whitespace.)
-
-
-
-<h2>In Depth: Lists</h2>
+<div class="page-header" id="id_lists">
+    <h2>In Depth: Lists</h2>
+</div>
   
   Lists are the basic data structure of Daimio. Spaces separate items. List items can be any valid expression.
   Notice that data structures are implicitly converted to JSON when forced to take string form.
@@ -338,7 +331,11 @@ Snack 3: Aliases
         [["shantung","weft","repp","slub"],1,2,4,8]
 
 
-<h2>In Depth: Pipes</h2>
+<div class="page-header" id="id_pipes">
+
+    <h2>In Depth: Pipes</h2>
+
+</div>
 
   You can use the pipe ('|') to pass the output of one command into an input of another.
   
@@ -572,7 +569,9 @@ MAGIC PIPE TESTS
         ["","",""]
 
 
-<h2>In Depth: Variables</h2>
+<div class="page-header" id="id_variables">
+    <h2>In Depth: Variables</h2>
+</div>
 
   (so pipelines are actually DAGs)
   (those labels are only valid inside the block)
@@ -615,7 +614,9 @@ MAGIC PIPE TESTS
   We'll see some more ways to reach into variables in a bit.
 
 
-<h2>In Depth: Blocks</h2>
+<div class="page-header" id="id_blocks">
+  <h2>In Depth: Blocks</h2>
+</div>
 
   A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
   
@@ -741,7 +742,9 @@ MAGIC PIPE TESTS
         Much nesting is divinest sense
 
 
-<h2>In Depth: Scope</h2>
+<div class="page-header" id="id_scope">
+    <h2>In Depth: Scope</h2>
+</div>
 
   so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
   
@@ -794,7 +797,9 @@ MAGIC PIPE TESTS
 //      {"asdf" | $>@x}{begin foo}{123 | $>@x || @x}{end foo}{@x}
  
   
-<h2>In Depth: Peek</h2>
+<div class="page-header" id="id_peek">
+    <h2>In Depth: Peek</h2>
+</div>
 
   This is a section all about how my list searching got flipped turned upside down. It includes the majority of the peek tests.
 
@@ -1146,7 +1151,9 @@ MAGIC PIPE TESTS
       [[4,3],[2,1]]
 
 
-<h2>In Depth: Poke</h2>
+<div class="page-header" id="id_poke">
+    <h2>In Depth: Poke</h2>
+</div>
   Poking is a lot like peeking, except it sets a value instead of reading it and fills any gaps it encounters with empty lists.
 
   no path is like push
@@ -1360,11 +1367,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
 
-<h2>COMMAND EXAMPLES</h2>
-  Examples and tests for all of the basic Daimio commands.
-
-<h3>LOGIC COMMANDS</h3>
-
+<div class="page-header" id="id_logic_examples">
+  <h2>Logic Commands</h2>
+</div>
 
      ~~~ OR returns the first true value it finds ~~~
 
@@ -1550,8 +1555,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
      // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | $>bat} "too far"))}
      //  hey
 
-
-<h3>MATH COMMANDS</h3>
+<div class="page-header" id="id_math_examples">
+  <h2>Math Commands</h2>
+</div>
 
   Ensure values are properly finagled. 
     {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
@@ -1670,8 +1676,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {123.456 | math round to 2}
       123.46
 
-
-<h3>LIST COMMANDS</h3>
+<div class="page-header" id="id_list_examples">
+  <h2>List Commands</h2>
+</div>
 
 
 <!-- Older commands that probably won't exist anymore but we still need to handle these cases somehow
@@ -2092,8 +2099,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       [[1],[2],[3]]
 
 
-
-<h3>STRING COMMANDS</h3>
+<div class="page-header" id="id_string_examples">
+  <h2>String Commands</h2>
+</div>
 
 
   GREP
@@ -2115,8 +2123,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       foursixsix...
 
     
-
-<h3>PROCESS COMMANDS</h3>
+<div class="page-header" id="id_process_examples">
+  <h2>Process Commands</h2>
+</div>
 
   
   RUN
@@ -2130,7 +2139,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       92
 
 
-<h2>EDGE CASES</h2>
+<div class="page-header" id="id_app_edge">
+  <h2>Edge Cases</h2>
+</div>
 
   A section for pushing the parser and interpreter into corners.
   
@@ -2835,7 +2846,9 @@ BASIC SYNTAX TESTS
 
 
 
-<h2>APPENDIXES</h2>
+<div class="page-header" id="id_app">
+    <h2>Appendixes</h2>
+</div>
 
 Appendix 1: Numbers
 
@@ -2893,7 +2906,9 @@ Appendix 1: Numbers
 
 
 
-<h2>KNOWN BUGS</h2>
+<div class="page-header" id="id_app_known">
+    <h2>Known Bugs</h2>
+</div>
 
   Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
     {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
@@ -2939,7 +2954,9 @@ Appendix 1: Numbers
       2
 
 
-<h2>DECISIONS TO BE MADE</h2>
+<div class="page-header" id="id_app_dec">
+    <h2>Decisions to be Made</h2>
+</div>
   In approximate order of importance... write about these when you make them.
 
   Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
