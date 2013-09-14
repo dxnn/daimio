@@ -10,7 +10,9 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 
 REPL notes: click code below to put it in the REPL. use space or enter to activate autocomplete if the menu is up. start with a '{' and end with a '}' when writing daimio commands. use up and down to cycle through your history. history is saved between sessions. use esc to toggle autocomplete on or off. 
 
-<h2>Daimio Primer</h2>
+<div class="page-header" id="daimio_primer">
+    <h2>Daimio Primer</h2>
+</div>
 
   numbers, natural and otherwise
     {65535}
@@ -196,10 +198,11 @@ REPL notes: click code below to put it in the REPL. use space or enter to activa
 
 And that's everything there is to know about Daimio. Well, almost. Let's explore a couple ideas in greater depth.
 
+<div class="page-header" id="id_commands">
 
+    <h2>In Depth: Commands</h2>
 
-<h2>In Depth: Commands</h2>
-
+</div>
 :::Quick Notes:::
 
 If you're familiar with other programming languages you'll notice that Daimio seems to be missing many basic necessities: control statements like if-then-else, loop statements, function declaration, variable assignment, and the list goes on. These facilities exist within Daimio as commands. This means that for-loops, for example, return a value (as do all commands). It also means that you can add new basic concepts to the language just by publishing new commands.
@@ -243,7 +246,9 @@ Snack 3: Aliases
         ["selvedge","balmoral","aglet","placket","plimsolls"]
 
 
-<h2>In Depth: Lists</h2>
+<div class="page-header" id="id_lists">
+    <h2>In Depth: Lists</h2>
+</div>
   
   Lists are the basic data structure of Daimio. Spaces separate items. List items can be any valid expression.
   Notice that data structures are implicitly converted to JSON when forced to take string form.
@@ -304,7 +309,11 @@ Snack 3: Aliases
         [["shantung","weft","repp","slub"],1,2,4,8]
 
 
-<h2>In Depth: Pipes</h2>
+<div class="page-header" id="id_pipes">
+
+    <h2>In Depth: Pipes</h2>
+
+</div>
 
   You can use the pipe ('|') to pass the output of one command into an input of another.
   
@@ -538,7 +547,9 @@ MAGIC PIPE TESTS
         ["","",""]
 
 
-<h2>In Depth: Variables</h2>
+<div class="page-header" id="id_variables">
+    <h2>In Depth: Variables</h2>
+</div>
 
   (so pipelines are actually DAGs)
   (those labels are only valid inside the block)
@@ -581,7 +592,9 @@ MAGIC PIPE TESTS
   We'll see some more ways to reach into variables in a bit.
 
 
-<h2>In Depth: Blocks</h2>
+<div class="page-header" id="id_blocks">
+    <h2>In Depth: Blocks</h2>
+</div>
 
   A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
   
@@ -707,7 +720,9 @@ MAGIC PIPE TESTS
         Much nesting is divinest sense
 
 
-<h2>In Depth: Scope</h2>
+<div class="page-header" id="id_scope">
+    <h2>In Depth: Scope</h2>
+</div>
 
   so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
   
@@ -760,7 +775,9 @@ MAGIC PIPE TESTS
 //      {"asdf" | $>@x}{begin foo}{123 | $>@x || @x}{end foo}{@x}
  
   
-<h2>In Depth: Peek</h2>
+<div class="page-header" id="id_peek">
+    <h2>In Depth: Peek</h2>
+</div>
 
   This is a section all about how my list searching got flipped turned upside down. It includes the majority of the peek tests.
 
@@ -1112,7 +1129,9 @@ MAGIC PIPE TESTS
       [[4,3],[2,1]]
 
 
-<h2>In Depth: Poke</h2>
+<div class="page-header" id="id_poke">
+    <h2>In Depth: Poke</h2>
+</div>
   Poking is a lot like peeking, except it sets a value instead of reading it and fills any gaps it encounters with empty lists.
 
   no path is like push
@@ -1326,10 +1345,13 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
 
-<h2>COMMAND EXAMPLES</h2>
+<div class="page-header" id="id_cmd_examples">
+    <h2>Command Examples</h2>
+</div>
+
   Examples and tests for all of the basic Daimio commands.
 
-<h3>LOGIC COMMANDS</h3>
+<h3>Logic Commands</h3>
 
 
      ~~~ OR returns the first true value it finds ~~~
@@ -1517,7 +1539,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
      //  hey
 
 
-<h3>MATH COMMANDS</h3>
+<h3>Math Commands</h3>
 
   Ensure values are properly finagled. 
     {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
@@ -1637,7 +1659,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       123.46
 
 
-<h3>LIST COMMANDS</h3>
+<h3>List Commands</h3>
 
 
 <!-- Older commands that probably won't exist anymore but we still need to handle these cases somehow
@@ -2059,7 +2081,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
 
-<h3>STRING COMMANDS</h3>
+<h3>String Commands</h3>
 
 
   GREP
@@ -2082,7 +2104,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
     
 
-<h3>PROCESS COMMANDS</h3>
+<h3>Process Commands</h3>
 
   
   RUN
@@ -2096,7 +2118,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       92
 
 
-<h2>EDGE CASES</h2>
+<div class="page-header" id="id_app_edge">
+    <h2>Edge Cases</h2>
+</div>
 
   A section for pushing the parser and interpreter into corners.
   
@@ -2801,7 +2825,9 @@ BASIC SYNTAX TESTS
 
 
 
-<h2>APPENDIXES</h2>
+<div class="page-header" id="id_app">
+    <h2>Appendixes</h2>
+</div>
 
 Appendix 1: Numbers
 
@@ -2859,7 +2885,9 @@ Appendix 1: Numbers
 
 
 
-<h2>KNOWN BUGS</h2>
+<div class="page-header" id="id_app_known">
+    <h2>Known Bugs</h2>
+</div>
 
   Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
     {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
@@ -2905,7 +2933,9 @@ Appendix 1: Numbers
       2
 
 
-<h2>DECISIONS TO BE MADE</h2>
+<div class="page-header" id="id_app_dec">
+    <h2>Decisions to be Made</h2>
+</div>
   In approximate order of importance... write about these when you make them.
 
   Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
