@@ -261,6 +261,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
     We just learned that param values are never bare words. What kinds of things can be param values?
     numbers, strings, lists, pipelines, fancies
   
+    Point out that unlike other fancies the ice cream @>x crepe $>x and funnel >x fancies can't be used as param values. They also *only* take their values from incoming pipes. This is a slightly odd case, but we can talk about it more in the Variables section (which really should be renamed since only $x is actually variable).
   
 <!--
 (:barbera :belvest :brioni)
