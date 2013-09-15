@@ -2,7 +2,7 @@
 <html> 
 <head> 
   <title>Daimio Tests</title>
-  <script type="text/javascript" src="../get.php?file=daimio&x=1"></script>
+  <script type="text/javascript" src="../daimio_composite.js"></script>
 
   <link rel="stylesheet" href="../css/styles.css" type="text/css" media="screen">
   <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
@@ -92,7 +92,8 @@
       
       // handle code
       if(mode == 'code') {
-        html += '<div class="panel panel-default"><div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '<span class="glyphicon glyphicon-arrow-left"></span></pre></code></div>'
+        html += '<div class="panel panel-default">' // note: this gets closed later
+        html += '<div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '<span class="glyphicon glyphicon-arrow-left"></span></pre></code></div>'
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
@@ -122,10 +123,14 @@
         
         // TODO: convert line and code_value to escaped html
         
-        html += '<div class="assert panel-footer"><small class="text-' + result + '">' + line + '</small></div></div>'
-        if(result == 'bad') {
-          html += '<small class="actual">Actual: ' + code_value + '</small>'
+        html += '<div class="assert panel-footer">'
+        if(result == 'success') {
+          html += '<small class="text-' + result + '">' + line + '</small>'
+        } else {
+          html += '<p><small class="text-expected">' + line + '</small></p>'
+          html += '<p><small class="actual text-danger">Actual: ' + code_value + '</small></p>'
         }
+        html += '</div></div>' // note: closing div from above
       }
       
       return true
@@ -137,7 +142,7 @@
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
       stats += '<div class="alert alert-success">Won ' + win + ' tests.</div>'
       
-      if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests.</div>'
+      if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests. (35 expected)</div>'
       if(!lose) stats += '<p>You win!!!</p>'
       
       document.getElementById('stats').innerHTML = stats
@@ -191,7 +196,7 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Appendices <b class="caret"></b></a>
           <ul class="dropdown-menu">
-            <li><a href="#id_app" class="">Appendices</a></li>
+            <li><a href="#id_app_numbers" class="">Numbers</a></li>
             <li><a href="#id_app_edge" class="">Edge Cases</a></li>
             <li><a href="#id_app_known" class="">Known Bugs</a></li>
             <li><a href="#id_app_dec" class="">Decisions to be Made</a></li>
@@ -391,9 +396,13 @@
 
 
 
-// NOTE: saving the following lines in case they're needed later -- delete this if you haven't had any scrollbar issues, otherwise change these to repl.display.foo references
-//    cm.on("change", function(instance, change) {document.querySelector(".CodeMirror-hscrollbar").style.display = 'none'})
-//    document.querySelector(".CodeMirror-scroll").style.overflow = 'hidden'
+// TODO: change these to repl.display.foo references
+    repl.on("change", function(instance, change) {
+      //document.querySelector(".CodeMirror-hscrollbar").style.display = 'none'
+      repl.getWrapperElement().children[1].style.display = 'none'
+      repl.getWrapperElement().children[2].style.display = 'none'
+    })
+    repl.getScrollerElement().style.overflow = 'hidden'
 
   </script>
 

@@ -259,7 +259,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
     Ah. So it looks like the trailing param value is negated if the word after the alias is a parameter name instead of a param value. (Param names are always bare words, param values never are.) It then becomes filled in through the pipe via the natural piping process. Interesting.
   
     We just learned that param values are never bare words. What kinds of things can be param values?
-    
+    numbers, strings, lists, pipelines, fancies
   
   
 <!--
@@ -297,7 +297,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 
   Keyed lists
 
-  A keyed list (aka hash, map, hash map, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. Every list in Daimio can take keys. There's a special command for transforming an unkeyed list into a new keyed list called 'list pair'.
+    A keyed list (aka hash, map, hash map, dictionary, associative array, key-value store, etc etc etc) is a function that takes keys and returns values. Every list in Daimio can take keys. There's a special command for transforming an unkeyed list into a new keyed list called 'list pair'.
   
     Here is the command written out:
       {list pair data (:one :first :two :second)}
@@ -323,7 +323,6 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {* (:A {* (:one 1 :two 2)} :B {* (:three 3 :four 4)})}
         {"A":{"one":1,"two":2},"B":{"three":3,"four":4}}
   
-  Quick 3: Commands in lists
   ---- talk about what can go in a list
 
     A list can have commands in it
@@ -393,66 +392,63 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
         {10 | (__ __) | add __ | add 1 | add}
           42
 
-MAGIC PIPE TESTS
+  Magic Pipe Tests
 
-  The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
+    The magic pipe has two uses: to explicitly connect two segments, and to access the Process's input value
 
-  Case 1: explicit connection. Each of these also has an implicit connection, but only the first example uses it because the others have no additional param space (add only takes two params).
-    {21 | add __}
-      42
-    {21 | add 21 to __}
-      42
-    {21 | add __ to 21}
-      42
-    {21 | add __ to __}
-      42
+    Case 1: explicit connection. Each of these also has an implicit connection, but only the first example uses it because the others have no additional param space (add only takes two params).
+      {21 | add __}
+        42
+      {21 | add 21 to __}
+        42
+      {21 | add __ to 21}
+        42
+      {21 | add __ to __}
+        42
 
-  Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
-    {42 || add __}
-      42
-    {21 || add 21 to __}
-      42
+    Case 1a: blocking implicit connection. The double pipe doesn't pass values implicitly, but you can still use the magic pipe to explicitly link them. Useful for commands that have multiple parameters.
+      {42 || add __}
+        42
+      {21 || add 21 to __}
+        42
 
-  Case 1b: carry along. You can use a pipe to carry the value through segments.
-    {42 | __}
-      42
-    {42 | __ | __}
-      42
+    Case 1b: carry along. You can use a pipe to carry the value through segments.
+      {42 | __}
+        42
+      {42 | __ | __}
+        42
     
-  Case 1c: duplication. You can use pipes in lists to duplicate the previous value
-    {42 | (__)}
-      [42]
-    {42 | (__ __)}
-      [42,42]
-    {42 | (:x __ __)}
-      ["x",42,42]
-    {42 | (__ :x __)}
-      [42,"x",42]
-    {42 | (__ __ :x)}
-      [42,42,"x"]
+    Case 1c: duplication. You can use pipes in lists to duplicate the previous value
+      {42 | (__)}
+        [42]
+      {42 | (__ __)}
+        [42,42]
+      {42 | (:x __ __)}
+        ["x",42,42]
+      {42 | (__ :x __)}
+        [42,"x",42]
+      {42 | (__ __ :x)}
+        [42,42,"x"]
     
-    {21 | add (__)}
-      [42]
-    {21 | add (__ __)}
-      [42,42]
-    {21 | add (-1 __ __)}
-      [20,42,42]
-    {21 | add (__ -1 __)}
-      [42,20,42]
-    {21 | add (__ __ -1)}
-      [42,42,20]
+      {21 | add (__)}
+        [42]
+      {21 | add (__ __)}
+        [42,42]
+      {21 | add (-1 __ __)}
+        [20,42,42]
+      {21 | add (__ -1 __)}
+        [42,20,42]
+      {21 | add (__ __ -1)}
+        [42,42,20]
 
-
-  Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
-  [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
-  maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
-  and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
-  BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
+    Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
+    [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
+    maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
+    and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
+    BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
   
-
-
-
-  Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
+  
+    Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
   
     ----- thoughts on this:
     - if we made 'process input' a different symbol we wouldn't have embedded pipeline reference issues 
@@ -480,9 +476,6 @@ MAGIC PIPE TESTS
     // this is a pipe
     // ceci n'est pas une pipe
     
-    
-    
-  
     {(1 2 3) | map block "{__ | add 4}"}
       [5,6,7]
     {(1 2 3) | map block "{add __ to 4}"}
@@ -498,17 +491,17 @@ MAGIC PIPE TESTS
     {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
       [3,4,5]
   
-  Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
-    {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
-    {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
+    Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
+      {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
+        4 x 8 :: 5 x 9 :: 6 x 10 ::
+      {begin foo | each data (1 2 3)} {add 3 to __} x {add __ to 7} ::{end foo}
+        4 x 8 :: 5 x 9 :: 6 x 10 ::
   
-  You can reframe the above like this:
-    {(1 2 3) | each block "{__ | (" " {__in | add 3} " x " {__in | add 7} " ::") | join}"}
-      4 x 8 :: 5 x 9 :: 6 x 10 ::
+    You can reframe the above like this:
+      {(1 2 3) | each block "{__ | (" " {__in | add 3} " x " {__in | add 7} " ::") | join}"}
+        4 x 8 :: 5 x 9 :: 6 x 10 ::
   
-  Notes:
+    Notes:
     To connect to the process input you must explicitly add the magic pipe to the first segment:
       {(1 2 3) | map block "{__ | add to 4}"}
         [5,6,7]
@@ -571,12 +564,12 @@ MAGIC PIPE TESTS
 <div class="page-header" id="id_variables">
   <h2>In Depth: Variables</h2>
 </div>
-
-  (so pipelines are actually DAGs)
-  (those labels are only valid inside the block)
-  (and can only be set once)
-  
-  
+    
+    ----- talk about pipeline vars, injected vars, imported vars, and then space vars
+    
+    (so pipelines are actually DAGs)
+    (those labels are only valid inside the block)
+    (and can only be set once)
   
     Set a space var like this:
       {(:one :two :three) | $>bar}
@@ -617,9 +610,9 @@ MAGIC PIPE TESTS
   <h2>In Depth: Blocks</h2>
 </div>
 
-  A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
+    A block encloses text. [Could be a template, or some Daimio code (or a mix). they're roughly equivalent to a string join + context + var. discuss var scope]
   
-  Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
+    Note that blocks no longer set variables automatically. We may include a {begin $foo}...{end $foo} form in the future to allow automatic var setting, but scope vars should be used carefully so forcing explicit setting is probably good. (We could also consider automatically setting a pipeline var, but for now explicit and simple is better.)
   
   
     or a string [inlined for the test harness]
@@ -648,7 +641,7 @@ MAGIC PIPE TESTS
       {begin foo | $>foo | $foo}Some text{end foo}
         Some text
 
-  We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
+    We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
   
     Using a block we've previously built:
       {$foo | string split on " "}
@@ -709,7 +702,7 @@ MAGIC PIPE TESTS
       {({:8} {8})}
         ["8",8]
     
-  [TODO: upgrade the test suite to allow blocks to spread over lines.]
+    [TODO: upgrade the test suite to allow blocks to spread over lines.]
 
     These two things are almost equivalent:
       {begin foo}One{"1 2 3" | string split on " "}Two{end foo}
@@ -718,16 +711,16 @@ MAGIC PIPE TESTS
       {string join value (:One {"1 2 3" | string split on " "} :Two)}
         One["1","2","3"]Two
 
-  Quick 2: Embedded blocks
+    Quick 2: Embedded blocks
 
     I put a block in a block for you:
       {begin outer}qq {begin inner | add 321}123{end inner} pp {end outer}
         qq 444 pp
 
-  (Blocks with the same name can't be nested. That would just be weird.)
+    (Blocks with the same name can't be nested. That would just be weird.)
 
-  Quotes in braces
-
+    Quotes in braces
+  
     If the nested quotes are in braces, you don't need to use a block:
       {string split on " " value {("inside" "here") | string join on " "}}
         ["inside","here"]
@@ -745,9 +738,9 @@ MAGIC PIPE TESTS
     <h2>In Depth: Scope</h2>
 </div>
 
-  so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
+    so.... blocks don't have a private scope. there's currently pipeline vars and space vars. pipeline vars are single-assignment and can bleed through blocks (but not into called subblocks). 
   
-  space vars are mutable and persistent. they model state within the space. you should only use them when necessary, and maybe not even then.
+    space vars are mutable and persistent. they model state within the space. you should only use them when necessary, and maybe not even then.
 
     TODO: fix this section!
 
@@ -2848,11 +2841,9 @@ BASIC SYNTAX TESTS
 
 
 
-<div class="page-header" id="id_app">
-    <h2>Appendixes</h2>
+<div class="page-header" id="id_app_numbers">
+  <h2>Numbers</h2>
 </div>
-
-Appendix 1: Numbers
 
   We use IEEE floating point under the hood (same as JS, among other languages), which has its pros and wats.
 
@@ -2912,73 +2903,73 @@ Appendix 1: Numbers
     <h2>Known Bugs</h2>
 </div>
 
-  Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
-    {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
-      {"xyz":"z","10":"z","3":"z","1":"z","a":"z"} 
-    {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
-      {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
+    Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
+      {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
+        {"xyz":"z","10":"z","3":"z","1":"z","a":"z"} 
+      {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
+        {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
 
-  Blocks inside lists that get cloned become quoted. This might be considered a *feature* in some circles, but it makes a fairly valid use case (sticking blocks inside a keyed list as quasi-object methods) more difficult.
-    {("foo" "{2 | add 7}") | map block "{__ | run}"}
-      ["foo",9]
-    {("foo" "{2 | add 7}") | $>foo | map block "{__ | run}"}
-      ["foo",9]
-    {("foo" "{2 | add 7}") | $>foo || $foo | map block "{__ | run}"}
-      ["foo",9]
+    Blocks inside lists that get cloned become quoted. This might be considered a *feature* in some circles, but it makes a fairly valid use case (sticking blocks inside a keyed list as quasi-object methods) more difficult.
+      {("foo" "{2 | add 7}") | map block "{__ | run}"}
+        ["foo",9]
+      {("foo" "{2 | add 7}") | $>foo | map block "{__ | run}"}
+        ["foo",9]
+      {("foo" "{2 | add 7}") | $>foo || $foo | map block "{__ | run}"}
+        ["foo",9]
     
-  Most list commands eat keys:
-    sort, reverse, etc
+    Most list commands eat keys:
+      sort, reverse, etc
   
-  The {logic is} command doesn't coerce internally
-    {"2" | is in (2) | then :true else :false}
-      true
+    The {logic is} command doesn't coerce internally
+      {"2" | is in (2) | then :true else :false}
+        true
   
-  Two problems here with peek/poke
-  1. you shouldn't have to preload with x:1 (BUG)
-  2. setting a subitem returns the full spacevar, not just the subitem value (BUG)
-    {* (:x 1) | $>hash}
-      {"x":1}
+    Two problems here with peek/poke
+    1. you shouldn't have to preload with x:1 (BUG)
+    2. setting a subitem returns the full spacevar, not just the subitem value (BUG)
+      {* (:x 1) | $>hash}
+        {"x":1}
 
-    {:ash | $>hash.{"two"}} {$hash}
-      ash {"x":1,"two":"ash"}
+      {:ash | $>hash.{"two"}} {$hash}
+        ash {"x":1,"two":"ash"}
 
-    {:ash | $>hash.{"two"}.monkey.flu} {$hash}
-      ash {"x":1,"two":{"monkey":{"flu":"ash"}}}
+      {:ash | $>hash.{"two"}.monkey.flu} {$hash}
+        ash {"x":1,"two":{"monkey":{"flu":"ash"}}}
 
-    {:ash | $>hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
-      ash {"x":1,"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
+      {:ash | $>hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
+        ash {"x":1,"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
 
-  Double pipe leaks values if next segment is an error
-    {123 | >_foo || __foo}
+    Double pipe leaks values if next segment is an error
+      {123 | >_foo || __foo}
   
-  Tail position pipeline vars flake out [probably requires placeholder segtype]
-    {2 | >two | "" | _two}
-      2
+    Tail position pipeline vars flake out [probably requires placeholder segtype]
+      {2 | >two | "" | _two}
+        2
 
 
 <div class="page-header" id="id_app_dec">
     <h2>Decisions to be Made</h2>
 </div>
-  In approximate order of importance... write about these when you make them.
+    In approximate order of importance... write about these when you make them.
 
-  Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
+    Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
 
-  Objects vs Arrays in JSON output: 
-    - which commands retain keys? all that possibly can?
-    - when are objects converted back into arrays? only on demand? not specified? anytime there's integer keys? finally a use for to_json?
+    Objects vs Arrays in JSON output: 
+      - which commands retain keys? all that possibly can?
+      - when are objects converted back into arrays? only on demand? not specified? anytime there's integer keys? finally a use for to_json?
   
-  How do we walk a tree to prune things, extract things, etc?
-    -- peek/poke partially solves this, but we want to combine pathfinders with lambda blocks (one to decide whether to run the other).
+    How do we walk a tree to prune things, extract things, etc?
+      -- peek/poke partially solves this, but we want to combine pathfinders with lambda blocks (one to decide whether to run the other).
   
-  Port creation / port invocation / command invocation: these are very similar. 
-  - can we consolidate them?
-  - how do we give port creation/invocation the same degree of helpful insight commands have?
+    Port creation / port invocation / command invocation: these are very similar. 
+    - can we consolidate them?
+    - how do we give port creation/invocation the same degree of helpful insight commands have?
   
-  If all side effects are in outside ports, commands become pure and controlling access to them is less necessary. 
-  - how do we limit access to outside ports in a safe and progressively available way?
-  - do dialects matter? can we compile down based on a particular "library" of commands we expect to have available anywhere the code is executed?
-  - we'll still want to overwrite commands and possible white/black list them, but it's really the ports we're limiting... do commands contain ports? can we pull this back in to the command level in some way? do we want to?
+    If all side effects are in outside ports, commands become pure and controlling access to them is less necessary. 
+    - how do we limit access to outside ports in a safe and progressively available way?
+    - do dialects matter? can we compile down based on a particular "library" of commands we expect to have available anywhere the code is executed?
+    - we'll still want to overwrite commands and possible white/black list them, but it's really the ports we're limiting... do commands contain ports? can we pull this back in to the command level in some way? do we want to?
   
-  Knowing when exactly a block will execute is hard.
+    Knowing when exactly a block will execute is hard.
 
-  What should booleans coerce to? 0 and 1 seem reasonable, but "" is nice for certain UI use cases (which ones?).
+    What should booleans coerce to? 0 and 1 seem reasonable, but "" is nice for certain UI use cases (which ones?).
