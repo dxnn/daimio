@@ -133,7 +133,9 @@ Clickable examples:</pre>
       
       turn-fix 
         { __ | >ship
-        | * ( :angle  { $turtles.{_ship.user}.angle | add _ship.result | $>turtles.{_ship.user}.angle} 
+        | $turtles.{_ship.user}.angle | add _ship.result | >new_angle 
+        | $>turtles.{_ship.user}.angle
+        | * ( :angle  _new_angle
               :thing  {("turtle" _ship.user) | join} ) }
         
       forward-fix 
