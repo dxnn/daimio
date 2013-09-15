@@ -899,12 +899,12 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {(1 2 3) | __.#1.#1.#1}
         1
     
-      {$data.*.*.*.*}
-        ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
+      {$data.*.*.*.* | ( {__ | unique} {__ | count} )}
+        [["hashly","bashly","crashly"],9]
 
     Remember, the star operator exposes the list internals to future operators in parallel, so #1 here eats nine scalar values.
-      {$data.*.*.*.*.#1}
-        ["hashly","bashly","crashly","hashly","bashly","crashly","hashly","bashly","crashly"]
+      {$data.*.*.*.*.#1 | ( {__ | unique} {__ | count} )}
+        [["hashly","bashly","crashly"],9]
       {$data.*.*.*.* | __.#1}
         hashly
       
@@ -1207,9 +1207,9 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
         {"a":{"aa":1,"ab":2},"b":{"ba":1,"bb":999},"c":{"ca":1,"cb":2}} 
     
     but if there are gaps in your keyed list the results might be unexpected -- the generated keys are consecutive integers (offset by one million to avoid common collisions). 
-    this behavior is likely to change; please don't rely on generated keys.
+    this behavior is likely to change; please don't rely on generated keys. also, the ordering is off in chrome. (BUG)
       {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999}
-        {"1000000":[],"1000001":999,"a":1,"b":2,"c":3}
+        {"a":1,"b":2,"c":3,"1000000":[],"1000001":999}
       {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999 | sort}
         [[],1,2,3,999]
       
