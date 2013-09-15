@@ -13,63 +13,84 @@
   
   <div style="float:right; width: 320px; overflow: auto">
     <pre id="hints">
-      
-{forward 10} {turn 10}
+Use {10 | @>forward} to move forward.
+Use {10 | @>turn} to turn.
+Use {wait} to pause a moment.
 
-{forward 10 | turn 10}
-
-{10 | forward | turn}
-
-{ 120 | forward | turn 
-| forward | turn | forward | turn}
-
-{90 | forward | turn}
-
-{range 4 | do "{90 | forward | turn}"}
-
-Other math commands:
-{math mod value 7 by 2}
-{math pow value 2 exp 8}
+Math commands:
+{2 | add 5}
+{5 | mod 2}
+{1.234 | round}
 {math sin value 90}
 {math cos value 90}
-{math round value 1.234}
+{5 | math pow exp 2}
+{math random max 10}
 
-    </pre>
+Clickable examples:</pre>
+    
+<p><code>
+{ range 5 
+| do "{144 | @>forward | @>turn}"}</code></p>
+<p><code>
+{ range 5 
+| do "{ 10 | @>turn | range 5 
+      | do "{ 144 | @>forward 
+            | @>turn | wait}"}"}</code></p>
+<p><code>
+{ 61 | @>turn | range 5 
+| do "{ 90  | @>turn | 20 | @>forward 
+      | 270 | @>turn | 20 | @>forward | wait}"}</code></p>
+<p><code>
+{ 33 | @>turn | range 5 
+| do "{ 90  | @>turn | 20 | @>forward 
+      | -90 | @>turn | 20 | @>forward 
+      | -90 | @>turn | 20 | @>forward | wait}"}</code></p>
+<p><code>
+{ range 8 
+| do "{ 45 | @>turn | range 5 
+      | do "{ 90  | @>turn | 50 | @>forward 
+            | 270 | @>turn | 50 | @>forward 
+            | 270 | @>turn | 50 | @>forward | wait}"}"}</code></p>
+<p><code>
+{ range 36 
+| do "{ 10 | @>turn | range 4 
+      | do "{90 | @>forward | @>turn | wait}"}"}</code></p>
+<p><code>
+{ range 400 
+| do "{ __ | times 0.04 
+      | add 3.2 | @>forward 
+      | 14.2 | @>turn | wait}"}</code></p>
+<p><code>
+{7 | range 200 
+| do "{ __ | divide value 200 | @>forward 
+      | -16.3 |@>turn | wait}"}</code></p>
+<p><code>
+{ range 12 
+| do "{ 7 | range 100 
+      | do "{ __ | divide value 100 | @>forward 
+            | -14.1 | @>turn | wait}"}"}</code></p>
+<p><code>
+{ range 10 
+| do "{ range 9 
+      | do "{100 | @>forward | 200 | @>turn | wait}" 
+      | 36 | @>turn}"}</code></p>
+<p><code>
+{ range 4 
+| do "{ range 100 | list reverse 
+      | do "{__ | @>turn | 10 | @>forward | wait}" 
+      | 60 | @>turn}"}</code></p>
+<p><code>
+{ range 400 
+| do "{ 5 | @>forward 
+      | math random max 4 | times 90 | @>turn | wait}"}</code></p>
   </div>
+  
+  <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
   
   <form id="codeform">
     <div><textarea id="code" name="code" rows="4" cols="100"></textarea></div>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
-  
-  <pre id="morehints">
-{range 5 | do "{144 | forward | turn}"}
-
-{range 5 | do "{turn 10 | range 5 | do "{ 144 | forward | turn | wait}"}"}
-
-{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 | wait}"}"}
-
-{range 5 | do "{turn 90 | forward 20 | turn 270 | forward 20 |  turn 270 | forward 20 | wait}"}"}
-
-{range 8 |  do "{turn 45 | range 5 | do "{turn 90 | forward 50 | turn 270 | forward 50 |  turn 270 | forward 50 | wait}"}"}"}
-
-{range 36 | do "{turn 10 | range 4 | do "{90 | forward | turn | wait}"}"}
-
-{range 400 | do "{__ | times 0.04 | add 3.2 | forward | turn 14.2 | wait}"}
-
-{7 | range 200 | do "{__ | divide value 200 | forward | turn -16.3 | wait}"}
-
-{range 12 | do "{7 | range 100 | do "{__ | divide value 100 | forward | turn -14.1 | wait}"}"}
-
-{range 10 | do "{range 9 | do "{forward 100 | turn 200 | wait}" | turn 36}"}
-
-{range 4 | do "{range 100 | list reverse | do "{__ | turn | forward 10 | wait}" | turn 60}"}
-
-{range 400 | do "{forward 5 | math random max 4 | times 90 | turn | wait}"}
-
-  </pre>
-  
-  <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
   
   <script type="text/daimio" id="spaceseeds">
     execspace
@@ -111,7 +132,7 @@ Other math commands:
       @turtle-add
       
       turn-fix 
-        { __ | >ship | tap
+        { __ | >ship
         | * ( :angle  { $turtles.{_ship.user}.angle | add _ship.result | $>turtles.{_ship.user}.angle} 
               :thing  {("turtle" _ship.user) | join} ) }
         
@@ -141,13 +162,21 @@ Other math commands:
       
       execspace.forward -> forward-fix
       forward-fix.svg-move -> @svg-move 
-      forward-fix.svg-add-line -> {__ | tap} -> @svg-add-line
+      forward-fix.svg-add-line -> @svg-add-line
       
       execspace.turn -> turn-fix -> @svg-rotate
       
   </script>
   
   
+  <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
+  <script src="../codemirror/lib/codemirror.js"></script>
+  <script src="../codemirror/mode/daimio/daimio.js"></script>
+  
+  <link rel="stylesheet" href="../codemirror/addon/hint/show-hint.css">
+  <script src="../codemirror/addon/hint/show-hint.js"></script>
+  <script src="../codemirror/addon/hint/daimio-hint.js"></script>
+
   <script type="text/javascript">   
     D.import_port_type('turtle-add', {
       dir: 'out',
@@ -184,8 +213,51 @@ Other math commands:
       OuterSpace = new D.Space(outerseed) // published for debug
       
       D.send_value_to_js_port('init', 1) // activate init
-    })
+      
+      var codenodes = document.getElementsByTagName('code')
+      ~[].slice.call(codenodes)
+        .forEach(function(node) {
+          node.addEventListener('click', function(ev) {
+            editor.setValue(
+              ev.target.innerHTML.replace(/&gt;/g, '>')
+                                 .replace(/&lt;/g, '<')
+                                 .replace(/^\s+|\s+$/g, ''))
+            editor.focus()
+            editor.setCursor(100, 1000)})})
+
+
+      // CODEMIRROR EDITOR
+      var ge = document.getElementById.bind(document)
+         editor = CodeMirror.fromTextArea(ge('code'), {})
     
+      editor.setSize('616px', editor.defaultTextHeight() * 7 + 8)
+      editor.display.wrapper.style.backgroundColor = '#f8f8f8'
+    
+      CodeMirror.commands.autocomplete = function(instance) {
+        CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
+          extraKeys: {'Space': function(instance, hint) {hint.pick()}}
+        , completeSingle: false
+        , closeCharacters: /[\n\t|"]/
+        })
+      }
+
+      editor.on("change", function(instance, change) {
+        CodeMirror.commands.autocomplete(instance)
+      })
+
+      editor.on("beforeChange", function(instance, change) {
+        // add space to changes caused by autocomplete
+        if(change.from.constructor != CodeMirror.Pos && !change.origin) {
+          change.update(change.from, change.to, [change.text[0] + " "])
+          return true
+        }
+      })
+      
+      editor.setOption('extraKeys', {
+        "Tab": false,
+      })
+      
+    })
   </script>
   
 </body>

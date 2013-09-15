@@ -313,7 +313,7 @@ D.port_standard_pairup = function(port) {
 D.port_standard_enter = function(ship, process) {
   if(process && process.state && process.state.secret) { // for exec ports
     process.state.secret.result = ship
-    ship = process.state.secret
+    ship = D.clone(process.state.secret)
   }
   
   if(this.pair)
