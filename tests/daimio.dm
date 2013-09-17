@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header" id="welcome">
   <h1>Welcome to Daimio!</h1>
 </div>
 
@@ -7,8 +7,6 @@ This document serves as a primer, tutorial, specification, test suite and REPL f
 Daimio is a framework for building programmable web applications, as well as the dataflow language used within that framework. 
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
-
-Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing list</a> to join the fun!
 
 
 <div class="page-header" id="daimio_primer">
@@ -338,7 +336,7 @@ Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing
   <h2>In Depth: Pipes</h2>
 </div>
 
-  You can use the pipe ('|') to pass the output of one command into an input of another.
+  You can use the pipe (<code>|</code>) to pass the output of one command into an input of another.
   
     Split, then join:
       {string split value "shantung weft repp slub" on " " | string join on ", "}
@@ -349,7 +347,7 @@ Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing
         shantung, slub
   
   
-  In some ways the pipe is syntactic sugar for *commands as parameter values*, though the two differ slightly in implementation. The following commands are essentially equivalent to the above pipelines.
+  In some ways the pipe is syntactic sugar for <strong>commands as parameter values</strong>, though the two differ slightly in implementation. The following commands are essentially equivalent to the above pipelines.
   
     Split, then join:
       {string join on ", " value {string split value "shantung weft repp slub" on " "}}
@@ -387,7 +385,7 @@ Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing
       {:asdf ||}{string join value (:one :two)}
         onetwo
   
-      the __ is pronounced "magic", because "double underscore" is a mouthful.
+      the <code>__</code> is pronounced "magic," because "double underscore" is a mouthful.
       the add command is powerful.
         {21 | (__ __) | add}
           42
@@ -445,9 +443,9 @@ Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing
       {21 | add (__ __ -1)}
         [42,42,20]
 
-    Rethinking Case 2. Having two different meanings of __ is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
-    [well, for one reason, some aliases have pipes in them: {(1 0 3) | map "{then :ham else :foo}"} -> (:ham :foo :ham) via front-pipes]
-    maybe... maybe having ({__} {__}) freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
+    Rethinking Case 2. Having two different meanings of <code>__</code> is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
+    [well, for one reason, some aliases have pipes in them: <code>{(1 0 3) | map "{then :ham else :foo}"}</code> -> <code>(:ham :foo :ham)</code> via front-pipes]
+    maybe... maybe having <code>({__} {__})</code> freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
     and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
     BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
   
