@@ -93,7 +93,10 @@
       // handle code
       if(mode == 'code') {
         html += '<div class="panel panel-default">' // note: this gets closed later
-        html += '<div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '<span class="glyphicon glyphicon-arrow-left"></span></pre></code></div>'
+        html += '<div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '</pre></code></div>'
+        
+    // J: i took out the glyphs for now sorry! let's put them back or something ok!
+    // <span class="glyphicon glyphicon-arrow-left"></span>
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
@@ -191,8 +194,6 @@
             <li><a href="#id_string_examples">String</a></li>
           </ul>
         </li>
-      </ul>
-      <ul class="nav navbar-nav navbar-right">
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Appendices <b class="caret"></b></a>
           <ul class="dropdown-menu">
@@ -202,6 +203,18 @@
             <li><a href="#id_app_dec" class="">Decisions to be Made</a></li>
           </ul>
         </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Demos <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a href="demos/button_timer.html" class="">Simple Counter</a></li>
+            <li><a href="demos/excitebikes.html" class="">Excitable Media</a></li>
+            <li><a href="demos/goodideas.html" class="">TodoMVC</a></li>
+            <li><a href="demos/turtle_solo.html" class="">Lonely Turtle</a></li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li class="active"><a href="https://github.com/dxnn/daimio">Download on Github</a></li>
       </ul>
     </div><!-- /.navbar-collapse -->
   </nav>

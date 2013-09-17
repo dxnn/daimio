@@ -2,9 +2,8 @@
 <html> 
 <head> 
   <meta charset="utf-8">
-  <title>A Push My Button Adventure</title>
-  <!--<script type="text/javascript" src="../get.php?file=daimio"></script>-->
-  <script type="text/javascript" src="../daimio_composite.js"></script>
+  <title>Sequence Adventures</title>
+  <script type="text/javascript" src="../../daimio_composite.js"></script>
 </head>
 
 <body>
@@ -97,13 +96,6 @@
       changed -> {$seq | max | >max | $seq | each block "{__ | divide by _max | times 5 | math round | >index | $chartchars.{_index}}" with {* (:max _max)} | join} -> @sparkline
 
   </script>
-  
-  <!--
-    - start with context: we're going to explore sequence generation and daimio interfaces 
-    - slow down and explain errors (where they come from and how they are fixed)
-    - explain scaffolding more thoroughly
-  -->
-   
   
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {

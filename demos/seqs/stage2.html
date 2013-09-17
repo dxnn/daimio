@@ -1,0 +1,91 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Sequences</title>
+  <script type="text/javascript" src="../../daimio_composite.js"></script>
+</head>
+<body>
+
+  <form id="add1">
+    <p><input type="submit" value="Add 1"></p>
+  </form>
+  
+  <form id="addn">
+    <p>
+      <input type="text" name="val" value="" id="val" size="3">
+      <input type="submit" value="add">
+    </p>
+  </form>
+
+  <p>Your sequence</p>
+  <div id="seq"> &nbsp; </div>
+  
+  
+  <p>The code</p>
+  <pre>
+&lt;form id=&quot;addn&quot;&gt;
+  &lt;p&gt;
+    &lt;input type=&quot;text&quot; name=&quot;val&quot; value=&quot;&quot; id=&quot;val&quot; size=&quot;3&quot;&gt;
+    &lt;input type=&quot;submit&quot; value=&quot;add&quot;&gt;
+  &lt;/p&gt;
+&lt;/form&gt;
+  
+outer
+  $seq []
+  
+  // INIT
+  changed {__}
+  saver {__ | list poke data $seq | $&gt;seq}
+  saver -&gt; changed
+
+  // ADD 1
+  @add1 dom-on-submit
+  @add1 -&gt; {$seq.#-1 | add 1} -&gt; saver
+  
+  // ADD N
+  @addn dom-on-submit
+  @addn -&gt; {__.val | add $seq.#-1} -&gt; saver
+  
+  // SHOW
+  @seq dom-set-text
+  changed -&gt; {$seq | join on &quot; &quot;} -&gt; @seq
+
+</pre>
+  
+  
+
+  <script type="text/daimio" id="spaceseeds">
+    outer
+      $seq []
+      
+      // INIT
+      changed {__}
+      saver {__ | list poke data $seq | $>seq}
+      saver -> changed
+
+      // ADD 1
+      @add1 dom-on-submit
+      @add1 -> {$seq.#-1 | add 1} -> saver
+      
+      // ADD N
+      @addn dom-on-submit
+      @addn -> {__.val | add $seq.#-1} -> saver
+      
+      // SHOW
+      @seq dom-set-text
+      changed -> {$seq | join on " "} -> @seq
+      
+  </script>
+   
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
+    })
+  </script>
+  
+</body>
+</html>

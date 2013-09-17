@@ -1,0 +1,110 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Sequences</title>
+  <script type="text/javascript" src="../../daimio_composite.js"></script>
+</head>
+<body>
+
+  <form id="add1">
+    <p><input type="submit" value="Add 1"></p>
+  </form>
+  
+  <form id="addn">
+    <p>
+      <input type="text" name="val" value="" id="val" size="3">
+      <input type="submit" value="add">
+    </p>
+  </form>
+
+  <form id="whatever">
+    <p>
+      <input type="text" name="code" value="" id="code" size="80">
+      <input type="submit" value="do whatever">
+    </p>
+  </form>
+  
+  <form id="safeway">
+    <p>
+      <input type="text" name="safecode" value="" id="safecode" size="80">
+      <input type="submit" value="safer twever">
+    </p>
+  </form>
+  
+  <p>Your sequence</p>
+  <div id="seq"> &nbsp; </div>
+  
+  
+  <p>The code</p><pre>
+&lt;form id=&quot;safeway&quot;&gt;
+  &lt;p&gt;
+    &lt;input type=&quot;text&quot; name=&quot;safecode&quot; value=&quot;&quot; id=&quot;safecode&quot; size=&quot;80&quot;&gt;
+    &lt;input type=&quot;submit&quot; value=&quot;safer twever&quot;&gt;
+  &lt;/p&gt;
+&lt;/form&gt;
+
+safespace
+  @in
+  @out
+  boxed {__.code | unquote | run with {* (:seq __in.seq)}}
+  @in -&gt; boxed -&gt; @out
+
+outer
+  @safeway dom-on-submit
+  @safeway -&gt; {* (:code __.safecode :seq $seq)} -&gt; safespace.in
+  safespace.out -&gt; saver
+
+</pre>
+  
+  
+
+  <script type="text/daimio" id="spaceseeds">
+    safespace
+      @in
+      @out
+      boxed {__.code | unquote | run with {* (:seq __in.seq)}}
+      @in -> boxed -> @out
+
+    outer
+      $seq []
+      
+      // INIT
+      changed {__}
+      saver {__ | list poke data $seq | $>seq}
+      saver -> changed
+
+      // ADD 1
+      @add1 dom-on-submit
+      @add1 -> {$seq.#-1 | add 1} -> saver
+      
+      // ADD N
+      @addn dom-on-submit
+      @addn -> {__.val | add $seq.#-1} -> saver
+      
+      // CODE
+      @whatever dom-on-submit
+      @whatever -> {__.code | unquote | run with {* (:seq $seq)}} -> saver
+      
+      // SAFEWAY
+      @safeway dom-on-submit
+      @safeway -> {* (:code __.safecode :seq $seq)} -> safespace.in
+      safespace.out -> saver
+
+      // SHOW
+      @seq dom-set-text
+      changed -> {$seq | join on " "} -> @seq
+      
+  </script>
+   
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
+    })
+  </script>
+  
+</body>
+</html>

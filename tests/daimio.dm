@@ -8,6 +8,9 @@ Daimio is a framework for building programmable web applications, as well as the
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
 
+Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing list</a> to join the fun!
+
+
 <div class="page-header" id="daimio_primer">
   <h2>Daimio Primer</h2>
 </div>
