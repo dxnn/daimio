@@ -2845,7 +2845,7 @@ D.SegmentTypes.PortSend = {
       }
     }
     else {
-      D.setError('Invalid port detected')
+      D.setError('Invalid port " + to + " detected')
     }
     
     return inputs[0]
