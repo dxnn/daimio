@@ -93,10 +93,7 @@
       // handle code
       if(mode == 'code') {
         html += '<div class="panel panel-default">' // note: this gets closed later
-        html += '<div class="panel-body"><code><pre>' + code_string.replace(/^\s+|\s+$/g, '') + '</pre></code></div>'
-        
-    // J: i took out the glyphs for now sorry! let's put them back or something ok!
-    // <span class="glyphicon glyphicon-arrow-left"></span>
+        html += '<div class="panel-body"><code><pre><span class="glyphicon glyphicon-arrow-left"></span>' + code_string.replace(/^\s+|\s+$/g, '') + '</pre></code></div>'
         
         code_string = code_string.replace(/^\s+|\s+$/g, '')
         
@@ -234,15 +231,42 @@
               </div>
             </div>
           </div>
-          <p>Click code to put it in the REPL.</p>
-          <p>Use Space or Enter or double-click to activate autocompletion.</p>
-          <p>Use Esc to cancel autocomplete, and to toggle its activation.</p>
-          <p>Use Up and Down arrows to cycle through your history.</p>
-          <p>History is saved between sessions.</p>
-          <p>Start with a '{' and end with a '}' when writing daimio commands.</p>
+          
+          <!-- HELP -->
+          <ul class="list-group" id="help">
+            <li class="list-group-item">
+              <div class="row">
+                <span class="col-md-7">
+                  Click code snippets to copy into the REPL. 
+                </span>
+                <span class="col-md-5">
+                  <span class="pull-right">
+                    <code class="docs-style"><pre><span class="glyphicon glyphicon-arrow-left"></span>{(:one 1 :two 2)}</pre></code>
+                  </span>
+                </span>
+              </div>  
+            </li>
+            <li class="list-group-item">Use <em>Space</em> or <em>Enter</em> or double-click to activate autocompletion.</li>
+            <li class="list-group-item">Use <em>Esc</em> to cancel autocomplete, and to toggle its activation.</li>
+            <li class="list-group-item">Use <em>Up</em> and <em>Down</em> arrows to cycle through your history.</li>
+            <li class="list-group-item">History is saved between sessions.</li>
+            <li class="list-group-item">Start with a '{' and end with a '}' when writing Daimio commands.</li>
+          </div>
         </div>
-      </div>
       <div class="col-xs-12 col-md-6">
+        
+        <!-- INTRO -->
+        <div id="intro">
+          <img src="../images/daimio_logo.png" alt="" />
+          <h3>A system for building programmable applications.</h3>
+          <p class="lead">Web applications are rarely customizable&#8212;you can&#8217;t tailor interfaces, extend functionality, or publish your modifications. Daimio makes bottom-up change possible by expressing every action your application can perform in a dialect of a language, and making execution contexts that speak different subsets of that dialect accessible.</p>          
+          <p>That means you can send raw code to the server. It means you can build extensions and share them. It means you can send code to other users for direct execution on their machines. <strong>And that means the server is merely one of potentially many trusted resources.</strong> Welcome to the world of programmable applications. Welcome to the world of universal computing. Welcome to Daimio.</p>
+          <div class="btn-group text-center">
+            <a href="https://groups.google.com/forum/#!forum/daimio" class="btn btn-success">Daimio Google Group</a>
+            <a href="https://github.com/dxnn/daimio" class="btn btn-info">Download on Github</a>
+          </div>
+        </div>
+        
         <!-- DOCUMENTATION -->
         <div id="docs">
           <p></p>
@@ -419,7 +443,7 @@
 
   </script>
 
-  <script src="..//js/jquery.js"></script>
+  <script src="../js/jquery.js"></script>
   <script src="../js/bootstrap.min.js"></script>
  
 </body>

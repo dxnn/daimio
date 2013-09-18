@@ -2042,8 +2042,8 @@ fieldset[disabled] .btn-success.active {
 }
 .btn-info {
   color: #ffffff;
-  background-color: #5bc0de;
-  border-color: #46b8da;
+  background-color: #e46868;
+  border-color: #e05252;
 }
 .btn-info:hover,
 .btn-info:focus,
@@ -2051,8 +2051,8 @@ fieldset[disabled] .btn-success.active {
 .btn-info.active,
 .open .dropdown-toggle.btn-info {
   color: #ffffff;
-  background-color: #39b3d7;
-  border-color: #269abc;
+  background-color: #de4545;
+  border-color: #d02525;
 }
 .btn-info:active,
 .btn-info.active,
@@ -2074,8 +2074,8 @@ fieldset[disabled] .btn-info:active,
 .btn-info.disabled.active,
 .btn-info[disabled].active,
 fieldset[disabled] .btn-info.active {
-  background-color: #5bc0de;
-  border-color: #46b8da;
+  background-color: #e46868;
+  border-color: #e05252;
 }
 .btn-link {
   color: #5dcb5d;
@@ -2840,7 +2840,7 @@ input[type="button"].btn-block {
 .dropdown-menu > li > a:focus {
   text-decoration: none;
   color: #262626;
-  background-color: #f5f5f5;
+  background-color: #eeeeee;
 }
 .dropdown-menu > .active > a,
 .dropdown-menu > .active > a:hover,
@@ -4273,11 +4273,11 @@ textarea.input-group-sm > .input-group-btn > .btn {
   background-color: #449d44;
 }
 .label-info {
-  background-color: #5bc0de;
+  background-color: #e46868;
 }
 .label-info[href]:hover,
 .label-info[href]:focus {
-  background-color: #31b0d5;
+  background-color: #dc3d3d;
 }
 .label-warning {
   background-color: #f0ad4e;
@@ -4543,7 +4543,7 @@ a.thumbnail:focus {
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
 }
 .progress-bar-info {
-  background-color: #5bc0de;
+  background-color: #e46868;
 }
 .progress-striped .progress-bar-info {
   background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.15)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.15)), color-stop(0.75, rgba(255, 255, 255, 0.15)), color-stop(0.75, transparent), to(transparent));
@@ -6047,6 +6047,30 @@ body {
     width: 565px;
   }
 }
+/* help */
+#help em {
+  color: #e46868;
+  font-style: normal;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+}
+#help pre {
+  padding: 3px 4px;
+  background: #fff;
+  margin: 0;
+  border: none;
+}
+#help pre:hover {
+  background-color: #5cb85c;
+  color: #ffffff;
+}
+#help pre .glyphicon {
+  margin-right: 10px;
+}
+#help code {
+  padding: 0;
+  display: block;
+  cursor: pointer;
+}
 /* History panel in REPL */
 #console {
   height: 350px;
@@ -6058,50 +6082,69 @@ body {
 #history div.cmd {
   margin-bottom: 13px;
 }
-#history div.cmd p.result {
-  margin-top: 2px;
-  padding-left: 7px;
-}
-#history p {
-  padding: 0px;
-  margin: 0px;
-}
-#history .input {
+#history div.cmd p.input {
   background-color: #FEFFDE;
-  color: #0E75C9;
+  color: #e46868;
+  padding: 2px 4px;
+  font-size: 90%;
+  margin-bottom: 0;
 }
-#history .result {
+#history div.cmd p.result {
+  margin-top: 4px;
+  padding-left: 7px;
   background-color: #FFF;
-  color: #333;
+  color: #222222;
+}
+/* intro */
+#intro {
+  margin-top: 30px;
+}
+#intro p.lead strong {
+  color: #5dcb5d;
 }
 /* Docs column */
-#docs pre {
+#docs .panel pre {
   padding: 3px 4px;
   background: #fff;
   margin: 0;
   border: none;
 }
-#docs pre:hover {
+#docs .panel pre:hover {
   background-color: #5cb85c;
   color: #ffffff;
 }
-#docs code {
+#docs .panel pre .glyphicon {
+  margin-right: 10px;
+}
+#docs .panel code {
   padding: 0;
   display: block;
   cursor: pointer;
 }
-#docs code:hover {
-  background: yellow !important;
-}
 #docs .assert {
   font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
 }
-#docs p.ws2 {
-  font-weight: 800;
-  padding-bottom: 9px;
-  margin: 40px 0 20px;
-  border-bottom: 1px solid #eeeeee;
-}
 #docs div.page-header {
   padding-top: 20px;
+}
+#docs div.page-header#welcome {
+  padding-top: 0;
+}
+.code-snippet pre {
+  padding: 3px 4px;
+  background: #fff;
+  margin: 0;
+  border: none;
+}
+.code-snippet pre:hover {
+  background-color: #5cb85c;
+  color: #ffffff;
+}
+.code-snippet pre .glyphicon {
+  margin-right: 10px;
+}
+.code-snippet code {
+  padding: 0;
+  display: block;
+  cursor: pointer;
 }
