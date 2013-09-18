@@ -11,7 +11,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 Sign up for the <a href="https://groups.google.com/forum/#!forum/daimio">mailing list</a> to join the fun!
 
 
-<div class="page-header" id="daimio_primer">
+<div class="page-header" id="id_daimio_primer">
   <h2>Daimio Primer</h2>
 </div>
 
