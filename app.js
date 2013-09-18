@@ -78,7 +78,7 @@ db.open(function(err, db) {
 
   // console.log('connected!'); 
   
-  app.listen(8008);
+  app.listen(8000);
   
   // io.on('connection', function (socket) {
   //   socket.on('bounce', function (data) {
