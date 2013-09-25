@@ -1,5 +1,5 @@
 <div class="page-header" id="welcome">
-  <h1>Welcome to Daimio!</h1>
+  <h2>Preface</h2>
 </div>
 
 This document serves as a primer, tutorial, specification, test suite and REPL for the Daimio language.
@@ -7,6 +7,31 @@ This document serves as a primer, tutorial, specification, test suite and REPL f
 Daimio is a framework for building programmable web applications, as well as the dataflow language used within that framework. 
 
 On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
+
+
+<div class="page-header" id="pronunciation">
+  <h2>Pronunciation guide</h2>
+</div>
+
+<h4>Daimio introduces as little syntax as possible, but there's a few symbols you may not be familiar with. Here's how you read them.</h4>
+
+  <strong>&gt;</strong> reads 'put', because it looks like a sideways highway
+
+  <strong>@</strong> reads 'port', because it looks like a wormhole
+
+  <strong>_</strong> reads 'read', as in read-only
+
+  <strong>$</strong> reads 'space'
+
+<h4>Combo elements:</h4>
+
+  <strong>@&gt;</strong> reads 'port put', or 'ice cream'
+
+  <strong>$&gt;</strong> reads 'space put', or 'crepe'
+
+  <strong>__</strong> reads 'read last'
+
+<h5>We'll look at each of those in more detail later, but now you know how to say it!</h5>
 
 
 <div class="page-header" id="id_daimio_primer">
@@ -206,7 +231,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   
     There's a few disadvantages to this approach in a traditional language, like awkward syntax for if-then-else (which becomes a function that takes a boolean expression and two callbacks). But we find that in a dataflow language like Daimio the convention is quite natural, and any semantic clumsiness is outweighed by the advantages:
     - no distinction between built-ins and application functionality means you can easily create new low-level control constructs.
-    - "everything is a command" reduces conceptual weight: all commands return a value, all commands take named parameters, param evaluation timing is consistent, and so on.
+    - "everything is a command" reduces conceptual weight: all commands return a value, all commands take named parameters, parameter evaluation timing is consistent, and so on.
     - facilities that affect commands (like aliases) can be used on anything in the system -- no special cases.
   
     We saw in the primer that commands have a handler, a method and named parameters, and that parameter order is irrelevant.
@@ -260,9 +285,15 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
     Ah. So it looks like the trailing param value is negated if the word after the alias is a parameter name instead of a param value. (Param names are always bare words, param values never are.) It then becomes filled in through the pipe via the natural piping process. Interesting.
   
     We just learned that param values are never bare words. What kinds of things can be param values?
-    numbers, strings, lists, pipelines, fancies
-  
-    Point out that unlike other fancies the ice cream @>x crepe $>x and funnel >x fancies can't be used as param values. They also *only* take their values from incoming pipes. This is a slightly odd case, but we can talk about it more in the Variables section (which really should be renamed since only $x is actually variable).
+    - numbers: 1, 0.45
+    - strings: "foo" :foo
+    - lists: ((1 2) (3 4))
+    - pipelines: {:foo}
+    - variables: _xyz $abc
+    
+    There are two things that can be pipeline segments but can't be parameter values:
+    - bare commands, e.g. 'math add' doesn't work -- put it in a pipeline
+    - 'put' expressions: >x $>y @>z
   
 <!--
 (:barbera :belvest :brioni)
@@ -567,6 +598,10 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
   <h2>In Depth: Variables</h2>
 </div>
     
+    &gt; implies movement -- putting data somewhere always implies shuffling a copy to somewhere else.
+    
+    references (in-pipeline mutation, copy-on-write, $foo and _foo (copy-on-read)
+    
     ----- talk about pipeline vars, injected vars, imported vars, and then space vars
     
     (so pipelines are actually DAGs)
@@ -605,8 +640,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {$foo.#2}
         2
   
-  We'll see some more ways to reach into variables in a bit.
-
+  We'll see some more ways to reach into variables in a bit.  
 
 <div class="page-header" id="id_blocks">
   <h2>In Depth: Blocks</h2>
@@ -2900,9 +2934,48 @@ BASIC SYNTAX TESTS
         777
 
 
+<div class="page-header" id="id_pipeline_parallelism">
+  <h2>Some notes on pipeline parallelism</h2>
+</div>
+
+A few example pipelines we can parallelize internally.
+
+//    {  123 
+//     | >in | add 1 | >out1
+//    || _in | add 2 | >out2
+//    || _in | add 3 | >out3
+//    || (out1 out2 out3)}
+Those three middle pipelines could run in parallel.
+
+//    {123 | (
+//      {__ | add 1}
+//      {__ | add 2}
+//      {__ | add 3}
+//    )}
+
+//    {123 | (
+//      {__ | add $x | $>x}
+//      {__ | add $x | $>x}
+//      {__ | add $x | $>x}
+//    )}
+
+That last one leads to non-determinism if you parallelize without fixing the execution order. 
+
+If we're going to allow in-pipeline parallelism, we open up two questions: 
+1) what is $x inside each pipeline?
+2) what is $x at the end? 
+
+And probably, the answers are
+1) A separate copy of the initial $x for each pipeline (clearly this hurts performance, but a: we don't care b: don't use space vars in parallel pipelines c: don't be daft)
+2) Last Write Wins, in expressed order [does compilation ever hurt reasoning about this, or is it guaranteed order invariant?]
+
+EXCEPT. Except if we do the above, $x is completely different at the end than if we don't run in parallel. 
+SO: space vars CAN NOT be written in pipelines run in parallel -- writing a space var forces the entire sequence to be run sequentially. 
+Same holds true for writing to like-named pipeline vars: those are errors, and force sequential execution.
+
 
 <div class="page-header" id="id_app_known">
-    <h2>Known Bugs</h2>
+  <h2>Known Bugs</h2>
 </div>
 
     Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
