@@ -21,13 +21,13 @@
 
   <strong>_</strong> reads 'read', as in read-only
 
-  <strong>$</strong> reads 'space'
+  <strong>$</strong> reads 'space variable', or 'spacevar'
 
 <h4>Combo elements:</h4>
 
-  <strong>@&gt;</strong> reads 'port put', or 'ice cream'
+  <strong>&gt;@</strong> reads 'put port'
 
-  <strong>$&gt;</strong> reads 'space put', or 'crepe'
+  <strong>&gt;$</strong> reads 'put spacevar'
 
   <strong>__</strong> reads 'read last'
 
@@ -1687,6 +1687,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {0 | min 1}
       0
  
+ 
   <h3>MOD</h3>
   
     Note that this is the true modulus operation, rather than JS's default remainder operation. Checking parity over negative integers becomes easier this way, for example.
@@ -1695,7 +1696,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         1
       {math mod value -7 by 2}
         1
-        
+      
       {5 | mod 13}
         5
       {-5 | mod 13}
@@ -1704,7 +1705,11 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         -5
       {5 | mod -13}
         -8
- 
+
+      {0 | mod 4}
+        0
+        
+   
   <h3>POW</h3>
   
     {math pow value 2 exp 8}
