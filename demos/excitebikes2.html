@@ -27,7 +27,7 @@
       initializer
         {20 | range | map block "{20 | range | map block 0}"}
         // {64 | math random | math pow exp 0.1666 | math round}
-        // {0 | $>cells.{20 | range}.{range 20}}
+        // {0 | >$cells.{20 | range}.{range 20}}
       
       @init -> initializer
 
@@ -48,7 +48,7 @@
       try-change
         {__ | tap | >cells 
         | if $change 
-          then "{ "" | $>change | _cells 
+          then "{ "" | >$change | _cells 
                 | list poke path (_change.row _change.col) value _change.val}"
           with {* (:cells _cells :change $change)} 
           else _cells}
@@ -60,7 +60,7 @@
       // INPUT
       @touched dom-on-click .touch
       save-change
-        {__ | split on "x" | * (:row __.#1 :col __.#2 :val 4) | $>change}
+        {__ | split on "x" | * (:row __.#1 :col __.#2 :val 4) | >$change}
       @touched -> save-change
       
 

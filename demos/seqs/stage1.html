@@ -70,7 +70,7 @@
 
       // ADD 1
       @add1 dom-on-submit
-      @add1 -> {$seq.#-1 | add 1 | list poke data $seq | $>seq} -> changed
+      @add1 -> {$seq.#-1 | add 1 | list poke data $seq | >$seq} -> changed
       
       // SHOW
       @seq dom-set-text

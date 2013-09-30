@@ -25,9 +25,9 @@
       changed {__}
       show    {__}
       initializer
-        {20 | range | map block "{20 | range | map block 1}" | $>cells}
+        {20 | range | map block "{20 | range | map block 1}" | >$cells}
         // {64 | math random | math pow exp 0.1666 | math round}
-        // {0 | $>cells.{20 | range}.{range 20}}
+        // {0 | >$cells.{20 | range}.{range 20}}
       
       @init -> initializer
 
@@ -38,24 +38,24 @@
 
       // LOOP
       process 
-        { () | $>mods | 0 | $>max
+        { () | >$mods | 0 | >$max
         | $cells | map block "{
             __ | map with {* (:row _key)} block "{
-              __ | >n | max $max | $>max | _n | mod 2 | switch (
+              __ | >n | max $max | >$max | _n | mod 2 | switch (
                 0 "{ __ | mod 8
                    | then "{ __in | divide by 2}"
-                     else "{ $mods | poke (_row _key 1) | $>mods | 0}"
+                     else "{ $mods | poke (_row _key 1) | >$mods | 0}"
                      with {* (:row _row :key _key "__in" __in)} }"
                 1 "{ __ | times 3 | add 1}")
               | run with {* (:row _row :key _key "__in" _n)} 
               | else 0}"}"
-        | $>cells
+        | >$cells
        || $mods | each block "{ 
             __ | >x | (
-              {$cells.{_x.#1 | minus 1 | max 0}.{_x.#2} | add _x.#3 | $>cells.{_x.#1 | minus 1 | max 0}.{_x.#2}}
-              {$cells.{_x.#1 | add 1 | min 19}.{_x.#2}  | add _x.#3 | $>cells.{_x.#1 | add 1 | min 19}.{_x.#2}}
-              {$cells.{_x.#1}.{_x.#2 | minus 1 | max 0} | add _x.#3 | $>cells.{_x.#1}.{_x.#2 | minus 1 | max 0}}
-              {$cells.{_x.#1}.{_x.#2 | add 1 | min 19}  | add _x.#3 | $>cells.{_x.#1}.{_x.#2 | add 1 | min 19}}
+              {$cells.{_x.#1 | minus 1 | max 0}.{_x.#2} | add _x.#3 | >$cells.{_x.#1 | minus 1 | max 0}.{_x.#2}}
+              {$cells.{_x.#1 | add 1 | min 19}.{_x.#2}  | add _x.#3 | >$cells.{_x.#1 | add 1 | min 19}.{_x.#2}}
+              {$cells.{_x.#1}.{_x.#2 | minus 1 | max 0} | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | minus 1 | max 0}}
+              {$cells.{_x.#1}.{_x.#2 | add 1 | min 19}  | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | add 1 | min 19}}
             )}" }"}"}
 
 // { $cells | poke path ( ({_x.#1} {_x.#2 | add 1}) 
@@ -77,8 +77,8 @@
         | list poke path  (_coords.#1 _coords.#2) 
                     value { $cells.{_coords.#1}.{ _coords.#2} 
                           | add 59} 
-        | $>cells}
-        // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
+        | >$cells}
+        // {__ | split on "x" | >coords | 4 | >$cells.{_coords.#1}.{_coords.#2}}
       @touched -> activate -> changed
         
 

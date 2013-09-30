@@ -69,7 +69,7 @@
       // show seq
       @seq  dom-set-text
       changed {__}
-      saver {__ | add 0 | list poke data $seq | $>seq}
+      saver {__ | add 0 | list poke data $seq | >$seq}
       saver -> changed -> {$seq | join on " "} -> @seq
       
       // add 1
@@ -91,7 +91,7 @@
       
       // everything
       @everything dom-on-submit
-      @everything -> {__.everycode | unquote | map data $seq | $>seq} -> changed
+      @everything -> {__.everycode | unquote | map data $seq | >$seq} -> changed
       
       // show sparkline
       @sparkline dom-set-text

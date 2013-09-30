@@ -762,7 +762,7 @@ D.import_fancy(':', {
   }
 })
 
-D.import_fancy('@>', {
+D.import_fancy('>@', {
   eat: function(token) {
     
     // TODO: throw a runtime error if it's not a valid port
@@ -774,10 +774,10 @@ D.import_fancy('@>', {
   }
 })
 
-D.import_fancy('$>', {
+D.import_fancy('>$', {
   eat: function(token) {
     
-    // TODO: change path to name, make $>foo set foo, make $>foo.baz.baa -> list poke path (:baz :baa) data $foo value __ | $>foo
+    // TODO: change path to name, make >$foo set foo, make >$foo.baz.baa -> list poke path (:baz :baa) data $foo value __ | >$foo
     
     var pieces = D.Parser.split_on(token.value, '.')
       , name = pieces.shift().slice(2)
@@ -4811,7 +4811,7 @@ D.ExecutionSpace =
     - or maybe you have to explicitly port requests to a higher oh we said that already
     
   - lambda explanation needs work... the quotes really throw people
-  - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | $> :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
+  - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | >$ :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
   
   
 */

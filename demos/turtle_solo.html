@@ -13,8 +13,8 @@
   
   <div style="float:right; width: 320px; overflow: auto">
     <pre id="hints">
-Use {10 | @>forward} to move forward.
-Use {10 | @>turn} to turn.
+Use {10 | >@forward} to move forward.
+Use {10 | >@turn} to turn.
 Use {wait} to pause a moment.
 
 Math commands:
@@ -30,59 +30,59 @@ Clickable examples:</pre>
     
 <p><code>
 { range 5 
-| do "{144 | @>forward | @>turn}"}</code></p>
+| do "{144 | >@forward | >@turn}"}</code></p>
 <p><code>
 { range 5 
-| do "{ 10 | @>turn | range 5 
-      | do "{ 144 | @>forward 
-            | @>turn | wait}"}"}</code></p>
+| do "{ 10 | >@turn | range 5 
+      | do "{ 144 | >@forward 
+            | >@turn | wait}"}"}</code></p>
 <p><code>
-{ 61 | @>turn | range 5 
-| do "{ 90  | @>turn | 20 | @>forward 
-      | 270 | @>turn | 20 | @>forward | wait}"}</code></p>
+{ 61 | >@turn | range 5 
+| do "{ 90  | >@turn | 20 | >@forward 
+      | 270 | >@turn | 20 | >@forward | wait}"}</code></p>
 <p><code>
-{ 33 | @>turn | range 5 
-| do "{ 90  | @>turn | 20 | @>forward 
-      | -90 | @>turn | 20 | @>forward 
-      | -90 | @>turn | 20 | @>forward | wait}"}</code></p>
+{ 33 | >@turn | range 5 
+| do "{ 90  | >@turn | 20 | >@forward 
+      | -90 | >@turn | 20 | >@forward 
+      | -90 | >@turn | 20 | >@forward | wait}"}</code></p>
 <p><code>
 { range 8 
-| do "{ 45 | @>turn | range 5 
-      | do "{ 90  | @>turn | 50 | @>forward 
-            | 270 | @>turn | 50 | @>forward 
-            | 270 | @>turn | 50 | @>forward | wait}"}"}</code></p>
+| do "{ 45 | >@turn | range 5 
+      | do "{ 90  | >@turn | 50 | >@forward 
+            | 270 | >@turn | 50 | >@forward 
+            | 270 | >@turn | 50 | >@forward | wait}"}"}</code></p>
 <p><code>
 { range 36 
-| do "{ 10 | @>turn | range 4 
-      | do "{90 | @>forward | @>turn | wait}"}"}</code></p>
+| do "{ 10 | >@turn | range 4 
+      | do "{90 | >@forward | >@turn | wait}"}"}</code></p>
 <p><code>
 { range 400 
 | do "{ __ | times 0.04 
-      | add 3.2 | @>forward 
-      | 14.2 | @>turn | wait}"}</code></p>
+      | add 3.2 | >@forward 
+      | 14.2 | >@turn | wait}"}</code></p>
 <p><code>
 {7 | range 200 
-| do "{ __ | divide value 200 | @>forward 
-      | -16.3 |@>turn | wait}"}</code></p>
+| do "{ __ | divide value 200 | >@forward 
+      | -16.3 |>@turn | wait}"}</code></p>
 <p><code>
 { range 12 
 | do "{ 7 | range 100 
-      | do "{ __ | divide value 100 | @>forward 
-            | -14.1 | @>turn | wait}"}"}</code></p>
+      | do "{ __ | divide value 100 | >@forward 
+            | -14.1 | >@turn | wait}"}"}</code></p>
 <p><code>
 { range 10 
 | do "{ range 9 
-      | do "{100 | @>forward | 200 | @>turn | wait}" 
-      | 36 | @>turn}"}</code></p>
+      | do "{100 | >@forward | 200 | >@turn | wait}" 
+      | 36 | >@turn}"}</code></p>
 <p><code>
 { range 4 
 | do "{ range 100 | list reverse 
-      | do "{__ | @>turn | 10 | @>forward | wait}" 
-      | 60 | @>turn}"}</code></p>
+      | do "{__ | >@turn | 10 | >@forward | wait}" 
+      | 60 | >@turn}"}</code></p>
 <p><code>
 { range 400 
-| do "{ 5 | @>forward 
-      | math random max 4 | times 90 | @>turn | wait}"}</code></p>
+| do "{ 5 | >@forward 
+      | math random max 4 | times 90 | >@turn | wait}"}</code></p>
   </div>
   
   <!-- {range 4 | do "{turn 100 | range 100 | list reverse | do "{__ | turn | forward 10 | wait}"}"} -->
@@ -118,7 +118,7 @@ Clickable examples:</pre>
         { __ | >ship
         | $colors.{_ship.user | times 11 | mod {$colors | count}} | >color 
         | * (:angle 0 :x 200 :y 200 :alpha 0.8 :color _color) 
-        | $>turtles.{_ship.user}
+        | >$turtles.{_ship.user}
         | _ship | list poke path :color value _color}
 
       @init -> {* (:user 1)} -> turtle-fix -> @turtle-add
@@ -134,7 +134,7 @@ Clickable examples:</pre>
       turn-fix 
         { __ | >ship
         | $turtles.{_ship.user}.angle | add _ship.result | >new_angle 
-        | $>turtles.{_ship.user}.angle
+        | >$turtles.{_ship.user}.angle
         | * ( :angle  _new_angle
               :thing  {("turtle" _ship.user) | join} ) }
         
@@ -143,14 +143,14 @@ Clickable examples:</pre>
         
         | _turtle.angle | add 90 | math cos | times _ship.result
         | add _turtle.x | max 0 | min 750 | >newx
-        | $>turtles.{_ship.user}.x 
+        | >$turtles.{_ship.user}.x 
         
         | _turtle.angle | add 90 | math sin | times _ship.result
         | add _turtle.y | max 0 | min 450 | >newy
-        | $>turtles.{_ship.user}.y
+        | >$turtles.{_ship.user}.y
         
         | * (:y _newy :x _newx :thing {("turtlebox" _ship.user) | join})
-        | @>svg-move 
+        | >@svg-move 
         
         | * ( :x1 {_turtle.x | add 15} 
               :y1 {_turtle.y | add 15} 
@@ -159,7 +159,7 @@ Clickable examples:</pre>
               :color _turtle.color 
               :alpha _turtle.alpha 
               :thing :mainsvg) 
-        | @>svg-add-line}
+        | >@svg-add-line}
       
       
       execspace.forward -> forward-fix

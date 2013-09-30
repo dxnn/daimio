@@ -192,7 +192,7 @@
   
   Variables
     space variables are mutable
-      {2 | $>foo | ( 1 2 3 ) | $>foo}
+      {2 | >$foo | ( 1 2 3 ) | >$foo}
         [1,2,3]
   
     and available across all blocks in the same space
@@ -224,7 +224,7 @@
         {"a":1,"b":2,"c":3,"d":4}
 
     dots are poke sugar too
-      {5 | $>foo.#2}
+      {5 | >$foo.#2}
         [1,5,3]
 
 
@@ -301,7 +301,7 @@
     
     There are two things that can be pipeline segments but can't be parameter values:
     - bare commands, e.g. 'math add' doesn't work -- put it in a pipeline
-    - 'put' expressions: >x $>y @>z
+    - 'put' expressions: >x >$y >@z
   
 <!--
 (:barbera :belvest :brioni)
@@ -351,7 +351,7 @@
   As you can see, the * operator (which is really just an alias for a command) uses the first value in the list as a key, the second as its value, the third as the second key, the fourth as its value, and so on. While this seems a bit messy on a single line, with proper whitespacing it's very easy to read. 
 
     Lists -- including keyed lists -- are always sorted, so we can use the #N notation on them:
-      {* (:one :first :two :second) | $>x || $x.#2}
+      {* (:one :first :two :second) | >$x || $x.#2}
         second
     
     [Integer keys in maps can mess up the sorting in the JS implementation]
@@ -617,9 +617,9 @@
     (and can only be set once)
   
     Set a space var like this:
-      {(:one :two :three) | $>bar}
+      {(:one :two :three) | >$bar}
         ["one","two","three"]
-      {* (:one 1 :two 2 :three 3) | $>foo}
+      {* (:one 1 :two 2 :three 3) | >$foo}
         {"one":1,"two":2,"three":3}
 
     Reference like so:
@@ -680,9 +680,9 @@
         ["Some","text"]
     
     The block can also be stored as a variable:
-      {begin foo | $>foo ||}Some text{end foo}{$foo}
+      {begin foo | >$foo ||}Some text{end foo}{$foo}
         Some text
-      {begin foo | $>foo | $foo}Some text{end foo}
+      {begin foo | >$foo | $foo}Some text{end foo}
         Some text
 
     We squelch the output of blocks that don't pipe the 'begin' statement as a convenience. Usually unpiped blocks are built as templates for later use.
@@ -692,7 +692,7 @@
         ["Some","text"]
     
     Blocks can also contain Daimio:
-      {begin foo | $>foo}x{_value}-{end foo}
+      {begin foo | >$foo}x{_value}-{end foo}
         x-
     
     The each command invokes a Daimio string for every element of a list. These are all equivalent -- the compiler removes the extraneous braces.
@@ -718,7 +718,7 @@
         ["x","1","-"]["x","2","-"]["x","3","-"]
     
     These show the strange, sad results of trying to coerce a list into a template.
-      {:hey | $>value}
+      {:hey | >$value}
         hey
       {each block (:x $value {$value} "{$value}" {"{$value}"}) data (1 2)}
         ["x","hey","hey","{$value}","{$value}"]["x","hey","hey","{$value}","{$value}"]
@@ -726,7 +726,7 @@
         ["x","hey"]["x","hey"]["x","hey"]
       {each block {(:x $value "-")} data (1 2 3)}
         ["x","hey","-"]["x","hey","-"]["x","hey","-"]
-      {:hey | $>value}
+      {:hey | >$value}
         hey
     
     Pipeline variables, including magic pipes, are reduced prior to templatization. 
@@ -789,11 +789,11 @@
     TODO: fix this section!
 
 //    A pipeline variable created in a block goes away when that block ends:
-//      {begin block ||}{123 | $>foo}{end block}{foo}
+//      {begin block ||}{123 | >$foo}{end block}{foo}
 //        123
 //  
 //    Variables beginning with '@' are global:
-//      {begin block}{123 | $>foo}{end block}{$foo}
+//      {begin block}{123 | >$foo}{end block}{$foo}
 //        123
 //    
 //    Blocks create a new variable:
@@ -805,21 +805,21 @@
 //        
 //      
 //    Use a global if you need access to it later:
-//      {begin outer}{begin inner | $>inner}123{end inner}{end outer}{$inner}
+//      {begin outer}{begin inner | >$inner}123{end inner}{end outer}{$inner}
 //        123
 //    
 //    Variables created in the outermost scope (outside of any blocks) can be accessed anywhere:
-//      {123 | $>x ||}{begin foo}{$x}{end foo}{$x}
+//      {123 | >$x ||}{begin foo}{$x}{end foo}{$x}
 //      123
 //    
 //    But they aren't actually globals:
-//      {123 | $>x ||}{begin foo |}{456 | $>x ||}{$x}{end foo}{$x}
+//      {123 | >$x ||}{begin foo |}{456 | >$x ||}{$x}{end foo}{$x}
 //      456123
 //  
 //  See what happened there? We overwrote the variable in the inner scope, but when the block ended that scope vanished, leaving behind the original variable value.
 //  
 //    Contrast that with a global:
-//      {123 | $>x ||}{begin foo |}{456 | $>x ||}{$x}{end foo}{$x}
+//      {123 | >$x ||}{begin foo |}{456 | >$x ||}{$x}{end foo}{$x}
 //      456456
 //  
 //  Changing a global changes it everywhere, regardless of scope. 
@@ -827,10 +827,10 @@
 //  Note: you may have heard tell of evil, unhygienic globals afflicting general purpose programming languages. Fortunately, Daimio isn't general purpose. In Daimio globals are cute and cuddly and always floss.
 //  
 //    Blocks establish a new variable scope:
-//      {"asdf" | $>x}{begin foo}{123 | $>x || $x}{end foo}{$x}
+//      {"asdf" | >$x}{begin foo}{123 | >$x || $x}{end foo}{$x}
 //  
 //    But variables starting with '@' are global:
-//      {"asdf" | $>@x}{begin foo}{123 | $>@x || @x}{end foo}{@x}
+//      {"asdf" | >$@x}{begin foo}{123 | >$@x || @x}{end foo}{@x}
  
   
 <div class="page-header" id="id_peek">
@@ -839,13 +839,13 @@
 
     This is a section all about how my list searching got flipped turned upside down. It includes the majority of the peek tests.
 
-    {* (:one :one :two :two :three :three) | $>numbers ||}
+    {* (:one :one :two :two :three :three) | >$numbers ||}
 
-    {* (:one :hashly :two :bashly :three :crashly) | $>hash ||}
+    {* (:one :hashly :two :bashly :three :crashly) | >$hash ||}
 
-    {* (:one :local :two "surprise local!" :foo :bar :bar :hello :hash $hash) | $>locals ||}
+    {* (:one :local :two "surprise local!" :foo :bar :bar :hello :hash $hash) | >$locals ||}
 
-    {( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | $>data ||}
+    {( {* (:one :first :two "surprise array!" :locals $locals)} {* (:one :second :two "surprise number also!" :locals $locals)} {* (:one :third :two "surprise me too!" :locals $locals)} ) | >$data ||}
 
 
     {$hash.one}
@@ -988,37 +988,37 @@
 
 <h3>Tree climbing</h3>
 
-  {* (:name "Awesome John" :age :alpha) | $>a-john ||}
+  {* (:name "Awesome John" :age :alpha) | >$a-john ||}
 
-  {* (:name "Awesome Bobs" :age :beta) | $>a-bobs ||}
+  {* (:name "Awesome Bobs" :age :beta) | >$a-bobs ||}
 
-  {* (:name "Awesome Mary" :age :gamma) | $>a-mary ||}
+  {* (:name "Awesome Mary" :age :gamma) | >$a-mary ||}
 
-  {* (:name "Awesome Stev" :age :delta) | $>a-stev ||}
+  {* (:name "Awesome Stev" :age :delta) | >$a-stev ||}
 
-  {($a-john $a-bobs $a-mary $a-stev) | $>awesome_people ||}
+  {($a-john $a-bobs $a-mary $a-stev) | >$awesome_people ||}
 
-  {* (:name "Cool John" :age :alpha) | $>c-john ||}
+  {* (:name "Cool John" :age :alpha) | >$c-john ||}
 
-  {* (:name "Cool Bobs" :age :beta) | $>c-bobs ||}
+  {* (:name "Cool Bobs" :age :beta) | >$c-bobs ||}
 
-  {* (:name "Cool Mary" :age :gamma) | $>c-mary ||}
+  {* (:name "Cool Mary" :age :gamma) | >$c-mary ||}
 
-  {* (:name "Cool Stev" :age :delta) | $>c-stev ||}
+  {* (:name "Cool Stev" :age :delta) | >$c-stev ||}
 
-  {($c-john $c-bobs $c-mary $c-stev) | $>cool_people ||}
+  {($c-john $c-bobs $c-mary $c-stev) | >$cool_people ||}
 
-  {* (:name "Neat John" :age :alpha) | $>n-john ||}
+  {* (:name "Neat John" :age :alpha) | >$n-john ||}
 
-  {* (:name "Neat Bobs" :age :beta) | $>n-bobs ||}
+  {* (:name "Neat Bobs" :age :beta) | >$n-bobs ||}
 
-  {* (:name "Neat Mary" :age :gamma) | $>n-mary ||}
+  {* (:name "Neat Mary" :age :gamma) | >$n-mary ||}
 
-  {* (:name "Neat Stev" :age :delta) | $>n-stev ||}
+  {* (:name "Neat Stev" :age :delta) | >$n-stev ||}
 
-  {($n-john $n-bobs $n-mary $n-stev) | $>neat_people ||}
+  {($n-john $n-bobs $n-mary $n-stev) | >$neat_people ||}
 
-  {( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | $>companies ||}
+  {( {* (:name "awesome test co" :employees $awesome_people :boss $a-john)} {* (:name "cool test co" :employees $cool_people :boss $c-john)} {* (:name "neat test co" :employees $neat_people :boss $n-john)} ) | >$companies ||}
 
   NOW QUERY IT
   
@@ -1197,9 +1197,9 @@
       [1,2,3,999]
 
   three ways to push a new value on a list
-    {(1 2 3 4) | $>ints}
+    {(1 2 3 4) | >$ints}
       [1,2,3,4]
-    {5 | $>ints.{$ints | count}}  {// BUG //}
+    {5 | >$ints.{$ints | count}}  {// BUG //}
       5
     {$ints | poke 6}
       [1,2,3,4,5,6]
@@ -1346,52 +1346,52 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 //
 //:::Bindings and such:::
 //
-//    {variable bind path :test block "{$count1 | add 1 | $>count1}"}
+//    {variable bind path :test block "{$count1 | add 1 | >$count1}"}
 //      
-//    {:a | $>test}
+//    {:a | >$test}
 //      a
 //      
 //    {$count1}
 //      1
 //    
 //  The magic var var __var takes var's val. This allows each binding to reference the value of the variable at the time it was edited, without regard for other bindings.
-//    {variable bind path :test block "{$count2 | add 1 | $>count2}"}
+//    {variable bind path :test block "{$count2 | add 1 | >$count2}"}
 //      
-//    {:b | $>test}
+//    {:b | >$test}
 //      b
 //      
 //    {$count1} x {$count2}
 //      2 x 1
 //      
-//    {variable unbind path :test block "{$count1 | add 1 | $>count1}"}
+//    {variable unbind path :test block "{$count1 | add 1 | >$count1}"}
 //  
-//    {:c | $>test}
+//    {:c | >$test}
 //      c
 //      
 //    {$count1} x {$count2}
 //      2 x 2
 //    
-//    {variable bind path :testx.y.z block "{$count2 | add 2 | $>count2}"}
+//    {variable bind path :testx.y.z block "{$count2 | add 2 | >$count2}"}
 //    
-//    {:x | $>testx.y.z}
+//    {:x | >$testx.y.z}
 //      x
 //    
 //    {$count1} x {$count2}
 //      2 x 4
 //    
 //  You can edit the bound var directly in the daimio -- infinite recursion is prevented.
-//    {variable bind path :foox block "{__var.#1 | add 2 | $>foox.0}"}
+//    {variable bind path :foox block "{__var.#1 | add 2 | >$foox.0}"}
 //    
-//    {(7 2) | $>foox}
+//    {(7 2) | >$foox}
 //      [7,2]
 //    
 //    {$foox}
 //      [9,2]
 //  
 //  Multiple bindings can edit the var in different ways (they all receive the original value through __var).
-//    {variable bind path :foox block "{__var.#1 | add __var.#2 | $>foox.1}"}
+//    {variable bind path :foox block "{__var.#1 | add __var.#2 | >$foox.1}"}
 //
-//    {(7 2) | $>foox}
+//    {(7 2) | >$foox}
 //      [7,2]
 //    
 //    {$foox}
@@ -1590,7 +1590,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
      {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
        yep
 
-     // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | $>bat} "too far"))}
+     // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | >$bat} "too far"))}
      //  hey
 
 <div class="page-header" id="id_math_examples">
@@ -1598,7 +1598,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 </div>
 
   Ensure values are properly finagled. 
-    {1 | $>x | 2 | $>y | 3 | $>z | ($x $y $z) | add}
+    {1 | >$x | 2 | >$y | 3 | >$z | ($x $y $z) | add}
       6
    
   <h3>ADD</h3>
@@ -1760,12 +1760,12 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
   Some data
-    {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | $>klist}
+    {( {* (:x 2 :y :d)} {* (:x 1 :y :d)} {* (:x 3 :y :a)} {* (:x 2 :y :c)} {* (:x 4 :y :b)} ) | >$klist}
       [{"x":2,"y":"d"},{"x":1,"y":"d"},{"x":3,"y":"a"},{"x":2,"y":"c"},{"x":4,"y":"b"}]
     
-    {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | $>dlist ||}
+    {( {* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))} ) | >$dlist ||}
     
-    {* (:two {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} :one {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} :three {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | $>data ||}
+    {* (:two {* (:one :second :two (:hinterlands :yellow :mishmash) :three :odd)} :one {* (:one :first :two (:hi :hello :hijinx :goodbye) :three :even)} :three {* (:one :third :two (:hinterlands :yellow :mishmash) :three :even)} )  | >$data ||}
   
    
   <h3>COUNT</h3>
@@ -1962,7 +1962,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     The merge command takes a list of keyed lists and applies a template to each one. It injects each key, which means we don't know in advance which variables are injected. This messes with our ability to do static analysis over pipeline variables. Is merge really necessary, or can {list each} do the job well enough?
     
     basic operation
-      {({* (:name :paul)} {* (:name :john)} {* (:name :george)}) | $>names ||}
+      {({* (:name :paul)} {* (:name :john)} {* (:name :george)}) | >$names ||}
 
       {merge data $names block "hey {_name}! "}
         hey paul! hey john! hey george! 
@@ -2221,17 +2221,17 @@ Tests for switch
 
 Tests for blocks
   the second set should override the first one (BUG)
-    {"{:foo}x" | $>xxx || 123 | $>xxx.y | $xxx}
+    {"{:foo}x" | >$xxx || 123 | >$xxx.y | $xxx}
       {y:123}
   works this way
-    {"{:foo}x" | $>xxx || 123 | $>xxx.#3 | $xxx}
+    {"{:foo}x" | >$xxx || 123 | >$xxx.#3 | $xxx}
       ["{:foo}x",[],123]
   
   make sure we're not defuncing pre-merge
   NOTE: needing the x:1 before poking is a bug (BUG)
-    {* (:x 1) | $>qq}
+    {* (:x 1) | >$qq}
       {"x":1}
-    {"{:foo}x" | $>qq.ww.ee || merge data $qq block "{_ee | quote}"}
+    {"{:foo}x" | >$qq.ww.ee || merge data $qq block "{_ee | quote}"}
       {:foo}x
     {$qq | merge block "{__}"}
       1{"ee":"{:foo}x"}
@@ -2240,7 +2240,7 @@ Tests for blocks
         
 
 Tests for stringification
-  {1 | $>power || each data (1 2 3 4) block "{math pow value 2 exp $power | $>power} "}
+  {1 | >$power || each data (1 2 3 4) block "{math pow value 2 exp $power | >$power} "}
     2 4 16 65536
 
     
@@ -2255,7 +2255,7 @@ Tests for pipes
     (should still fail)
     // TODO: ensure we're not front-piping inside pipes
     // (this might have to wait until the big rebuild)
-    {math pow value 5 | $>vvvvv}
+    {math pow value 5 | >$vvvvv}
     
     (ss should fail with error, so zero value)
     {3 | math pow value {string split}}
@@ -2337,28 +2337,28 @@ falsy falsers:
 
 
 Tests for pass-by-value. Changing a Daimio variable shouldn't change other variables, either in Daimio or in the base language.
-  {(1 2 3 4) | $>x}
+  {(1 2 3 4) | >$x}
     [1,2,3,4]
-  {$x | $>y}
+  {$x | >$y}
     [1,2,3,4]
-  {$x | poke 5 | $>x}
+  {$x | poke 5 | >$x}
     [1,2,3,4,5]
   {$x} x {$y}
     [1,2,3,4,5] x [1,2,3,4]
 
 Tests for self-reference. PBV cures these ills.
-  {* (:a 1 :b 2) | $>x | $>x.c}
+  {* (:a 1 :b 2) | >$x | >$x.c}
     {"a":1,"b":2,"c":{"a":1,"b":2}}
-  {$x | $>x.d} {// (BUG) //}
+  {$x | >$x.d} {// (BUG) //}
     {"a":1,"b":2,"c":{"a":1,"b":2}}
   {$x}
     {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
 
-  {(1 2 3) | $>x | poke $x | $>x}
+  {(1 2 3) | >$x | poke $x | >$x}
     [1,2,3,[1,2,3]]
 
 Tests for list compilation:
-  {"{add ($counter 1) | $>counter}" | $>countblock}
+  {"{add ($counter 1) | >$counter}" | >$countblock}
     1
   {$countblock}
     2
@@ -2366,9 +2366,9 @@ Tests for list compilation:
     3
 
 Tests for bad chars
-  {+foo | $>ok}
+  {+foo | >$ok}
   
-  {123 | $>_foo | "" | $_foo}
+  {123 | >$_foo | "" | $_foo}
     
   {123 | >_foo | "" | __foo}
     
@@ -2401,25 +2401,25 @@ so you have to do that manually
 Strings from foreign sources (db, user input, etc) aren't processed unless explicitly instructed. Also, any string transformations taint the source string, coercing it from live code into a normal string.
   
   For reference, this is how you immediately run tainted strings:
-    {:z | $>z | "x{$key}y{$z}" | string transform from "{$key}" to 123}
+    {:z | >$z | "x{$key}y{$z}" | string transform from "{$key}" to 123}
       x123y{$z}
-    {:z | $>z | "x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote | run}
+    {:z | >$z | "x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote | run}
       x123yz
 
   And this is how you prep them for running eventually. (Here 'eventually' comes at the end of the pipeline.)
-    {:z | $>z | "x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote}
+    {:z | >$z | "x{$key}y{$z}" | string transform from "{$key}" to 123 | unquote}
       x123yz
 
   And these are all transformed, hence tainted:
-    {"KEY" | $>key}
+    {"KEY" | >$key}
       KEY
     {"x{$key}y{$z}" | string transform from "{$key}" to 123}
       x123y{$z}
-    {begin block | $>block | string transform from "{$key}" to 123}x{$key}y{$z}{end block} {// from a block}
+    {begin block | >$block | string transform from "{$key}" to 123}x{$key}y{$z}{end block} {// from a block}
       x123y{$z}
     {$block | string transform from "{$key}" to 123}
       x123y{$z}
-    {"x{$key}y{$z}" | $>x | string transform from "{$key}" to 123} {// from a string}
+    {"x{$key}y{$z}" | >$x | string transform from "{$key}" to 123} {// from a string}
       x123y{$z}
     {string transform value "x{$key}y{$z}" from "{$key}" to 123}
       x123y{$z}
@@ -2449,13 +2449,13 @@ Strings from foreign sources (db, user input, etc) aren't processed unless expli
   ensure we can also access it as a function
     {"x{_key}y{$z}" | each data (1 2)}
       x0yzx1yz
-    {begin block | $>block | each data (1 2)}x{_key}y{$z}{end block}
+    {begin block | >$block | each data (1 2)}x{_key}y{$z}{end block}
       x0yzx1yz
     {$block | each data (1 2)}
       x0yzx1yz
-    {"x{_key}y{$z}" | $>x | each data (1 2)} {// as a var}
+    {"x{_key}y{$z}" | >$x | each data (1 2)} {// as a var}
       x0yzx1yz
-    {"x{_key}y{$z}" | $>x1 | each data (1 2)} {// var via pipe}
+    {"x{_key}y{$z}" | >$x1 | each data (1 2)} {// var via pipe}
       x0yzx1yz
     {each block "x{_key}y{$z}" data (1 2)}
       x0yzx1yz
@@ -2479,7 +2479,7 @@ Strings from foreign sources (db, user input, etc) aren't processed unless expli
 
 // other stuff
 
-{:dann | $>name}
+{:dann | >$name}
   dann
 
 Quoting a string passes the Daimio through unscathed.
@@ -2505,19 +2505,19 @@ The quote command also works on lists.
 
 ---> inside a parameter, braces around quotes are redundant. 
 
-{123 | $>foo}
+{123 | >$foo}
 123
 
-{"{$foo} ~" | $>string_foo} 
+{"{$foo} ~" | >$string_foo} 
 123 ~
 
-{ {"~ {$foo}"} | $>run_foo}
+{ {"~ {$foo}"} | >$run_foo}
 ~ 123
 
 {$string_foo}{$run_foo}
 123 ~~ 123
 
-{:asdf | $>foo}
+{:asdf | >$foo}
 asdf
 
 {$string_foo}{$run_foo} 
@@ -2525,7 +2525,7 @@ asdf ~~ asdf
 
 
 Here's the use cases, from the user's perspective:
-{123 | $>foo}
+{123 | >$foo}
   123
 
 - I put a simple string in, I want the same string out.
@@ -2533,7 +2533,7 @@ Here's the use cases, from the user's perspective:
     simple
   {begin x}blockguts{end x}
     blockguts
-  {begin x | $>x | $x}asdf{end x}
+  {begin x | >$x | $x}asdf{end x}
     asdf
 
 - I put a simple string in, do some regex substitution, and get the evolved string out.
@@ -2566,27 +2566,27 @@ Here's the use cases, from the user's perspective:
     123x
 
 - I put a Daimio string in, get the processed output, and put that in a variable.
-  {"{$foo}x" | run | $>x}
+  {"{$foo}x" | run | >$x}
     123x
   {$x}
     123x
-  {321 | $>foo}
+  {321 | >$foo}
     321
   {$x}
     123x
 
 - I put a Daimio string in to a variable, then invoke that variable later (getting the processed output in each new context).
-  {"{$foo}x" | $>x}
+  {"{$foo}x" | >$x}
     321x
   {$x}
     321x
-  {123 | $>foo}
+  {123 | >$foo}
     123
   {$x}
     123x
 
 - I put a Daimio string in to a variable, then use that variable as a template for merging.
-  {"~{__}~" | $>z}
+  {"~{__}~" | >$z}
     ~~
   {each block $z data (1 2 3)}
     ~1~~2~~3~
@@ -2621,52 +2621,52 @@ Here's the use cases, from the user's perspective:
 
 BLOCK APPLICATION AND ORDER OF OPERATIONS
 
-  Inside the list we're evaluating {2 | $>a} before the next call to $a
-    {1 | $>a | ( $a {2 | $>a} $a )}
+  Inside the list we're evaluating {2 | >$a} before the next call to $a
+    {1 | >$a | ( $a {2 | >$a} $a )}
       [1,2,2]
 
   Same here -- the braces around $a have no effect
-    {2 | $>a | ( {$a} {4 | $>a} {$a} )}
+    {2 | >$a | ( {$a} {4 | >$a} {$a} )}
       [2,4,4]
 
   Block processing comes later, or sometimes not at all
-    {4 | $>a | ( "{$a}" {8 | $>a} {$a} ) | unquote}
+    {4 | >$a | ( "{$a}" {8 | >$a} {$a} ) | unquote}
       ["8",8,8]
-    {4 | $>a | ( "{$a}" {8 | $>a} {$a} )}
+    {4 | >$a | ( "{$a}" {8 | >$a} {$a} )}
       ["{$a}",8,8]
 
   Set up a block that changes the value in $value
-    {:x | $>x || :y | $>y || :xylo | $>value}
+    {:x | >$x || :y | >$y || :xylo | >$value}
       xylo
-    {begin x_to_y | $>x_to_y}{string transform value $value from $x to $y}{end x_to_y}
+    {begin x_to_y | >$x_to_y}{string transform value $value from $x to $y}{end x_to_y}
       yylo
-    {:xyzzy | $>value || $x_to_y}
+    {:xyzzy | >$value || $x_to_y}
       yyzzy
     
   Anything we apply it to is stringified (and blocks in lists aren't executed by default)
-    {"{(:tex :mex)}" | $>value | ($value $x_to_y {$value | run} {$x_to_y | run})}
+    {"{(:tex :mex)}" | >$value | ($value $x_to_y {$value | run} {$x_to_y | run})}
       ["{(:tex :mex)}","{string transform value $value from $x to $y}",["tex","mex"],"{(:tey :mey)}"]
   
   Even itself
-    {$x_to_y | $>value | $x_to_y | run}
+    {$x_to_y | >$value | $x_to_y | run}
       {string transform value $value from $y to $y}
       
   But we can explicitly unquote it
 // THINK: what are we really doing here? this is completely demented.
-//    {$x_to_y | $>value | $x_to_y | run | >y_to_y | "/[y{__}]/" | $>y | _y_to_y | unquote | run}
+//    {$x_to_y | >$value | $x_to_y | run | >y_to_y | "/[y{__}]/" | >$y | _y_to_y | unquote | run}
 //      asdlkfjasldkfj
       
 
   alternately:
-    {$x_to_y | string transform from :x to :z | string transform from :y to :x | string transform from :z to :y | $>y_to_x}
+    {$x_to_y | string transform from :x to :z | string transform from :y to :x | string transform from :z to :y | >$y_to_x}
       {string transform value $value from $y to $x}
   
-    {"axy fix hex hoax" | $>value || :x | $>x || :y | $>y || $y_to_x}
+    {"axy fix hex hoax" | >$value || :x | >$x || :y | >$y || $y_to_x}
       {string transform value $value from $y to $x}
 
 
   run the process instantly
-    {"axy fix hex hoax" | $>value || :x | $>x || :y | $>y || $y_to_x | unquote | run}
+    {"axy fix hex hoax" | >$value || :x | >$x || :y | >$y || $y_to_x | unquote | run}
       axx fix hex hoax
 
     {$y_to_x | unquote | run | quote}
@@ -2674,17 +2674,17 @@ BLOCK APPLICATION AND ORDER OF OPERATIONS
 
 
   unquote the string to create a block
-    {$y_to_x | unquote | $>y_to_x_block}
+    {$y_to_x | unquote | >$y_to_x_block}
       axx fix hex hoax
 
     {$y_to_x | unquote | quote}
       {string transform value $value from $y to $x}
 
-    {"axy faxy foxy" | $>value || $y_to_x_block}
+    {"axy faxy foxy" | >$value || $y_to_x_block}
       axx faxx foxx
 
   Let's examine strings in strings in braces etc
-    {:z | $>z | :a | $>y}
+    {:z | >$z | :a | >$y}
       a
 
   test for fully processing each nested block
@@ -2692,39 +2692,39 @@ BLOCK APPLICATION AND ORDER OF OPERATIONS
       1 z 2 z 3 z
 
   this test shows that we process elements in the outer block before processing the inner block -- i.e., the last $y is processed before the earlier ones. 
-    {"1 {"{$y} 2 {$z | $>y} 3"} {$y}"}
+    {"1 {"{$y} 2 {$z | >$y} 3"} {$y}"}
       1 a 2 z 3 a
     
   this time we're explicitly running the inner block
-    {"1 {"{$y} 2 {:x | $>y} 3" | run} {$y}"}
+    {"1 {"{$y} 2 {:x | >$y} 3" | run} {$y}"}
       1 z 2 x 3 x
 
   testing order of operations. 
-    {1 | $>x | ({"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " "}
+    {1 | >$x | ({"{$x}" | >$asdf} "zxcv" {"{$x}"} $asdf) | string join on " "}
       {$x} zxcv {$x} {$x}
-    {1 | $>x | ({"{$x}" | $>asdf} "zxcv" {"{$x}"} $asdf) | string join on " " | unquote}
+    {1 | >$x | ({"{$x}" | >$asdf} "zxcv" {"{$x}"} $asdf) | string join on " " | unquote}
       1 zxcv 1 1
     
   notice that the block inside the list isn't processed until after the pipelines in the list.
-    {1 | $>x | "{$x}dog" | $>asdf | ($asdf {8 | $>x} $asdf) | string join on " "}
+    {1 | >$x | "{$x}dog" | >$asdf | ($asdf {8 | >$x} $asdf) | string join on " "}
       {$x}dog 8 {$x}dog
-    {1 | $>x | "{$x}dog" | $>asdf | ($asdf {8 | $>x} $asdf) | string join on " " | unquote}
+    {1 | >$x | "{$x}dog" | >$asdf | ($asdf {8 | >$x} $asdf) | string join on " " | unquote}
       8dog 8 8dog
-    {1 | $>x | "{$x}dog" | $>asdf | ($asdf "{8 | $>x}" $asdf) | string join on " " | unquote}
+    {1 | >$x | "{$x}dog" | >$asdf | ($asdf "{8 | >$x}" $asdf) | string join on " " | unquote}
       1dog 8 8dog
 
   When the list is processed by {string join} it quotes any blocks. 
-    {:bebop | $>genre | ($genre {:modal | $>genre} $genre {"{"渋谷系" | $>genre}"} $genre) | string join on " {$genre} "}
-      bebop {$genre} modal {$genre} modal {$genre} {"渋谷系" | $>genre} {$genre} modal
+    {:bebop | >$genre | ($genre {:modal | >$genre} $genre {"{"渋谷系" | >$genre}"} $genre) | string join on " {$genre} "}
+      bebop {$genre} modal {$genre} modal {$genre} {"渋谷系" | >$genre} {$genre} modal
     
   Unquoting after finishes the processing.
-    {:bebop | $>genre | ($genre {:modal | $>genre} $genre {"{"渋谷系" | $>genre}"} $genre) | string join on " {$genre} " | unquote}
+    {:bebop | >$genre | ($genre {:modal | >$genre} $genre {"{"渋谷系" | >$genre}"} $genre) | string join on " {$genre} " | unquote}
       bebop modal modal modal modal modal 渋谷系 渋谷系 modal
   
   Blocks inside vars suffer the same fate.
-    {({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} "}
+    {({"{$x}dog" | >$asdf} $asdf {8 | >$x} $asdf) | string join on " {$x} "}
       {$x}dog {$x} {$x}dog {$x} 8 {$x} {$x}dog
-    {1 | $>x | ({"{$x}dog" | $>asdf} $asdf {8 | $>x} $asdf) | string join on " {$x} " | unquote}
+    {1 | >$x | ({"{$x}dog" | >$asdf} $asdf {8 | >$x} $asdf) | string join on " {$x} " | unquote}
       8dog 8 8dog 8 8 8 8dog
     
   
@@ -2737,10 +2737,10 @@ BLOCK APPLICATION AND ORDER OF OPERATIONS
   {(:One {"1 2 3" | string split on " "} :Two)}
     ["One",["1","2","3"],"Two"]
 
-  {begin foo | $>foo | $foo}One{"1 2 3" | string split on " "}Two{end foo}
+  {begin foo | >$foo | $foo}One{"1 2 3" | string split on " "}Two{end foo}
     One["1","2","3"]Two
 
-  {begin foo | $>foo ||}One{"1 2 3" | string split on " "}Two{end foo}{$foo}
+  {begin foo | >$foo ||}One{"1 2 3" | string split on " "}Two{end foo}{$foo}
     One["1","2","3"]Two
 
   {"{:asdf}"} bax
@@ -2795,13 +2795,13 @@ Basic blocks and vars:
   {begin foo | string split on " " | grep :h}hello how are you?{end foo}
     ["hello","how"]
 
-  {begin foo | $>foo ||}hello{end foo}{$foo | grep :llo}
+  {begin foo | >$foo ||}hello{end foo}{$foo | grep :llo}
     ["hello"]
 
-  {(:foo :buzz :bizz :bazz) | $>x | grep :zz value $x}
+  {(:foo :buzz :bizz :bazz) | >$x | grep :zz value $x}
     ["buzz","bizz","bazz"]
 
-  {begin foo | string split on " " | $>x ||}hello hey zebra squid{end foo}{$x | grep :h}
+  {begin foo | string split on " " | >$x ||}hello hey zebra squid{end foo}{$x | grep :h}
     ["hello","hey"]
 
 
@@ -2847,10 +2847,10 @@ BASIC SYNTAX TESTS
       123y
 
   tests for quote and brace matching
-    {* ("bar" "{$x}") | $>x}
+    {* ("bar" "{$x}") | >$x}
       {"bar":"{$x}"}
 
-    {* ("one" "local" "two" "surprise local!" "foo" "bar" "yum" $x) | $>x}
+    {* ("one" "local" "two" "surprise local!" "foo" "bar" "yum" $x) | >$x}
       {"one":"local","two":"surprise local!","foo":"bar","yum":{"bar":"{$x}"}}
 
     {{"ok"}} y
@@ -2978,9 +2978,9 @@ Those three middle pipelines could run in parallel.
 //    )}
 
 //    {123 | (
-//      {__ | add $x | $>x}
-//      {__ | add $x | $>x}
-//      {__ | add $x | $>x}
+//      {__ | add $x | >$x}
+//      {__ | add $x | >$x}
+//      {__ | add $x | >$x}
 //    )}
 
 That last one leads to non-determinism if you parallelize without fixing the execution order. 
@@ -3011,9 +3011,9 @@ Same holds true for writing to like-named pipeline vars: those are errors, and f
     Blocks inside lists that get cloned become quoted. This might be considered a *feature* in some circles, but it makes a fairly valid use case (sticking blocks inside a keyed list as quasi-object methods) more difficult.
       {("foo" "{2 | add 7}") | map block "{__ | run}"}
         ["foo",9]
-      {("foo" "{2 | add 7}") | $>foo | map block "{__ | run}"}
+      {("foo" "{2 | add 7}") | >$foo | map block "{__ | run}"}
         ["foo",9]
-      {("foo" "{2 | add 7}") | $>foo || $foo | map block "{__ | run}"}
+      {("foo" "{2 | add 7}") | >$foo || $foo | map block "{__ | run}"}
         ["foo",9]
     
     Most list commands eat keys:
@@ -3026,16 +3026,16 @@ Same holds true for writing to like-named pipeline vars: those are errors, and f
     Two problems here with peek/poke
     1. you shouldn't have to preload with x:1 (BUG)
     2. setting a subitem returns the full spacevar, not just the subitem value (BUG)
-      {* (:x 1) | $>hash}
+      {* (:x 1) | >$hash}
         {"x":1}
 
-      {:ash | $>hash.{"two"}} {$hash}
+      {:ash | >$hash.{"two"}} {$hash}
         ash {"x":1,"two":"ash"}
 
-      {:ash | $>hash.{"two"}.monkey.flu} {$hash}
+      {:ash | >$hash.{"two"}.monkey.flu} {$hash}
         ash {"x":1,"two":{"monkey":{"flu":"ash"}}}
 
-      {:ash | $>hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
+      {:ash | >$hash.{"two"}.monkey.{(:x :y :z)}.flu} {$hash}
         ash {"x":1,"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
 
     Double pipe leaks values if next segment is an error

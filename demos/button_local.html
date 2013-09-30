@@ -24,7 +24,7 @@
       @counter dom-set-text
       @button  dom-on-submit
       
-      @button -> {1 | add $count | $>count} -> @counter
+      @button -> {1 | add $count | >$count} -> @counter
   </code></pre>
   
   <h3>The spacial structure</h3>
@@ -34,7 +34,7 @@
   |                                       |  
   |     _____________________________     |  
   |    /                             \    |  
-  o---(  {1 | add $count | $>count}  )---o
+  o---(  {1 | add $count | >$count}  )---o
   |    \_____________________________/    |  
   |                                       |  
   |_______________________________________|  
@@ -46,7 +46,7 @@
       @counter dom-set-text
       @button  dom-on-submit
       
-      @button -> {1 | add $count | $>count} -> @counter
+      @button -> {1 | add $count | >$count} -> @counter
 
   </script>
    
@@ -310,7 +310,7 @@
     
     
     z = document.getElementsByTagName('code')[1]
-    r = draw_station('{__ | add $count | $>count}')
+    r = draw_station('{__ | add $count | >$count}')
     x = function() {z.innerHTML = box_to_string(composite(e, r, Math.floor(Math.random() * 30), Math.floor(Math.random()*6)))}
     c = function() {setTimeout(function() {x();i++;if(i<100) c()},0)}
     i = -1000

@@ -22,9 +22,9 @@
       changed {__}
       show    {__}
       initializer
-        {20 | range | map block "{20 | range | map block 0}" | $>cells}
+        {20 | range | map block "{20 | range | map block 0}" | >$cells}
         // {64 | math random | math pow exp 0.1666 | math round}
-        // {0 | $>cells.{20 | range}.{range 20}}
+        // {0 | >$cells.{20 | range}.{range 20}}
       
       @init -> initializer
 
@@ -40,7 +40,7 @@
                 2 1 
                 3 2 
                 4 3)}"}"
-        | $>cells}
+        | >$cells}
 
       initializer -> process -> changed
       process -> {process sleep for $time} -> process
@@ -49,8 +49,8 @@
       // INPUT
       @touched dom-on-click .touch
       activate
-        {__ | split on "x" | >coords | $cells | list poke path (_coords.#1 _coords.#2) value 4 | $>cells}
-        // {__ | split on "x" | >coords | 4 | $>cells.{_coords.#1}.{_coords.#2}}
+        {__ | split on "x" | >coords | $cells | list poke path (_coords.#1 _coords.#2) value 4 | >$cells}
+        // {__ | split on "x" | >coords | 4 | >$cells.{_coords.#1}.{_coords.#2}}
       @touched -> activate -> changed
         
 

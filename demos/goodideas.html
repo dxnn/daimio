@@ -61,14 +61,14 @@
       changed {__}
       show {__}
       // NOTE: changed and show are just event hangers -- kind of like channels.
-      @ideas-in -> {__ | $>ideas} -> show
+      @ideas-in -> {__ | >$ideas} -> show
       changed   -> @ideas-out
 
 
       // ADD
       @addidea   dom-on-submit
       @new-todo  dom-set-value
-      add  {* (:title __ :completed 0) | (__) | union $ideas | $>ideas}
+      add  {* (:title __ :completed 0) | (__) | union $ideas | >$ideas}
       
       @addidea -> {""} -> @new-todo
       @addidea -> {__.desc} -> add -> changed
@@ -76,13 +76,13 @@
       
       // REMOVE
       @destroy dom-on-click .destroy
-      remove   {__ | list remove data $ideas | $>ideas}
+      remove   {__ | list remove data $ideas | >$ideas}
       @destroy -> remove -> changed
       
       
       // REMOVE COMPLETED
       @clear-completed dom-on-click
-      remove-completed {$ideas | list remove by_value {$ideas | filter block "{__.completed}"} | $>ideas}
+      remove-completed {$ideas | list remove by_value {$ideas | filter block "{__.completed}"} | >$ideas}
       @clear-completed -> remove-completed -> changed
       
       
@@ -92,19 +92,19 @@
       // FIXME: list poke
       // FIXME: map with ()
       completer 
-        { __ | $>thekey | $ideas
+        { __ | >$thekey | $ideas
         | map block "{ _key | eq $thekey 
                      | then {* (:title     __in.title 
                                 :completed {1 | subtract __in.completed})} 
                        else __in}" 
           with {* (:thekey _thekey)} 
-        | $>ideas}
+        | >$ideas}
       @toggle -> completer -> changed
       
       
       // AUTOCOMPLETER
       @toggle-all         dom-on-click
-      @toggle-all -> {$ideas | filter block "{__.completed | not}" | then 1 else 0 | $>cval | $ideas | map block "{* (:title     __in.title :completed $cval)}" | $>ideas} -> changed
+      @toggle-all -> {$ideas | filter block "{__.completed | not}" | then 1 else 0 | >$cval | $ideas | map block "{* (:title     __in.title :completed $cval)}" | >$ideas} -> changed
       // FIXME: filter by :completed
       
       
@@ -119,26 +119,26 @@
         { $ideas | tap
         | map block "{* (:title     __in.title 
                          :completed __in.completed)}"
-        | $>ideas}
+        | >$ideas}
       
       focused
-        { __ | $>thekey | $ideas
+        { __ | >$thekey | $ideas
         | map block "{ _key | eq $thekey 
                      | then {* (:title     __in.title 
                                 :completed __in.completed
                                 :editing   1)}
                        else __in}" 
           with {* (:thekey _thekey)} 
-        | $>ideas}
+        | >$ideas}
       
       changer
-        { __ | $>theval | $ideas
+        { __ | >$theval | $ideas
         | map block "{ __.editing
                      | then {* (:title     $theval
                                 :completed __in.completed)}
                        else __in}" 
           with {* (:theval __in)} 
-        | $>ideas}
+        | >$ideas}
       
       @blurme   -> blurred -> changed
       @focusme  -> focused -> changed

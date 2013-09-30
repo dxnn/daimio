@@ -35,17 +35,17 @@
       
       @time-in  dom-on-change
       @time-out dom-set-text
-      @time-in -> {__ | $>time} -> @time-out
+      @time-in -> {__ | >$time} -> @time-out
 
       @step-in  dom-on-change
       @step-out dom-set-text
-      @step-in -> {__ | $>step} -> @step-out
+      @step-in -> {__ | >$step} -> @step-out
       
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc    {__ | add $count | $>count}
-      block  {$count | then "" else "{1 | @>start}" with 1} 
+      inc    {__ | add $count | >$count}
+      block  {$count | then "" else "{1 | >@start}" with 1} 
       
       @button -> block
       block.start -> inc -> @counter
@@ -61,7 +61,7 @@
     |                                                           |
     |             ______________________________                |
     |            /                              \               |
-    o-----------(  {__ | add $count | $>count}  )--------------o
+    o-----------(  {__ | add $count | >$count}  )--------------o
     |     |      \______________________________/      |        |
     |     ^                                            v        |
     |     ^                                            v        |
@@ -73,11 +73,11 @@
     |                                                           |
     |                   _________________                       |
     |                  /                 \                      |
-    o-----------------(  {__ | $>time}   )---------------------o
+    o-----------------(  {__ | >$time}   )---------------------o
     |                  \_________________/                      |
     |                   _________________                       |
     |                  /                 \                      |
-    o-----------------(  {__ | $>step}   )---------------------o
+    o-----------------(  {__ | >$step}   )---------------------o
     |                  \_________________/                      |
     |___________________________________________________________|
     
@@ -92,17 +92,17 @@
       
       @time-in  dom-on-change
       @time-out dom-set-text
-      @time-in -> {__ | $>time} -> @time-out
+      @time-in -> {__ | >$time} -> @time-out
 
       @step-in  dom-on-change
       @step-out dom-set-text
-      @step-in -> {__ | $>step} -> @step-out
+      @step-in -> {__ | >$step} -> @step-out
       
       @counter dom-set-text
       @button  dom-on-submit
 
-      inc    {__ | add $count | $>count}
-      block  {$count | then "" else "{1 | @>start}" with 1} 
+      inc    {__ | add $count | >$count}
+      block  {$count | then "" else "{1 | >@start}" with 1} 
       
       @button -> block
       block.start -> inc -> @counter

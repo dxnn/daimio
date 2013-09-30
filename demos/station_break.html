@@ -34,12 +34,12 @@
       
       modthree {__ | mod 3 | then "" else :fizz}
       modfive  {__ | mod 5 | then "" else :buzz}
-      modtwo   {__ | mod 2 | then "{__ | @>twono}" else "{__ | @>twoyes}" with __}
+      modtwo   {__ | mod 2 | then "{__ | >@twono}" else "{__ | >@twoyes}" with __}
       
-      twono    {""   | @>modtwo-yes | "{:No | @>modtwo-no}" | run}
-      twoyes   {:Yes | @>modtwo-yes | ""  | @>modtwo-no}
+      twono    {""   | >@modtwo-yes | "{:No | >@modtwo-no}" | run}
+      twoyes   {:Yes | >@modtwo-yes | ""  | >@modtwo-no}
       
-      counter {__ | add $count | $>count}
+      counter {__ | add $count | >$count}
       
       foo {123 | process downport name :argh | tap}
       @button1 -> foo

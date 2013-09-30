@@ -83,8 +83,8 @@ Fixed:
 {/()} {/(} outside {/)}  --- broken lists bork lights
 
 
-{... | @> :foo.x} write to channel (pub)
-{... | !@> :foo.x} bind to channel pre-write (guard)
+{... | >@ :foo.x} write to channel (pub)
+{... | !>@ :foo.x} bind to channel pre-write (guard)
 {... | <@ :foo.x} bind to channel post-write (sub)
 {... | <@! :foo.x} bind to channel pre-read (generator)
 {@foo.x} read from channel
@@ -147,7 +147,7 @@ Also external.
   ^^ filter block "{:xyz | is in this.tags}"
   ^__^ (^_1 ^_2 ^_3) // you could skip this line w/o change
 ^ filter block "{(:foo :baz :xyz) | list intersect data this.tags | not}"
-^_^ union (^_1 ^_2) | diff ^_3 | @> :lalala}
+^_^ union (^_1 ^_2) | diff ^_3 | >@ :lalala}
 
 {story find by_ids #id
 ^ sort by :date | reverse | slice 10
