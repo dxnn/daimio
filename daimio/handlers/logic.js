@@ -146,8 +146,8 @@ D.import_models({
             count++
             
             if(found === count) {
-              if(typeof item == 'function') 
-                return item(function(value) {my_tramp_prior_starter(value)}, scope) 
+              if(item instanceof D.Segment)
+                return D.TYPES['block'](item)(my_tramp_prior_starter, scope)
               else
                 return item
             }
@@ -158,8 +158,8 @@ D.import_models({
             if(count % 2)
               return null
 
-            if(typeof item == 'function') 
-              var bool = item(function(value) {my_tramp_prior_starter(value)}, scope) 
+            if(item instanceof D.Segment)
+              bool = D.TYPES['block'](item)(my_tramp_prior_starter, scope)
             else
               bool = item
               
@@ -221,35 +221,23 @@ D.import_models({
             desc: 'A list of value then expression then value then expression and so on and so forth and etcetera and yada yada',
             type: 'list',
             required: true
-          }
+          },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(on, value, prior_starter) {
-          // var list = value.reverse()
-          // 
-          // var callback = function(result) {
-          //   var reward = list.pop()
-          //   if(result == on) {
-          //     continuation(reward)
-          //   }
-          //   else {
-          //     D.run(list.pop(), callback)
-          //   }
-          // }
-          // 
-          // D.run(list.pop(), callback)
-          // 
-          // return NaN
-          
-          
-          
-          
+        fun: function(on, value, _with, prior_starter) {
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
-            // var test = D.run(value[i])
 
-            if(test == on)
+            if(test == on) {
               return value[i+1]
+            }
           }
+          
+          // TODO: add 'otherwise' or equivalent 
           
           return false
         },

@@ -1578,20 +1578,50 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
   <h3>COND</h3>
 
-     {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
-       good
+      {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
+        good
+      
+      {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
+        good
+      
+      {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+        good
+      
+      {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
+        yep
+      
+// {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | >$bat} "too far"))}
+//  hey
+// THINK: this is an OOO issue between old and new -- it's a bad test. think about how to separate these concerns.
+      
+    Ensure results are processed with the correct scope
+      {cond (0 :foo 1 "{_n | add _k}") with {* (:n 11 :k 2)} }
+        13
+    
+    Ensure proper short-circuiting for results
+      {0 | >$cond1 | cond (0 "{$cond1 | add 1 | >$cond1}" 1 "{$cond1 | add 2 | >$cond1}" 2 "{$cond1 | add 3 | >$cond1}") | $cond1}
+        2
+    
+    Ensure proper scoping for conditions
+      {cond ("{_n | minus _k}" :foo "{_n | add _k}" :good) with {* (:n 5 :k 5)} }
+        good
+    
+    Ensure proper short-circuiting for conditions
+      {cond ("{0 | >$cond1}" :foo "{$cond1 | add 1 | >$cond1}" :boo "{$cond1 | add 2 | >$cond1}" :goo) | $cond1}
+        1
 
-     {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
-       good
+  <h3>SWITCH</h3>
 
-     {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
-       good
+      {logic switch on 2 value (1 :one 2 :two 3 :three)}
+        two
 
-     {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
-       yep
+      {logic switch on {:asdf | string slice start 2} value (:as 1 :sd 2 :df 3)}
+        3
 
-     // {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | >$bat} "too far"))}
-     //  hey
+      {0 | switch (1 :foo 0 "{_n | add _k}") with {* (:n 11 :k 2)} }
+        13
+
+    
 
 <div class="page-header" id="id_math_examples">
   <h2>Math Commands</h2>
@@ -2210,14 +2240,6 @@ Extra braces don't matter. extra quotes do, but are generally ok.
   {{{"{__ | add {"4"}}"}} | map data {(1 2)} }
     [5,6]
     
-
-Tests for switch
-  ham?
-    {logic switch on 2 value (1 :one 2 :two 3 :three)}
-      two
-    
-    {logic switch on {:asdf | string slice start 2} value (:as 1 :sd 2 :df 3)}
-      3
 
 Tests for blocks
   the second set should override the first one (BUG)
