@@ -2,11 +2,11 @@
   <h2>Preface</h2>
 </div>
 
-This document serves as a primer, tutorial, specification, test suite and REPL for the Daimio language.
+    This document serves as a primer, tutorial, specification, test suite and REPL for the Daimio language.
 
-Daimio is a framework for building programmable web applications, as well as the dataflow language used within that framework. 
+    Daimio is a framework for building programmable web applications, as well as the dataflow language used within that framework. 
 
-On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
+    On this page all Daimio statements are wrapped in braces. Any line which begins with an open brace will be processed as a Daimio statement, and the following line indicates the desired outcome. Green means it passed, red indicates failure. Output is converted to JSON for display in the REPL and the examples below.
 
 
 <div class="page-header" id="pronunciation">
@@ -37,7 +37,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 <div class="page-header" id="id_daimio_primer">
   <h2>Daimio Primer</h2>
 </div>
-
+  Some basics
     numbers, natural and otherwise
       {65535}
         65535
@@ -74,6 +74,8 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {* (:a {* (:aa 1 :ab 2)} :b 2 )}
         {"a":{"aa":1,"ab":2},"b":2}
   
+  
+  Commands
     commands have a handler and a method
       {list count}
         0
@@ -100,7 +102,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {22 | add 20}
         42
   
-    double underscore takes the previous value
+    double underscore reads the last value
       {21 | add __}
         42
       {21 | add 21 to __}
@@ -111,6 +113,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
         42
 
   
+  Comments
     slash comments one segment
       {/string join}
     
@@ -122,7 +125,8 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
         401
       {// 401 | add 1}
 
-
+  
+  Blocks
     blocks are delimited by begin/end, and contain strings
       {begin foo}some string{end foo}
         some string
@@ -139,25 +143,26 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {"{:hello} world"}
         hello world
   
-    blocks are fed to commands
+    blocks are lambdas
       {"{__ | add 1}" | map data ( 1 2 3 )}
         [2,3,4]
       {begin block | map data ( 1 2 3 )}{__ | add 1}{end block}
         [2,3,4]
   
-    __in is the process input
+    __in reads the process input
       {( 1 2 3 ) | map block "{__in | add 1}"}
         [2,3,4]
   
-    in first position __ is equal to __in
+    __ reads the last value, which is the process input here
       {( 1 2 3 ) | map block "{__ | add 1}"}
         [2,3,4]
   
-    but not further inside a pipeline
+    further inside a pipeline __ reads the previous pipeline segment
       {( 1 2 3 ) | map block "{__ | add 5 | (__ __in)}"}
         [[6,1],[7,2],[8,3]]
   
   
+  More pipes
     a piped value fills the first available parameter
       {math add value 10 to 32}
         42
@@ -172,7 +177,8 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {32 || math add value 10 to __}
         42
   
-    
+  
+  Labels
     pipe values can be labeled for later use
       {8 | >eight | (_eight _eight 2) | add _eight | add}
         42
@@ -184,6 +190,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
       {2 | >two | 4 | >two | (_two)}
         [2]
   
+  Variables
     space variables are mutable
       {2 | $>foo | ( 1 2 3 ) | $>foo}
         [1,2,3]
@@ -193,6 +200,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
         [2,4,6]
   
   
+  Lists
     you can peek into data structures
       {* (:a 1 :b 2 :c 3) | list peek path :b}
         2
@@ -306,7 +314,7 @@ On this page all Daimio statements are wrapped in braces. Any line which begins 
 </div>
   
   Lists are the basic data structure of Daimio. Spaces separate items. List items can be any valid expression.
-  Notice that data structures are implicitly converted to JSON when forced to take string form.
+    Notice that data structures are implicitly converted to JSON when forced to take string form.
   
     A list of random numbers:
       {(8 6 7 5 3 0 9)}
@@ -1681,10 +1689,21 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
  
   <h3>MOD</h3>
   
-    {math mod value 7 by 2}
-      1
-    {:7 | mod :2}
-      1
+    Note that this is the true modulus operation, rather than JS's default remainder operation. Checking parity over negative integers becomes easier this way, for example.
+    
+      {math mod value 7 by 2}
+        1
+      {math mod value -7 by 2}
+        1
+        
+      {5 | mod 13}
+        5
+      {-5 | mod 13}
+        8
+      {-5 | mod -13}
+        -5
+      {5 | mod -13}
+        -8
  
   <h3>POW</h3>
   
