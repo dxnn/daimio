@@ -182,10 +182,13 @@ D.import_models({
           },
         ],
         fun: function(value, by) {
+          // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
               return D.setError('Modulation by zero is a crime against nature') || 0
-            return a % b
+            
+            return a > 0 == b > 0 ? a % b : a % b + b
+            // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
           })
         },
       },
