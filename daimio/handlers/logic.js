@@ -228,17 +228,20 @@ D.import_models({
             type: 'maybe-list'
           },
         ],
-        fun: function(on, value, _with, prior_starter) {
+        fun: function(on, value, _with, prior_starter, process) {
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
 
             if(test == on) {
-              return value[i+1]
+              var result = value[i+1]
+              if(_with && (result instanceof D.Segment))
+                return D.TYPES['block'](result)(prior_starter, _with, process)
+              else
+                return result
             }
           }
           
           // TODO: add 'otherwise' or equivalent 
-          
           return false
         },
       },

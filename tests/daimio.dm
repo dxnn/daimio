@@ -1578,23 +1578,22 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
   <h3>COND</h3>
 
+    Ensure false values fail and the first good one passes
       {cond ($false :bad "" :bad 0 :bad () :bad 1 :good 2 :bad)}
         good
-      
+    
+    Likewise for pre-processed pipelines
       {cond ({$false} :bad {""} :bad {0} :bad {()} :bad {1} :good {2} :bad)}
         good
-      
-      {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d) | string join}")}
+    
+    Ensure we always process the result
+      {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d)}") | join}
         good
       
-      {cond ($false "bad!" {:true} "{:yep}" $nope "baaaad!!!")}
-        yep
+      {cond ($false :bad {:true} "{:good}" $nope :bad) | split}
+        ["g","o","o","d"]
       
-// {cond (($false "bad!") ({:true} 456 "hey {$bat}") ({123 | >$bat} "too far"))}
-//  hey
-// THINK: this is an OOO issue between old and new -- it's a bad test. think about how to separate these concerns.
-      
-    Ensure results are processed with the correct scope
+    Ensure result is processed with the correct scope
       {cond (0 :foo 1 "{_n | add _k}") with {* (:n 11 :k 2)} }
         13
     
@@ -1603,7 +1602,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         2
     
     Ensure proper scoping for conditions
-      {cond ("{_n | minus _k}" :foo "{_n | add _k}" :good) with {* (:n 5 :k 5)} }
+      {cond ("{_n | minus _k}" :bad "{_n | add _k}" :good) with {* (:n 5 :k 5)} }
         good
     
     Ensure proper short-circuiting for conditions
@@ -1611,16 +1610,48 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         1
 
   <h3>SWITCH</h3>
-
+    
+    Ensure we select the correct value
       {logic switch on 2 value (1 :one 2 :two 3 :three)}
         two
 
       {logic switch on {:asdf | string slice start 2} value (:as 1 :sd 2 :df 3)}
         3
 
-      {0 | switch (1 :foo 0 "{_n | add _k}") with {* (:n 11 :k 2)} }
-        13
+    Ensure false values trigger the switch
+      {0 | switch (1 :bad 0 :good)}
+        good
+    
+    Be aware of implicit coercion
+      {0 | switch ("" :good 0 :bad)}
+        good
+      {12 | switch ("12" :good 12 :bad)}
+        good
 
+    Result is only processed if the 'with' param is present
+      {1 | switch (1 "{:good}") | split}
+        ["{",":","g","o","o","d","}"]
+
+      {1 | switch (1 "{:good}") with 1 | split}
+        ["g","o","o","d"]
+
+    Ensure result is processed with the correct scope
+      {2 | switch (1 :bad 2 "{_n | add _k}") with {* (:n 11 :k 2)} }
+        13
+    
+    Ensure proper short-circuiting for results
+      {0 | >$switch1 | 1 | switch (0 "{$switch1 | add 1 | >$switch1}" 1 "{$switch1 | add 2 | >$switch1}" 2 "{$switch1 | add 3 | >$switch1}") with 1 | $switch1}
+        2
+    
+    Conditions are never processed
+      {:foo | switch ("{:boo}" :bad "{:foo}" :bad :foo :good)}
+        good
+        
+      {10 | switch ("{_n | minus _k}" :bad "{_n | add _k}" :bad 10 :good) with {* (:n 5 :k 5)} }
+        good
+        
+//    TODO: test for 'otherwise'-style default
+//      {"{:foo}" | switch ("{:boo}" :bad "{:foo}" :bad)}
     
 
 <div class="page-header" id="id_math_examples">
