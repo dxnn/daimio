@@ -187,7 +187,7 @@ D.import_models({
             if(!b) 
               return D.setError('Modulation by zero is a crime against nature') || 0
             
-            return a > 0 == b > 0 ? a % b : a % b + b
+            return a >= 0 == b > 0 ? a % b : a % b + b
             // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
           })
         },
