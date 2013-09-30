@@ -16,7 +16,7 @@
 
     outer
       $colors ["#66F", "#77F", "#88F", "#99F", "#AAF", "#BBF", "#CCF", "#DDF", "#EEF", "#FFF"]
-      $time   10
+      $time   1000
       $cells  []
       $mods  []
       
@@ -31,10 +31,6 @@
       
       @init -> initializer
 
-
-// TODO: add 'with' to switch
-// FIXME: undo !cloning
-// THINK: how do we do the mapping w/o being stupid? maybe a fun over a path into $cells? that could work... so reach in, modify, spit out whole thing -- like a map that only runs over certain items.
 
       // LOOP
       process 
@@ -58,10 +54,14 @@
               {$cells.{_x.#1}.{_x.#2 | add 1 | min 19}  | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | add 1 | min 19}}
             )}" }"}"}
 
-// { $cells | poke path ( ({_x.#1} {_x.#2 | add 1}) 
-//                        ({_x.#1} {_x.#2 | minus 1}) 
-//                        ({_x.#1 | add 1}   {_x.#2}) 
-//                        ({_x.#1 | minus 1} {_x.#2}) ) 
+
+// TODO: add 'with' to switch
+// THINK: how do we do the mapping w/o being stupid? maybe a fun over a path into $cells? that could work... so reach in, modify, spit out whole thing -- like a map that only runs over certain items.
+
+// { $cells | poke path (( ({_x.#1} {_x.#2 | add 1}) 
+//                         ({_x.#1} {_x.#2 | minus 1}) 
+//                         ({_x.#1 | add 1}   {_x.#2}) 
+//                         ({_x.#1 | minus 1} {_x.#2}) )) 
 //                 fun "{__ | _x.#3}" with {* (:x _x)}
 // | >$cells
 
