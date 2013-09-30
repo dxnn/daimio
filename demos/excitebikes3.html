@@ -37,14 +37,16 @@
         { () | >$mods | 0 | >$max
         | $cells | map block "{
             __ | map with {* (:row _key)} block "{
-              __ | >n | max $max | >$max | _n | mod 2 | switch (
-                0 "{ __ | mod 8
-                   | then "{ __in | divide by 2}"
-                     else "{ $mods | poke (_row _key 1) | >$mods | 0}"
-                     with {* (:row _row :key _key "__in" __in)} }"
-                1 "{ __ | times 3 | add 1}")
-              | run with {* (:row _row :key _key "__in" _n)} 
-              | else 0}"}"
+              __ | max $max | >$max 
+                 | __in | mod 2 
+                 | switch
+                   ( 0 "{ __ | mod 8
+                        | then "{ __ | divide by 2}"
+                          else "{ $mods | poke (_row _key 1) | >$mods | 0}"
+                          with {* (:row _row :key _key "__in" __in)} }"
+                     1 "{ __ | times 3 | add 1}")
+                   with {* (:row _row :key _key "__in" __in)} 
+                 | else 0}"}"
         | >$cells
        || $mods | each block "{ 
             __ | >x | (
@@ -62,8 +64,10 @@
 //                         ({_x.#1} {_x.#2 | minus 1}) 
 //                         ({_x.#1 | add 1}   {_x.#2}) 
 //                         ({_x.#1 | minus 1} {_x.#2}) )) 
-//                 fun "{__ | _x.#3}" with {* (:x _x)}
+//                 block "{__ | _x.#3}" with {* (:x _x)}
 // | >$cells
+
+// actually, reduce over $mods with $cells as the initial data -- then you can just >$cells once at the end.
 
 
       initializer -> process -> changed
