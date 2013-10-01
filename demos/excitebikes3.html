@@ -6,16 +6,75 @@
   <script type="text/javascript" src="../daimio_composite.js"></script>
   -->
     <script type="text/javascript" src="../get.php?file=daimio"></script>
+    
+  <style>
+    #celltable {
+      max-width:400px;
+      font-size:10px;
+    }
+    
+    #celltable td {
+      max-width:20px;
+      min-width:20px;
+      height:20px;
+      overflow:hidden;
+    }
+  </style>
 </head>
 <body>
   
+  <div id="tools" style="float:right; border: 1px solid black">
+    <form id="stuff">
+      <p>
+        <label for="add-on-click">Add on click</label>
+        <input type="text" name="add-on-click" value="60" size="3" id="add-on-click">
+      </p>
+      <p>
+        <label for="magic-modulus">Magic modulus</label>
+        <input type="text" name="magic-modulus" value="8" size="3" id="magic-modulus">
+      </p>
+      <p>
+        <label for="self-transform">Transforms into</label>
+        <input type="text" name="self-transform" value="1" size="3" id="self-transform">
+      </p>
+      <p>
+        <label for="add-to-neighbors">Adds to neighbors</label>
+        <input type="text" name="add-to-neighbors" value="1" size="3" id="add-to-neighbors">
+      </p>
+      <p>
+        <input id="time-in" type="range" value="1000" min="0" max="2000"> 
+        <span id="time-out">1000</span> (delay, in milliseconds)</p>
+      </p>
+    </form>
+  </div>
+  
   <div id="house"></div>
+  <svg id="graph" width="1000px" height="80px" viewBox="0 0 1000 80" background="orange"></svg>
   
   
   <script type="text/daimio" class="spaceseeds">
+    collate
+      @cells in
+      @max   in
+      @out
+      
+      $cells ""
+      $max   ""
+      
+      combiner
+        {$cells | and $max | then "{($cells $max) | join | >@send | "" | >$cells | >$max}" with 1}
+      
+      @cells -> {__ | >$cells} -> combiner
+      @max   -> {__ | >$max}   -> combiner
+      combiner.send -> @out
+      
 
     outer
-      $colors ["#66F", "#77F", "#88F", "#99F", "#AAF", "#BBF", "#CCF", "#DDF", "#EEF", "#FFF"]
+      $colors ["#44F", "#55F", "#66F", "#77F", "#88F", "#99F", "#AAF", "#BBF", "#CCF", "#DDF", "#EEF"]
+      $add-to-neighbors 1
+      $self-transform  1
+      $magic-modulus  8
+      $add-on-click  60
       $time   1000
       $cells  []
       $mods  []
@@ -37,16 +96,16 @@
         { () | >$mods | 0 | >$max
         | $cells | map block "{
             __ | map with {* (:row _key)} block "{
-              __ | max $max | >$max 
-                 | __in | mod 2 
+              __ | mod 2 
                  | switch
-                   ( 0 "{ __ | mod 8
+                   ( 0 "{ __ | mod $magic-modulus
                         | then "{ __ | divide by 2}"
-                          else "{ $mods | poke (_row _key 1) | >$mods | 0}"
+                          else "{ $mods | poke (_row _key $add-to-neighbors) | >$mods | $self-transform}"
                           with {* (:row _row :key _key "__in" __in)} }"
                      1 "{ __ | times 3 | add 1}")
                    with {* (:row _row :key _key "__in" __in)} 
-                 | else 0}"}"
+                 | else 1 | >result
+                 | max $max | >$max | _result | add 0}"}"
         | >$cells
        || $mods | each block "{ 
             __ | >x | (
@@ -57,7 +116,6 @@
             )}" }"}"}
 
 
-// TODO: add 'with' to switch
 // THINK: how do we do the mapping w/o being stupid? maybe a fun over a path into $cells? that could work... so reach in, modify, spit out whole thing -- like a map that only runs over certain items.
 
 // { $cells | poke path (( ({_x.#1} {_x.#2 | add 1}) 
@@ -78,31 +136,67 @@
       @touched dom-on-click .touch
       activate
         { __ | split on "x" | >coords | $cells 
-        | list poke path  (_coords.#1 _coords.#2) 
+        | list poke path (_coords.#1 _coords.#2) 
                     value { $cells.{_coords.#1}.{ _coords.#2} 
-                          | add 59} 
+                          | add $add-on-click} 
         | >$cells}
-        // {__ | split on "x" | >coords | 4 | >$cells.{_coords.#1}.{_coords.#2}}
       @touched -> activate -> changed
+      
+      @time-in  dom-on-change
+      @time-out dom-set-text
+      @time-in -> {__ | >$time} -> @time-out
+      
+      @add-on-click dom-on-change
+      @add-on-click -> {__ | >$add-on-click}
+        
+      @magic-modulus dom-on-change
+      @magic-modulus -> {__ | >$magic-modulus}
+        
+      @self-transform dom-on-change
+      @self-transform -> {__ | >$self-transform}
+        
+      @add-to-neighbors dom-on-change
+      @add-to-neighbors -> {__ | >$add-to-neighbors}
         
 
       // SHOW
       @house  dom-set-html
+      @svg-add-line
       
       show-cells
-        <table border="0" cellspacing="0" cellpadding="3" style="max-width:400px;">
+        <table id="celltable" border="0" cellspacing="0" cellpadding="3">
           {begin row | map data $cells | join}
             <tr>
               {begin item | map data __in with {* (:row _key)} | join}
-                <td class="touch" data-value="{_row}x{_key}" style="max-width:20px;min-width:20px;height:20px;background-color:{$colors.{__ | divide by $max | math pow exp 0.1 | times 10 | math round}};overflow:hidden">{__}</td>
+                <td class="touch" data-value="{_row}x{_key}" 
+                    style="background-color:{$colors.{__ | divide by $max | math pow exp 0.1 
+                                                         | times 10 | math round}}">{__}</td>
               {end item}
           	</tr>
         	{end row}
         </table>
+        
+      show-max
         <h1>max: {$max}</h1>
       
+      show-past-maxes
+        {* ( :x1 {$turn | add 1 | >$turn | mod 1000} 
+             :y1 {80} 
+             :x2 {$turn | mod 1000}
+             :y2 {$max | math log | times 3 | subtract from 80}
+             :color :pink 
+             :alpha 1 
+             :thing :graph)}
+      
+      show-histogram
+        {* (:x 1)}
+      
       changed -> show
-      show -> show-cells -> @house
+      show -> show-max   -> collate.max
+      show -> show-cells -> collate.cells
+      show -> show-past-maxes -> @svg-add-line
+      
+      collate.out -> @house
       
   </script>
   
