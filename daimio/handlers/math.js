@@ -264,6 +264,26 @@ D.import_models({
 
       // TODO: move these into a math-trig handler
 
+      log: {
+        desc: "Returns the logarithm, natural by default",
+        params: [
+          {
+            key: 'value',
+            desc: 'A number to log',
+            type: 'number',
+          },
+          {
+            key: 'base',
+            desc: 'Defaults to e',
+            type: 'number',
+          },
+        ],
+        fun: function(value, base) {
+          return (base ? (Math.log(value) / Math.log(base)) : Math.log(value) ) || 0 // clears out NaNs
+        },
+      },
+
+
       // CAREFUL WHEN YOU ADD asin and acos and also sqrt and log -- all of those can give NaNs!
       sin: {
         desc: "Find out if yours is original",

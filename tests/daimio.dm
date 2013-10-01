@@ -1722,6 +1722,14 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {math divide value (1 2 3) by (6 5 4) | map block "{__ | round to 2}"}
       [0.17,0.4,0.75]
  
+  <h3>LOG</h3>
+    {math log value 100}
+      4.605170185988092
+    {math log value 100 base 10}
+      2
+    {1024 | math log base 2}
+      10
+  
   <h3>MAX</h3>
   
     {max (1 2 3)}
