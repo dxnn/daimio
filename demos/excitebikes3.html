@@ -42,8 +42,12 @@
         <input type="text" name="add-to-neighbors" value="1" size="3" id="add-to-neighbors">
       </p>
       <p>
-        <input id="time-in" type="range" value="1000" min="0" max="2000"> 
-        <span id="time-out">1000</span> (delay, in milliseconds)</p>
+        <input id="time-in" type="range" value="10000" min="0" max="10000"> 
+        <span id="time-out">10000</span> (delay, in milliseconds)</p>
+      </p>
+      <p>
+        <label for="grid-size">Grid size</label>
+        <input type="text" name="grid-size" value="20" size="3" id="grid-size">
       </p>
     </form>
   </div>
@@ -75,20 +79,25 @@
       $self-transform  1
       $magic-modulus  8
       $add-on-click  60
-      $time   1000
+      $time   10000
       $cells  []
+      $size  4
       $mods  []
+      $ticks 0
       
       // INIT
       @init   from-js
       changed {__}
       show    {__}
       initializer
-        {20 | range | map block "{20 | range | map block 1}" | >$cells}
+        {$size | range | map block "{$size | range | map block 1}" | >$cells}
         // {64 | math random | math pow exp 0.1666 | math round}
         // {0 | >$cells.{20 | range}.{range 20}}
       
-      @init -> initializer
+      starter
+        {$ticks | else "{1 | >@go}"}
+      
+      @init -> initializer -> starter
 
 
       // LOOP
@@ -109,10 +118,14 @@
         | >$cells
        || $mods | each block "{ 
             __ | >x | (
-              {$cells.{_x.#1 | minus 1 | max 0}.{_x.#2} | add _x.#3 | >$cells.{_x.#1 | minus 1 | max 0}.{_x.#2}}
-              {$cells.{_x.#1 | add 1 | min 19}.{_x.#2}  | add _x.#3 | >$cells.{_x.#1 | add 1 | min 19}.{_x.#2}}
-              {$cells.{_x.#1}.{_x.#2 | minus 1 | max 0} | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | minus 1 | max 0}}
-              {$cells.{_x.#1}.{_x.#2 | add 1 | min 19}  | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | add 1 | min 19}}
+              { $cells.{_x.#1 | minus 1 | max 0}.{_x.#2} 
+              | add _x.#3 | >$cells.{_x.#1 | minus 1 | max 0}.{_x.#2}}
+              { $cells.{_x.#1 | add 1 | min {$size | minus 1}}.{_x.#2}  
+              | add _x.#3 | >$cells.{_x.#1 | add 1 | min {$size | minus 1}}.{_x.#2}}
+              { $cells.{_x.#1}.{_x.#2 | minus 1 | max 0} 
+              | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | minus 1 | max 0}}
+              { $cells.{_x.#1}.{_x.#2 | add 1 | min {$size | minus 1}}  
+              | add _x.#3 | >$cells.{_x.#1}.{_x.#2 | add 1 | min {$size | minus 1}}}
             )}" }"}"}
 
 
@@ -128,8 +141,9 @@
 // actually, reduce over $mods with $cells as the initial data -- then you can just >$cells once at the end.
 
 
-      initializer -> process -> changed
+      starter.go -> process -> changed
       process -> {process sleep for $time} -> process
+      process -> {$ticks | add 1 | >$ticks}
       
       
       // INPUT
@@ -158,35 +172,41 @@
       @add-to-neighbors dom-on-change
       @add-to-neighbors -> {__ | >$add-to-neighbors}
         
+      @grid-size dom-on-change
+      @grid-size -> {__ | >$size} -> initializer
+      
 
       // SHOW
       @house  dom-set-html
       @svg-add-line
       
       show-cells
-        <table id="celltable" border="0" cellspacing="0" cellpadding="3">
-          {begin row | map data $cells | join}
-            <tr>
-              {begin item | map data __in with {* (:row _key)} | join}
-                <td class="touch" data-value="{_row}x{_key}" 
-                    style="background-color:{$colors.{__ | divide by $max | math pow exp 0.1 
-                                                         | times 10 | math round}}">{__}</td>
-              {end item}
-          	</tr>
-        	{end row}
-        </table>
+       <table id="celltable" border="0" cellspacing="0" cellpadding="3">
+         {begin row | map data $cells | join}
+           <tr>
+             {begin item | map data __in with {* (:row _key)} | join}
+               <td class="touch" data-value="{_row}x{_key}" 
+                   style="background-color:{$colors.{__ | divide by $max | math pow exp 0.1 
+                                                        | times 10 | math round}}">{__}</td>
+             {end item}
+          </tr>
+        {end row}
+       </table>
         
       show-max
-        <h1>max: {$max}</h1>
+        <h1>ticks: {$ticks}
+            max: {$max}</h1>
       
       show-past-maxes
-        {* ( :x1 {$turn | add 1 | >$turn | mod 1000} 
-             :y1 {80} 
-             :x2 {$turn | mod 1000}
+        {* ( :x1 {$ticks | mod 1000 | >x} 
+             :y1 80 
+             :x2 _x
              :y2 {$max | math log | times 3 | subtract from 80}
-             :color :pink 
-             :alpha 1 
+             :color :pink
+             :alpha 0.2 
              :thing :graph)}
+
+// :color {"#FF{$ticks | divide by 1000 | round | subtract from 9}F{$ticks | divide by 1000 | round | subtract from 9}F" | run}
       
       show-histogram
         {* (:x 1)}
@@ -194,10 +214,18 @@
       changed -> show
       show -> show-max   -> collate.max
       show -> show-cells -> collate.cells
-      show -> show-past-maxes -> @svg-add-line
+     show -> show-past-maxes -> @svg-add-line
       
       collate.out -> @house
       
+      
+// performance notes
+// -- base for 1000x on 4x4: 15 seconds
+// -- with svg_add_line: 25 sec, plus 6 sec per 1000x (cumulative element cost)
+// -- without clone: 14 seconds
+// -- w/o html table: 7.5 seconds
+// -- w/o html, 20x20: 80 seconds (only 10x worse instead of 25x)
+// -- 
   </script>
   
 
@@ -212,6 +240,118 @@
     
       D.send_value_to_js_port('init', 1) // activate init
     })
+    
+
+    // weird stuff
+    
+    add = function(a,b) {return a+b}
+    dadd = function(acc, item) {return acc + item.reduce(add)}
+
+    onetick = function(grid) {
+      var mods = []
+        , size = grid.length
+        
+      for(var i=0; i < size; i++) {
+        for(var j=0; j < size; j++) {
+          var value = grid[i][j]
+          grid[i][j] = (value % 2) ? value * 3 + 1 : value / 2
+          if(!(value % 8)) {
+            grid[i][j] = 1
+            mods.push([i, j])
+          }
+        }
+      }
+      
+      while(mods.length) {
+        var mod = mods.pop()
+          , y = mod[0]
+          , ydec = y ? y-1 : 0
+          , yinc = y != size-1 ? y+1 : size-1
+          , x = mod[1]
+          , xdec = x ? x-1 : 0
+          , xinc = x != size-1 ? x+1 : size-1
+        grid[y][xdec]++
+        grid[y][xinc]++
+        grid[ydec][x]++
+        grid[yinc][x]++
+      }
+      
+      return grid
+    }
+    
+    goticks = function(grid, times) {
+      for(var i=0, l=times; i < l; i++) {
+        console.log(JSON.stringify(onetick(grid)))
+      }
+    }
+    
+    someticks = function(grid, maxrounds) {
+      var tick = 0
+        , memo = {}
+        // , memo = [JSON.stringify(grid)]
+        , maxrounds = maxrounds || 10000000
+      
+      while(tick < maxrounds) {
+        grid = onetick(grid)
+        var str = grid.toString()
+
+        if(memo[str]) {
+          var keys = Object.keys(memo)
+            , index = keys.indexOf(str)
+            , total = 0
+            
+          for(var i=index, l=keys.length; i < l; i++)
+            total += keys[i].split(',').reduce(function(a,b){return a+(+b)}, 0)
+          
+          return {grid: JSON.stringify(grid), index: index, clength: tick-index, fprint: total}
+        }
+        
+        memo[str] = 1
+        tick++
+
+        // var str = JSON.stringify(grid)
+        // if(memo[str]) {
+        //   var keys = Object.keys(memo)
+        //     , index = keys.indexOf(str)
+        //     , total = 0
+        //   
+        //   for(var i=index, l=keys.length; i < l; i++) {
+        //     total += JSON.parse(keys[i]).reduce(dadd, 0)
+        //   }
+        //   
+        //   return {grid: str, index: index, clength: tick-index, fprint: total}
+        //   // return "Offset: " + index + " Cycle length: " + (tick - index) + " grid: " + str
+        // }
+        // memo[str] = 1
+      }
+      
+      return 'Failed after ' + maxrounds + ' turns: ' + JSON.stringify(grid)
+    }
+    
+    moreticks = function(grid, start, end) {
+      var oldgrid = D.clone(grid)
+      for(var mmm=start; mmm<end; mmm++) {
+        // grid = [[1,mmm,1,1],[1,7,1,1],[1,1,1,1],[1,1,60,1]]
+        grid = D.clone(oldgrid)
+        grid[0][1] = mmm
+        grid[1][1] = mmm+1
+        
+        var result = someticks(grid)
+          , str = typeof result == 'string' 
+                                 ? result 
+                                 : "Offset: " + result.index 
+                                 + " Cycle length: " + result.clength
+                                 + " Total: " + result.fprint
+                                 + " Grid: " + result.grid
+        console.log('trying ' + mmm + ': ' + str)
+      }
+    }
+    
+    a_grid = [[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,60,1]]
+    // grid = [[1,1,1,1],[1,1,1,1],[1,1,2,1],[1,2,58,2]]
+    
+    
+    
   </script>
   
 </body>
