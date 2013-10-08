@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-framework="javascript">
 <head>
-  <title>Excitable Media</title>
+  <title>The Sans-collatz automaton</title>
   <!--
   <script type="text/javascript" src="../../daimio_composite.js"></script>
   -->
@@ -24,9 +24,9 @@
 <body>
   
   <div id="tools" style="width: 600px; float:right; border: 1px solid black">
-    <h2>Sans-Collatz Automata</h2>
+    <h2>The Sans-collatz automaton</h2>
     <p>
-      I gave a talk a couple weeks ago which featured both cellular automata and the Collatz sequence as examples. Then Chuck Moore spoke on his GreenArray chip with 144 tiny computers on it. I wondered what would happen if each of those were calculating the Collatz sequence. Well, that wouldn't do much. But what if something in that calculation triggered a computer to send information to its neighbors?
+      I gave a talk a couple weeks ago which featured both cellular automata and the Collatz sequence as examples. Then Chuck Moore spoke on his GreenArrays chip with 144 tiny computers on it. I wondered what would happen if each of those little machines were calculating the Collatz sequence. Well, that wouldn't do much. But what if something in that calculation triggered a computer to send information to its neighbors?
     </p>
 
     <p>So here's the setup:</p>
@@ -38,7 +38,7 @@
       <li>Unless K is divisible by 8: then we replace with it 1 and add 1 to each neighbor.</li>
     </ul>
     
-    <p>In this particular example we're also "bouncing" 1s off the edges back into the cell.</p>
+    <p>In this particular example we're also "bouncing" 1s off the edges back into the cell. Neighbors are a la von Neumann.</p>
     
     <form id="stuff">
       <p>
@@ -210,9 +210,13 @@
        </table>
         
       show-max
-        <h1>ticks: {$ticks}
-            max: {$max}</h1>
-        <p>Instructions: click in the grid and watch the fun unveil.</p>
+        <h1>
+          ticks: {$ticks}
+          max: {$max}
+        </h1>
+        <p>Instructions: click in the grid and watch the fun unfold.</p>
+        <p>The graph below plots the maxes so you can spot patterns.</p>
+        <p>Discoveries and thoughts are on the <a href="sans-collatz-notes.html">notes page</a>.</p>
       
       show-past-maxes
         {* ( :x1 {$ticks | mod 1000 | >x} 
@@ -260,12 +264,10 @@
     
 
 
-    // pure JS stuff for console use below. 
-    // TODO: make new commands that encompass these functions
+    // pure JS stuff for console use follows
+    // NOTE: we're mutating like crazy in the name of performance
+    // TODO: make new Daimio commands that encompass these functions
     
-    add = function(a,b) {return a+b}
-    dadd = function(acc, item) {return acc + item.reduce(add)}
-
     onetick = function(grid) {
       var mods = []
         , size = grid.length
@@ -298,13 +300,13 @@
       return grid
     }
     
-    goticks = function(grid, times) {
+    showticks = function(grid, times) {
       for(var i=0, l=times; i < l; i++) {
         console.log(JSON.stringify(onetick(grid)))
       }
     }
     
-    someticks = function(grid, maxrounds) {
+    solveticks = function(grid, maxrounds, final) {
       var tick = 0
         // , memo = {}
         // , memo = [JSON.stringify(grid)]
@@ -321,7 +323,7 @@
         outer:
         for(var i=0, l=haregrid.length; i < l; i++) {
           for(var j=0, k=haregrid[i].length; j < k; j++) {
-            if(haregrid[i][j] != turtlegrid[i][j]) {
+            if(haregrid[i][j] != turtlegrid[i][j]) { // big perf hotspot. double-for >> (toString || reduce)
               failed = true
               break outer
             }
@@ -330,10 +332,10 @@
         
         if(!failed) {
           var clength = tick+1
-          if(clength > 10000)
-            clength = someticks(haregrid).clength
+          if(!final)
+            clength = solveticks(haregrid, 100000, true).clength
           
-          return {grid: JSON.stringify(haregrid), index: tick, clength: clength, fprint: 0}
+          return {grid: JSON.stringify(haregrid), offset: tick - clength + 1, clength: clength, fprint: 0}
         }
 
         tick++
@@ -345,15 +347,14 @@
     moreticks = function(grid, start, end) {
       var oldgrid = D.clone(grid)
       for(var mmm=start; mmm<end; mmm++) {
-        // grid = [[1,mmm,1,1],[1,7,1,1],[1,1,1,1],[1,1,60,1]]
         grid = D.clone(oldgrid)
         grid[0][1] = mmm
         grid[1][1] = mmm+1
         
-        var result = someticks(grid)
+        var result = solveticks(grid)
           , str = typeof result == 'string' 
                                  ? result 
-                                 : "Offset: " + result.index 
+                                 : "Offset: " + result.offset 
                                  + " Cycle length: " + result.clength
                                  + " Total: " + result.fprint
                                  + " Grid: " + result.grid

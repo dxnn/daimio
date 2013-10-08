@@ -1,0 +1,115 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>I am a strange automata</title>
+</head>
+<body>
+  <h1>Notes on the Sans-collatz automaton</h1>
+
+  <pre>
+Some findings from exploring a rather curious automaton. 
+
+Use the <a href="sans-collatz.html">interactive demo</a> to explore the automata. 
+That page also has several javascript functions you can 
+use from the console to calculate generations more quickly.
+Here's an example transcript:
+
+grid = [[3,2,2],[2,2,2],[2,2,2]]
+  [Array[3], Array[3], Array[3]]
+onetick(grid)
+  [Array[3], Array[3], Array[3]]
+JSON.stringify(grid)
+  "[[10,1,1],[1,1,1],[1,1,1]]"
+showticks(grid, 3)
+  [[5,4,4],[4,4,4],[4,4,4]]
+  [[16,2,2],[2,2,2],[2,2,2]]
+  [[3,2,1],[2,1,1],[1,1,1]]
+solveticks(grid)
+  Object {grid: "[[3,2,1],[2,1,1],[1,1,1]]", offset: 0, clength: 12, fprint: 0}
+moreticks(grid, 2, 5)
+  trying 2: Offset: 0 Cycle length: 348 Total: 0 Grid: [[52,1,10],[1,10,4],[10,4,3]]
+  trying 3: Offset: 369 Cycle length: 3 Total: 0 Grid: [[4,4,4],[4,4,4],[4,4,4]]
+  trying 4: Offset: 572 Cycle length: 52 Total: 0 Grid: [[3,24,3],[24,2,24],[3,24,3]]
+JSON.stringify(grid)
+  "[[3,2,1],[2,1,1],[1,1,1]]"
+
+
+
+THOUGHTS:
+With a single "active" element (1, 2 and 4 are inactive), the only question is when you first "pop" down to 1.
+So the offsets may vary, but the three cycles will be identical (though perhaps with different entry points).
+Looking at the common entry points could be interesting -- for a given cycle, are there "inaccessible" elements?
+Can we measure the likelihood of entering through a particular element? So far experimental evidence points to
+certain elements as being much more likely starting points.
+
+Cycles have rotation and reflection symmetries with other cycles, but they also have element-based symmetries.
+In other words, given a particular cycle you should be able to generate new cycles of the same length that are 
+disjoint but follow a similar pattern, by 1-2-4 / 3-5 replacement, for example. 
+
+The offset is how long it takes to settle into a pattern. They appear to increase by a factor of 10^(N-1) with successive each step up. 
+
+
+These are found cycles with "bounce-back" style edges, and guesses at offset behavior.
+
+2x2:
+    2: [[5,5],[5,5]] // common to all sizes
+    3: [[4,4],[4,4]] // common to all sizes
+    4: [[4,3],[3,4]]
+    8: [[4,4],[3,3]]
+   12: [[4,5],[4,4]]
+   24: [[5,3],[1,11]]
+offset < 200 for all orbits; order of 100
+
+3x3:
+   11: [[3,3,5],[3,3,5],[3,3,5]]
+   12: [[3,2,2],[2,2,2],[2,2,2]]
+       [[3,2,2],[2,2,2],[2,2,3]]
+       [[3,4,3],[4,4,4],[3,4,3]]  // many independent cycles of equal length
+   14: [[5,3,5],[3,1,3],[5,3,5]]
+   52: [[3,1,3],[1,4,1],[3,1,3]]
+   84: [[3,1,1],[2,1,2],[1,2,3]]
+  212: [[4,4,5],[4,4,4],[3,4,4]]
+  348: [[2,3,5],[5,7,3],[3,5,2]]
+ 1328: [[16,3,3],[3,1,4],[4,3,4]]
+ 6832: [[2,3,4],[3,2,3],[3,3,3]]
+offset < 10,000 for all orbits; order of 1,000
+
+4x4:
+    4: [[2,2,3,10],[4,5,5,3],[1,1,5,2],[10,1,4,2]]
+   12: [[3,2,2,3],[2,2,2,2],[2,2,2,2],[3,2,2,3]]  // transform middle 2->4 and 2->1
+       [[3,2,2,2],[2,2,2,2],[2,2,2,2],[3,2,2,3]]  // 2->4, and 2->1 if 1 not adj 3
+       [[3,2,2,2],[2,2,2,2],[2,2,2,2],[2,2,2,2]]  // well, sorta. [3,4,1,2] doesn't.
+   87: [[2,4,4,3],[4,2,1,4],[4,1,2,4],[3,4,4,2]]
+  308: [[7,2,3,3],[2,3,5,3],[3,5,3,2],[3,3,2,7]]
+  348: [[1,1,2,3],[4,2,1,2],[4,1,2,1],[3,4,4,1]]
+  538: [[3,3,3,3],[3,1,2,3],[3,2,1,3],[3,3,3,3]]
+offset < 1,000,000 for all orbits; order of 100,000
+
+5x5:
+    12: [[3,2,2,2,3],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[3,2,2,2,3]] 
+        [[3,2,1,2,3],[2,1,2,1,2],[1,2,1,2,1],[2,1,2,1,2],[3,2,1,2,3]] // 67,313,603
+    87: [[2,4,4,4,3],[4,2,2,1,4],[4,2,2,2,4],[4,1,2,2,4],[3,4,4,4,2]]
+        [[3,3,4,3,3],[3,4,4,4,3],[4,4,1,4,4],[3,4,4,4,3],[3,3,4,3,3]] // 303,386,051
+   308: 
+   348: [[3,2,2,3,3],[2,4,2,4,3],[2,2,4,2,2],[3,4,2,4,2],[3,3,2,2,3]] 
+        [[3,3,2,1,1],[3,4,4,1,2],[2,4,2,4,2],[1,1,4,2,2],[1,2,2,2,3]]   // >110,000,000  (A)
+        [[3,2,2,3,10],[2,2,4,4,3],[4,4,2,4,2],[4,1,4,2,2],[16,4,4,2,3]] // 930,995,351 (B)
+   696: [[16,2,1,9,5],[2,1,4,2,9],[1,2,2,4,1],[1,2,2,1,2],[6,1,1,2,16]] 
+        [[5,4,4,18,10],[4,4,2,1,18],[2,1,1,2,4],[16,4,1,4,4],[16,16,2,4,5]] // 291,623 (C)
+   792: [[3,2,1,5,3],[2,23,4,1,5],[1,4,4,4,1],[5,1,4,23,2],[3,5,1,2,3]]     // 197,676,863
+so far, offset is order of 100,000,000
+
+6x6:
+    12: [[3,2,2,2,2,3],[2,2,2,2,2,2],[2,2,2,2,2,2],[2,2,2,2,2,2],[2,2,2,2,2,2],[3,2,2,2,2,3]]
+    87: [[3,2,2,2,2,5],[2,2,2,2,2,2],[2,2,2,2,2,2],[2,2,2,2,2,2],[2,2,2,2,2,2],[3,2,2,2,2,3]] // 20,292,488 
+
+
+(A) from [[3,1,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2]]
+(B) from [[3,4,2,2,5],[2,5,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2]]
+(C) from [[3,2,2,2,5],[2,2,2,2,2],[2,2,2,2,2],[2,2,2,2,2],[3,2,2,2,3]]
+
+
+  </pre>
+</body>
+</html>
