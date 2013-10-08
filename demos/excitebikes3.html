@@ -23,11 +23,27 @@
 </head>
 <body>
   
-  <div id="tools" style="float:right; border: 1px solid black">
+  <div id="tools" style="width: 600px; float:right; border: 1px solid black">
+    <h2>Sans-Collatz Automata</h2>
+    <p>
+      I gave a talk a couple weeks ago which featured both cellular automata and the Collatz sequence as examples. Then Chuck Moore spoke on his GreenArray chip with 144 tiny computers on it. I wondered what would happen if each of those were calculating the Collatz sequence. Well, that wouldn't do much. But what if something in that calculation triggered a computer to send information to its neighbors?
+    </p>
+
+    <p>So here's the setup:</p>
+    <ul>
+      <li>An NxN grid of cells.</li>
+      <li>Each cell contains an integer K.</li>
+      <li>If K is odd replace it with 3K+1.</li>
+      <li>If K is even replace it with K/2.</li>
+      <li>Unless K is divisible by 8: then we replace with it 1 and add 1 to each neighbor.</li>
+    </ul>
+    
+    <p>In this particular example we're also "bouncing" 1s off the edges back into the cell.</p>
+    
     <form id="stuff">
       <p>
         <label for="add-on-click">Add on click</label>
-        <input type="text" name="add-on-click" value="60" size="3" id="add-on-click">
+        <input type="text" name="add-on-click" value="5" size="3" id="add-on-click">
       </p>
       <p>
         <label for="magic-modulus">Magic modulus</label>
@@ -42,12 +58,12 @@
         <input type="text" name="add-to-neighbors" value="1" size="3" id="add-to-neighbors">
       </p>
       <p>
-        <input id="time-in" type="range" value="10000" min="0" max="10000"> 
-        <span id="time-out">10000</span> (delay, in milliseconds)</p>
+        <input id="time-in" type="range" value="1000" min="0" max="5000"> 
+        <span id="time-out">1000</span> (delay, in milliseconds)</p>
       </p>
       <p>
         <label for="grid-size">Grid size</label>
-        <input type="text" name="grid-size" value="20" size="3" id="grid-size">
+        <input type="text" name="grid-size" value="16" size="3" id="grid-size">
       </p>
     </form>
   </div>
@@ -78,10 +94,10 @@
       $add-to-neighbors 1
       $self-transform  1
       $magic-modulus  8
-      $add-on-click  60
-      $time   10000
+      $add-on-click  5
+      $time   1000
       $cells  []
-      $size  4
+      $size  16
       $mods  []
       $ticks 0
       
@@ -129,7 +145,7 @@
             )}" }"}"}
 
 
-// THINK: how do we do the mapping w/o being stupid? maybe a fun over a path into $cells? that could work... so reach in, modify, spit out whole thing -- like a map that only runs over certain items.
+// THINK: how do we do the mapping w/o being daft? maybe a fun over a path into $cells? that could work... so reach in, modify, spit out whole thing -- like a map that only runs over certain items.
 
 // { $cells | poke path (( ({_x.#1} {_x.#2 | add 1}) 
 //                         ({_x.#1} {_x.#2 | minus 1}) 
@@ -196,6 +212,7 @@
       show-max
         <h1>ticks: {$ticks}
             max: {$max}</h1>
+        <p>Instructions: click in the grid and watch the fun unveil.</p>
       
       show-past-maxes
         {* ( :x1 {$ticks | mod 1000 | >x} 
@@ -242,7 +259,9 @@
     })
     
 
-    // weird stuff
+
+    // pure JS stuff for console use below. 
+    // TODO: make new commands that encompass these functions
     
     add = function(a,b) {return a+b}
     dadd = function(acc, item) {return acc + item.reduce(add)}
@@ -287,7 +306,7 @@
     
     someticks = function(grid, maxrounds) {
       var tick = 0
-        , memo = {}
+        // , memo = {}
         // , memo = [JSON.stringify(grid)]
         , maxrounds = maxrounds || 2000000000
         , haregrid = D.clone(grid)
@@ -315,43 +334,9 @@
             clength = someticks(haregrid).clength
           
           return {grid: JSON.stringify(haregrid), index: tick, clength: clength, fprint: 0}
-          // TODO: run haregrid again for cycle length
         }
-        
-        // if(haregrid.toString() == turtlegrid.toString()) {
-        // }
-        
-        
-        // var str = grid.toString()
-        // 
-        // if(memo[str]) {
-        //   var keys = Object.keys(memo)
-        //     , index = keys.indexOf(str)
-        //     , total = 0
-        //     
-        //   for(var i=index, l=keys.length; i < l; i++)
-        //     total += keys[i].split(',').reduce(function(a,b){return a+(+b)}, 0)
-        //   
-        //   return {grid: JSON.stringify(grid), index: index, clength: tick-index, fprint: total}
-        // }
-        
-        // memo[str] = 1
-        tick++
 
-        // var str = JSON.stringify(grid)
-        // if(memo[str]) {
-        //   var keys = Object.keys(memo)
-        //     , index = keys.indexOf(str)
-        //     , total = 0
-        //   
-        //   for(var i=index, l=keys.length; i < l; i++) {
-        //     total += JSON.parse(keys[i]).reduce(dadd, 0)
-        //   }
-        //   
-        //   return {grid: str, index: index, clength: tick-index, fprint: total}
-        //   // return "Offset: " + index + " Cycle length: " + (tick - index) + " grid: " + str
-        // }
-        // memo[str] = 1
+        tick++
       }
       
       return 'Failed after ' + maxrounds + ' turns: ' + JSON.stringify(grid)
@@ -376,11 +361,7 @@
       }
     }
     
-    a_grid = [[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,60,1]]
-    // grid = [[1,1,1,1],[1,1,1,1],[1,1,2,1],[1,2,58,2]]
-    
-    
-    
+    a_grid = [[1,1,1,1],[1,1,1,1],[1,1,1,1],[1,1,3,1]]
   </script>
   
 </body>
