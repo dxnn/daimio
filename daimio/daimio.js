@@ -248,9 +248,12 @@ D.track_event = function(type, target, callback) {
     document.addEventListener(type, function(event) {
       var target = event.target
         , listener = tracked.by_id[target.id]
+        , cname = target.className
       
-      if(!listener) {
-        target.className.split(/\s+/).forEach(function(name) {
+      if(!listener && cname) {
+        if(cname.baseVal != undefined)
+          cname = cname.baseVal
+        cname.split(/\s+/).forEach(function(name) {
           listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
         })
       }
