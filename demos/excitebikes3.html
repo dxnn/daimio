@@ -289,24 +289,53 @@
       var tick = 0
         , memo = {}
         // , memo = [JSON.stringify(grid)]
-        , maxrounds = maxrounds || 10000000
+        , maxrounds = maxrounds || 2000000000
+        , haregrid = D.clone(grid)
+        , turtlegrid = D.clone(grid)
+        , failed
       
       while(tick < maxrounds) {
-        grid = onetick(grid)
-        var str = grid.toString()
-
-        if(memo[str]) {
-          var keys = Object.keys(memo)
-            , index = keys.indexOf(str)
-            , total = 0
-            
-          for(var i=index, l=keys.length; i < l; i++)
-            total += keys[i].split(',').reduce(function(a,b){return a+(+b)}, 0)
-          
-          return {grid: JSON.stringify(grid), index: index, clength: tick-index, fprint: total}
+        haregrid = onetick(onetick(haregrid))
+        turtlegrid = onetick(turtlegrid)
+        failed = false
+        
+        outer:
+        for(var i=0, l=haregrid.length; i < l; i++) {
+          for(var j=0, k=haregrid[i].length; j < k; j++) {
+            if(haregrid[i][j] != turtlegrid[i][j]) {
+              failed = true
+              break outer
+            }
+          }
         }
         
-        memo[str] = 1
+        if(!failed) {
+          var clength = tick+1
+          if(clength > 10000)
+            clength = someticks(haregrid).clength
+          
+          return {grid: JSON.stringify(haregrid), index: tick, clength: clength, fprint: 0}
+          // TODO: run haregrid again for cycle length
+        }
+        
+        // if(haregrid.toString() == turtlegrid.toString()) {
+        // }
+        
+        
+        // var str = grid.toString()
+        // 
+        // if(memo[str]) {
+        //   var keys = Object.keys(memo)
+        //     , index = keys.indexOf(str)
+        //     , total = 0
+        //     
+        //   for(var i=index, l=keys.length; i < l; i++)
+        //     total += keys[i].split(',').reduce(function(a,b){return a+(+b)}, 0)
+        //   
+        //   return {grid: JSON.stringify(grid), index: index, clength: tick-index, fprint: total}
+        // }
+        
+        // memo[str] = 1
         tick++
 
         // var str = JSON.stringify(grid)
