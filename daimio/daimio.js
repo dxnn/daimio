@@ -268,6 +268,7 @@ D.track_event = function(type, target, callback) {
           || ( target.value != undefined && target.value )
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
+          || D.scrub_var(target)
         listener(value, event)
       }
     }, false)
