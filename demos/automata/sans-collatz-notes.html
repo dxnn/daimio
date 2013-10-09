@@ -39,20 +39,20 @@ JSON.stringify(grid)
 THOUGHTS:
 With a single "active" element (i.e. not 1, 2, or 4) in your grid, 
 the only question is when you first are divisible by 8. 
-So in that case there are only three possible loops, 
+So in that case there are only three possible cycles, 
 all of which share the same entry point. 
+(Where the "entry point" to the cycle is the first element of the cycle to appear.)
 
-So the offsets may vary, but the three cycles will be identical (though perhaps with different entry points).
 Looking at the common entry points could be interesting -- for a given cycle, are there "inaccessible" elements?
 Can we measure the likelihood of entering through a particular element? So far experimental evidence points to
 certain elements as being much more likely starting points.
 
 Cycles have rotation and reflection symmetries with other cycles, but they also have element-based symmetries.
 In other words, given a particular cycle you should be able to generate new cycles of the same length that are 
-disjoint but follow a similar pattern, by 1-2-4 / 3-5 replacement, for example. 
+disjoint but follow a similar pattern, e.g. by 1-2-4 / 3-5 replacement. (Any actual examples?)
 
 The offset is how many generations pass before settling into a pattern. 
-They appear to increase by a factor of 10^(N-1) with successive each step up 
+They appear to increase by a factor of 10^(N-1) with each successive grid step 
 (though note that like all observations here this is wildly speculative). 
 Is there any correlation between the shape of the initial grid and the offset? 
 Cycle lengths tend to be very small compared to offsets. 
