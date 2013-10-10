@@ -248,9 +248,12 @@ D.track_event = function(type, target, callback) {
     document.addEventListener(type, function(event) {
       var target = event.target
         , listener = tracked.by_id[target.id]
+        , cname = target.className
       
-      if(!listener) {
-        target.className.split(/\s+/).forEach(function(name) {
+      if(!listener && cname) {
+        if(cname.baseVal != undefined)
+          cname = cname.baseVal
+        cname.split(/\s+/).forEach(function(name) {
           listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
         })
       }
@@ -265,6 +268,7 @@ D.track_event = function(type, target, callback) {
           || ( target.value != undefined && target.value )
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
+          || D.scrub_var(target)
         listener(value, event)
       }
     }, false)
@@ -6395,8 +6399,8 @@ D.import_models({
             count++
             
             if(found === count) {
-              if(typeof item == 'function') 
-                return item(function(value) {my_tramp_prior_starter(value)}, scope) 
+              if(item instanceof D.Segment)
+                return D.TYPES['block'](item)(my_tramp_prior_starter, scope)
               else
                 return item
             }
@@ -6407,8 +6411,8 @@ D.import_models({
             if(count % 2)
               return null
 
-            if(typeof item == 'function') 
-              var bool = item(function(value) {my_tramp_prior_starter(value)}, scope) 
+            if(item instanceof D.Segment)
+              bool = D.TYPES['block'](item)(my_tramp_prior_starter, scope)
             else
               bool = item
               
@@ -6470,36 +6474,27 @@ D.import_models({
             desc: 'A list of value then expression then value then expression and so on and so forth and etcetera and yada yada',
             type: 'list',
             required: true
-          }
+          },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(on, value, prior_starter) {
-          // var list = value.reverse()
-          // 
-          // var callback = function(result) {
-          //   var reward = list.pop()
-          //   if(result == on) {
-          //     continuation(reward)
-          //   }
-          //   else {
-          //     D.run(list.pop(), callback)
-          //   }
-          // }
-          // 
-          // D.run(list.pop(), callback)
-          // 
-          // return NaN
-          
-          
-          
-          
+        fun: function(on, value, _with, prior_starter, process) {
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
-            // var test = D.run(value[i])
 
-            if(test == on)
-              return value[i+1]
+            if(test == on) {
+              var result = value[i+1]
+              if(_with && (result instanceof D.Segment))
+                return D.TYPES['block'](result)(prior_starter, _with, process)
+              else
+                return result
+            }
           }
           
+          // TODO: add 'otherwise' or equivalent 
           return false
         },
       },
@@ -6776,10 +6771,13 @@ D.import_models({
           },
         ],
         fun: function(value, by) {
+          // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
               return D.setError('Modulation by zero is a crime against nature') || 0
-            return a % b
+            
+            return a >= 0 == b > 0 ? a % b : a % b + b
+            // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
           })
         },
       },
@@ -6854,6 +6852,26 @@ D.import_models({
       },
 
       // TODO: move these into a math-trig handler
+
+      log: {
+        desc: "Returns the logarithm, natural by default",
+        params: [
+          {
+            key: 'value',
+            desc: 'A number to log',
+            type: 'number',
+          },
+          {
+            key: 'base',
+            desc: 'Defaults to e',
+            type: 'number',
+          },
+        ],
+        fun: function(value, base) {
+          return (base ? (Math.log(value) / Math.log(base)) : Math.log(value) ) || 0 // clears out NaNs
+        },
+      },
+
 
       // CAREFUL WHEN YOU ADD asin and acos and also sqrt and log -- all of those can give NaNs!
       sin: {
