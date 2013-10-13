@@ -42,6 +42,13 @@ Maybe add Frink as a handler?
 
 */ 
 
+
+/* Naming conventions for Daimio:
+D.import_commands   <--- snake_case for functions
+D.SegmentTypes      <--- CamelCase for built-in objects
+D.SPACESEEDS        <--- ALLCAPS for runtime containers
+
+*/
 D = {}
 D.ETC = {}
 D.ABLOCKS = {}
@@ -54,7 +61,6 @@ D.AliasMap = {};
 D.Parser = {}
 D.commands = {}
 D.SegmentTypes = {}
-
 
 D.command_open = '{'
 D.command_closed = '}'
