@@ -893,21 +893,21 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 
 /* TERMINATORS! */
 
-D.terminators = {}
-D.Tglyphs = ""
+D.Terminators = {}
+D.Etc.Tglyphs = ""
 D.import_terminator = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.terminators[ch]) D.terminators[ch] = []
-  D.terminators[ch].push(obj)
-  D.Tglyphs += ch
+  if(!D.Terminators[ch]) D.Terminators[ch] = []
+  D.Terminators[ch].push(obj)
+  D.Etc.Tglyphs += ch
 }
 
 // TODO: these should do more than just return a fancy parser...
 
 D.terminate = function(ch, verb, params) {
-  if(!D.terminators[ch]) return false
-  var fun, terminators = D.terminators[ch]
+  if(!D.Terminators[ch]) return false
+  var fun, terminators = D.Terminators[ch]
   
   for(var i=0, l=terminators.length; i < l; i++) {
     fun = terminators[i][verb]
@@ -4502,7 +4502,7 @@ D.Parser.split_on = function(string, regex, label) {
 
 D.Parser.split_on_terminators = function(string) {
   // TODO: make Tglyphs work with multi-char Terminators
-  return D.Parser.split_on(string, D.Tglyphs, 'Terminator')
+  return D.Parser.split_on(string, D.Etc.Tglyphs, 'Terminator')
 }
 
 D.Parser.split_on_space = function(string) {
