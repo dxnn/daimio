@@ -62,6 +62,7 @@ D.Types = {}
 D.Parser = {}
 D.Commands = {}
 D.SegmentTypes = {}
+D.PortFlavours = {}
 
 D.Constants = {} // CONSTANTSFRY
 D.Constants.command_open = '{'
@@ -234,8 +235,6 @@ D.getDecorators = function(by_block, by_type) {
 
 /* PORTS! */
 
-D.PORTFLAVOURS = {}
-
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
 
 
@@ -345,7 +344,7 @@ D.port_standard_enter = function(ship, process) {
 
 
 D.import_port_type = function(flavour, pflav) {
-  if(D.PORTFLAVOURS[flavour])
+  if(D.PortFlavours[flavour])
     return D.setError('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
@@ -374,7 +373,7 @@ D.import_port_type = function(flavour, pflav) {
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.setError("That port flavour's properties are invalid")
   
-  D.PORTFLAVOURS[flavour] = pflav
+  D.PortFlavours[flavour] = pflav
   return true
 }
 
@@ -2878,7 +2877,7 @@ D.Port = function(port_template, space) {
     , name = port_template.name
     , typehint = port_template.typehint
     
-  var pflav = D.PORTFLAVOURS[flavour]
+  var pflav = D.PortFlavours[flavour]
   
   if(!pflav)
     return D.setError('Port flavour "' + flavour + '" could not be identified')
