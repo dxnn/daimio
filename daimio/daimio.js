@@ -53,6 +53,8 @@ D.AliasMap = {};
 
 D.Parser = {}
 D.commands = {}
+D.SegmentTypes = {}
+
 
 D.command_open = '{'
 D.command_closed = '}'
@@ -63,6 +65,18 @@ D.quote = '"'
 D.noop = function() {}
 D.identity = function(x) {return x}
 D.concat = function(a,b) {return a.concat(b)}
+
+D.process_counter = 1
+D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
+
+/*
+  D.CONSTANTS = {}
+  CONSTANTSFRY
+  - OpenBrace
+  - CloseBrace
+  - OpenAngle
+  - CloseAngle
+*/
 
 
 /////// SOME HELPER METHODS ///////////
@@ -581,7 +595,6 @@ D.import_terminator('→', { // send [old]
 
 /* ALIASES! */
 
-
 D.import_models = function(new_models) {
   for(var model_key in new_models) {
     var model = new_models[model_key]
@@ -610,7 +623,6 @@ D.import_aliases = function(values) {
 
 
 /* TYPES! */
-
 
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.add_type = function(key, fun) {
@@ -707,17 +719,6 @@ D.add_type('either:block,string', function(value) {
 // [string] is a list of strings, block|string is a block or a string, and ""|list is false or a list (like maybe-list)
 
 
-/*
-  D.CONSTANTS = {}
-  CONSTANTSFRY
-  - OpenBrace
-  - CloseBrace
-  - OpenAngle
-  - CloseAngle
-*/
-
-
-
 // D.run is a serialized endpoint. Most gateways are also. If you want raw data use spacial execution
 D.run = function(daimio, ultimate_callback, space) {
   if(!daimio) return ""
@@ -754,6 +755,7 @@ D.run = function(daimio, ultimate_callback, space) {
   
   return ""
 }
+
 
 
 // Find some positions for a variable path... then mod them with a callback, in-place
@@ -809,8 +811,6 @@ D.import_pathfinder = function(name, pf) {
 // TODO: go up one level (is this the same as capture/boxing?)
 // TODO: filter by daimio code (does nothing in create mode?)
 
-// 
-
 
 D.peek = function(base, path) {
   path = D.toArray(path)
@@ -856,7 +856,6 @@ D.peek = function(base, path) {
   
   return todo.length ? todo[0] : false
 }
-
 
 // TODO: generalize this more so it runs a callback function instead of setting a static value
 // TODO: have a callback for branch creation as well, then combine this with peek
@@ -950,47 +949,9 @@ D.recursive_extend = function(base, value) {
   return base
 }
 
-// apply a function to every branch of a tree
-// D.recursive_walk = function(values, fun, seen) {
-//   if(!values || typeof values != 'object') return values;
-// 
-//   seen = seen || []; // only YOU can prevent infinite recursion...
-//   if(seen.indexOf(values) !== -1) return values;
-//   seen.push(values);
-//   
-//   for(var key in values) {
-//     var value = values[key];
-//     if(typeof value == 'object') values[key] = fun(D.recursive_walk(value, fun, seen))
-//     else values[key] = value;
-//   }
-//   return values;
-// };
-
-// DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
-// NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
-D.recursive_walk = function(data, pattern, fun) {
-  var true_pattern = false
-  
-  try {
-    true_pattern = pattern(data) // prevents bad pattern
-  } catch (e) {}
-  
-  
-  if(true_pattern) {
-    try {
-      fun(data) // prevents bad fun
-    } catch (e) {}
-  }
-  
-  if(!data || typeof data != 'object') return
-  
-  for(var key in data) {
-    if(!data.hasOwnProperty(key)) return
-    D.recursive_walk(data[key], pattern, fun)
-  }
-}
 
 // apply a function to every leaf of a tree, but generate a new copy of it as we go
+// THINK: only used by D.deep_copy, which we maybe don't need anymore
 D.recursive_leaves_copy = function(values, fun, seen) {
   if(!values || typeof values != 'object') return fun(values);
 
@@ -1018,32 +979,57 @@ D.recursive_leaves_copy = function(values, fun, seen) {
   return new_values;
 };
 
-// run every function in a tree (but not funs funs return)
-D.recursive_run = function(values, seen) {
-  if(D.isBlock(values)) return values;
-  if(typeof values == 'function') return values();
-  if(!values || typeof values != 'object') return values;
-  
-  seen = seen || []; // only YOU can prevent infinite recursion...
-  if(seen.indexOf(values) !== -1) return values;
-  seen.push(values);
 
-  var new_values = (Array.isArray(values) ? [] : {});
-  
-  for(var key in values) {
-    var value = values[key];
-    if(typeof value == 'function') {
-      new_values[key] = value();
-    }
-    else if(typeof value == 'object') {
-      new_values[key] = D.recursive_run(value, seen);
-    }
-    else {
-      new_values[key] = value;
-    }
-  }
-  return new_values;
-};
+// DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
+// NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
+// D.recursive_walk = function(data, pattern, fun) {
+//   var true_pattern = false
+//   
+//   try {
+//     true_pattern = pattern(data) // prevents bad pattern
+//   } catch (e) {}
+//   
+//   
+//   if(true_pattern) {
+//     try {
+//       fun(data) // prevents bad fun
+//     } catch (e) {}
+//   }
+//   
+//   if(!data || typeof data != 'object') return
+//   
+//   for(var key in data) {
+//     if(!data.hasOwnProperty(key)) return
+//     D.recursive_walk(data[key], pattern, fun)
+//   }
+// }
+
+// run every function in a tree (but not funs funs return)
+// D.recursive_run = function(values, seen) {
+//   if(D.isBlock(values)) return values;
+//   if(typeof values == 'function') return values();
+//   if(!values || typeof values != 'object') return values;
+//   
+//   seen = seen || []; // only YOU can prevent infinite recursion...
+//   if(seen.indexOf(values) !== -1) return values;
+//   seen.push(values);
+// 
+//   var new_values = (Array.isArray(values) ? [] : {});
+//   
+//   for(var key in values) {
+//     var value = values[key];
+//     if(typeof value == 'function') {
+//       new_values[key] = value();
+//     }
+//     else if(typeof value == 'object') {
+//       new_values[key] = D.recursive_run(value, seen);
+//     }
+//     else {
+//       new_values[key] = value;
+//     }
+//   }
+//   return new_values;
+// };
 
 // NOTE: defunctionize does a deep clone of 'values', so the value returned does not == (pointers don't match)
 // THINK: there may be cases where this doesn't actually deep clone...
@@ -1079,41 +1065,41 @@ D.recursive_run = function(values, seen) {
 // };
 
 // walk down into a list following the path, running a callback on each end-of-path item
-D.recursive_path_walk = function(list, path, callback, parent) {
-  if(typeof list != 'object') {
-    if(!path) callback(list, parent); // done walking, let's eat
-    return; 
-  }
-
-  // parents for child items
-  // THINK: this is inefficient and stupid...
-  var this_parent = {'parent': parent};
-  for(var key in list) {
-    this_parent[key] = list[key];
-  }
-
-  // end of the path?
-  if(!path) {
-    for(var key in list) {
-      callback(list[key], this_parent);
-    }
-    return; // out of gas, going home
-  }
-
-  var first_dot = path.indexOf('.') >= 0 ? path.indexOf('.') : path.length;
-  var part = path.slice(0, first_dot); // the first bit
-  path = path.slice(first_dot + 1); // the remainder
-
-  if(part == '*') {
-    for(var key in list) {
-      D.recursive_path_walk(list[key], path, callback, this_parent);
-    }
-  } else {
-    if(typeof list[part] != 'undefined') {
-      D.recursive_path_walk(list[part], path, callback, this_parent);
-    }
-  }
-};
+// D.recursive_path_walk = function(list, path, callback, parent) {
+//   if(typeof list != 'object') {
+//     if(!path) callback(list, parent); // done walking, let's eat
+//     return; 
+//   }
+// 
+//   // parents for child items
+//   // THINK: this is inefficient and stupid...
+//   var this_parent = {'parent': parent};
+//   for(var key in list) {
+//     this_parent[key] = list[key];
+//   }
+// 
+//   // end of the path?
+//   if(!path) {
+//     for(var key in list) {
+//       callback(list[key], this_parent);
+//     }
+//     return; // out of gas, going home
+//   }
+// 
+//   var first_dot = path.indexOf('.') >= 0 ? path.indexOf('.') : path.length;
+//   var part = path.slice(0, first_dot); // the first bit
+//   path = path.slice(first_dot + 1); // the remainder
+// 
+//   if(part == '*') {
+//     for(var key in list) {
+//       D.recursive_path_walk(list[key], path, callback, this_parent);
+//     }
+//   } else {
+//     if(typeof list[part] != 'undefined') {
+//       D.recursive_path_walk(list[part], path, callback, this_parent);
+//     }
+//   }
+// };
 
 // this is different from recursive_merge, because it replaces subvalues instead of merging
 D.recursive_insert = function(into, keys, value) {
@@ -1614,8 +1600,6 @@ D.ABlock = function(segments, wiring) {
   Aliases are converted to Commands prior to PBlockiness (and Command values are then enhanced with method pointer)
 */
 
-D.process_counter = 1
-D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
 
 D.Token = function(type, value) {
   this.key = D.token_counter++
@@ -1666,8 +1650,6 @@ D.Segment.prototype.toJSON = function() {
 
 // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
 
-
-D.SegmentTypes = {}
 
 D.SegmentTypes.Terminator = {
   try_lex: function(string) {
@@ -2077,31 +2059,31 @@ D.SegmentTypes.Variable = {
     return string // this is never lexed
   }
 , token_to_segments: function(token) {
-      return [new D.Segment(token.type, token.value, token)]
+    return [new D.Segment(token.type, token.value, token)]
   }
 , munge_segments: function(L, segment, R) {
-  if(segment.value.type == 'space') // space vars have to be collected at runtime
-    return [L.concat(segment), R]
+    if(segment.value.type == 'space') // space vars have to be collected at runtime
+      return [L.concat(segment), R]
   
-  var my_key = segment.key
-    , new_key = segment.value.prevkey
-    , key_index
+    var my_key = segment.key
+      , new_key = segment.value.prevkey
+      , key_index
 
-  // TODO: if !R.length, wire __out to the value [otherwise {2 | >foo | "" | _foo} doesn't work]
+    // TODO: if !R.length, wire __out to the value [otherwise {2 | >foo | "" | _foo} doesn't work]
   
-  if(!new_key && !R.length) // some pipeline vars have to be collected then too
-    return [L.concat(segment), R]
+    if(!new_key && !R.length) // some pipeline vars have to be collected then too
+      return [L.concat(segment), R]
 
-  if(!new_key)
-    new_key = segment.value.name
+    if(!new_key)
+      new_key = segment.value.name
     
-  R.forEach(function(future_segment) { // but others can be converted into wiring
-    while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
-      future_segment.inputs[key_index] = new_key
-  })
+    R.forEach(function(future_segment) { // but others can be converted into wiring
+      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
+        future_segment.inputs[key_index] = new_key
+    })
   
-  return [L, R]
-}
+    return [L, R]
+  }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var type = segment.value.type
       , name = segment.value.name
@@ -2936,7 +2918,6 @@ D.Port = function(port_template, space) {
   
   return port
 }
-
 
 
 // something about using []s and {}s to map something... _and_ vs _or_? it was really clever, whatever it was.
