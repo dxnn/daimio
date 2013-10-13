@@ -70,9 +70,8 @@ D.Constants.list_open = '('      // currently unused
 D.Constants.list_closed = ')'    // currently unused
 D.Constants.quote = '"'          // currently unused
 
-// THINK: these two are a bit silly
-D.process_counter = 1
-D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
+D.Etc.process_counter = 1
+D.Etc.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
 
 D.noop = function() {}
 D.identity = function(x) {return x}
@@ -1603,7 +1602,7 @@ D.ABlock = function(segments, wiring) {
 
 
 D.Token = function(type, value) {
-  this.key = D.token_counter++
+  this.key = D.Etc.token_counter++
   this.type = type
   this.value = value
 }
@@ -3378,7 +3377,7 @@ D.import_optimizer = function(name, fun) {
 
 
 D.Process = function(space, block, scope, prior_starter) {
-  this.pid = D.process_counter++
+  this.pid = D.Etc.process_counter++
   this.starttime = Date.now()
   this.current = 0
   this.space = space
