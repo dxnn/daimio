@@ -182,8 +182,8 @@ CodeMirror.defineMode("daimio", function() {
             word = words.pop()
             if(!data.pnames)
               data.pnames = []
-            for(var i=0, l = D.commands[data.handler].methods[word].params.length; i < l; i++) {
-              data.pnames.push(D.commands[data.handler].methods[word].params[i].key)
+            for(var i=0, l = D.Commands[data.handler].methods[word].params.length; i < l; i++) {
+              data.pnames.push(D.Commands[data.handler].methods[word].params[i].key)
             }
             data.method = word
             now.verb = 'parametrize'
@@ -208,7 +208,7 @@ CodeMirror.defineMode("daimio", function() {
         } 
         
         // good handler
-        else if(D.commands[word]) { 
+        else if(D.Commands[word]) { 
           data.handler = word
           returnType = HANDLER
           now.verb = 'methodize'
@@ -228,7 +228,7 @@ CodeMirror.defineMode("daimio", function() {
       */
       case 'methodize':
         var word = getNextWord(stream)
-        var handler = D.commands[data.handler]
+        var handler = D.Commands[data.handler]
 
         // good method
         if(handler.methods[word]) { 

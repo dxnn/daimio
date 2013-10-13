@@ -40,7 +40,7 @@ D.import_models({
           },
         ],
         fun: function(value, to) {
-          return D.ETC.Math.solver(value, to, function(a, b) {return a + b;});
+          return D.Etc.Math.solver(value, to, function(a, b) {return a + b;});
         },
       },
 
@@ -77,7 +77,7 @@ D.import_models({
           },
         ],
         fun: function(value, by) {
-          return D.ETC.Math.solver(value, by, function(a, b) {return a * b;});
+          return D.Etc.Math.solver(value, by, function(a, b) {return a * b;});
         },
       },
 
@@ -114,7 +114,7 @@ D.import_models({
           },
         ],
         fun: function(value, from) {
-          return D.ETC.Math.solver(from, value, function(a, b) {return a - b;});
+          return D.Etc.Math.solver(from, value, function(a, b) {return a - b;});
         },
       },
 
@@ -151,7 +151,7 @@ D.import_models({
           },
         ],
         fun: function(value, by) {
-          return D.ETC.Math.solver(value, by, function(a, b) {
+          return D.Etc.Math.solver(value, by, function(a, b) {
             if(!b) 
               return D.setError('Division by zero is a crime against nature') || 0
             return a / b
@@ -183,7 +183,7 @@ D.import_models({
         ],
         fun: function(value, by) {
           // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
-          return D.ETC.Math.solver(value, by, function(a, b) {
+          return D.Etc.Math.solver(value, by, function(a, b) {
             if(!b) 
               return D.setError('Modulation by zero is a crime against nature') || 0
             
@@ -395,9 +395,9 @@ D.import_models({
   }
 });
 
-D.ETC.Math = {}
+D.Etc.Math = {}
 
-D.ETC.Math.solver = function(value, to, fun) {
+D.Etc.Math.solver = function(value, to, fun) {
   // TODO: we don't need this if the type is "array|number"
   value = (typeof value == 'object') ? D.toArray(value) : value
   to = (typeof to == 'object') ? D.toArray(to) : to
@@ -406,28 +406,28 @@ D.ETC.Math.solver = function(value, to, fun) {
   // are these arrays or numbers?
   var arrays = Array.isArray(value) + Array.isArray(to)
   
-  // THINK: maybe wrap these with D.ETC.toNumeric to keep out NaNs
-  if(arrays == 2) return D.ETC.Math.doubleArray(value, to, fun);
-  if(arrays == 1) return D.ETC.Math.singleArray(value, to, fun);
-  if(arrays == 0) return D.ETC.Math.naryanArray(value, to, fun);
+  // THINK: maybe wrap these with D.Etc.toNumeric to keep out NaNs
+  if(arrays == 2) return D.Etc.Math.doubleArray(value, to, fun);
+  if(arrays == 1) return D.Etc.Math.singleArray(value, to, fun);
+  if(arrays == 0) return D.Etc.Math.naryanArray(value, to, fun);
 };
 
-D.ETC.Math.doubleArray = function(value, to, fun) {
+D.Etc.Math.doubleArray = function(value, to, fun) {
   return value.map(function(val, key) {
-    return fun(D.ETC.toNumeric(val), D.ETC.toNumeric(to[key]));
+    return fun(D.Etc.toNumeric(val), D.Etc.toNumeric(to[key]));
   });
 };
 
-D.ETC.Math.singleArray = function(value, to, fun) {
+D.Etc.Math.singleArray = function(value, to, fun) {
   // ensure value is the array
   if(typeof value != 'object') {
     var temp = to; to = value; value = temp;
   }
   
   // one array, one number
-  if(D.ETC.isNumeric(to)) {
+  if(D.Etc.isNumeric(to)) {
     return value.map(function(val) {
-      return fun(D.ETC.toNumeric(val), D.ETC.toNumeric(to));
+      return fun(D.Etc.toNumeric(val), D.Etc.toNumeric(to));
     });
   }
 
@@ -436,20 +436,20 @@ D.ETC.Math.singleArray = function(value, to, fun) {
   value = D.toArray(value);
   for(var i=0, l=value.length; i < l; i++) {
     // NOTE: this essentially bypasses identity concerns -- total=0 poisons *, total=1 taints +. it means subtraction and division are relative to the first value in the array, but that's ok.
-    if(total === false) total = D.ETC.toNumeric(value[i]);
-    else total = fun(total, D.ETC.toNumeric(value[i]));
+    if(total === false) total = D.Etc.toNumeric(value[i]);
+    else total = fun(total, D.Etc.toNumeric(value[i]));
   }
   return total;
 };
 
-D.ETC.Math.naryanArray = function(value, to, fun) {
-  if(!D.ETC.isNumeric(value)) {
+D.Etc.Math.naryanArray = function(value, to, fun) {
+  if(!D.Etc.isNumeric(value)) {
     D.setError("That is not a numeric value")
     value = 0
   }
-  if(!D.ETC.isNumeric(to)) {
-    // D.ETC.toNumeric(value)
+  if(!D.Etc.isNumeric(to)) {
+    // D.Etc.toNumeric(value)
     to = 0
   }
-  return fun(D.ETC.toNumeric(value), D.ETC.toNumeric(to));        
+  return fun(D.Etc.toNumeric(value), D.Etc.toNumeric(to));        
 };

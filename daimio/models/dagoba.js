@@ -23,7 +23,7 @@ D.import_models({
           // add graph action bindings
           topics = ['node/add','node/remove','port/add','port/remove','edge/add','edge/remove'];
           for(var i=0, l=topics.length; i < l; i++) {
-            D.ETC.dagoba.set_actions(graph, topics[i]);
+            D.Etc.dagoba.set_actions(graph, topics[i]);
           }
           
           return graph.id;
@@ -182,14 +182,14 @@ D.import_models({
           
           var node, nodes = {};
           
-          if(!by_ids.length) return D.ETC.dagoba.scrubber(graph.nodes);
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.nodes);
           
           for(var i=0, l=by_ids.length; i < l; i++) {
             node = graph.nodes[by_ids[i]];
             if(node) nodes[node.id] = node;
           }
 
-          return D.ETC.dagoba.scrubber(nodes);
+          return D.Etc.dagoba.scrubber(nodes);
         },
       },
 
@@ -214,14 +214,14 @@ D.import_models({
           
           var port, ports = {};
           
-          if(!by_ids.length) return D.ETC.dagoba.scrubber(graph.ports);
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.ports);
           
           for(var i=0, l=by_ids.length; i < l; i++) {
             port = graph.ports[by_ids[i]];
             if(port) ports[port.id] = port;
           }
 
-          return D.ETC.dagoba.scrubber(ports);
+          return D.Etc.dagoba.scrubber(ports);
         },
       },
 
@@ -246,14 +246,14 @@ D.import_models({
           
           var edge, edges = {};
           
-          if(!by_ids.length) return D.ETC.dagoba.scrubber(graph.edges);
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.edges);
           
           for(var i=0, l=by_ids.length; i < l; i++) {
             edge = graph.edges[by_ids[i]];
             if(edge) edges[edge.id] = edge;
           }
 
-          return D.ETC.dagoba.scrubber(edges);
+          return D.Etc.dagoba.scrubber(edges);
         },
       },
 
@@ -292,7 +292,7 @@ D.import_models({
             sorter = Dagoba.sort['natural'];
           }
           
-          return D.ETC.dagoba.scrubber(sorter(graph, options));
+          return D.Etc.dagoba.scrubber(sorter(graph, options));
         },
       },
 
@@ -449,8 +449,8 @@ D.import_models({
   }
 });
 
-D.ETC.dagoba = {};
-D.ETC.dagoba.scrubber = function(things) {
+D.Etc.dagoba = {};
+D.Etc.dagoba.scrubber = function(things) {
   var ports = {}, edges = {}, clean_things = [], 
       id_keys = ['ports', 'edges', 'startnodes', 'endnodes', 'startnode', 'endnode', 'startports', 'endports', 'startport', 'endport', 'startedges', 'endedges', 'node'],
       bad_keys = ['graph', 'init', 'remove'];
@@ -460,7 +460,7 @@ D.ETC.dagoba.scrubber = function(things) {
     
     for(var key in thing) {
       if(id_keys.indexOf(key) != -1) {
-        clean_thing[key] = D.ETC.dagoba.extract_ids(thing[key]);
+        clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
       } 
       else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
         if(D.isBlock(thing[key])) {
@@ -477,7 +477,7 @@ D.ETC.dagoba.scrubber = function(things) {
   return clean_things;
 };
 
-D.ETC.dagoba.extract_ids = function(things) {
+D.Etc.dagoba.extract_ids = function(things) {
   var ids = [];
   if(things.id) return [things.id];
   
@@ -488,7 +488,7 @@ D.ETC.dagoba.extract_ids = function(things) {
   return ids;
 }
 
-D.ETC.dagoba.set_actions = function(graph, topic) {
+D.Etc.dagoba.set_actions = function(graph, topic) {
   graph.add_action(topic, function(topic) {
     return function(thing) {
       // D.execute('variable', 'set', [topic, thing]);

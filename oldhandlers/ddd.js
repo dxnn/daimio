@@ -32,12 +32,12 @@ D.import_models({
         ],
         fun: function(action, params, options) {
           // FIXME: this is pretty stupid
-          if(typeof D.ETC.d3[action] != 'function') return D.onerror('That is not a valid action');
+          if(typeof D.Etc.d3[action] != 'function') return D.onerror('That is not a valid action');
           params.unshift(options[2]);
           params.unshift(options[1]);
           params.unshift(options[0]);
           // fix option length
-          D.ETC.d3[action].apply(this, params);
+          D.Etc.d3[action].apply(this, params);
         },
       },
     
@@ -45,4 +45,4 @@ D.import_models({
   }
 });
 
-D.ETC.d3 = {};
+D.Etc.d3 = {};

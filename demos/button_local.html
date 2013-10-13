@@ -66,7 +66,7 @@
         
         // _.each(seed.ports, function(port, portkey) {
         D.toArray(seed.ports).forEach(function(port, portkey) {
-          port.dir = D.PORTFLAVOURS[port[0]].dir
+          port.dir = D.PortFlavours[port[0]].dir
           if(port.dir == 'in')
             inports[portkey] = port
           if(port.dir == 'out')

@@ -44,45 +44,46 @@ Maybe add Frink as a handler?
 
 
 /* Naming conventions for Daimio:
-D.import_commands   <--- snake_case for functions
+D.import_commands   <--- snake_case for functions and constants
 D.SegmentTypes      <--- CamelCase for built-in objects
 D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
 */
 D = {}
-D.ETC = {}
+
 D.ABLOCKS = {}
-D.SPACESEEDS = {}
 D.DIALECTS = {}
-D.TYPES = {}
-D.ALIASES = {};
-D.AliasMap = {};
+D.SPACESEEDS = {}
+D.DECORATORS = []
 
+D.DecoratorIndices.ByType = {}        // technically these should be all caps,
+D.DecoratorIndices.ByBlock = {}       // but it's just too much yelling really
+D.DecoratorIndices.ByTypeBlock = {}
+
+D.Aliases = {}                        // aliases are a grey area: 
+D.AliasMap = {}                       // one day they may be able to grow at runtime
+
+D.Etc = {}
+D.Types = {}
 D.Parser = {}
-D.commands = {}
+D.Commands = {}
 D.SegmentTypes = {}
+D.PortFlavours = {}
 
-D.command_open = '{'
-D.command_closed = '}'
-D.list_open = '('
-D.list_closed = ')'
-D.quote = '"'
+D.Constants = {}                      // constants fry, constants fry, any time at all
+D.Constants.command_open = '{'
+D.Constants.command_closed = '}'
+D.Constants.list_open = '('           // currently unused
+D.Constants.list_closed = ')'         // currently unused
+D.Constants.quote = '"'               // currently unused
+
+D.Etc.process_counter = 1             // this is a bit silly
+D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
 
 D.noop = function() {}
 D.identity = function(x) {return x}
 D.concat = function(a,b) {return a.concat(b)}
 
-D.process_counter = 1
-D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
-
-/*
-  D.CONSTANTS = {}
-  CONSTANTSFRY
-  - OpenBrace
-  - CloseBrace
-  - OpenAngle
-  - CloseAngle
-*/
 
 
 /////// SOME HELPER METHODS ///////////
@@ -115,7 +116,7 @@ D.clone = function(value) {
   }
 }
 
-D.ETC.regex_escape = function(str) {
+D.Etc.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
@@ -177,15 +178,8 @@ if (typeof exports !== 'undefined') {
   exports.D = D
 }
 
-D.CHANNELS = {}
-
 
 /* DECORATORS! */
-
-D.DECORATORS = []
-D.DecoratorsByType = {}
-D.DecoratorsByBlock = {}
-D.DecoratorsByTypeBlock = {}
 
 D.addDecorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
@@ -200,20 +194,20 @@ D.addDecorator = function(block_id, type, value, unique) {
     }
   }
   
-  if(!D.DecoratorsByType[type]) {
-    D.DecoratorsByType[type] = []
+  if(!D.DecoratorIndices.ByType[type]) {
+    D.DecoratorIndices.ByType[type] = []
   }
-  if(!D.DecoratorsByBlock[block_id]) {
-    D.DecoratorsByBlock[block_id] = []
+  if(!D.DecoratorIndices.ByBlock[block_id]) {
+    D.DecoratorIndices.ByBlock[block_id] = []
   }
-  if(!D.DecoratorsByTypeBlock[type + '-' + block_id]) {
-    D.DecoratorsByTypeBlock[type + '-' + block_id] = []
+  if(!D.DecoratorIndices.ByTypeBlock[type + '-' + block_id]) {
+    D.DecoratorIndices.ByTypeBlock[type + '-' + block_id] = []
   }
   
   D.DECORATORS.push(decorator)
-  D.DecoratorsByType[type].push(decorator)
-  D.DecoratorsByBlock[block_id].push(decorator)
-  D.DecoratorsByTypeBlock[type + '-' + block_id].push(decorator)
+  D.DecoratorIndices.ByType[type].push(decorator)
+  D.DecoratorIndices.ByBlock[block_id].push(decorator)
+  D.DecoratorIndices.ByTypeBlock[type + '-' + block_id].push(decorator)
   
   return decorator
 }
@@ -223,14 +217,14 @@ D.getDecorators = function(by_block, by_type) {
   
   if(!by_block) {
     if(by_type) {
-      decorators = D.DecoratorsByType[by_type]
+      decorators = D.DecoratorIndices.ByType[by_type]
     }
   }
   else {
     if(by_type) {
-      decorators = D.DecoratorsByTypeBlock[by_type + '-' + by_block]
+      decorators = D.DecoratorIndices.ByTypeBlock[by_type + '-' + by_block]
     } else {
-      decorators = D.DecoratorsByBlock[by_block]
+      decorators = D.DecoratorIndices.ByBlock[by_block]
     }
   }
   
@@ -239,8 +233,6 @@ D.getDecorators = function(by_block, by_type) {
 
 
 /* PORTS! */
-
-D.PORTFLAVOURS = {}
 
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
 
@@ -259,11 +251,11 @@ D.PORTFLAVOURS = {}
 
 
 D.track_event = function(type, target, callback) {
-  if(!D.ETC.events)
-    D.ETC.events = {}
+  if(!D.Etc.events)
+    D.Etc.events = {}
   
-  if(!D.ETC.events[type]) {
-    D.ETC.events[type] = {by_class: {}, by_id: {}}
+  if(!D.Etc.events[type]) {
+    D.Etc.events[type] = {by_class: {}, by_id: {}}
     
     document.addEventListener(type, function(event) {
       var target = event.target
@@ -295,7 +287,7 @@ D.track_event = function(type, target, callback) {
     }, false)
   }
   
-  var tracked = D.ETC.events[type]
+  var tracked = D.Etc.events[type]
   
   if(target[0] == '.') {
     tracked.by_class[target.slice(1)] = callback
@@ -351,7 +343,7 @@ D.port_standard_enter = function(ship, process) {
 
 
 D.import_port_type = function(flavour, pflav) {
-  if(D.PORTFLAVOURS[flavour])
+  if(D.PortFlavours[flavour])
     return D.setError('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
@@ -380,7 +372,7 @@ D.import_port_type = function(flavour, pflav) {
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.setError("That port flavour's properties are invalid")
   
-  D.PORTFLAVOURS[flavour] = pflav
+  D.PortFlavours[flavour] = pflav
   return true
 }
 
@@ -403,7 +395,7 @@ D.import_fancy = function(ch, obj) {
   
   D.FancyRegex = RegExp(Object.keys(D.FANCIES)
                                  .sort(function(a, b) {return a.length - b.length})
-                                 .map(function(str) {return '^' + D.ETC.regex_escape(str) + '\\w'})
+                                 .map(function(str) {return '^' + D.Etc.regex_escape(str) + '\\w'})
                                  .join('|'))
 }
 
@@ -604,11 +596,11 @@ D.import_terminator('→', { // send [old]
 D.import_models = function(new_models) {
   for(var model_key in new_models) {
     var model = new_models[model_key]
-    if(!D.commands[model_key]) {
-      D.commands[model_key] = model
+    if(!D.Commands[model_key]) {
+      D.Commands[model_key] = model
     } 
     else {
-      D.extend(D.commands[model_key]['methods'], model['methods'])
+      D.extend(D.Commands[model_key]['methods'], model['methods'])
     }
   }
 }
@@ -622,7 +614,7 @@ D.import_aliases = function(values) {
   for(var key in values) {
     var value = values[key]
     value = D.Parser.string_to_tokens('{' + value + '}')
-    D.ALIASES[key] = value // do some checking or something
+    D.Aliases[key] = value // do some checking or something
   }
 }
 
@@ -633,7 +625,7 @@ D.import_aliases = function(values) {
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.add_type = function(key, fun) {
   // TODO: add some type checking
-  D.TYPES[key] = fun
+  D.Types[key] = fun
 };
 
 
@@ -662,7 +654,7 @@ D.add_type('number', function(value) {
 })
 
 D.add_type('integer', function(value) {
-  value = D.TYPES['number'](value) // TODO: make a simpler way to call these
+  value = D.Types['number'](value) // TODO: make a simpler way to call these
   
   return Math.round(value)
 })
@@ -686,7 +678,7 @@ D.add_type('maybe-list', function(value) {
   if(value === false || !D.isNice(value))
     return false
   else
-    return D.TYPES['list'](value)
+    return D.Types['list'](value)
 })
 
 D.add_type('block', function(value) {
@@ -716,9 +708,9 @@ D.add_type('block', function(value) {
 
 D.add_type('either:block,string', function(value) {
   if(D.isBlock(value)) {
-    return D.TYPES['block'](value)
+    return D.Types['block'](value)
   } else {
-    return D.TYPES['string'](value)
+    return D.Types['string'](value)
   }
 })
 
@@ -1196,7 +1188,7 @@ D.mean_defunctionize = function(values, seen) {
 //   while(chunk = D.Parser.get_next_thing(string)) {
 //     string = string.slice(chunk.length)
 // 
-//     if(chunk[0] == D.command_open)
+//     if(chunk[0] == D.Constants.command_open)
 //       chunk = {block: chunk}
 //       
 //     chunks.push(chunk)
@@ -1216,14 +1208,14 @@ D.mean_defunctionize = function(values, seen) {
 D.Parser.get_next_thing = function(string, ignore_begin) {
   var first_open, next_open, next_closed
   
-  first_open = next_open = next_closed = string.indexOf(D.command_open);
+  first_open = next_open = next_closed = string.indexOf(D.Constants.command_open);
   
   if(first_open == -1) return string  // no Daimio here
   if(first_open > 0) return string.slice(0, first_open)  // trim non-Daimio head
 
   do {
-    next_open = string.indexOf(D.command_open, next_open + 1)
-    next_closed = string.indexOf(D.command_closed, next_closed) + 1
+    next_open = string.indexOf(D.Constants.command_open, next_open + 1)
+    next_closed = string.indexOf(D.Constants.command_closed, next_closed) + 1
   } while(next_closed && next_open != -1 && next_closed > next_open)
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
@@ -1232,7 +1224,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     return string
   }
 
-  if(ignore_begin || string.slice(0,7) != D.command_open + 'begin ')
+  if(ignore_begin || string.slice(0,7) != D.Constants.command_open + 'begin ')
     return string.slice(0, next_closed)  // not a block
 
   var block_name = string.match(/^\{begin (\w+)/)
@@ -1243,7 +1235,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   }
   block_name = block_name[1];
   
-  var end_tag = D.command_open + 'end ' + block_name + D.command_closed
+  var end_tag = D.Constants.command_open + 'end ' + block_name + D.Constants.command_closed
     , end_begin = string.indexOf(end_tag)
     , end_end = end_begin + end_tag.length;
     
@@ -1314,10 +1306,10 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   if(typeof string != 'string') 
     return string || []
   
-  if(string.slice(0,7) == D.command_open + 'begin ') { // in a block
+  if(string.slice(0,7) == D.Constants.command_open + 'begin ') { // in a block
     var pipeline = D.Parser.get_next_thing(string, true)
       , block_name = pipeline.match(/^\{begin (\w+)/)[1] // TODO: this could fail
-      , end_tag = D.command_open + 'end ' + block_name + D.command_closed
+      , end_tag = D.Constants.command_open + 'end ' + block_name + D.Constants.command_closed
       , body = string.slice(pipeline.length, -end_tag.length)
       , segment = D.Parser.string_to_block_segment(body)
 
@@ -1400,7 +1392,7 @@ D.Parser.string_to_tokens = function(string) {
     , block_inputs = []
     , chunk = D.Parser.get_next_thing(string)
   
-  if(chunk.length == string.length && chunk[0] == D.command_open) {
+  if(chunk.length == string.length && chunk[0] == D.Constants.command_open) {
     // only one chunk, so make regular pipeline
     return D.Parser.pipeline_string_to_tokens(chunk)
   } 
@@ -1410,7 +1402,7 @@ D.Parser.string_to_tokens = function(string) {
       string = string.slice(chunk.length)
       result = []
 
-      if(chunk[0] == D.command_open) {
+      if(chunk[0] == D.Constants.command_open) {
         result = D.Parser.pipeline_string_to_tokens(chunk, true)
       } else {
         result = [new D.Token('String', chunk)]
@@ -1608,7 +1600,7 @@ D.ABlock = function(segments, wiring) {
 
 
 D.Token = function(type, value) {
-  this.key = D.token_counter++
+  this.key = D.Etc.token_counter++
   this.type = type
   this.value = value
 }
@@ -1764,7 +1756,7 @@ D.SegmentTypes.String = {
     if(string[0] != '"' || string.slice(-1) != '"')
       return string    
 
-    if(string.indexOf(D.command_open) != -1)
+    if(string.indexOf(D.Constants.command_open) != -1)
       return string
 
     return new D.Token('String', string.slice(1, -1))
@@ -1782,7 +1774,7 @@ D.SegmentTypes.Block = {
     if(string[0] != '"' || string.slice(-1) != '"')
       return string    
 
-    if(string.indexOf(D.command_open) == -1)
+    if(string.indexOf(D.Constants.command_open) == -1)
       return string
 
     return new D.Token('Block', string.slice(1, -1))
@@ -1833,7 +1825,7 @@ D.SegmentTypes.Blockjoin = {
 
 D.SegmentTypes.Pipeline = {
   try_lex: function(string) {
-    if(string[0] != D.command_open || string.slice(-1) != D.command_closed)
+    if(string[0] != D.Constants.command_open || string.slice(-1) != D.Constants.command_closed)
       return string
 
     return new D.Token('Pipeline', string)
@@ -2438,10 +2430,10 @@ D.SegmentTypes.Command = {
         }
       }
   
-      if(method_param.type && D.TYPES[method_param.type])
-        typefun = D.TYPES[method_param.type]
+      if(method_param.type && D.Types[method_param.type])
+        typefun = D.Types[method_param.type]
       else
-        typefun = D.TYPES.anything
+        typefun = D.Types.anything
   
       if(param_value !== undefined) {
         param_value = typefun(param_value)
@@ -2477,7 +2469,7 @@ D.SegmentTypes.Alias = {
     // return new D.Token('Alias', string) // NOTE: this has to run last...
   }
 , munge_tokens: function(L, token, R) {
-    var new_tokens = D.ALIASES[token.value.word]
+    var new_tokens = D.Aliases[token.value.word]
     
     if(!new_tokens) {
       D.setError("The alias '" + token.value.word + "' stares at you blankly")
@@ -2558,8 +2550,8 @@ D.SegmentTypes.Alias = {
 
 // D.Dialect = function(models, aliases, parent) {
 D.Dialect = function(commands, aliases) {
-  this.commands = commands ? D.deep_copy(commands) : D.commands
-  this.aliases = aliases ? D.clone(aliases) : D.ALIASES
+  this.commands = commands ? D.deep_copy(commands) : D.Commands
+  this.aliases = aliases ? D.clone(aliases) : D.Aliases
   // this.parent = parent
 }
 
@@ -2884,7 +2876,7 @@ D.Port = function(port_template, space) {
     , name = port_template.name
     , typehint = port_template.typehint
     
-  var pflav = D.PORTFLAVOURS[flavour]
+  var pflav = D.PortFlavours[flavour]
   
   if(!pflav)
     return D.setError('Port flavour "' + flavour + '" could not be identified')
@@ -3326,9 +3318,9 @@ D.import_optimizer = function(name, fun) {
 
 // figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
 
-//D.ETC.opt_memos = {}
+//D.Etc.opt_memos = {}
 //D.import_optimizer('memoize', function(block, scope) {
-//  var memos = D.ETC.opt_memos
+//  var memos = D.Etc.opt_memos
 //  if(!memos[block.id])
 //    memos[block.id] = {}
 //
@@ -3383,7 +3375,7 @@ D.import_optimizer = function(name, fun) {
 
 
 D.Process = function(space, block, scope, prior_starter) {
-  this.pid = D.process_counter++
+  this.pid = D.Etc.process_counter++
   this.starttime = Date.now()
   this.current = 0
   this.space = space
@@ -3608,7 +3600,7 @@ D.Parser.split_on = function(string, regex, label) {
     return string
   
   if(!(regex instanceof RegExp))
-    regex = RegExp('[' + D.ETC.regex_escape(regex) + ']')
+    regex = RegExp('[' + D.Etc.regex_escape(regex) + ']')
   
   var output = []
     , inside = []
@@ -3776,12 +3768,12 @@ D.obj_to_array = function(obj) {
 };
 
 D.stringify = function(value) {
-  return D.TYPES['string'](value)
+  return D.Types['string'](value)
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
   if(D.isBlock(value)) {
-    return D.TYPES['block'](value)(prior_starter, {}, process)
+    return D.Types['block'](value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
@@ -3794,22 +3786,22 @@ D.isBlock = function(value) {
   return value && value.type == 'Block' && value.value && value.value.id
 }
 
-D.ETC.isNumeric = function(value) {
+D.Etc.isNumeric = function(value) {
   return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
 }
 
-D.ETC.toNumeric = function(value) {
+D.Etc.toNumeric = function(value) {
   if(value === '0') return 0
   if(typeof value == 'number') return value
   if(typeof value == 'string') return +value ? +value : 0
   return 0
 }
 
-D.ETC.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
+D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
 
-D.ETC.string_to_regex = function(string, global) {
-  if(string[0] !== '/' || !D.ETC.flag_checker_regex.test(string)) {
-    return RegExp(D.ETC.regex_escape(string), (global ? 'g' : ''))
+D.Etc.string_to_regex = function(string, global) {
+  if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
+    return RegExp(D.Etc.regex_escape(string), (global ? 'g' : ''))
   }
   
   var flags = string.slice(string.lastIndexOf('/') + 1)
@@ -3818,7 +3810,7 @@ D.ETC.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
-D.ETC.niceifyish = function(value, whitespace) {
+D.Etc.niceifyish = function(value, whitespace) {
   // this takes an array of un-stringify-able values and returns the nice bits, mostly
   // probably pretty slow -- this is just a quick hack for console debugging
   

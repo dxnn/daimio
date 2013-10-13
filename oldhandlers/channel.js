@@ -31,7 +31,7 @@ D.import_models({
               return maybe_gateway
 
             // so maybe_gateway is a block, but it's unfuncified... so func it.
-            // var block = D.TYPES['block'](maybe_gateway)
+            // var block = D.Types['block'](maybe_gateway)
             
             // erm... block gets space.execute'd so keep it as a segment...
             // except what if it's just a string?
@@ -46,14 +46,14 @@ D.import_models({
           // herp derp merp berp
           
           var channel_name = 'channel:' + Math.random()
-            , channel = D.commands.channel.methods.add.fun(channel_name)
+            , channel = D.Commands.channel.methods.add.fun(channel_name)
           
           from.forEach(function(gateway_name) {
-            D.commands.channel.methods['attach-to-start'].fun(channel_name, gateway_name)
+            D.Commands.channel.methods['attach-to-start'].fun(channel_name, gateway_name)
           })
           
           to.forEach(function(gateway_name) {
-            D.commands.channel.methods['attach-to-end'].fun(channel_name, gateway_name)
+            D.Commands.channel.methods['attach-to-end'].fun(channel_name, gateway_name)
           })
           
           console.log(to)
