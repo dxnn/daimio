@@ -51,7 +51,7 @@ D.SPACESEEDS        <--- ALLCAPS for runtime containers
 */
 D = {}
 
-D.ABLOCKS = {}
+D.BLOCKS = {}
 D.DIALECTS = {}
 D.SPACESEEDS = {}
 D.DECORATORS = []
@@ -696,7 +696,7 @@ D.add_type('block', function(value) {
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.real_execute(D.ABLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
     }
   }
   else {
@@ -1295,7 +1295,7 @@ D.Parser.segments_to_block_segment = function(segments) {
     delete segment.inputs
   }
   
-  var block = new D.ABlock(segments, wiring)
+  var block = new D.Block(segments, wiring)
     , segment = new D.Segment('Block', {id: block.id})
   
   return segment
@@ -1537,7 +1537,7 @@ D.Transformers.rekey = function(L, segment, R) {
 }
 
 
-D.ABlock = function(segments, wiring) {
+D.Block = function(segments, wiring) {
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
   // 
   // if(head) {
@@ -1574,8 +1574,8 @@ D.ABlock = function(segments, wiring) {
     , hash = murmurhash(json)
     
   // THINK: take this out and put it elsewhere? or... how is block access limited? or... huh.
-  if(!D.ABLOCKS[hash])
-    D.ABLOCKS[hash] = this
+  if(!D.BLOCKS[hash])
+    D.BLOCKS[hash] = this
   
   this.id = hash
 }
@@ -2624,13 +2624,13 @@ D.Dialect.prototype.get_method = function(handler, method) {
 
 D.get_block = function(ablock_or_segment) {
   if(!ablock_or_segment)
-    return new D.ABlock()
+    return new D.Block()
   if(ablock_or_segment.segments)
     return ablock_or_segment
-  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.ABLOCKS[ablock_or_segment.value.id])
-    return D.ABLOCKS[ablock_or_segment.value.id]
+  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.BLOCKS[ablock_or_segment.value.id])
+    return D.BLOCKS[ablock_or_segment.value.id]
   else
-    return new D.ABlock()
+    return new D.Block()
 }
 
 
@@ -2653,7 +2653,7 @@ D.spaceseed_add = function(seed) {
       delete seed[key] // ensure no errant properties, including id
   
   // TODO: check dialect [id -> D.DIALECTS]
-  // TODO: check stations [array of id -> D.ABLOCKS]
+  // TODO: check stations [array of id -> D.BLOCKS]
   // TODO: check subspaces [array of id -> D.SPACESEEDS]
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
@@ -3016,7 +3016,7 @@ D.Space = function(seed_id, parent) {
 
   // this.stations = []
   // ;(template.stations || []).forEach(this.add_station)
-  // stations = stations.map(function(block_id) { return D.ABLOCKS[block_id] })
+  // stations = stations.map(function(block_id) { return D.BLOCKS[block_id] })
 
   // this.ports = []
   // ;(template.ports || []).filter(function(port) { return port.space == this.id })
@@ -3072,7 +3072,7 @@ D.Space.prototype.dock = function(ship, station_id) {
   this.station_id = station_id
   
   var block_id = this.seed.stations[station_id - 1]
-    , block = D.ABLOCKS[block_id]
+    , block = D.BLOCKS[block_id]
     , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
     , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
     , scope = {"__in": ship} // TODO: find something better...
