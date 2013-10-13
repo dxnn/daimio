@@ -51,7 +51,7 @@ D.SPACESEEDS        <--- ALLCAPS for runtime containers
 */
 D = {}
 
-D.ABLOCKS = {}
+D.BLOCKS = {}
 D.DIALECTS = {}
 D.SPACESEEDS = {}
 D.DECORATORS = []
@@ -67,9 +67,13 @@ D.AliasMap = {}                       // one day they may be able to grow at run
 D.Etc = {}
 D.Types = {}
 D.Parser = {}
+D.Fancies = {}
 D.Commands = {}
+D.Terminators = {}
+D.Pathfinders = []                    // one of these things is not like the others
 D.SegmentTypes = {}
 D.PortFlavours = {}
+D.Transformers = {}
 
 D.Constants = {}                      // constants fry, constants fry, any time at all
 D.Constants.command_open = '{'
@@ -80,6 +84,9 @@ D.Constants.quote = '"'               // currently unused
 
 D.Etc.process_counter = 1             // this is a bit silly
 D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
+
+D.Etc.FancyRegex = ""                 // this is also pretty silly
+D.Etc.Tglyphs = ""                    // and this one too
 
 D.noop = function() {}
 D.identity = function(x) {return x}
@@ -96,12 +103,12 @@ D.concat = function(a,b) {return a.concat(b)}
 // that would simplify e.g. translation, and allows automated error stuff (eg show what errors a command can throw, practice throwing those to see what happens, pick out all potential errors of type foo from all stations (like, which stations are capable of producing *extreme* errors?))
 
 // use this to set simple errors
-D.setError = function(error) {
-  return D.onerror('', error)
+D.set_error = function(error) {
+  return D.on_error('', error)
 }
 
 // use this to report errors in low-level daimio processes
-D.onerror = function(command, error) {
+D.on_error = function(command, error) {
   console.log('error: ' + error, command)
   return ""
 }
@@ -117,7 +124,7 @@ D.clone = function(value) {
   }
 }
 
-D.Etc.regex_escape = function(str) {
+D.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
@@ -182,14 +189,14 @@ if (typeof exports !== 'undefined') {
 
 /* DECORATORS! */
 
-D.addDecorator = function(block_id, type, value, unique) {
+D.add_decorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
                   , type: type
                   , value: value }
     , existing_decorators
   
   if(unique) {
-    existing_decorators = D.getDecorators(block_id, type)
+    existing_decorators = D.get_decorators(block_id, type)
     if(existing_decorators && existing_decorators.length) {
       return existing_decorators[0]
     }
@@ -213,7 +220,7 @@ D.addDecorator = function(block_id, type, value, unique) {
   return decorator
 }
 
-D.getDecorators = function(by_block, by_type) {
+D.get_decorators = function(by_block, by_type) {
   var decorators = D.DECORATORS
   
   if(!by_block) {
@@ -337,7 +344,7 @@ D.port_standard_enter = function(ship, process) {
     return this.pair.exit(ship)
 
   if(!this.station)
-    return D.setError('Every port must have a pair or a station')
+    return D.set_error('Every port must have a pair or a station')
 
   this.space.dock(ship, this.station) // THINK: always async...?
 }
@@ -345,12 +352,12 @@ D.port_standard_enter = function(ship, process) {
 
 D.import_port_type = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
-    return D.setError('That port flavour has already been im-port-ed')
+    return D.set_error('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
   
   if(!pflav)
-    return D.setError('That flavour is not desirable')
+    return D.set_error('That flavour is not desirable')
 
   if(typeof pflav.add != 'function')
     pflav.add = D.noop // noop, so we can call w/o checking
@@ -371,7 +378,7 @@ D.import_port_type = function(flavour, pflav) {
     pflav.enter = D.port_standard_enter
   
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
-  //   return D.setError("That port flavour's properties are invalid")
+  //   return D.set_error("That port flavour's properties are invalid")
   
   D.PortFlavours[flavour] = pflav
   return true
@@ -382,21 +389,19 @@ D.import_port_type = function(flavour, pflav) {
 
 /* FANCIES! */
 
-D.FANCIES = {}
-D.FancyRegex = ""
 D.import_fancy = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Fancy character must be a string')
+  if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.FANCIES[ch]) {
+  if(!D.Fancies[ch]) {
     // TODO: check obj.eat
-    D.FANCIES[ch] = obj
+    D.Fancies[ch] = obj
   } else {
-    D.setError('Your fancies are more borken')
+    D.set_error('Your fancies are more borken')
   }
   
-  D.FancyRegex = RegExp(Object.keys(D.FANCIES)
+  D.Etc.FancyRegex = RegExp(Object.keys(D.Fancies)
                                  .sort(function(a, b) {return a.length - b.length})
-                                 .map(function(str) {return '^' + D.Etc.regex_escape(str) + '\\w'})
+                                 .map(function(str) {return '^' + D.regex_escape(str) + '\\w'})
                                  .join('|'))
 }
 
@@ -481,7 +486,7 @@ D.import_fancy('__', {
     token.value = pieces.shift()
 
     if(token.value != '__' && token.value != '__in') {
-      D.setError('Only __ and __in are allow to start with __')
+      D.set_error('Only __ and __in are allow to start with __')
       return []
     }
 
@@ -535,21 +540,19 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 
 /* TERMINATORS! */
 
-D.terminators = {}
-D.Tglyphs = ""
 D.import_terminator = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Terminator character must be a string')
+  if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.terminators[ch]) D.terminators[ch] = []
-  D.terminators[ch].push(obj)
-  D.Tglyphs += ch
+  if(!D.Terminators[ch]) D.Terminators[ch] = []
+  D.Terminators[ch].push(obj)
+  D.Etc.Tglyphs += ch
 }
 
 // TODO: these should do more than just return a fancy parser...
 
 D.terminate = function(ch, verb, params) {
-  if(!D.terminators[ch]) return false
-  var fun, terminators = D.terminators[ch]
+  if(!D.Terminators[ch]) return false
+  var fun, terminators = D.Terminators[ch]
   
   for(var i=0, l=terminators.length; i < l; i++) {
     fun = terminators[i][verb]
@@ -631,7 +634,7 @@ D.add_type = function(key, fun) {
 
 
 D.add_type('string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.block_ref_to_string(value)
   }
   
@@ -661,29 +664,29 @@ D.add_type('integer', function(value) {
 })
 
 D.add_type('anything', function(value) {
-  if(!D.isNice(value)) return ""
+  if(!D.is_nice(value)) return ""
   return value // THINK: what about blocks? 
 })
 
 D.add_type('array', function(value) { // ugh...
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('list', function(value) {
   if(value && typeof value === 'object') 
     return value.type == 'Block' ? [value] : value
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('maybe-list', function(value) {
-  if(value === false || !D.isNice(value))
+  if(value === false || !D.is_nice(value))
     return false
   else
     return D.Types['list'](value)
 })
 
 D.add_type('block', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     // value is a block ref...
     return function(prior_starter, scope, process) {
       // TODO: check value.value.id first, because it might not be in ABLOCKS
@@ -693,7 +696,7 @@ D.add_type('block', function(value) {
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.REAL_execute(D.ABLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
     }
   }
   else {
@@ -708,7 +711,7 @@ D.add_type('block', function(value) {
 })
 
 D.add_type('either:block,string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.Types['block'](value)
   } else {
     return D.Types['string'](value)
@@ -792,7 +795,6 @@ D.run = function(daimio, ultimate_callback, space) {
 
 */
 
-D.Pathfinders = []
 D.import_pathfinder = function(name, pf) {
   if(typeof pf.keymatch != 'function')
     pf.keymatch = function(key) {return false} // return false if N/A, 'one' if you're singular, otherwise 'many'
@@ -812,7 +814,7 @@ D.import_pathfinder = function(name, pf) {
 
 
 D.peek = function(base, path) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   if(!path.length)
     return value
@@ -838,7 +840,7 @@ D.peek = function(base, path) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -862,7 +864,7 @@ D.peek = function(base, path) {
 
 // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
 D.poke = function(base, path, value) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   // THINK: no path works like push, because that's a reasonable use case for this...  
   // if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
@@ -893,7 +895,7 @@ D.poke = function(base, path, value) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -965,14 +967,14 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
       var val = values[key]
       // this is only called from toPrimitive and deep_copy, which both want blocks
-      if(D.isBlock(val)) {
+      if(D.is_block(val)) {
         new_values[key] = fun(val); // blocks are immutable
       } else if(typeof val == 'object') {
         new_values[key] = D.recursive_leaves_copy(val, fun, seen);
       } else {
         new_values[key] = fun(val);
       }
-    // } catch(e) {D.onerror(e)}
+    // } catch(e) {D.on_error(e)}
   }
 
   return new_values;
@@ -1005,7 +1007,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 
 // run every function in a tree (but not funs funs return)
 // D.recursive_run = function(values, seen) {
-//   if(D.isBlock(values)) return values;
+//   if(D.is_block(values)) return values;
 //   if(typeof values == 'function') return values();
 //   if(!values || typeof values != 'object') return values;
 //   
@@ -1039,7 +1041,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 // 
 //   if(values.__nodefunc) return values;
 //   
-//   if(D.isBlock(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
+//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
 //   if(typeof values == 'function') return D.defunctionize(values());
 //   if(typeof values != 'object') return values;
 //   
@@ -1123,7 +1125,7 @@ D.recursive_insert = function(into, keys, value) {
 // NOTE: this is basically toPrimitive, for things that are already primitives. 
 D.deep_copy = function(value) {
   if(!value || typeof value != 'object') return value; // number, string, or boolean
-  if(D.isBlock(value)) return value; // blocks are immutable, so pass-by-ref is ok.
+  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
   return D.recursive_leaves_copy(value, D.deep_copy);
 };
 
@@ -1132,7 +1134,7 @@ D.scrub_var = function(value) {
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
-    // D.onerror('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
+    // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
     value = D.mean_defunctionize(value);
     if(value === null) value = false;
     return value;
@@ -1141,7 +1143,7 @@ D.scrub_var = function(value) {
 
 // this is like defunc, but not as nice -- it trashes funcs and snips circular refs
 D.mean_defunctionize = function(values, seen) {
-  if(!D.isNice(values)) return false;
+  if(!D.is_nice(values)) return false;
   if(!values) return values;
 
   if(typeof values == 'function') return null;
@@ -1221,7 +1223,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
   if(!next_closed) {
-    D.onerror("No closing brace for '" + string + "'")
+    D.on_error("No closing brace for '" + string + "'")
     return string
   }
 
@@ -1231,7 +1233,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   var block_name = string.match(/^\{begin (\w+)/)
   if(!block_name) {
     // FIXME: handle this situation better
-    D.onerror(string, 'Something weird happened')
+    D.on_error(string, 'Something weird happened')
     return string
   }
   block_name = block_name[1];
@@ -1242,7 +1244,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     
   if(!end_begin) {
     // FIXME: handle this situation better
-    D.onerror(string, "No end tag for block '" + block_name + "'");
+    D.on_error(string, "No end tag for block '" + block_name + "'");
     return string;
   }
   
@@ -1260,9 +1262,9 @@ D.Parser.string_to_block_segment = function(string) {
   
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
-    // , decorators = D.getDecorators(block_id)
+    // , decorators = D.get_decorators(block_id)
   
-  D.addDecorator(block_id, 'OriginalString', string, true)
+  D.add_decorator(block_id, 'OriginalString', string, true)
   // if(!decorators) {
   //   // TODO: check to ensure there's already an OriginalString for this
   //   // TODO: refactor
@@ -1277,7 +1279,7 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
   
-  segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+  segments = D.mungeLR(segments, D.Transformers.rekey)
   
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
@@ -1293,7 +1295,7 @@ D.Parser.segments_to_block_segment = function(segments) {
     delete segment.inputs
   }
   
-  var block = new D.ABlock(segments, wiring)
+  var block = new D.Block(segments, wiring)
     , segment = new D.Segment('Block', {id: block.id})
   
   return segment
@@ -1320,7 +1322,7 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   } 
   else {
     if(string[0] != '{' && string.slice(-1) != '}') {
-      D.setError('That string is not a pipeline')
+      D.set_error('That string is not a pipeline')
       return []
     }
   
@@ -1504,14 +1506,15 @@ D.block_ref_to_string = function(value) {
 
 
 /*
+  TRANSFORMERS!
+
   each Transformer takes a left-set of segments, the segment in question, and a right-set of segments. 
   it returns the new left and right set. the next segment from the right set is then considered, until no items remain.
   for now, all the fancy and terminator code is stuffed into these two functions.
   TODO: split out the fancys and terminators so they're added like types.
 */
-D.TRANSFORMERS = {}
 
-D.TRANSFORMERS.Rekey = function(L, segment, R) {
+D.Transformers.rekey = function(L, segment, R) {
   var old_key = segment.key
     , new_key = L.length
     
@@ -1534,7 +1537,7 @@ D.TRANSFORMERS.Rekey = function(L, segment, R) {
 }
 
 
-D.ABlock = function(segments, wiring) {
+D.Block = function(segments, wiring) {
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
   // 
   // if(head) {
@@ -1571,8 +1574,8 @@ D.ABlock = function(segments, wiring) {
     , hash = murmurhash(json)
     
   // THINK: take this out and put it elsewhere? or... how is block access limited? or... huh.
-  if(!D.ABLOCKS[hash])
-    D.ABLOCKS[hash] = this
+  if(!D.BLOCKS[hash])
+    D.BLOCKS[hash] = this
   
   this.id = hash
 }
@@ -1608,7 +1611,7 @@ D.Token = function(type, value) {
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
-  this.value = D.isNice(value) ? value : ""
+  this.value = D.is_nice(value) ? value : ""
   
   if(!token) 
     token = {}
@@ -1787,7 +1790,7 @@ D.SegmentTypes.Block = {
   }
 , toJSON: function(segment) {
     var block_id = segment.value.id
-      , decorators = D.getDecorators(block_id, 'OriginalString')
+      , decorators = D.get_decorators(block_id, 'OriginalString')
       
     if(decorators) {
       return decorators[0].value
@@ -1820,7 +1823,7 @@ D.SegmentTypes.Blockjoin = {
       return D.execute_then_stringify(value, {}, process)
     }
 
-    return D.dataTrampoline(inputs, processfun, D.string_concat, prior_starter)
+    return D.data_trampoline(inputs, processfun, D.string_concat, prior_starter)
   }
 }
 
@@ -1837,7 +1840,7 @@ D.SegmentTypes.Pipeline = {
     var last_replacement = new_tokens[new_tokens.length - 1]
     
     if(!last_replacement){
-      // D.setError('The previous replacement does not exist')
+      // D.set_error('The previous replacement does not exist')
       return [L, R]
     }
     
@@ -1917,7 +1920,7 @@ D.SegmentTypes.Fancy = {
   try_lex: function(string) {
     // var regex = new RegExp('^[' + D.FancyGlyphs + ']') // THINK: would anything else ever start with a fancy glyph?
 
-    if(D.FancyRegex.test(string)) 
+    if(D.Etc.FancyRegex.test(string)) 
       return new D.Token('Fancy', string)
 
     return string
@@ -1926,12 +1929,12 @@ D.SegmentTypes.Fancy = {
     // var glyph = token.value.slice(0,1)
     var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
   
-    if(!D.FANCIES[glyph]) {
-      D.setError('Your fancies are borken:' + glyph + ' ' + token.value)
+    if(!D.Fancies[glyph]) {
+      D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
       return [L, R]
     }
 
-    var new_tokens = D.FANCIES[glyph].eat(token)
+    var new_tokens = D.Fancies[glyph].eat(token)
       , last_replacement = new_tokens[new_tokens.length - 1]
     
     if(last_replacement) {
@@ -1991,7 +1994,7 @@ D.SegmentTypes.VariableSet = {
                                             && future_segment.value.name == name })
      .forEach(function(future_segment) { 
        if(future_segment.value.prevkey)
-         return D.setError('Pipeline variables may be set at most once per pipeline')
+         return D.set_error('Pipeline variables may be set at most once per pipeline')
        future_segment.value.prevkey = new_key
      })
   
@@ -2046,7 +2049,7 @@ D.SegmentTypes.PortSend = {
       }
     }
     else {
-      D.setError('Invalid port " + to + " detected')
+      D.set_error('Invalid port " + to + " detected')
     }
     
     return inputs[0]
@@ -2094,7 +2097,7 @@ D.SegmentTypes.Variable = {
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
       value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
       
-    if(!D.isNice(value))
+    if(!D.is_nice(value))
       return false
     
     // return value // OPT: cloning each time is terrible
@@ -2353,7 +2356,7 @@ D.SegmentTypes.Command = {
       var word = items.shift()
 
       if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.setError('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
+        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
         if(items.length)
           items.shift()
         continue
@@ -2403,7 +2406,7 @@ D.SegmentTypes.Command = {
 
     if(!method) {
       // THINK: error?
-      D.setError('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
+      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
@@ -2423,7 +2426,7 @@ D.SegmentTypes.Command = {
         param_value = inputs[name_index]
       }
       
-      if(!piped && !D.isNice(param_value)) {
+      if(!piped && !D.is_nice(param_value)) {
         name_index = segment.value.names.indexOf('__pipe__')
         piped = true
         if(name_index != -1) {
@@ -2457,7 +2460,7 @@ D.SegmentTypes.Command = {
       return method.fun.apply(handler, params.concat(prior_starter, process))
     } else {
       errors.forEach(function(error) {
-        D.setError(error)
+        D.set_error(error)
       })
       return ""
     }
@@ -2473,14 +2476,14 @@ D.SegmentTypes.Alias = {
     var new_tokens = D.Aliases[token.value.word]
     
     if(!new_tokens) {
-      D.setError("The alias '" + token.value.word + "' stares at you blankly")
+      D.set_error("The alias '" + token.value.word + "' stares at you blankly")
       return [L, R]
     }
     
     new_tokens =  D.clone(new_tokens)
 
     // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
 
     // fiddle with wiring
@@ -2621,13 +2624,13 @@ D.Dialect.prototype.get_method = function(handler, method) {
 
 D.get_block = function(ablock_or_segment) {
   if(!ablock_or_segment)
-    return new D.ABlock()
+    return new D.Block()
   if(ablock_or_segment.segments)
     return ablock_or_segment
-  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.ABLOCKS[ablock_or_segment.value.id])
-    return D.ABLOCKS[ablock_or_segment.value.id]
+  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.BLOCKS[ablock_or_segment.value.id])
+    return D.BLOCKS[ablock_or_segment.value.id]
   else
-    return new D.ABlock()
+    return new D.Block()
 }
 
 
@@ -2650,7 +2653,7 @@ D.spaceseed_add = function(seed) {
       delete seed[key] // ensure no errant properties, including id
   
   // TODO: check dialect [id -> D.DIALECTS]
-  // TODO: check stations [array of id -> D.ABLOCKS]
+  // TODO: check stations [array of id -> D.BLOCKS]
   // TODO: check subspaces [array of id -> D.SPACESEEDS]
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
@@ -2880,16 +2883,16 @@ D.Port = function(port_template, space) {
   var pflav = D.PortFlavours[flavour]
   
   if(!pflav)
-    return D.setError('Port flavour "' + flavour + '" could not be identified')
+    return D.set_error('Port flavour "' + flavour + '" could not be identified')
   
   // if(D.PORTS[name])
-  //   return D.setError('That port has already been added')
+  //   return D.set_error('That port has already been added')
     
   if(!name)
     name = 'port-' + Math.random()
     
   // if(!space)
-  //   return D.setError('Every port must have a space')
+  //   return D.set_error('Every port must have a space')
   
   var port = Object.create(pflav)
   
@@ -2899,7 +2902,7 @@ D.Port = function(port_template, space) {
   port.flavour = flavour
   port.station = station || undefined
   port.typehint = typehint
-  port.settings = D.isNice(settings) ? settings : {}
+  port.settings = D.is_nice(settings) ? settings : {}
   
   port.pair = false
   
@@ -2929,7 +2932,7 @@ D.Space = function(seed_id, parent) {
     , self = this
   
   if(!seed)
-    return D.setError('Invalid spaceseed')
+    return D.set_error('Invalid spaceseed')
     
   // TODO: validate parent
   
@@ -3013,7 +3016,7 @@ D.Space = function(seed_id, parent) {
 
   // this.stations = []
   // ;(template.stations || []).forEach(this.add_station)
-  // stations = stations.map(function(block_id) { return D.ABLOCKS[block_id] })
+  // stations = stations.map(function(block_id) { return D.BLOCKS[block_id] })
 
   // this.ports = []
   // ;(template.ports || []).filter(function(port) { return port.space == this.id })
@@ -3069,7 +3072,7 @@ D.Space.prototype.dock = function(ship, station_id) {
   this.station_id = station_id
   
   var block_id = this.seed.stations[station_id - 1]
-    , block = D.ABLOCKS[block_id]
+    , block = D.BLOCKS[block_id]
     , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
     , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
     , scope = {"__in": ship} // TODO: find something better...
@@ -3164,7 +3167,7 @@ D.Space.prototype.change_seed = function(seed_id) {
 //   var index = this.stations.indexOf(station)
 //   
 //   if(index == -1)
-//     return D.setError('No such station found')
+//     return D.set_error('No such station found')
 //   
 //   // TODO: remove the station's ports
 //   
@@ -3206,14 +3209,14 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   // if(!when_done) {
   //   when_done = function(result) {
   //     // THINK: what should we do here?
-  //     D.setError("No when_done callback sent to space.execute for result: " + D.stringify(result))
+  //     D.set_error("No when_done callback sent to space.execute for result: " + D.stringify(result))
   //   }
   // }
   
   if(this.processes.length && this.only_one_process) {
     // NOTE: we kind of need this -- it keeps all the process requests in order (using JS's event loop) and clears our closet of skeletal callstacks
     var thunk = function() {
-      var result = self.REAL_execute(block, scope, prior_starter, listeners)
+      var result = self.real_execute(block, scope, prior_starter, listeners)
       if(result === result)
         prior_starter(result) // we're asynced, but the process didn't know it
     }
@@ -3222,15 +3225,15 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
     // setTimeout(thunk, 0)
     
     // this.queue.push(function() {
-    //   self.REAL_execute(block, scope, prior_starter, when_done)
+    //   self.real_execute(block, scope, prior_starter, when_done)
     // })
     return NaN
   }
 
-  return self.REAL_execute(block, scope, prior_starter, listeners)
+  return self.real_execute(block, scope, prior_starter, listeners)
 }
 
-D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners) {
+D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners) {
   var self = this
     , process
     , result
@@ -3263,7 +3266,7 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
     result = process.run()
     self.cleanup(process, listeners)
   } catch(e) {
-    D.setError(e.message)
+    D.set_error(e.message)
     self.cleanup(process, listeners)
   }
   
@@ -3438,7 +3441,7 @@ D.Process.prototype.done = function() {
     }
   } 
   
-  output = D.isNice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
+  output = D.is_nice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
 
   if(this.asynced) {
     this.asynced = false // ORLY??
@@ -3485,7 +3488,7 @@ D.Process.prototype.next = function() {
     , key = segment.key || this.current
 
   if(wiring[key]) {
-    inputs = wiring[key].map(function(index) {return D.isNice(state[index]) ? state[index] : null}) // THINK: why null?
+    inputs = wiring[key].map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) // THINK: why null?
   }
   
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
@@ -3519,7 +3522,7 @@ D.Process.prototype.next = function() {
   Used in small doses it makes your possibly-async command logic much simpler.
 */
 
-D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
+D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
   var keys = Object.keys(data)
   , size = keys.length
   , index = -1
@@ -3562,14 +3565,14 @@ D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun
 }
 
 D.string_concat = function(total, value) {
-  total = D.isNice(total) ? total : ''
-  value = D.isNice(value) ? value : ''
+  total = D.is_nice(total) ? total : ''
+  value = D.is_nice(value) ? value : ''
   return D.stringify(total) + D.stringify(value)
 }
 
 D.list_push = function(total, value) {
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   total.push(value)
   return total
 }
@@ -3580,7 +3583,7 @@ D.list_set = function(total, value, key) {
   var keys = Object.keys(total)
   if(!key) key = keys.length
   
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   
   total[key] = value
   return total
@@ -3592,7 +3595,7 @@ D.scrub_list = function(list) {
   if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
     return list
     
-  return D.toArray(list)
+  return D.to_array(list)
 }
 
 
@@ -3601,7 +3604,7 @@ D.Parser.split_on = function(string, regex, label) {
     return string
   
   if(!(regex instanceof RegExp))
-    regex = RegExp('[' + D.Etc.regex_escape(regex) + ']')
+    regex = RegExp('[' + D.regex_escape(regex) + ']')
   
   var output = []
     , inside = []
@@ -3698,7 +3701,7 @@ D.Parser.split_on = function(string, regex, label) {
 
 D.Parser.split_on_terminators = function(string) {
   // TODO: make Tglyphs work with multi-char Terminators
-  return D.Parser.split_on(string, D.Tglyphs, 'Terminator')
+  return D.Parser.split_on(string, D.Etc.Tglyphs, 'Terminator')
 }
 
 D.Parser.split_on_space = function(string) {
@@ -3729,7 +3732,7 @@ D.mungeLR = function(items, fun) {
 // HELPER FUNCTIONS
 // THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
 
-D.isFalse = function(value) {
+D.is_false = function(value) {
   if(!value) 
     return true // '', 0, false, NaN, null, undefined
   
@@ -3746,17 +3749,17 @@ D.isFalse = function(value) {
   return true
 }
 
-D.isNice = function(value) {
+D.is_nice = function(value) {
   return !!value || value == false; // not NaN, null, or undefined
   // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
 };
 
 // this converts non-iterable items into a single-element array
-D.toArray = function(value) {
+D.to_array = function(value) {
   if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
   if(typeof value == 'object') return D.obj_to_array(value);
   if(value === false) return []; // hmmm...
-  if(!D.isNice(value)) return []; // double hmmm.
+  if(!D.is_nice(value)) return []; // double hmmm.
   return [value];
 };
 
@@ -3773,25 +3776,25 @@ D.stringify = function(value) {
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.Types['block'](value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
 }
 
-D.isBlock = function(value) {
+D.is_block = function(value) {
   if(!value instanceof D.Segment)
     return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
 
   return value && value.type == 'Block' && value.value && value.value.id
 }
 
-D.Etc.isNumeric = function(value) {
+D.is_numeric = function(value) {
   return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
 }
 
-D.Etc.toNumeric = function(value) {
+D.to_numeric = function(value) {
   if(value === '0') return 0
   if(typeof value == 'number') return value
   if(typeof value == 'string') return +value ? +value : 0
@@ -3800,9 +3803,9 @@ D.Etc.toNumeric = function(value) {
 
 D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
 
-D.Etc.string_to_regex = function(string, global) {
+D.string_to_regex = function(string, global) {
   if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
-    return RegExp(D.Etc.regex_escape(string), (global ? 'g' : ''))
+    return RegExp(D.regex_escape(string), (global ? 'g' : ''))
   }
   
   var flags = string.slice(string.lastIndexOf('/') + 1)
@@ -3811,23 +3814,22 @@ D.Etc.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
-D.Etc.niceifyish = function(value, whitespace) {
-  // this takes an array of un-stringify-able values and returns the nice bits, mostly
-  // probably pretty slow -- this is just a quick hack for console debugging
-  
-  var purge = function(key, value) {
-    try {
-      JSON.stringify(value)
-    } catch(e) {
-      if(key && +key !== +key)
-        value = undefined
-    }
-    return value
-  }
-  
-  return JSON.stringify(value, purge, whitespace)
-}
-
+// D.Etc.niceifyish = function(value, whitespace) {
+//   // this takes an array of un-stringify-able values and returns the nice bits, mostly
+//   // probably pretty slow -- this is just a quick hack for console debugging
+//   
+//   var purge = function(key, value) {
+//     try {
+//       JSON.stringify(value)
+//     } catch(e) {
+//       if(key && +key !== +key)
+//         value = undefined
+//     }
+//     return value
+//   }
+//   
+//   return JSON.stringify(value, purge, whitespace)
+// }
 
 
 
@@ -4036,7 +4038,7 @@ D.seedlikes_from_string = function(stringlike) {
             route.push(part + '.in')
             // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
-              D.setError('Port not found in line: ' + line)
+              D.set_error('Port not found in line: ' + line)
               route = []
             }
             else {
@@ -4051,7 +4053,7 @@ D.seedlikes_from_string = function(stringlike) {
         if(route.length == 2) {
           // TODO: ensure pushed route isn't null,null
           if(!route[0] || !route[1])
-            D.setError('Port not found in line: ' + line)
+            D.set_error('Port not found in line: ' + line)
           else 
             this_seed.routes.push(route)
           
@@ -4142,9 +4144,9 @@ D.make_spaceseeds = function(seedlikes) {
           , two = port_key_to_index[route[1]]
           
         if(!one)
-          D.setError('Invalid route: ' + route[0])
+          D.set_error('Invalid route: ' + route[0])
         if(!two)
-          D.setError('Invalid route: ' + route[1])
+          D.set_error('Invalid route: ' + route[1])
         
         if(!one || !two)
           return []

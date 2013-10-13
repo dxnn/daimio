@@ -44,7 +44,7 @@ Maybe add Frink as a handler?
 
 D = {}
 D.ETC = {}
-D.ABLOCKS = {}
+D.BLOCKS = {}
 D.SPACESEEDS = {}
 D.DIALECTS = {}
 D.TYPES = {}
@@ -74,12 +74,12 @@ D.concat = function(a,b) {return a.concat(b)}
 // that would simplify e.g. translation, and allows automated error stuff (eg show what errors a command can throw, practice throwing those to see what happens, pick out all potential errors of type foo from all stations (like, which stations are capable of producing *extreme* errors?))
 
 // use this to set simple errors
-D.setError = function(error) {
-  return D.onerror('', error)
+D.set_error = function(error) {
+  return D.on_error('', error)
 }
 
 // use this to report errors in low-level daimio processes
-D.onerror = function(command, error) {
+D.on_error = function(command, error) {
   console.log('error: ' + error, command)
   return ""
 }
@@ -167,14 +167,14 @@ D.DecoratorsByType = {}
 D.DecoratorsByBlock = {}
 D.DecoratorsByTypeBlock = {}
 
-D.addDecorator = function(block_id, type, value, unique) {
+D.add_decorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
                   , type: type
                   , value: value }
     , existing_decorators
   
   if(unique) {
-    existing_decorators = D.getDecorators(block_id, type)
+    existing_decorators = D.get_decorators(block_id, type)
     if(existing_decorators && existing_decorators.length) {
       return existing_decorators[0]
     }
@@ -198,7 +198,7 @@ D.addDecorator = function(block_id, type, value, unique) {
   return decorator
 }
 
-D.getDecorators = function(by_block, by_type) {
+D.get_decorators = function(by_block, by_type) {
   var decorators = D.DECORATORS
   
   if(!by_block) {
@@ -324,7 +324,7 @@ D.port_standard_enter = function(ship, process) {
     return this.pair.exit(ship)
 
   if(!this.station)
-    return D.setError('Every port must have a pair or a station')
+    return D.set_error('Every port must have a pair or a station')
 
   this.space.dock(ship, this.station) // THINK: always async...?
 }
@@ -332,12 +332,12 @@ D.port_standard_enter = function(ship, process) {
 
 D.import_port_type = function(flavour, pflav) {
   if(D.PORTFLAVOURS[flavour])
-    return D.setError('That port flavour has already been im-port-ed')
+    return D.set_error('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
   
   if(!pflav)
-    return D.setError('That flavour is not desirable')
+    return D.set_error('That flavour is not desirable')
 
   if(typeof pflav.add != 'function')
     pflav.add = D.noop // noop, so we can call w/o checking
@@ -358,7 +358,7 @@ D.import_port_type = function(flavour, pflav) {
     pflav.enter = D.port_standard_enter
   
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
-  //   return D.setError("That port flavour's properties are invalid")
+  //   return D.set_error("That port flavour's properties are invalid")
   
   D.PORTFLAVOURS[flavour] = pflav
   return true
@@ -385,7 +385,7 @@ D.import_port_type('to-js', {
     
     var fun = D.ETC.fun && D.ETC.fun[this.settings.thing]
     if(!fun)
-      return D.setError('No fun found')
+      return D.set_error('No fun found')
     
     fun(ship)
   }
@@ -451,10 +451,10 @@ D.import_port_type('dom-set-text', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })
 
@@ -469,10 +469,10 @@ D.import_port_type('dom-set-html', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -487,10 +487,10 @@ D.import_port_type('dom-set-value', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -505,10 +505,10 @@ D.import_port_type('dom-do-submit', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })
 
@@ -638,7 +638,7 @@ D.import_port_type('svg-move', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(element.x !== undefined) { // a regular element
       
@@ -681,7 +681,7 @@ D.import_port_type('svg-rotate', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     var x = typeof ship.x === 'number' ? ship.x : element.x.baseVal.value + (element.width.baseVal.value / 2)
       , y = typeof ship.y === 'number' ? ship.y : element.y.baseVal.value + (element.height.baseVal.value / 2)
@@ -706,10 +706,10 @@ D.import_port_type('svg-add-line', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(!element.getCTM)
-      return D.setError("That doesn't look like an svg element to me")
+      return D.set_error("That doesn't look like an svg element to me")
     
     var x1 = ship.x1 || 0
       , y1 = ship.y1 || 0
@@ -740,19 +740,19 @@ D.import_port_type('svg-add-line', {
 
 /* FANCIES! */
 
-D.FANCIES = {}
-D.FancyRegex = ""
+D.Fancies = {}
+D.Etc.FancyRegex = ""
 D.import_fancy = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Fancy character must be a string')
+  if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.FANCIES[ch]) {
+  if(!D.Fancies[ch]) {
     // TODO: check obj.eat
-    D.FANCIES[ch] = obj
+    D.Fancies[ch] = obj
   } else {
-    D.setError('Your fancies are more borken')
+    D.set_error('Your fancies are more borken')
   }
   
-  D.FancyRegex = RegExp(Object.keys(D.FANCIES)
+  D.Etc.FancyRegex = RegExp(Object.keys(D.Fancies)
                                  .sort(function(a, b) {return a.length - b.length})
                                  .map(function(str) {return '^' + D.ETC.regex_escape(str) + '\\w'})
                                  .join('|'))
@@ -839,7 +839,7 @@ D.import_fancy('__', {
     token.value = pieces.shift()
 
     if(token.value != '__' && token.value != '__in') {
-      D.setError('Only __ and __in are allow to start with __')
+      D.set_error('Only __ and __in are allow to start with __')
       return []
     }
 
@@ -893,21 +893,21 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 
 /* TERMINATORS! */
 
-D.terminators = {}
-D.Tglyphs = ""
+D.Terminators = {}
+D.Etc.Tglyphs = ""
 D.import_terminator = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Terminator character must be a string')
+  if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.terminators[ch]) D.terminators[ch] = []
-  D.terminators[ch].push(obj)
-  D.Tglyphs += ch
+  if(!D.Terminators[ch]) D.Terminators[ch] = []
+  D.Terminators[ch].push(obj)
+  D.Etc.Tglyphs += ch
 }
 
 // TODO: these should do more than just return a fancy parser...
 
 D.terminate = function(ch, verb, params) {
-  if(!D.terminators[ch]) return false
-  var fun, terminators = D.terminators[ch]
+  if(!D.Terminators[ch]) return false
+  var fun, terminators = D.Terminators[ch]
   
   for(var i=0, l=terminators.length; i < l; i++) {
     fun = terminators[i][verb]
@@ -991,7 +991,7 @@ D.add_type = function(key, fun) {
 
 
 D.add_type('string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.block_ref_to_string(value)
   }
   
@@ -1021,29 +1021,29 @@ D.add_type('integer', function(value) {
 })
 
 D.add_type('anything', function(value) {
-  if(!D.isNice(value)) return ""
+  if(!D.is_nice(value)) return ""
   return value // THINK: what about blocks? 
 })
 
 D.add_type('array', function(value) { // ugh...
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('list', function(value) {
   if(value && typeof value === 'object') 
     return value.type == 'Block' ? [value] : value
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('maybe-list', function(value) {
-  if(value === false || !D.isNice(value))
+  if(value === false || !D.is_nice(value))
     return false
   else
     return D.TYPES['list'](value)
 })
 
 D.add_type('block', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     // value is a block ref...
     return function(prior_starter, scope, process) {
       // TODO: check value.value.id first, because it might not be in ABLOCKS
@@ -1053,7 +1053,7 @@ D.add_type('block', function(value) {
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.REAL_execute(D.ABLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
     }
   }
   else {
@@ -1068,7 +1068,7 @@ D.add_type('block', function(value) {
 })
 
 D.add_type('either:block,string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.TYPES['block'](value)
   } else {
     return D.TYPES['string'](value)
@@ -1135,7 +1135,7 @@ D.resolve_path = function(words, base, fun) {
   
   // if(path.indexOf(D.command_open) != -1) path = D.run(path);
   // if(!path) return base;
-  // if(path.indexOf('.') == -1) return D.isNice(base[path]) ? base[path] : false;
+  // if(path.indexOf('.') == -1) return D.is_nice(base[path]) ? base[path] : false;
   // words = path.split('.');
 
   if(typeof words == 'string') {
@@ -1145,7 +1145,7 @@ D.resolve_path = function(words, base, fun) {
   if(!words.length) 
     return base
   // if(words.length == 1) 
-  //   return D.isNice(base[words[0]]) ? base[words[0]] : false
+  //   return D.is_nice(base[words[0]]) ? base[words[0]] : false
   var value = base
 
   // value = base[words.shift()]; // THINK: this is by reference...
@@ -1154,7 +1154,7 @@ D.resolve_path = function(words, base, fun) {
   for(var i=0, l=words.length; i < l; i++) {
     word = words[i];
     
-    if(!D.isNice(word))
+    if(!D.is_nice(word))
       continue // is this right?
     // THINK: add something to stop word[0] from exploding also
     
@@ -1175,7 +1175,7 @@ D.resolve_path = function(words, base, fun) {
     
     // for #-X, return the Xth item from the end
     else if(word[0] == '#' && word[1] == '-' && +word.slice(2)) {
-      flat_value = D.toArray(value);
+      flat_value = D.to_array(value);
       index = flat_value.length - +word.slice(2);
       value = flat_value[index];
     }
@@ -1183,7 +1183,7 @@ D.resolve_path = function(words, base, fun) {
     // for #X, return the Xth item
     else if(word[0] == '#' && +word.slice(1)) {
       // OPT: use a for-in here and shortcut it
-      flat_value = D.toArray(value);
+      flat_value = D.to_array(value);
       value = flat_value[+word.slice(1) - 1];
     }
     
@@ -1237,7 +1237,7 @@ D.resolve_path = function(words, base, fun) {
     }
   }
 
-  return D.isNice(value) ? value : false;
+  return D.is_nice(value) ? value : false;
 };
 
 
@@ -1352,12 +1352,12 @@ D.import_pathfinder('star', {
   },
   gather: function(value, key) {
     if(value && typeof value == 'object')
-      return D.toArray(value)
+      return D.to_array(value)
 
     return []
   },
   create: function(value, key) {
-    value = D.toArray(value) // TODO: this is wrong, but we need parent to fix it (right?)
+    value = D.to_array(value) // TODO: this is wrong, but we need parent to fix it (right?)
     
     for(var i=0, l=value.length; i < l; i++)
       if(typeof value[i] != 'object')
@@ -1428,7 +1428,7 @@ D.import_pathfinder('position', {
     
     return [ value[ vkeys[ position ] ] ]
     
-    // value = D.toArray(value)
+    // value = D.to_array(value)
     // var position = Math.abs(+key.slice(1)) // THINK: if |value| < N for #-N then do this backward...
     // 
     // for(var i=0, l=position; i <= l; i++)
@@ -1501,7 +1501,7 @@ D.import_pathfinder('key', {
 
 
 D.peek = function(base, path) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   if(!path.length)
     return value
@@ -1527,7 +1527,7 @@ D.peek = function(base, path) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -1552,7 +1552,7 @@ D.peek = function(base, path) {
 
 // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
 D.poke = function(base, path, value) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   // THINK: no path works like push, because that's a reasonable use case for this...  
   // if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
@@ -1583,7 +1583,7 @@ D.poke = function(base, path, value) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -1618,7 +1618,7 @@ D.poke = function(base, path, value) {
 //   
 //   var reducer = function(acc, value, words) {
 //     if(scalar_test(value))
-//       return D.setError("There's been a terrible mistake") || {}
+//       return D.set_error("There's been a terrible mistake") || {}
 // 
 //     if(JSON.stringify(value) === '{}') {
 //       words.forEach(function(word) {
@@ -1636,7 +1636,7 @@ D.poke = function(base, path, value) {
 // 
 //     // for #-X, return the Xth item from the end
 //     else if(word[0] == '#' && word[1] == '-' && +word.slice(2)) {
-//       flat_value = D.toArray(value);
+//       flat_value = D.to_array(value);
 //       index = flat_value.length - +word.slice(2);
 //       value = flat_value[index];
 //     }
@@ -1798,14 +1798,14 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
       var val = values[key]
       // this is only called from toPrimitive and deep_copy, which both want blocks
-      if(D.isBlock(val)) {
+      if(D.is_block(val)) {
         new_values[key] = fun(val); // blocks are immutable
       } else if(typeof val == 'object') {
         new_values[key] = D.recursive_leaves_copy(val, fun, seen);
       } else {
         new_values[key] = fun(val);
       }
-    // } catch(e) {D.onerror(e)}
+    // } catch(e) {D.on_error(e)}
   }
 
   return new_values;
@@ -1813,7 +1813,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 
 // run every function in a tree (but not funs funs return)
 D.recursive_run = function(values, seen) {
-  if(D.isBlock(values)) return values;
+  if(D.is_block(values)) return values;
   if(typeof values == 'function') return values();
   if(!values || typeof values != 'object') return values;
   
@@ -1847,7 +1847,7 @@ D.recursive_run = function(values, seen) {
 // 
 //   if(values.__nodefunc) return values;
 //   
-//   if(D.isBlock(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
+//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
 //   if(typeof values == 'function') return D.defunctionize(values());
 //   if(typeof values != 'object') return values;
 //   
@@ -1931,7 +1931,7 @@ D.recursive_insert = function(into, keys, value) {
 // NOTE: this is basically toPrimitive, for things that are already primitives. 
 D.deep_copy = function(value) {
   if(!value || typeof value != 'object') return value; // number, string, or boolean
-  if(D.isBlock(value)) return value; // blocks are immutable, so pass-by-ref is ok.
+  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
   return D.recursive_leaves_copy(value, D.deep_copy);
 };
 
@@ -1940,7 +1940,7 @@ D.scrub_var = function(value) {
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
-    D.onerror('Your object has circular references');
+    D.on_error('Your object has circular references');
     value = D.mean_defunctionize(value);
     if(value === null) value = false;
     return value;
@@ -1949,7 +1949,7 @@ D.scrub_var = function(value) {
 
 // this is like defunc, but not as nice -- it trashes funcs and snips circular refs
 D.mean_defunctionize = function(values, seen) {
-  if(!D.isNice(values)) return false;
+  if(!D.is_nice(values)) return false;
   if(!values) return values;
 
   if(typeof values == 'function') return null;
@@ -2020,7 +2020,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
   if(!next_closed) {
-    D.onerror("No closing brace for '" + string + "'")
+    D.on_error("No closing brace for '" + string + "'")
     return string
   }
 
@@ -2030,7 +2030,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   var block_name = string.match(/^\{begin (\w+)/)
   if(!block_name) {
     // FIXME: handle this situation better
-    D.onerror(string, 'Something weird happened')
+    D.on_error(string, 'Something weird happened')
     return string
   }
   block_name = block_name[1];
@@ -2041,7 +2041,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     
   if(!end_begin) {
     // FIXME: handle this situation better
-    D.onerror(string, "No end tag for block '" + block_name + "'");
+    D.on_error(string, "No end tag for block '" + block_name + "'");
     return string;
   }
   
@@ -2059,9 +2059,9 @@ D.Parser.string_to_block_segment = function(string) {
   
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
-    // , decorators = D.getDecorators(block_id)
+    // , decorators = D.get_decorators(block_id)
   
-  D.addDecorator(block_id, 'OriginalString', string, true)
+  D.add_decorator(block_id, 'OriginalString', string, true)
   // if(!decorators) {
   //   // TODO: check to ensure there's already an OriginalString for this
   //   // TODO: refactor
@@ -2076,7 +2076,7 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
   
-  segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+  segments = D.mungeLR(segments, D.Transformers.rekey)
   
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
@@ -2092,7 +2092,7 @@ D.Parser.segments_to_block_segment = function(segments) {
     delete segment.inputs
   }
   
-  var block = new D.ABlock(segments, wiring)
+  var block = new D.Block(segments, wiring)
     , segment = new D.Segment('Block', {id: block.id})
   
   return segment
@@ -2119,7 +2119,7 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   } 
   else {
     if(string[0] != '{' && string.slice(-1) != '}') {
-      D.setError('That string is not a pipeline')
+      D.set_error('That string is not a pipeline')
       return []
     }
   
@@ -2308,9 +2308,9 @@ D.block_ref_to_string = function(value) {
   for now, all the fancy and terminator code is stuffed into these two functions.
   TODO: split out the fancys and terminators so they're added like types.
 */
-D.TRANSFORMERS = {}
+D.Transformers = {}
 
-D.TRANSFORMERS.Rekey = function(L, segment, R) {
+D.Transformers.rekey = function(L, segment, R) {
   var old_key = segment.key
     , new_key = L.length
     
@@ -2333,7 +2333,7 @@ D.TRANSFORMERS.Rekey = function(L, segment, R) {
 }
 
 
-D.ABlock = function(segments, wiring) {
+D.Block = function(segments, wiring) {
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
   // 
   // if(head) {
@@ -2370,8 +2370,8 @@ D.ABlock = function(segments, wiring) {
     , hash = murmurhash(json)
     
   // THINK: take this out and put it elsewhere? or... how is block access limited? or... huh.
-  if(!D.ABLOCKS[hash])
-    D.ABLOCKS[hash] = this
+  if(!D.BLOCKS[hash])
+    D.BLOCKS[hash] = this
   
   this.id = hash
 }
@@ -2409,7 +2409,7 @@ D.Token = function(type, value) {
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
-  this.value = D.isNice(value) ? value : ""
+  this.value = D.is_nice(value) ? value : ""
   
   if(!token) 
     token = {}
@@ -2590,7 +2590,7 @@ D.SegmentTypes.Block = {
   }
 , toJSON: function(segment) {
     var block_id = segment.value.id
-      , decorators = D.getDecorators(block_id, 'OriginalString')
+      , decorators = D.get_decorators(block_id, 'OriginalString')
       
     if(decorators) {
       return decorators[0].value
@@ -2623,7 +2623,7 @@ D.SegmentTypes.Blockjoin = {
       return D.execute_then_stringify(value, {}, process)
     }
 
-    return D.dataTrampoline(inputs, processfun, D.string_concat, prior_starter)
+    return D.data_trampoline(inputs, processfun, D.string_concat, prior_starter)
   }
 }
 
@@ -2640,7 +2640,7 @@ D.SegmentTypes.Pipeline = {
     var last_replacement = new_tokens[new_tokens.length - 1]
     
     if(!last_replacement){
-      // D.setError('The previous replacement does not exist')
+      // D.set_error('The previous replacement does not exist')
       return [L, R]
     }
     
@@ -2720,7 +2720,7 @@ D.SegmentTypes.Fancy = {
   try_lex: function(string) {
     // var regex = new RegExp('^[' + D.FancyGlyphs + ']') // THINK: would anything else ever start with a fancy glyph?
 
-    if(D.FancyRegex.test(string)) 
+    if(D.Etc.FancyRegex.test(string)) 
       return new D.Token('Fancy', string)
 
     return string
@@ -2729,12 +2729,12 @@ D.SegmentTypes.Fancy = {
     // var glyph = token.value.slice(0,1)
     var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
   
-    if(!D.FANCIES[glyph]) {
-      D.setError('Your fancies are borken:' + glyph + ' ' + token.value)
+    if(!D.Fancies[glyph]) {
+      D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
       return [L, R]
     }
 
-    var new_tokens = D.FANCIES[glyph].eat(token)
+    var new_tokens = D.Fancies[glyph].eat(token)
       , last_replacement = new_tokens[new_tokens.length - 1]
     
     if(last_replacement) {
@@ -2794,7 +2794,7 @@ D.SegmentTypes.VariableSet = {
                                             && future_segment.value.name == name })
      .forEach(function(future_segment) { 
        if(future_segment.value.prevkey)
-         return D.setError('Pipeline variables may be set at most once per pipeline')
+         return D.set_error('Pipeline variables may be set at most once per pipeline')
        future_segment.value.prevkey = new_key
      })
   
@@ -2849,7 +2849,7 @@ D.SegmentTypes.PortSend = {
       }
     }
     else {
-      D.setError('Invalid port " + to + " detected')
+      D.set_error('Invalid port " + to + " detected')
     }
     
     return inputs[0]
@@ -2897,7 +2897,7 @@ D.SegmentTypes.Variable = {
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
       value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
       
-    if(!D.isNice(value))
+    if(!D.is_nice(value))
       return false
     
     // return value // OPT: cloning each time is terrible
@@ -3156,7 +3156,7 @@ D.SegmentTypes.Command = {
       var word = items.shift()
 
       if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.setError('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
+        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
         if(items.length)
           items.shift()
         continue
@@ -3206,7 +3206,7 @@ D.SegmentTypes.Command = {
 
     if(!method) {
       // THINK: error?
-      D.setError('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
+      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
@@ -3226,7 +3226,7 @@ D.SegmentTypes.Command = {
         param_value = inputs[name_index]
       }
       
-      if(!piped && !D.isNice(param_value)) {
+      if(!piped && !D.is_nice(param_value)) {
         name_index = segment.value.names.indexOf('__pipe__')
         piped = true
         if(name_index != -1) {
@@ -3260,7 +3260,7 @@ D.SegmentTypes.Command = {
       return method.fun.apply(handler, params.concat(prior_starter, process))
     } else {
       errors.forEach(function(error) {
-        D.setError(error)
+        D.set_error(error)
       })
       return ""
     }
@@ -3276,14 +3276,14 @@ D.SegmentTypes.Alias = {
     var new_tokens = D.ALIASES[token.value.word]
     
     if(!new_tokens) {
-      D.setError("The alias '" + token.value.word + "' stares at you blankly")
+      D.set_error("The alias '" + token.value.word + "' stares at you blankly")
       return [L, R]
     }
     
     new_tokens =  D.clone(new_tokens)
 
     // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
 
     // fiddle with wiring
@@ -3424,13 +3424,13 @@ D.Dialect.prototype.get_method = function(handler, method) {
 
 D.get_block = function(ablock_or_segment) {
   if(!ablock_or_segment)
-    return new D.ABlock()
+    return new D.Block()
   if(ablock_or_segment.segments)
     return ablock_or_segment
-  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.ABLOCKS[ablock_or_segment.value.id])
-    return D.ABLOCKS[ablock_or_segment.value.id]
+  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.BLOCKS[ablock_or_segment.value.id])
+    return D.BLOCKS[ablock_or_segment.value.id]
   else
-    return new D.ABlock()
+    return new D.Block()
 }
 
 
@@ -3453,7 +3453,7 @@ D.spaceseed_add = function(seed) {
       delete seed[key] // ensure no errant properties, including id
   
   // TODO: check dialect [id -> D.DIALECTS]
-  // TODO: check stations [array of id -> D.ABLOCKS]
+  // TODO: check stations [array of id -> D.BLOCKS]
   // TODO: check subspaces [array of id -> D.SPACESEEDS]
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
@@ -3683,16 +3683,16 @@ D.Port = function(port_template, space) {
   var pflav = D.PORTFLAVOURS[flavour]
   
   if(!pflav)
-    return D.setError('Port flavour "' + flavour + '" could not be identified')
+    return D.set_error('Port flavour "' + flavour + '" could not be identified')
   
   // if(D.PORTS[name])
-  //   return D.setError('That port has already been added')
+  //   return D.set_error('That port has already been added')
     
   if(!name)
     name = 'port-' + Math.random()
     
   // if(!space)
-  //   return D.setError('Every port must have a space')
+  //   return D.set_error('Every port must have a space')
   
   var port = Object.create(pflav)
   
@@ -3702,7 +3702,7 @@ D.Port = function(port_template, space) {
   port.flavour = flavour
   port.station = station || undefined
   port.typehint = typehint
-  port.settings = D.isNice(settings) ? settings : {}
+  port.settings = D.is_nice(settings) ? settings : {}
   
   port.pair = false
   
@@ -3733,7 +3733,7 @@ D.Space = function(seed_id, parent) {
     , self = this
   
   if(!seed)
-    return D.setError('Invalid spaceseed')
+    return D.set_error('Invalid spaceseed')
     
   // TODO: validate parent
   
@@ -3817,7 +3817,7 @@ D.Space = function(seed_id, parent) {
 
   // this.stations = []
   // ;(template.stations || []).forEach(this.add_station)
-  // stations = stations.map(function(block_id) { return D.ABLOCKS[block_id] })
+  // stations = stations.map(function(block_id) { return D.BLOCKS[block_id] })
 
   // this.ports = []
   // ;(template.ports || []).filter(function(port) { return port.space == this.id })
@@ -3873,7 +3873,7 @@ D.Space.prototype.dock = function(ship, station_id) {
   this.station_id = station_id
   
   var block_id = this.seed.stations[station_id - 1]
-    , block = D.ABLOCKS[block_id]
+    , block = D.BLOCKS[block_id]
     , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
     , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
     , scope = {"__in": ship} // TODO: find something better...
@@ -3968,7 +3968,7 @@ D.Space.prototype.change_seed = function(seed_id) {
 //   var index = this.stations.indexOf(station)
 //   
 //   if(index == -1)
-//     return D.setError('No such station found')
+//     return D.set_error('No such station found')
 //   
 //   // TODO: remove the station's ports
 //   
@@ -4010,14 +4010,14 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   // if(!when_done) {
   //   when_done = function(result) {
   //     // THINK: what should we do here?
-  //     D.setError("No when_done callback sent to space.execute for result: " + D.stringify(result))
+  //     D.set_error("No when_done callback sent to space.execute for result: " + D.stringify(result))
   //   }
   // }
   
   if(this.processes.length && this.only_one_process) {
     // NOTE: we kind of need this -- it keeps all the process requests in order (using JS's event loop) and clears our closet of skeletal callstacks
     var thunk = function() {
-      var result = self.REAL_execute(block, scope, prior_starter, listeners)
+      var result = self.real_execute(block, scope, prior_starter, listeners)
       if(result === result)
         prior_starter(result) // we're asynced, but the process didn't know it
     }
@@ -4026,15 +4026,15 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
     // setTimeout(thunk, 0)
     
     // this.queue.push(function() {
-    //   self.REAL_execute(block, scope, prior_starter, when_done)
+    //   self.real_execute(block, scope, prior_starter, when_done)
     // })
     return NaN
   }
 
-  return self.REAL_execute(block, scope, prior_starter, listeners)
+  return self.real_execute(block, scope, prior_starter, listeners)
 }
 
-D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners) {
+D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners) {
   var self = this
     , process
     , result
@@ -4067,7 +4067,7 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
     result = process.run()
     self.cleanup(process, listeners)
   } catch(e) {
-    D.setError(e.message)
+    D.set_error(e.message)
     self.cleanup(process, listeners)
   }
   
@@ -4242,7 +4242,7 @@ D.Process.prototype.done = function() {
     }
   } 
   
-  output = D.isNice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
+  output = D.is_nice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
 
   if(this.asynced) {
     this.asynced = false // ORLY??
@@ -4289,7 +4289,7 @@ D.Process.prototype.next = function() {
     , key = segment.key || this.current
 
   if(wiring[key]) {
-    inputs = wiring[key].map(function(index) {return D.isNice(state[index]) ? state[index] : null}) // THINK: why null?
+    inputs = wiring[key].map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) // THINK: why null?
   }
   
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
@@ -4323,7 +4323,7 @@ D.Process.prototype.next = function() {
   Used in small doses it makes your possibly-async command logic much simpler.
 */
 
-D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
+D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
   var keys = Object.keys(data)
   , size = keys.length
   , index = -1
@@ -4366,14 +4366,14 @@ D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun
 }
 
 D.string_concat = function(total, value) {
-  total = D.isNice(total) ? total : ''
-  value = D.isNice(value) ? value : ''
+  total = D.is_nice(total) ? total : ''
+  value = D.is_nice(value) ? value : ''
   return D.stringify(total) + D.stringify(value)
 }
 
 D.list_push = function(total, value) {
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   total.push(value)
   return total
 }
@@ -4384,7 +4384,7 @@ D.list_set = function(total, value, key) {
   var keys = Object.keys(total)
   if(!key) key = keys.length
   
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   
   total[key] = value
   return total
@@ -4396,7 +4396,7 @@ D.scrub_list = function(list) {
   if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
     return list
     
-  return D.toArray(list)
+  return D.to_array(list)
 }
 
 
@@ -4502,7 +4502,7 @@ D.Parser.split_on = function(string, regex, label) {
 
 D.Parser.split_on_terminators = function(string) {
   // TODO: make Tglyphs work with multi-char Terminators
-  return D.Parser.split_on(string, D.Tglyphs, 'Terminator')
+  return D.Parser.split_on(string, D.Etc.Tglyphs, 'Terminator')
 }
 
 D.Parser.split_on_space = function(string) {
@@ -4625,7 +4625,7 @@ function murmurhash(key, seed) {
 // HELPER FUNCTIONS
 // THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
 
-D.isFalse = function(value) {
+D.is_false = function(value) {
   if(!value) 
     return true // '', 0, false, NaN, null, undefined
   
@@ -4642,17 +4642,17 @@ D.isFalse = function(value) {
   return true
 }
 
-D.isNice = function(value) {
+D.is_nice = function(value) {
   return !!value || value == false; // not NaN, null, or undefined
   // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
 };
 
 // this converts non-iterable items into a single-element array
-D.toArray = function(value) {
+D.to_array = function(value) {
   if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
   if(typeof value == 'object') return D.obj_to_array(value);
   if(value === false) return []; // hmmm...
-  if(!D.isNice(value)) return []; // double hmmm.
+  if(!D.is_nice(value)) return []; // double hmmm.
   return [value];
 };
 
@@ -4669,14 +4669,14 @@ D.stringify = function(value) {
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.TYPES['block'](value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
 }
 
-D.isBlock = function(value) {
+D.is_block = function(value) {
   if(!value instanceof D.Segment)
     return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
 
@@ -4986,7 +4986,7 @@ D.seedlikes_from_string = function(stringlike) {
             route.push(part + '.in')
             // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
-              D.setError('Port not found in line: ' + line)
+              D.set_error('Port not found in line: ' + line)
               route = []
             }
             else {
@@ -5001,7 +5001,7 @@ D.seedlikes_from_string = function(stringlike) {
         if(route.length == 2) {
           // TODO: ensure pushed route isn't null,null
           if(!route[0] || !route[1])
-            D.setError('Port not found in line: ' + line)
+            D.set_error('Port not found in line: ' + line)
           else 
             this_seed.routes.push(route)
           
@@ -5092,9 +5092,9 @@ D.make_spaceseeds = function(seedlikes) {
           , two = port_key_to_index[route[1]]
           
         if(!one)
-          D.setError('Invalid route: ' + route[0])
+          D.set_error('Invalid route: ' + route[0])
         if(!two)
-          D.setError('Invalid route: ' + route[1])
+          D.set_error('Invalid route: ' + route[1])
         
         if(!one || !two)
           return []
@@ -5234,7 +5234,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.list_set, prior_starter, D.scrub_list)
+          return D.data_trampoline(data, processfun, D.list_set, prior_starter, D.scrub_list)
         },
       },
       
@@ -5290,7 +5290,7 @@ D.import_models({
             return value // the value becomes the new total
           }
           
-          return D.dataTrampoline(data, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(data, processfun, joinerfun, prior_starter)
         },
       },
       
@@ -5330,7 +5330,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.string_concat, prior_starter)
+          return D.data_trampoline(data, processfun, D.string_concat, prior_starter)
           
           // TODO: also push the "row count" into the local context
           // THINK: (but how do we say "give me number 5 from data" when 5 is a var?) -- oh right foo.{"#{rows | mod {foo | count}}"} --- maybe we can make that easier?
@@ -5383,7 +5383,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.string_concat, prior_starter)
+          return D.data_trampoline(data, processfun, D.string_concat, prior_starter)
         },
       },
       
@@ -5456,7 +5456,7 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           return values[0].map(function(item, key) {
             return values.map(function(list) {
@@ -5494,7 +5494,7 @@ D.import_models({
           var k, v, hash = {}
           
           if(data.length < 2) {            
-            return D.setError('The data parameter must contain at least two elements') || {}
+            return D.set_error('The data parameter must contain at least two elements') || {}
           }
 
           while(data.length > 1) 
@@ -5531,12 +5531,12 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           var number_of_arrays = values.length
           
           values.forEach(function(list, index) {
-            list = D.toArray(list)
+            list = D.to_array(list)
             list.forEach(function(value) {
               var key = typeof value == 'object' ? D.stringify(value) : value
               
@@ -5687,7 +5687,7 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           // quick check for all arrays
           for(var key in values) {
@@ -5718,7 +5718,7 @@ D.import_models({
               var temp = stack[stack.length - 1]
               if(typeof temp == 'number' || typeof temp == 'string') { // scalar
                 hash[key] = temp
-              } else if(D.isBlock(temp)) { // block
+              } else if(D.is_block(temp)) { // block
                 hash[key] = temp
               } else { // list
                 hash[key] = D.commands.list.methods.union.fun(stack)
@@ -5784,7 +5784,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
         },
       },
       
@@ -5848,7 +5848,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
         },
       },
       
@@ -5923,7 +5923,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
           
           // make a new map using our dataTrampoline
           // sort that
@@ -6082,12 +6082,12 @@ D.import_models({
           // removes unNice values from the total
           var joinerfun = function(total, value) {
             total = Array.isArray(total) ? total : []
-            if(!D.isNice(value)) return total
+            if(!D.is_nice(value)) return total
             total.push(value)
             return total
           }
           
-          return D.dataTrampoline(data, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(data, processfun, joinerfun, prior_starter)
         },
       },
       
@@ -6142,7 +6142,7 @@ D.import_models({
             return the_item
           }
           
-          return D.dataTrampoline(data, processfun, D.noop, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.noop, prior_starter, finalfun)
         },
       },
       
@@ -6201,7 +6201,7 @@ D.import_models({
         fun: function(data, value) {
           // TODO: add a 'return' param, so you can ask for "the set of matching keys" or "last key" or etc
           
-          value = D.toArray(value).map(JSON.stringify) // for matching nested structures
+          value = D.to_array(value).map(JSON.stringify) // for matching nested structures
           
           for(var key in data) 
             if(data.hasOwnProperty(key) && value == JSON.stringify(data[key])) 
@@ -6282,7 +6282,7 @@ D.import_models({
           },
         ],
         fun: function(value, then, _else, _with, prior_starter, process) {
-          var branch = D.isFalse(value) ? _else : then
+          var branch = D.is_false(value) ? _else : then
           
           if(!_with)
             return branch
@@ -6303,7 +6303,7 @@ D.import_models({
           // THINK: consider an 'invert' param so you can alias something like 'unless'
           
           // if(!value) return _else;
-          // // if(!D.isNice(value)) return _else;
+          // // if(!D.is_nice(value)) return _else;
           // // if(value === 0 || value === '') return _else;
           // if(typeof value == 'object' && _.isEmpty(value)) return _else;
           // 
@@ -6332,11 +6332,11 @@ D.import_models({
           },
         ],
         fun: function(value, _in, like) {
-          if(!D.isNice(like)) {
+          if(!D.is_nice(like)) {
             // TODO: indexOf doesn't coerce strings and numbers so {"2" | is in (2)} fails.
-            if(D.isNice(_in)) return _in.indexOf(value) !== -1
+            if(D.is_nice(_in)) return _in.indexOf(value) !== -1
             
-            if(!Array.isArray(value)) return D.onerror("Requires 'in', 'like', or a value list")
+            if(!Array.isArray(value)) return D.on_error("Requires 'in', 'like', or a value list")
             
             var base = value[0] // test each item
             for(var i=1, l=value.length; i < l; i++) {
@@ -6419,23 +6419,23 @@ D.import_models({
             if(bool !== bool) 
               return NaN
             
-            if(!D.isFalse(bool)) // because bool isn't really a bool, ya know?
+            if(!D.is_false(bool)) // because bool isn't really a bool, ya know?
               found = count+1
             
             return null
           }
           
           var joinerfun = function(total, value) {
-            if(D.isNice(total)) return total
-            if(D.isNice(value)) return value
+            if(D.is_nice(total)) return total
+            if(D.is_nice(value)) return value
             return null
           }
           
-          return D.dataTrampoline(value, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(value, processfun, joinerfun, prior_starter)
           
           
           // var unwrapped = _.find(value, function(item) {
-          //   return (typeof item != 'object' || D.isBlock(item))
+          //   return (typeof item != 'object' || D.is_block(item))
           // })
           // 
           // if(unwrapped) {
@@ -6517,12 +6517,12 @@ D.import_models({
         ],
         fun: function(value, also) {
           if(typeof also != 'undefined')
-            return !(D.isFalse(value) || D.isFalse(also))
+            return !(D.is_false(value) || D.is_false(also))
           
-          // value = D.toArray(value)
+          // value = D.to_array(value)
           
           for(var key in value)
-            if(D.isFalse(value[key])) return false
+            if(D.is_false(value[key])) return false
           
           // THINK: why not return the last value in the list if everything is truthy?
           return true //value[key]
@@ -6559,7 +6559,7 @@ D.import_models({
           if(typeof also != 'undefined') return value
 
           for(var key in value)
-            if(!D.isFalse(value[key])) return value[key]
+            if(!D.is_false(value[key])) return value[key]
           
           return false
         },
@@ -6575,7 +6575,7 @@ D.import_models({
           },
         ],
         fun: function(value) {
-          return D.isFalse(value) ? true : false
+          return D.is_false(value) ? true : false
           
           // TODO: make this a core Daimio method!
           // if(!value) return true;
@@ -6742,7 +6742,7 @@ D.import_models({
         fun: function(value, by) {
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
-              return D.setError('Division by zero is a crime against nature') || 0
+              return D.set_error('Division by zero is a crime against nature') || 0
             return a / b
           });
         },
@@ -6774,7 +6774,7 @@ D.import_models({
           // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
-              return D.setError('Modulation by zero is a crime against nature') || 0
+              return D.set_error('Modulation by zero is a crime against nature') || 0
             
             return a >= 0 == b > 0 ? a % b : a % b + b
             // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
@@ -6809,7 +6809,7 @@ D.import_models({
         fun: function(value, exp) {
           // THINK: can we solver this?
           if(value < 0 && exp % 1)
-            return D.setError('Roots of negatives are not real') || 0
+            return D.set_error('Roots of negatives are not real') || 0
             
           return Math.pow(value, exp) || 0
         },
@@ -6944,7 +6944,7 @@ D.import_models({
           },
         ],
         fun: function(value, also) {
-          value = D.toArray(value)
+          value = D.to_array(value)
 
           if(also != undefined)
             value.push(also)
@@ -6970,7 +6970,7 @@ D.import_models({
           },
         ],
         fun: function(value, also) {
-          value = D.toArray(value)
+          value = D.to_array(value)
 
           if(also != undefined)
             value.push(also)
@@ -6988,8 +6988,8 @@ D.ETC.Math = {}
 
 D.ETC.Math.solver = function(value, to, fun) {
   // TODO: we don't need this if the type is "array|number"
-  value = (typeof value == 'object') ? D.toArray(value) : value
-  to = (typeof to == 'object') ? D.toArray(to) : to
+  value = (typeof value == 'object') ? D.to_array(value) : value
+  to = (typeof to == 'object') ? D.to_array(to) : to
   // var arrays = (typeof value == 'object') + (typeof to == 'object');
 
   // are these arrays or numbers?
@@ -7022,7 +7022,7 @@ D.ETC.Math.singleArray = function(value, to, fun) {
 
   // just the one array
   var total = false;
-  value = D.toArray(value);
+  value = D.to_array(value);
   for(var i=0, l=value.length; i < l; i++) {
     // NOTE: this essentially bypasses identity concerns -- total=0 poisons *, total=1 taints +. it means subtraction and division are relative to the first value in the array, but that's ok.
     if(total === false) total = D.ETC.toNumeric(value[i]);
@@ -7033,7 +7033,7 @@ D.ETC.Math.singleArray = function(value, to, fun) {
 
 D.ETC.Math.naryanArray = function(value, to, fun) {
   if(!D.ETC.isNumeric(value)) {
-    D.setError("That is not a numeric value")
+    D.set_error("That is not a numeric value")
     value = 0
   }
   if(!D.ETC.isNumeric(to)) {
@@ -7130,7 +7130,7 @@ D.import_models({
                      })[0] 
 
           if(!port)
-            return D.setError('No corresponding port exists on this station')
+            return D.set_error('No corresponding port exists on this station')
           
           // send the value, go async while we wait for the reply
           
@@ -7201,7 +7201,7 @@ D.import_models({
           // return NaN
           
           // var space = D.OuterSpace
-          // space.REAL_execute(value, callback) 
+          // space.real_execute(value, callback) 
           // TODO: fix me this is stupid it needs the right space
           
           // return D.run(value)
@@ -7246,7 +7246,7 @@ D.import_models({
 
           // var good_values = [], values, temp;
           // if(typeof value != 'object') return D.stringify(value);
-          // values = D.toArray(value);
+          // values = D.to_array(value);
 
           // for(var i=0, l=values.length; i < l; i++) {
             // temp = D.stringify(values[i]);
@@ -7445,7 +7445,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(matches, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(matches, processfun, D.list_push, prior_starter, finalfun)
           
           
           
@@ -7460,7 +7460,7 @@ D.import_models({
           // 
           // var to2 = to
           // from = D.ETC.string_to_regex(from, true)
-          // if(D.isBlock(to)) {
+          // if(D.is_block(to)) {
           //   to2 = function(string) {
           //     return D.run(to, string)
           //     // D.execute('variable', 'set', ['this', string]);
@@ -7960,7 +7960,7 @@ D.import_models({
         ],
         fun: function(sheet, type, id, data) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           data = data || {};
           data.id = id;
@@ -7988,10 +7988,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.remove()) return sheet.id;
         },
@@ -8089,7 +8089,7 @@ D.import_models({
         ],
         fun: function(sheet, type, daimio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           if(sheet.set_template(type, daimio)) return sheet.id;
         },
@@ -8125,10 +8125,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, key, value) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
           
@@ -8181,7 +8181,7 @@ D.import_models({
         ],
         fun: function(sheet, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.pan(dx, dy);
           return sheet.id;
@@ -8206,7 +8206,7 @@ D.import_models({
         ],
         fun: function(sheet, ratio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.scale(ratio);
           return sheet.id;
@@ -8253,10 +8253,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, x, y, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // NOTE: thing's x/y are in the svg coord space (so we don't have to change them all with each zoom/pan), so we need to translate the incoming page-based x/y.
           if(x || x === 0) {
@@ -8291,10 +8291,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.render()) return thing.id;
         },
@@ -8318,10 +8318,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_back(thing.el);
           
@@ -8347,10 +8347,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_front(thing.el);
           
@@ -8377,7 +8377,7 @@ D.import_models({
 });
 
 if(window.Daggr) {
-  Daggr.onerror = D.onerror;
+  Daggr.onerror = D.on_error;
 }
 // The dagoba interface model
 
@@ -8435,7 +8435,7 @@ D.import_models({
         ],
         fun: function(graph, id, data) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           data = data || {};
           data.id = id;
@@ -8475,10 +8475,10 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and node?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           node = graph.nodes[node];
-          if(!node) return D.onerror('Invalid node id');
+          if(!node) return D.on_error('Invalid node id');
           
           data = data || {};
           data.id = id;
@@ -8524,13 +8524,13 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and ports?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           startport = graph.ports[startport];
-          if(!startport) return D.onerror('Invalid startport id');
+          if(!startport) return D.on_error('Invalid startport id');
           
           endport = graph.ports[endport];
-          if(!endport) return D.onerror('Invalid endport id');
+          if(!endport) return D.on_error('Invalid endport id');
           
           data = data || {};
           data.id = id;
@@ -8559,7 +8559,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node, nodes = {};
           
@@ -8591,7 +8591,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port, ports = {};
           
@@ -8623,7 +8623,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge, edges = {};
           
@@ -8665,11 +8665,11 @@ D.import_models({
           // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var sorter = Dagoba.sort[by];
           if(!sorter) {
-            D.onerror('Invalid sort function id, falling back to natural');
+            D.on_error('Invalid sort function id, falling back to natural');
             sorter = Dagoba.sort['natural'];
           }
           
@@ -8697,7 +8697,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node;
           
@@ -8728,7 +8728,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port;
           
@@ -8759,7 +8759,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge;
           
@@ -8810,12 +8810,12 @@ D.import_models({
         ],
         fun: function(graph, id, type, path, value) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
-          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.onerror('Invalid type');
+          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
           
           var thing = graph[type][id];
-          if(!thing) D.onerror('Invalid id');
+          if(!thing) D.on_error('Invalid id');
           
           // TODO: scrub bad paths, like 'startport'
           
@@ -8844,7 +8844,7 @@ D.ETC.dagoba.scrubber = function(things) {
         clean_thing[key] = D.ETC.dagoba.extract_ids(thing[key]);
       } 
       else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
-        if(D.isBlock(thing[key])) {
+        if(D.is_block(thing[key])) {
           clean_thing[key] = thing[key];
         } else {
           clean_thing[key] = D.scrub_var(thing[key]);
@@ -8879,5 +8879,5 @@ D.ETC.dagoba.set_actions = function(graph, topic) {
 
 // TODO: this won't work on the server
 if(window.Dagoba) {
-  Dagoba.onerror = D.onerror;
+  Dagoba.onerror = D.on_error;
 }

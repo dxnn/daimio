@@ -42,7 +42,7 @@ s2ABt = string_to_tokens_and_segments_and_block_test = function(string, result_t
   var tokens = D.Parser.string_to_tokens(string)
     , segments = D.Parser.string_to_segments(string)
     , block_ref = D.Parser.string_to_block_segment(string)
-    , ABlocks = D.ABLOCKS
+    , ABlocks = D.BLOCKS
   
   // D.recursive_walk(ABlocks, function(item) {return item.id}, function(item) {delete item.id})
   
@@ -53,7 +53,7 @@ s2ABt = string_to_tokens_and_segments_and_block_test = function(string, result_t
                out: {tokens: tokens, segments: segments, block_ref: block_ref, blocks: ABlocks}, 
                was: {tokens: result_tokens, segments: result_segments, blocks: result_blocks, fff: "x" + D.run('{(1 2 3) | math add to 4}')} })
   
-  D.ABLOCKS = {}
+  D.BLOCKS = {}
 }
 
 head2pipe = function(blockhead, result) {
@@ -68,7 +68,7 @@ head2pipe = function(blockhead, result) {
 funtest = function(string, result) {
   // var space = D.OuterSpace
   //   , segment = D.Parser.string_to_block_segment(string)
-  //   , ABlocks = D.ABLOCKS
+  //   , ABlocks = D.BLOCKS
   //   , block = ABlocks[segment.value.id]
   // 
   // space.execute(block, function(output) {

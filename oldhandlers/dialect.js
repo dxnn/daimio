@@ -24,7 +24,7 @@ D.import_models({
           block = D.Parser.string_to_block_segment(block)
           
           if(D.SPACESEEDS[name])
-            return D.setError('That space has already been added')
+            return D.set_error('That space has already been added')
           
           D.SPACESEEDS[name] = new D.Space(dialect, block)
           

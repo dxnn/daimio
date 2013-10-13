@@ -86,7 +86,7 @@ D.import_models({
                      })[0] 
 
           if(!port)
-            return D.setError('No corresponding port exists on this station')
+            return D.set_error('No corresponding port exists on this station')
           
           // send the value, go async while we wait for the reply
           
@@ -157,7 +157,7 @@ D.import_models({
           // return NaN
           
           // var space = D.OuterSpace
-          // space.REAL_execute(value, callback) 
+          // space.real_execute(value, callback) 
           // TODO: fix me this is stupid it needs the right space
           
           // return D.run(value)

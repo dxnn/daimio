@@ -124,7 +124,7 @@ CodeMirror.defineMode("daimio", function() {
         now.verb = 'close'
         segue = true
       }
-      else if(D.terminators[peek]) {
+      else if(D.Terminators[peek]) {
         onTerminate(state)
         now.verb = 'handle'
         goThere(state, 'terminator')
@@ -477,7 +477,7 @@ CodeMirror.defineMode("daimio", function() {
     
     comeBack(state) // one for here
     
-    if(peek == '}' || D.terminators[peek]) {
+    if(peek == '}' || D.Terminators[peek]) {
       comeBack(state) // another for the alias itself
       goThere(state, 'command')
     }

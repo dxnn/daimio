@@ -59,7 +59,7 @@ D.import_models({
         ],
         fun: function(sheet, type, id, data) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           data = data || {};
           data.id = id;
@@ -87,10 +87,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.remove()) return sheet.id;
         },
@@ -188,7 +188,7 @@ D.import_models({
         ],
         fun: function(sheet, type, daimio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           if(sheet.set_template(type, daimio)) return sheet.id;
         },
@@ -224,10 +224,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, key, value) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
           
@@ -280,7 +280,7 @@ D.import_models({
         ],
         fun: function(sheet, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.pan(dx, dy);
           return sheet.id;
@@ -305,7 +305,7 @@ D.import_models({
         ],
         fun: function(sheet, ratio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.scale(ratio);
           return sheet.id;
@@ -352,10 +352,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, x, y, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // NOTE: thing's x/y are in the svg coord space (so we don't have to change them all with each zoom/pan), so we need to translate the incoming page-based x/y.
           if(x || x === 0) {
@@ -390,10 +390,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.render()) return thing.id;
         },
@@ -417,10 +417,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_back(thing.el);
           
@@ -446,10 +446,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_front(thing.el);
           
@@ -476,5 +476,5 @@ D.import_models({
 });
 
 if(window.Daggr) {
-  Daggr.onerror = D.onerror;
+  Daggr.onerror = D.on_error;
 }

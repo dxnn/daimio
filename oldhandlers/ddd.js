@@ -32,7 +32,7 @@ D.import_models({
         ],
         fun: function(action, params, options) {
           // FIXME: this is pretty stupid
-          if(typeof D.Etc.d3[action] != 'function') return D.onerror('That is not a valid action');
+          if(typeof D.Etc.d3[action] != 'function') return D.on_error('That is not a valid action');
           params.unshift(options[2]);
           params.unshift(options[1]);
           params.unshift(options[0]);

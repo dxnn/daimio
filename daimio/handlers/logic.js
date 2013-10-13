@@ -29,7 +29,7 @@ D.import_models({
           },
         ],
         fun: function(value, then, _else, _with, prior_starter, process) {
-          var branch = D.isFalse(value) ? _else : then
+          var branch = D.is_false(value) ? _else : then
           
           if(!_with)
             return branch
@@ -50,7 +50,7 @@ D.import_models({
           // THINK: consider an 'invert' param so you can alias something like 'unless'
           
           // if(!value) return _else;
-          // // if(!D.isNice(value)) return _else;
+          // // if(!D.is_nice(value)) return _else;
           // // if(value === 0 || value === '') return _else;
           // if(typeof value == 'object' && _.isEmpty(value)) return _else;
           // 
@@ -79,11 +79,11 @@ D.import_models({
           },
         ],
         fun: function(value, _in, like) {
-          if(!D.isNice(like)) {
+          if(!D.is_nice(like)) {
             // TODO: indexOf doesn't coerce strings and numbers so {"2" | is in (2)} fails.
-            if(D.isNice(_in)) return _in.indexOf(value) !== -1
+            if(D.is_nice(_in)) return _in.indexOf(value) !== -1
             
-            if(!Array.isArray(value)) return D.onerror("Requires 'in', 'like', or a value list")
+            if(!Array.isArray(value)) return D.on_error("Requires 'in', 'like', or a value list")
             
             var base = value[0] // test each item
             for(var i=1, l=value.length; i < l; i++) {
@@ -106,7 +106,7 @@ D.import_models({
             return value == like // exact match, ish.
           }
           
-          like = D.Etc.string_to_regex(like)
+          like = D.string_to_regex(like)
           return like.test(value)
         },
       },
@@ -166,23 +166,23 @@ D.import_models({
             if(bool !== bool) 
               return NaN
             
-            if(!D.isFalse(bool)) // because bool isn't really a bool, ya know?
+            if(!D.is_false(bool)) // because bool isn't really a bool, ya know?
               found = count+1
             
             return null
           }
           
           var joinerfun = function(total, value) {
-            if(D.isNice(total)) return total
-            if(D.isNice(value)) return value
+            if(D.is_nice(total)) return total
+            if(D.is_nice(value)) return value
             return null
           }
           
-          return D.dataTrampoline(value, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(value, processfun, joinerfun, prior_starter)
           
           
           // var unwrapped = _.find(value, function(item) {
-          //   return (typeof item != 'object' || D.isBlock(item))
+          //   return (typeof item != 'object' || D.is_block(item))
           // })
           // 
           // if(unwrapped) {
@@ -264,12 +264,12 @@ D.import_models({
         ],
         fun: function(value, also) {
           if(typeof also != 'undefined')
-            return !(D.isFalse(value) || D.isFalse(also))
+            return !(D.is_false(value) || D.is_false(also))
           
-          // value = D.toArray(value)
+          // value = D.to_array(value)
           
           for(var key in value)
-            if(D.isFalse(value[key])) return false
+            if(D.is_false(value[key])) return false
           
           // THINK: why not return the last value in the list if everything is truthy?
           return true //value[key]
@@ -306,7 +306,7 @@ D.import_models({
           if(typeof also != 'undefined') return value
 
           for(var key in value)
-            if(!D.isFalse(value[key])) return value[key]
+            if(!D.is_false(value[key])) return value[key]
           
           return false
         },
@@ -322,7 +322,7 @@ D.import_models({
           },
         ],
         fun: function(value) {
-          return D.isFalse(value) ? true : false
+          return D.is_false(value) ? true : false
           
           // TODO: make this a core Daimio method!
           // if(!value) return true;

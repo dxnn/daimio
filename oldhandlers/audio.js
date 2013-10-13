@@ -164,9 +164,9 @@
 //             var context = this.vars.context
 //               , node = this.vars.nodes[id]
 // 
-//             if(!node) return D.onerror("I can't seem to find that node");
+//             if(!node) return D.on_error("I can't seem to find that node");
 //             if(!node[name] || node[name].value === undefined) {
-//               return D.onerror("That node doesn't contain that parameter");
+//               return D.on_error("That node doesn't contain that parameter");
 //             }
 // 
 //             node[name].value = value
@@ -200,17 +200,17 @@
 //             var context = this.vars.context
 //           
 //             var receiver = this.vars.nodes[to]
-//             if(!receiver) return D.onerror("The receiver is missing");
+//             if(!receiver) return D.on_error("The receiver is missing");
 //           
 //             if(as) {
-//               if(receiver[as] === undefined) return D.onerror("The receiver does not have that parameter");
+//               if(receiver[as] === undefined) return D.on_error("The receiver does not have that parameter");
 //               receiver = receiver[as]
 //             }
 // 
 //             var nodes = this.vars.nodes
 //             input.forEach(function(input_id) {
 //               var input_node = nodes[input_id]
-//               if(!input_node) return D.onerror("The receiver is missing");
+//               if(!input_node) return D.on_error("The receiver is missing");
 //               input_node.connect(receiver)
 //             })
 //           
@@ -231,7 +231,7 @@
 //             },
 //           ],
 //           fun: function(value) {
-//             if(value < 0 || value > 1) return D.onerror('That is not a number between 0 and 1');
+//             if(value < 0 || value > 1) return D.on_error('That is not a number between 0 and 1');
 //             this.vars.maingain.gain.value = value
 //             return true
 //           },
@@ -244,7 +244,7 @@
 //             var context = this.vars.context
 //               , maingain = this.vars.maingain
 // 
-//             if(this.vars.playing) return D.onerror('Already playing!');
+//             if(this.vars.playing) return D.on_error('Already playing!');
 //             maingain.connect(this.vars.analyser)
 //             this.vars.playing = true
 //             
@@ -259,7 +259,7 @@
 //             var context = this.vars.context
 //               , maingain = this.vars.maingain
 // 
-//             if(!this.vars.playing) return D.onerror('Not currently playing');
+//             if(!this.vars.playing) return D.on_error('Not currently playing');
 //             maingain.disconnect(this.vars.analyser)
 //             this.vars.playing = false
 //             

@@ -117,7 +117,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.list_set, prior_starter, D.scrub_list)
+          return D.data_trampoline(data, processfun, D.list_set, prior_starter, D.scrub_list)
         },
       },
       
@@ -173,7 +173,7 @@ D.import_models({
             return value // the value becomes the new total
           }
           
-          return D.dataTrampoline(data, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(data, processfun, joinerfun, prior_starter)
         },
       },
       
@@ -213,7 +213,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.string_concat, prior_starter)
+          return D.data_trampoline(data, processfun, D.string_concat, prior_starter)
           
           // TODO: also push the "row count" into the local context
           // THINK: (but how do we say "give me number 5 from data" when 5 is a var?) -- oh right foo.{"#{rows | mod {foo | count}}"} --- maybe we can make that easier?
@@ -266,7 +266,7 @@ D.import_models({
                    , scope, process)
           }
           
-          return D.dataTrampoline(data, processfun, D.string_concat, prior_starter)
+          return D.data_trampoline(data, processfun, D.string_concat, prior_starter)
         },
       },
       
@@ -339,7 +339,7 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           return values[0].map(function(item, key) {
             return values.map(function(list) {
@@ -377,7 +377,7 @@ D.import_models({
           var k, v, hash = {}
           
           if(data.length < 2) {            
-            return D.setError('The data parameter must contain at least two elements') || {}
+            return D.set_error('The data parameter must contain at least two elements') || {}
           }
 
           while(data.length > 1) 
@@ -414,12 +414,12 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           var number_of_arrays = values.length
           
           values.forEach(function(list, index) {
-            list = D.toArray(list)
+            list = D.to_array(list)
             list.forEach(function(value) {
               var key = typeof value == 'object' ? D.stringify(value) : value
               
@@ -570,7 +570,7 @@ D.import_models({
           if(!data && !also) return []
           else if(!data) values = also
           else if(also) values = [also, data]
-          else values = D.toArray(data)
+          else values = D.to_array(data)
           
           // quick check for all arrays
           for(var key in values) {
@@ -601,7 +601,7 @@ D.import_models({
               var temp = stack[stack.length - 1]
               if(typeof temp == 'number' || typeof temp == 'string') { // scalar
                 hash[key] = temp
-              } else if(D.isBlock(temp)) { // block
+              } else if(D.is_block(temp)) { // block
                 hash[key] = temp
               } else { // list
                 hash[key] = D.Commands.list.methods.union.fun(stack)
@@ -667,7 +667,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
         },
       },
       
@@ -731,7 +731,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
         },
       },
       
@@ -806,7 +806,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(data, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.list_push, prior_starter, finalfun)
           
           // make a new map using our dataTrampoline
           // sort that
@@ -965,12 +965,12 @@ D.import_models({
           // removes unNice values from the total
           var joinerfun = function(total, value) {
             total = Array.isArray(total) ? total : []
-            if(!D.isNice(value)) return total
+            if(!D.is_nice(value)) return total
             total.push(value)
             return total
           }
           
-          return D.dataTrampoline(data, processfun, joinerfun, prior_starter)
+          return D.data_trampoline(data, processfun, joinerfun, prior_starter)
         },
       },
       
@@ -1025,7 +1025,7 @@ D.import_models({
             return the_item
           }
           
-          return D.dataTrampoline(data, processfun, D.noop, prior_starter, finalfun)
+          return D.data_trampoline(data, processfun, D.noop, prior_starter, finalfun)
         },
       },
       
@@ -1084,7 +1084,7 @@ D.import_models({
         fun: function(data, value) {
           // TODO: add a 'return' param, so you can ask for "the set of matching keys" or "last key" or etc
           
-          value = D.toArray(value).map(JSON.stringify) // for matching nested structures
+          value = D.to_array(value).map(JSON.stringify) // for matching nested structures
           
           for(var key in data) 
             if(data.hasOwnProperty(key) && value == JSON.stringify(data[key])) 

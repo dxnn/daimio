@@ -34,7 +34,7 @@ D.import_models({
 
           // var good_values = [], values, temp;
           // if(typeof value != 'object') return D.stringify(value);
-          // values = D.toArray(value);
+          // values = D.to_array(value);
 
           // for(var i=0, l=values.length; i < l; i++) {
             // temp = D.stringify(values[i]);
@@ -66,7 +66,7 @@ D.import_models({
         fun: function(value, on) {
           var output = []
           
-          on = D.Etc.string_to_regex(on)
+          on = D.string_to_regex(on)
           
           if(typeof value == 'string') value = value.split(/\n/)
           for(var key in value) {
@@ -167,7 +167,7 @@ D.import_models({
           }
         ],
         fun: function(value, from, to, prior_starter) {
-          from = D.Etc.string_to_regex(from, true)
+          from = D.string_to_regex(from, true)
           
           if(typeof to != 'function')
             return value.replace(from, to)
@@ -233,7 +233,7 @@ D.import_models({
             return result
           }
           
-          return D.dataTrampoline(matches, processfun, D.list_push, prior_starter, finalfun)
+          return D.data_trampoline(matches, processfun, D.list_push, prior_starter, finalfun)
           
           
           
@@ -247,8 +247,8 @@ D.import_models({
           // 
           // 
           // var to2 = to
-          // from = D.Etc.string_to_regex(from, true)
-          // if(D.isBlock(to)) {
+          // from = D.string_to_regex(from, true)
+          // if(D.is_block(to)) {
           //   to2 = function(string) {
           //     return D.run(to, string)
           //     // D.execute('variable', 'set', ['this', string]);

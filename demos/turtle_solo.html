@@ -188,15 +188,15 @@ Clickable examples:</pre>
         var mainsvg = document.getElementById('mainsvg')
 
         if(!mainsvg)
-          return D.setError('Your svg is out of alignment')
+          return D.set_error('Your svg is out of alignment')
 
         D.Etc.turtles = D.Etc.turtles || {} // le sigh
 
         if(!ship.user)
-          return D.setError('There is no user in that ship')
+          return D.set_error('There is no user in that ship')
 
         if(D.Etc.turtles[ship.user])
-          return D.setError('You already have a turtle')
+          return D.set_error('You already have a turtle')
 
         var string = '<g id="turtlebox' + ship.user + '" transform="translate(200,200)"><rect width="30" height="50" id="turtle' + ship.user + '" style="fill:' + ship.color  + '"></rect></g>'
           , frag = D.string_to_svg_frag(string)

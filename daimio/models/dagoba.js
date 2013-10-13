@@ -54,7 +54,7 @@ D.import_models({
         ],
         fun: function(graph, id, data) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           data = data || {};
           data.id = id;
@@ -94,10 +94,10 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and node?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           node = graph.nodes[node];
-          if(!node) return D.onerror('Invalid node id');
+          if(!node) return D.on_error('Invalid node id');
           
           data = data || {};
           data.id = id;
@@ -143,13 +143,13 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and ports?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           startport = graph.ports[startport];
-          if(!startport) return D.onerror('Invalid startport id');
+          if(!startport) return D.on_error('Invalid startport id');
           
           endport = graph.ports[endport];
-          if(!endport) return D.onerror('Invalid endport id');
+          if(!endport) return D.on_error('Invalid endport id');
           
           data = data || {};
           data.id = id;
@@ -178,7 +178,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node, nodes = {};
           
@@ -210,7 +210,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port, ports = {};
           
@@ -242,7 +242,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge, edges = {};
           
@@ -284,11 +284,11 @@ D.import_models({
           // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var sorter = Dagoba.sort[by];
           if(!sorter) {
-            D.onerror('Invalid sort function id, falling back to natural');
+            D.on_error('Invalid sort function id, falling back to natural');
             sorter = Dagoba.sort['natural'];
           }
           
@@ -316,7 +316,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node;
           
@@ -347,7 +347,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port;
           
@@ -378,7 +378,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge;
           
@@ -429,12 +429,12 @@ D.import_models({
         ],
         fun: function(graph, id, type, path, value) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
-          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.onerror('Invalid type');
+          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
           
           var thing = graph[type][id];
-          if(!thing) D.onerror('Invalid id');
+          if(!thing) D.on_error('Invalid id');
           
           // TODO: scrub bad paths, like 'startport'
           
@@ -463,7 +463,7 @@ D.Etc.dagoba.scrubber = function(things) {
         clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
       } 
       else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
-        if(D.isBlock(thing[key])) {
+        if(D.is_block(thing[key])) {
           clean_thing[key] = thing[key];
         } else {
           clean_thing[key] = D.scrub_var(thing[key]);
@@ -498,5 +498,5 @@ D.Etc.dagoba.set_actions = function(graph, topic) {
 
 // TODO: this won't work on the server
 if(window.Dagoba) {
-  Dagoba.onerror = D.onerror;
+  Dagoba.onerror = D.on_error;
 }
