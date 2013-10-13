@@ -56,8 +56,9 @@ D.DIALECTS = {}
 D.SPACESEEDS = {}
 D.DECORATORS = []
 
-D.DecoratorIndices.ByType = {}        // technically these should be all caps,
-D.DecoratorIndices.ByBlock = {}       // but it's just too much yelling really
+D.DecoratorIndices = {}               // technically these should be all caps,
+D.DecoratorIndices.ByType = {}        // but it's just too much yelling really
+D.DecoratorIndices.ByBlock = {}       
 D.DecoratorIndices.ByTypeBlock = {}
 
 D.Aliases = {}                        // aliases are a grey area: 
