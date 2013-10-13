@@ -53,7 +53,7 @@
   
   function try_state(state, start) {
     if(!state.data.handler)
-      return Object.keys(D.commands).concat(Object.keys(D.ALIASES))
+      return Object.keys(D.commands).concat(Object.keys(D.Aliases))
     else if(!state.data.method)
       return Object.keys(D.commands[state.data.handler].methods)
     else if(state.verb == 'parametrize' && !start) // no pname

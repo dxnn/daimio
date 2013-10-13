@@ -55,8 +55,8 @@ D.ABLOCKS = {}
 D.SPACESEEDS = {}
 D.DIALECTS = {}
 D.Types = {}
-D.ALIASES = {};
-D.AliasMap = {};
+D.Aliases = {}
+D.AliasMap = {}
 
 D.Parser = {}
 D.commands = {}
@@ -622,7 +622,7 @@ D.import_aliases = function(values) {
   for(var key in values) {
     var value = values[key]
     value = D.Parser.string_to_tokens('{' + value + '}')
-    D.ALIASES[key] = value // do some checking or something
+    D.Aliases[key] = value // do some checking or something
   }
 }
 
@@ -2477,7 +2477,7 @@ D.SegmentTypes.Alias = {
     // return new D.Token('Alias', string) // NOTE: this has to run last...
   }
 , munge_tokens: function(L, token, R) {
-    var new_tokens = D.ALIASES[token.value.word]
+    var new_tokens = D.Aliases[token.value.word]
     
     if(!new_tokens) {
       D.setError("The alias '" + token.value.word + "' stares at you blankly")
@@ -2559,7 +2559,7 @@ D.SegmentTypes.Alias = {
 // D.Dialect = function(models, aliases, parent) {
 D.Dialect = function(commands, aliases) {
   this.commands = commands ? D.deep_copy(commands) : D.commands
-  this.aliases = aliases ? D.clone(aliases) : D.ALIASES
+  this.aliases = aliases ? D.clone(aliases) : D.Aliases
   // this.parent = parent
 }
 
