@@ -70,8 +70,10 @@ D.Parser = {}
 D.Fancies = {}
 D.Commands = {}
 D.Terminators = {}
+D.Pathfinders = []                    // one of these things is not like the others
 D.SegmentTypes = {}
 D.PortFlavours = {}
+D.Transformers = {}
 
 D.Constants = {}                      // constants fry, constants fry, any time at all
 D.Constants.command_open = '{'
@@ -85,8 +87,6 @@ D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overla
 
 D.Etc.FancyRegex = ""                 // this is also pretty silly
 D.Etc.Tglyphs = ""                    // and this one too
-
-
 
 D.noop = function() {}
 D.identity = function(x) {return x}
@@ -795,7 +795,6 @@ D.run = function(daimio, ultimate_callback, space) {
 
 */
 
-D.Pathfinders = []
 D.import_pathfinder = function(name, pf) {
   if(typeof pf.keymatch != 'function')
     pf.keymatch = function(key) {return false} // return false if N/A, 'one' if you're singular, otherwise 'many'
@@ -1280,7 +1279,7 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
   
-  segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+  segments = D.mungeLR(segments, D.Transformers.rekey)
   
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
@@ -1507,14 +1506,15 @@ D.block_ref_to_string = function(value) {
 
 
 /*
+  TRANSFORMERS!
+
   each Transformer takes a left-set of segments, the segment in question, and a right-set of segments. 
   it returns the new left and right set. the next segment from the right set is then considered, until no items remain.
   for now, all the fancy and terminator code is stuffed into these two functions.
   TODO: split out the fancys and terminators so they're added like types.
 */
-D.TRANSFORMERS = {}
 
-D.TRANSFORMERS.Rekey = function(L, segment, R) {
+D.Transformers.rekey = function(L, segment, R) {
   var old_key = segment.key
     , new_key = L.length
     
@@ -2483,7 +2483,7 @@ D.SegmentTypes.Alias = {
     new_tokens =  D.clone(new_tokens)
 
     // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
 
     // fiddle with wiring

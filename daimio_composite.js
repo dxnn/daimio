@@ -2076,7 +2076,7 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
   
-  segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+  segments = D.mungeLR(segments, D.Transformers.rekey)
   
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
@@ -2308,9 +2308,9 @@ D.block_ref_to_string = function(value) {
   for now, all the fancy and terminator code is stuffed into these two functions.
   TODO: split out the fancys and terminators so they're added like types.
 */
-D.TRANSFORMERS = {}
+D.Transformers = {}
 
-D.TRANSFORMERS.Rekey = function(L, segment, R) {
+D.Transformers.rekey = function(L, segment, R) {
   var old_key = segment.key
     , new_key = L.length
     
@@ -3283,7 +3283,7 @@ D.SegmentTypes.Alias = {
     new_tokens =  D.clone(new_tokens)
 
     // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.TRANSFORMERS.Rekey)
+    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
 
     // fiddle with wiring
