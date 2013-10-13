@@ -44,7 +44,7 @@ Maybe add Frink as a handler?
 
 
 /* Naming conventions for Daimio:
-D.import_commands   <--- snake_case for functions
+D.import_commands   <--- snake_case for functions and constants
 D.SegmentTypes      <--- CamelCase for built-in objects
 D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
@@ -52,8 +52,8 @@ D.SPACESEEDS        <--- ALLCAPS for runtime containers
 D = {}
 
 D.ABLOCKS = {}
-D.SPACESEEDS = {}
 D.DIALECTS = {}
+D.SPACESEEDS = {}
 D.Aliases = {} // aliases are a grey area: one day they may be able to grow at runtime
 D.AliasMap = {}
 
@@ -63,27 +63,21 @@ D.Parser = {}
 D.Commands = {}
 D.SegmentTypes = {}
 
-D.command_open = '{'
-D.command_closed = '}'
-D.list_open = '('
-D.list_closed = ')'
-D.quote = '"'
+D.Constants = {} // CONSTANTSFRY
+D.Constants.command_open = '{'
+D.Constants.command_closed = '}'
+D.Constants.list_open = '('      // currently unused
+D.Constants.list_closed = ')'    // currently unused
+D.Constants.quote = '"'          // currently unused
+
+// THINK: these two are a bit silly
+D.process_counter = 1
+D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
 
 D.noop = function() {}
 D.identity = function(x) {return x}
 D.concat = function(a,b) {return a.concat(b)}
 
-D.process_counter = 1
-D.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
-
-/*
-  D.CONSTANTS = {}
-  CONSTANTSFRY
-  - OpenBrace
-  - CloseBrace
-  - OpenAngle
-  - CloseAngle
-*/
 
 
 /////// SOME HELPER METHODS ///////////
@@ -1197,7 +1191,7 @@ D.mean_defunctionize = function(values, seen) {
 //   while(chunk = D.Parser.get_next_thing(string)) {
 //     string = string.slice(chunk.length)
 // 
-//     if(chunk[0] == D.command_open)
+//     if(chunk[0] == D.Constants.command_open)
 //       chunk = {block: chunk}
 //       
 //     chunks.push(chunk)
@@ -1217,14 +1211,14 @@ D.mean_defunctionize = function(values, seen) {
 D.Parser.get_next_thing = function(string, ignore_begin) {
   var first_open, next_open, next_closed
   
-  first_open = next_open = next_closed = string.indexOf(D.command_open);
+  first_open = next_open = next_closed = string.indexOf(D.Constants.command_open);
   
   if(first_open == -1) return string  // no Daimio here
   if(first_open > 0) return string.slice(0, first_open)  // trim non-Daimio head
 
   do {
-    next_open = string.indexOf(D.command_open, next_open + 1)
-    next_closed = string.indexOf(D.command_closed, next_closed) + 1
+    next_open = string.indexOf(D.Constants.command_open, next_open + 1)
+    next_closed = string.indexOf(D.Constants.command_closed, next_closed) + 1
   } while(next_closed && next_open != -1 && next_closed > next_open)
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
@@ -1233,7 +1227,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     return string
   }
 
-  if(ignore_begin || string.slice(0,7) != D.command_open + 'begin ')
+  if(ignore_begin || string.slice(0,7) != D.Constants.command_open + 'begin ')
     return string.slice(0, next_closed)  // not a block
 
   var block_name = string.match(/^\{begin (\w+)/)
@@ -1244,7 +1238,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   }
   block_name = block_name[1];
   
-  var end_tag = D.command_open + 'end ' + block_name + D.command_closed
+  var end_tag = D.Constants.command_open + 'end ' + block_name + D.Constants.command_closed
     , end_begin = string.indexOf(end_tag)
     , end_end = end_begin + end_tag.length;
     
@@ -1315,10 +1309,10 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   if(typeof string != 'string') 
     return string || []
   
-  if(string.slice(0,7) == D.command_open + 'begin ') { // in a block
+  if(string.slice(0,7) == D.Constants.command_open + 'begin ') { // in a block
     var pipeline = D.Parser.get_next_thing(string, true)
       , block_name = pipeline.match(/^\{begin (\w+)/)[1] // TODO: this could fail
-      , end_tag = D.command_open + 'end ' + block_name + D.command_closed
+      , end_tag = D.Constants.command_open + 'end ' + block_name + D.Constants.command_closed
       , body = string.slice(pipeline.length, -end_tag.length)
       , segment = D.Parser.string_to_block_segment(body)
 
@@ -1401,7 +1395,7 @@ D.Parser.string_to_tokens = function(string) {
     , block_inputs = []
     , chunk = D.Parser.get_next_thing(string)
   
-  if(chunk.length == string.length && chunk[0] == D.command_open) {
+  if(chunk.length == string.length && chunk[0] == D.Constants.command_open) {
     // only one chunk, so make regular pipeline
     return D.Parser.pipeline_string_to_tokens(chunk)
   } 
@@ -1411,7 +1405,7 @@ D.Parser.string_to_tokens = function(string) {
       string = string.slice(chunk.length)
       result = []
 
-      if(chunk[0] == D.command_open) {
+      if(chunk[0] == D.Constants.command_open) {
         result = D.Parser.pipeline_string_to_tokens(chunk, true)
       } else {
         result = [new D.Token('String', chunk)]
@@ -1765,7 +1759,7 @@ D.SegmentTypes.String = {
     if(string[0] != '"' || string.slice(-1) != '"')
       return string    
 
-    if(string.indexOf(D.command_open) != -1)
+    if(string.indexOf(D.Constants.command_open) != -1)
       return string
 
     return new D.Token('String', string.slice(1, -1))
@@ -1783,7 +1777,7 @@ D.SegmentTypes.Block = {
     if(string[0] != '"' || string.slice(-1) != '"')
       return string    
 
-    if(string.indexOf(D.command_open) == -1)
+    if(string.indexOf(D.Constants.command_open) == -1)
       return string
 
     return new D.Token('Block', string.slice(1, -1))
@@ -1834,7 +1828,7 @@ D.SegmentTypes.Blockjoin = {
 
 D.SegmentTypes.Pipeline = {
   try_lex: function(string) {
-    if(string[0] != D.command_open || string.slice(-1) != D.command_closed)
+    if(string[0] != D.Constants.command_open || string.slice(-1) != D.Constants.command_closed)
       return string
 
     return new D.Token('Pipeline', string)
