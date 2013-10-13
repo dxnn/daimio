@@ -31,7 +31,7 @@ D.import_models({
               return maybe_gateway
 
             // so maybe_gateway is a block, but it's unfuncified... so func it.
-            // var block = D.TYPES['block'](maybe_gateway)
+            // var block = D.Types['block'](maybe_gateway)
             
             // erm... block gets space.execute'd so keep it as a segment...
             // except what if it's just a string?

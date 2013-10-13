@@ -54,7 +54,7 @@ D.Etc = {}
 D.ABLOCKS = {}
 D.SPACESEEDS = {}
 D.DIALECTS = {}
-D.TYPES = {}
+D.Types = {}
 D.ALIASES = {};
 D.AliasMap = {};
 
@@ -633,7 +633,7 @@ D.import_aliases = function(values) {
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.add_type = function(key, fun) {
   // TODO: add some type checking
-  D.TYPES[key] = fun
+  D.Types[key] = fun
 };
 
 
@@ -662,7 +662,7 @@ D.add_type('number', function(value) {
 })
 
 D.add_type('integer', function(value) {
-  value = D.TYPES['number'](value) // TODO: make a simpler way to call these
+  value = D.Types['number'](value) // TODO: make a simpler way to call these
   
   return Math.round(value)
 })
@@ -686,7 +686,7 @@ D.add_type('maybe-list', function(value) {
   if(value === false || !D.isNice(value))
     return false
   else
-    return D.TYPES['list'](value)
+    return D.Types['list'](value)
 })
 
 D.add_type('block', function(value) {
@@ -716,9 +716,9 @@ D.add_type('block', function(value) {
 
 D.add_type('either:block,string', function(value) {
   if(D.isBlock(value)) {
-    return D.TYPES['block'](value)
+    return D.Types['block'](value)
   } else {
-    return D.TYPES['string'](value)
+    return D.Types['string'](value)
   }
 })
 
@@ -2438,10 +2438,10 @@ D.SegmentTypes.Command = {
         }
       }
   
-      if(method_param.type && D.TYPES[method_param.type])
-        typefun = D.TYPES[method_param.type]
+      if(method_param.type && D.Types[method_param.type])
+        typefun = D.Types[method_param.type]
       else
-        typefun = D.TYPES.anything
+        typefun = D.Types.anything
   
       if(param_value !== undefined) {
         param_value = typefun(param_value)
@@ -3776,12 +3776,12 @@ D.obj_to_array = function(obj) {
 };
 
 D.stringify = function(value) {
-  return D.TYPES['string'](value)
+  return D.Types['string'](value)
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
   if(D.isBlock(value)) {
-    return D.TYPES['block'](value)(prior_starter, {}, process)
+    return D.Types['block'](value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
