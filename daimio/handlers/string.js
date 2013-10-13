@@ -66,7 +66,7 @@ D.import_models({
         fun: function(value, on) {
           var output = []
           
-          on = D.ETC.string_to_regex(on)
+          on = D.Etc.string_to_regex(on)
           
           if(typeof value == 'string') value = value.split(/\n/)
           for(var key in value) {
@@ -167,7 +167,7 @@ D.import_models({
           }
         ],
         fun: function(value, from, to, prior_starter) {
-          from = D.ETC.string_to_regex(from, true)
+          from = D.Etc.string_to_regex(from, true)
           
           if(typeof to != 'function')
             return value.replace(from, to)
@@ -247,7 +247,7 @@ D.import_models({
           // 
           // 
           // var to2 = to
-          // from = D.ETC.string_to_regex(from, true)
+          // from = D.Etc.string_to_regex(from, true)
           // if(D.isBlock(to)) {
           //   to2 = function(string) {
           //     return D.run(to, string)

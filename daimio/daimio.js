@@ -50,7 +50,7 @@ D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
 */
 D = {}
-D.ETC = {}
+D.Etc = {}
 D.ABLOCKS = {}
 D.SPACESEEDS = {}
 D.DIALECTS = {}
@@ -115,7 +115,7 @@ D.clone = function(value) {
   }
 }
 
-D.ETC.regex_escape = function(str) {
+D.Etc.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
@@ -259,11 +259,11 @@ D.PORTFLAVOURS = {}
 
 
 D.track_event = function(type, target, callback) {
-  if(!D.ETC.events)
-    D.ETC.events = {}
+  if(!D.Etc.events)
+    D.Etc.events = {}
   
-  if(!D.ETC.events[type]) {
-    D.ETC.events[type] = {by_class: {}, by_id: {}}
+  if(!D.Etc.events[type]) {
+    D.Etc.events[type] = {by_class: {}, by_id: {}}
     
     document.addEventListener(type, function(event) {
       var target = event.target
@@ -295,7 +295,7 @@ D.track_event = function(type, target, callback) {
     }, false)
   }
   
-  var tracked = D.ETC.events[type]
+  var tracked = D.Etc.events[type]
   
   if(target[0] == '.') {
     tracked.by_class[target.slice(1)] = callback
@@ -403,7 +403,7 @@ D.import_fancy = function(ch, obj) {
   
   D.FancyRegex = RegExp(Object.keys(D.FANCIES)
                                  .sort(function(a, b) {return a.length - b.length})
-                                 .map(function(str) {return '^' + D.ETC.regex_escape(str) + '\\w'})
+                                 .map(function(str) {return '^' + D.Etc.regex_escape(str) + '\\w'})
                                  .join('|'))
 }
 
@@ -3326,9 +3326,9 @@ D.import_optimizer = function(name, fun) {
 
 // figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
 
-//D.ETC.opt_memos = {}
+//D.Etc.opt_memos = {}
 //D.import_optimizer('memoize', function(block, scope) {
-//  var memos = D.ETC.opt_memos
+//  var memos = D.Etc.opt_memos
 //  if(!memos[block.id])
 //    memos[block.id] = {}
 //
@@ -3608,7 +3608,7 @@ D.Parser.split_on = function(string, regex, label) {
     return string
   
   if(!(regex instanceof RegExp))
-    regex = RegExp('[' + D.ETC.regex_escape(regex) + ']')
+    regex = RegExp('[' + D.Etc.regex_escape(regex) + ']')
   
   var output = []
     , inside = []
@@ -3794,22 +3794,22 @@ D.isBlock = function(value) {
   return value && value.type == 'Block' && value.value && value.value.id
 }
 
-D.ETC.isNumeric = function(value) {
+D.Etc.isNumeric = function(value) {
   return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
 }
 
-D.ETC.toNumeric = function(value) {
+D.Etc.toNumeric = function(value) {
   if(value === '0') return 0
   if(typeof value == 'number') return value
   if(typeof value == 'string') return +value ? +value : 0
   return 0
 }
 
-D.ETC.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
+D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
 
-D.ETC.string_to_regex = function(string, global) {
-  if(string[0] !== '/' || !D.ETC.flag_checker_regex.test(string)) {
-    return RegExp(D.ETC.regex_escape(string), (global ? 'g' : ''))
+D.Etc.string_to_regex = function(string, global) {
+  if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
+    return RegExp(D.Etc.regex_escape(string), (global ? 'g' : ''))
   }
   
   var flags = string.slice(string.lastIndexOf('/') + 1)
@@ -3818,7 +3818,7 @@ D.ETC.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
-D.ETC.niceifyish = function(value, whitespace) {
+D.Etc.niceifyish = function(value, whitespace) {
   // this takes an array of un-stringify-able values and returns the nice bits, mostly
   // probably pretty slow -- this is just a quick hack for console debugging
   

@@ -16,7 +16,7 @@ D.import_port_type('to-js', {
   outside_exit: function(ship) {
     // this is very very stupid
     
-    var fun = D.ETC.fun && D.ETC.fun[this.settings.thing]
+    var fun = D.Etc.fun && D.Etc.fun[this.settings.thing]
     if(!fun)
       return D.setError('No fun found')
     

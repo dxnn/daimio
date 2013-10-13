@@ -102,11 +102,11 @@ D.import_models({
           if(is_obj == 2)
             return JSON.stringify(value) == JSON.stringify(like)
           
-          if(like[0] !== '/' || !D.ETC.flag_checker_regex.test(like)) {
+          if(like[0] !== '/' || !D.Etc.flag_checker_regex.test(like)) {
             return value == like // exact match, ish.
           }
           
-          like = D.ETC.string_to_regex(like)
+          like = D.Etc.string_to_regex(like)
           return like.test(value)
         },
       },
