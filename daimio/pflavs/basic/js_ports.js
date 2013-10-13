@@ -18,7 +18,7 @@ D.import_port_type('to-js', {
     
     var fun = D.Etc.fun && D.Etc.fun[this.settings.thing]
     if(!fun)
-      return D.setError('No fun found')
+      return D.set_error('No fun found')
     
     fun(ship)
   }

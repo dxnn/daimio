@@ -234,10 +234,10 @@
 //         ],
 //         fun: function(id) {
 //           var template = this.vars.bindings[id]
-//           if(!template) return D.onerror(id, "You must bind the element before you refresh it. Use {dom set} to set an element's content.")
+//           if(!template) return D.on_error(id, "You must bind the element before you refresh it. Use {dom set} to set an element's content.")
 //           
 //           var el = document.getElementById(id)
-//           if(!el) return D.onerror(id, "Invalid element id.")
+//           if(!el) return D.on_error(id, "Invalid element id.")
 //           
 //           el.innerHTML = D.run(template).replace(/^\s+|\s+$/g, '') // FIXME: this shouldn't have to trim!
 //         },
@@ -256,7 +256,7 @@
 //         ],
 //         fun: function(id) {
 //           var el = document.getElementById(id)
-//           if(!el) return D.onerror(id, "Invalid element id.")
+//           if(!el) return D.on_error(id, "Invalid element id.")
 //           
 //           return el.value
 //         },
@@ -281,7 +281,7 @@
 //         ],
 //         fun: function(id, to) {
 //           var el = document.getElementById(id)
-//           if(!el) return D.onerror(id, "Invalid element id.")
+//           if(!el) return D.on_error(id, "Invalid element id.")
 //           
 //           return el.value = to
 //         },
@@ -300,7 +300,7 @@
 //         ],
 //         fun: function(id) {
 //           var el = document.getElementById(id)
-//           if(!el) return D.onerror(id, "Invalid element id.")
+//           if(!el) return D.on_error(id, "Invalid element id.")
 //           
 //           return el.innerHTML
 //         },
@@ -325,7 +325,7 @@
 //         ],
 //         fun: function(id, to) {
 //           var el = document.getElementById(id)
-//           if(!el) return D.onerror(id, "Invalid element id.")
+//           if(!el) return D.on_error(id, "Invalid element id.")
 //           
 //           el.innerHTML = to
 //         },

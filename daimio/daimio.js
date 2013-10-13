@@ -96,12 +96,12 @@ D.concat = function(a,b) {return a.concat(b)}
 // that would simplify e.g. translation, and allows automated error stuff (eg show what errors a command can throw, practice throwing those to see what happens, pick out all potential errors of type foo from all stations (like, which stations are capable of producing *extreme* errors?))
 
 // use this to set simple errors
-D.setError = function(error) {
-  return D.onerror('', error)
+D.set_error = function(error) {
+  return D.on_error('', error)
 }
 
 // use this to report errors in low-level daimio processes
-D.onerror = function(command, error) {
+D.on_error = function(command, error) {
   console.log('error: ' + error, command)
   return ""
 }
@@ -117,7 +117,7 @@ D.clone = function(value) {
   }
 }
 
-D.Etc.regex_escape = function(str) {
+D.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
@@ -337,7 +337,7 @@ D.port_standard_enter = function(ship, process) {
     return this.pair.exit(ship)
 
   if(!this.station)
-    return D.setError('Every port must have a pair or a station')
+    return D.set_error('Every port must have a pair or a station')
 
   this.space.dock(ship, this.station) // THINK: always async...?
 }
@@ -345,12 +345,12 @@ D.port_standard_enter = function(ship, process) {
 
 D.import_port_type = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
-    return D.setError('That port flavour has already been im-port-ed')
+    return D.set_error('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
   
   if(!pflav)
-    return D.setError('That flavour is not desirable')
+    return D.set_error('That flavour is not desirable')
 
   if(typeof pflav.add != 'function')
     pflav.add = D.noop // noop, so we can call w/o checking
@@ -371,7 +371,7 @@ D.import_port_type = function(flavour, pflav) {
     pflav.enter = D.port_standard_enter
   
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
-  //   return D.setError("That port flavour's properties are invalid")
+  //   return D.set_error("That port flavour's properties are invalid")
   
   D.PortFlavours[flavour] = pflav
   return true
@@ -385,18 +385,18 @@ D.import_port_type = function(flavour, pflav) {
 D.FANCIES = {}
 D.FancyRegex = ""
 D.import_fancy = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Fancy character must be a string')
+  if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
   // ch = ch[0] // only first char matters
   if(!D.FANCIES[ch]) {
     // TODO: check obj.eat
     D.FANCIES[ch] = obj
   } else {
-    D.setError('Your fancies are more borken')
+    D.set_error('Your fancies are more borken')
   }
   
   D.FancyRegex = RegExp(Object.keys(D.FANCIES)
                                  .sort(function(a, b) {return a.length - b.length})
-                                 .map(function(str) {return '^' + D.Etc.regex_escape(str) + '\\w'})
+                                 .map(function(str) {return '^' + D.regex_escape(str) + '\\w'})
                                  .join('|'))
 }
 
@@ -481,7 +481,7 @@ D.import_fancy('__', {
     token.value = pieces.shift()
 
     if(token.value != '__' && token.value != '__in') {
-      D.setError('Only __ and __in are allow to start with __')
+      D.set_error('Only __ and __in are allow to start with __')
       return []
     }
 
@@ -538,7 +538,7 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 D.terminators = {}
 D.Tglyphs = ""
 D.import_terminator = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Terminator character must be a string')
+  if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
   // ch = ch[0] // only first char matters
   if(!D.terminators[ch]) D.terminators[ch] = []
   D.terminators[ch].push(obj)
@@ -838,7 +838,7 @@ D.peek = function(base, path) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -893,7 +893,7 @@ D.poke = function(base, path, value) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -972,7 +972,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       } else {
         new_values[key] = fun(val);
       }
-    // } catch(e) {D.onerror(e)}
+    // } catch(e) {D.on_error(e)}
   }
 
   return new_values;
@@ -1132,7 +1132,7 @@ D.scrub_var = function(value) {
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
-    // D.onerror('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
+    // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
     value = D.mean_defunctionize(value);
     if(value === null) value = false;
     return value;
@@ -1221,7 +1221,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
   if(!next_closed) {
-    D.onerror("No closing brace for '" + string + "'")
+    D.on_error("No closing brace for '" + string + "'")
     return string
   }
 
@@ -1231,7 +1231,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   var block_name = string.match(/^\{begin (\w+)/)
   if(!block_name) {
     // FIXME: handle this situation better
-    D.onerror(string, 'Something weird happened')
+    D.on_error(string, 'Something weird happened')
     return string
   }
   block_name = block_name[1];
@@ -1242,7 +1242,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     
   if(!end_begin) {
     // FIXME: handle this situation better
-    D.onerror(string, "No end tag for block '" + block_name + "'");
+    D.on_error(string, "No end tag for block '" + block_name + "'");
     return string;
   }
   
@@ -1320,7 +1320,7 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   } 
   else {
     if(string[0] != '{' && string.slice(-1) != '}') {
-      D.setError('That string is not a pipeline')
+      D.set_error('That string is not a pipeline')
       return []
     }
   
@@ -1837,7 +1837,7 @@ D.SegmentTypes.Pipeline = {
     var last_replacement = new_tokens[new_tokens.length - 1]
     
     if(!last_replacement){
-      // D.setError('The previous replacement does not exist')
+      // D.set_error('The previous replacement does not exist')
       return [L, R]
     }
     
@@ -1927,7 +1927,7 @@ D.SegmentTypes.Fancy = {
     var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
   
     if(!D.FANCIES[glyph]) {
-      D.setError('Your fancies are borken:' + glyph + ' ' + token.value)
+      D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
       return [L, R]
     }
 
@@ -1991,7 +1991,7 @@ D.SegmentTypes.VariableSet = {
                                             && future_segment.value.name == name })
      .forEach(function(future_segment) { 
        if(future_segment.value.prevkey)
-         return D.setError('Pipeline variables may be set at most once per pipeline')
+         return D.set_error('Pipeline variables may be set at most once per pipeline')
        future_segment.value.prevkey = new_key
      })
   
@@ -2046,7 +2046,7 @@ D.SegmentTypes.PortSend = {
       }
     }
     else {
-      D.setError('Invalid port " + to + " detected')
+      D.set_error('Invalid port " + to + " detected')
     }
     
     return inputs[0]
@@ -2353,7 +2353,7 @@ D.SegmentTypes.Command = {
       var word = items.shift()
 
       if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.setError('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
+        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
         if(items.length)
           items.shift()
         continue
@@ -2403,7 +2403,7 @@ D.SegmentTypes.Command = {
 
     if(!method) {
       // THINK: error?
-      D.setError('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
+      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
@@ -2457,7 +2457,7 @@ D.SegmentTypes.Command = {
       return method.fun.apply(handler, params.concat(prior_starter, process))
     } else {
       errors.forEach(function(error) {
-        D.setError(error)
+        D.set_error(error)
       })
       return ""
     }
@@ -2473,7 +2473,7 @@ D.SegmentTypes.Alias = {
     var new_tokens = D.Aliases[token.value.word]
     
     if(!new_tokens) {
-      D.setError("The alias '" + token.value.word + "' stares at you blankly")
+      D.set_error("The alias '" + token.value.word + "' stares at you blankly")
       return [L, R]
     }
     
@@ -2880,16 +2880,16 @@ D.Port = function(port_template, space) {
   var pflav = D.PortFlavours[flavour]
   
   if(!pflav)
-    return D.setError('Port flavour "' + flavour + '" could not be identified')
+    return D.set_error('Port flavour "' + flavour + '" could not be identified')
   
   // if(D.PORTS[name])
-  //   return D.setError('That port has already been added')
+  //   return D.set_error('That port has already been added')
     
   if(!name)
     name = 'port-' + Math.random()
     
   // if(!space)
-  //   return D.setError('Every port must have a space')
+  //   return D.set_error('Every port must have a space')
   
   var port = Object.create(pflav)
   
@@ -2929,7 +2929,7 @@ D.Space = function(seed_id, parent) {
     , self = this
   
   if(!seed)
-    return D.setError('Invalid spaceseed')
+    return D.set_error('Invalid spaceseed')
     
   // TODO: validate parent
   
@@ -3164,7 +3164,7 @@ D.Space.prototype.change_seed = function(seed_id) {
 //   var index = this.stations.indexOf(station)
 //   
 //   if(index == -1)
-//     return D.setError('No such station found')
+//     return D.set_error('No such station found')
 //   
 //   // TODO: remove the station's ports
 //   
@@ -3206,7 +3206,7 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   // if(!when_done) {
   //   when_done = function(result) {
   //     // THINK: what should we do here?
-  //     D.setError("No when_done callback sent to space.execute for result: " + D.stringify(result))
+  //     D.set_error("No when_done callback sent to space.execute for result: " + D.stringify(result))
   //   }
   // }
   
@@ -3263,7 +3263,7 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
     result = process.run()
     self.cleanup(process, listeners)
   } catch(e) {
-    D.setError(e.message)
+    D.set_error(e.message)
     self.cleanup(process, listeners)
   }
   
@@ -3601,7 +3601,7 @@ D.Parser.split_on = function(string, regex, label) {
     return string
   
   if(!(regex instanceof RegExp))
-    regex = RegExp('[' + D.Etc.regex_escape(regex) + ']')
+    regex = RegExp('[' + D.regex_escape(regex) + ']')
   
   var output = []
     , inside = []
@@ -3802,7 +3802,7 @@ D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
 
 D.Etc.string_to_regex = function(string, global) {
   if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
-    return RegExp(D.Etc.regex_escape(string), (global ? 'g' : ''))
+    return RegExp(D.regex_escape(string), (global ? 'g' : ''))
   }
   
   var flags = string.slice(string.lastIndexOf('/') + 1)
@@ -4036,7 +4036,7 @@ D.seedlikes_from_string = function(stringlike) {
             route.push(part + '.in')
             // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
-              D.setError('Port not found in line: ' + line)
+              D.set_error('Port not found in line: ' + line)
               route = []
             }
             else {
@@ -4051,7 +4051,7 @@ D.seedlikes_from_string = function(stringlike) {
         if(route.length == 2) {
           // TODO: ensure pushed route isn't null,null
           if(!route[0] || !route[1])
-            D.setError('Port not found in line: ' + line)
+            D.set_error('Port not found in line: ' + line)
           else 
             this_seed.routes.push(route)
           
@@ -4142,9 +4142,9 @@ D.make_spaceseeds = function(seedlikes) {
           , two = port_key_to_index[route[1]]
           
         if(!one)
-          D.setError('Invalid route: ' + route[0])
+          D.set_error('Invalid route: ' + route[0])
         if(!two)
-          D.setError('Invalid route: ' + route[1])
+          D.set_error('Invalid route: ' + route[1])
         
         if(!one || !two)
           return []

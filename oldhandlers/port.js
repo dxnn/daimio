@@ -51,7 +51,7 @@ D.import_models({
           // var port = D.PORTS[id] // TODO: erp make this context(space) sensitive?
           
           // if(!port)
-          //   return D.setError('That is not a valid port')
+          //   return D.set_error('That is not a valid port')
           // 
           // return port.sendMessage(value, prior_starter)
           

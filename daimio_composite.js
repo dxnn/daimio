@@ -74,12 +74,12 @@ D.concat = function(a,b) {return a.concat(b)}
 // that would simplify e.g. translation, and allows automated error stuff (eg show what errors a command can throw, practice throwing those to see what happens, pick out all potential errors of type foo from all stations (like, which stations are capable of producing *extreme* errors?))
 
 // use this to set simple errors
-D.setError = function(error) {
-  return D.onerror('', error)
+D.set_error = function(error) {
+  return D.on_error('', error)
 }
 
 // use this to report errors in low-level daimio processes
-D.onerror = function(command, error) {
+D.on_error = function(command, error) {
   console.log('error: ' + error, command)
   return ""
 }
@@ -324,7 +324,7 @@ D.port_standard_enter = function(ship, process) {
     return this.pair.exit(ship)
 
   if(!this.station)
-    return D.setError('Every port must have a pair or a station')
+    return D.set_error('Every port must have a pair or a station')
 
   this.space.dock(ship, this.station) // THINK: always async...?
 }
@@ -332,12 +332,12 @@ D.port_standard_enter = function(ship, process) {
 
 D.import_port_type = function(flavour, pflav) {
   if(D.PORTFLAVOURS[flavour])
-    return D.setError('That port flavour has already been im-port-ed')
+    return D.set_error('That port flavour has already been im-port-ed')
   
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
   
   if(!pflav)
-    return D.setError('That flavour is not desirable')
+    return D.set_error('That flavour is not desirable')
 
   if(typeof pflav.add != 'function')
     pflav.add = D.noop // noop, so we can call w/o checking
@@ -358,7 +358,7 @@ D.import_port_type = function(flavour, pflav) {
     pflav.enter = D.port_standard_enter
   
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
-  //   return D.setError("That port flavour's properties are invalid")
+  //   return D.set_error("That port flavour's properties are invalid")
   
   D.PORTFLAVOURS[flavour] = pflav
   return true
@@ -385,7 +385,7 @@ D.import_port_type('to-js', {
     
     var fun = D.ETC.fun && D.ETC.fun[this.settings.thing]
     if(!fun)
-      return D.setError('No fun found')
+      return D.set_error('No fun found')
     
     fun(ship)
   }
@@ -451,10 +451,10 @@ D.import_port_type('dom-set-text', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })
 
@@ -469,10 +469,10 @@ D.import_port_type('dom-set-html', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -487,10 +487,10 @@ D.import_port_type('dom-set-value', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -505,10 +505,10 @@ D.import_port_type('dom-do-submit', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })
 
@@ -638,7 +638,7 @@ D.import_port_type('svg-move', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(element.x !== undefined) { // a regular element
       
@@ -681,7 +681,7 @@ D.import_port_type('svg-rotate', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     var x = typeof ship.x === 'number' ? ship.x : element.x.baseVal.value + (element.width.baseVal.value / 2)
       , y = typeof ship.y === 'number' ? ship.y : element.y.baseVal.value + (element.height.baseVal.value / 2)
@@ -706,10 +706,10 @@ D.import_port_type('svg-add-line', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(!element.getCTM)
-      return D.setError("That doesn't look like an svg element to me")
+      return D.set_error("That doesn't look like an svg element to me")
     
     var x1 = ship.x1 || 0
       , y1 = ship.y1 || 0
@@ -743,13 +743,13 @@ D.import_port_type('svg-add-line', {
 D.FANCIES = {}
 D.FancyRegex = ""
 D.import_fancy = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Fancy character must be a string')
+  if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
   // ch = ch[0] // only first char matters
   if(!D.FANCIES[ch]) {
     // TODO: check obj.eat
     D.FANCIES[ch] = obj
   } else {
-    D.setError('Your fancies are more borken')
+    D.set_error('Your fancies are more borken')
   }
   
   D.FancyRegex = RegExp(Object.keys(D.FANCIES)
@@ -839,7 +839,7 @@ D.import_fancy('__', {
     token.value = pieces.shift()
 
     if(token.value != '__' && token.value != '__in') {
-      D.setError('Only __ and __in are allow to start with __')
+      D.set_error('Only __ and __in are allow to start with __')
       return []
     }
 
@@ -896,7 +896,7 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 D.terminators = {}
 D.Tglyphs = ""
 D.import_terminator = function(ch, obj) {
-  if(typeof ch != 'string') return D.onerror('Terminator character must be a string')
+  if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
   // ch = ch[0] // only first char matters
   if(!D.terminators[ch]) D.terminators[ch] = []
   D.terminators[ch].push(obj)
@@ -1527,7 +1527,7 @@ D.peek = function(base, path) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -1583,7 +1583,7 @@ D.poke = function(base, path, value) {
     }
     
     if(!pf)
-      return D.setError('No matching pathfinder was found')
+      return D.set_error('No matching pathfinder was found')
     
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
@@ -1618,7 +1618,7 @@ D.poke = function(base, path, value) {
 //   
 //   var reducer = function(acc, value, words) {
 //     if(scalar_test(value))
-//       return D.setError("There's been a terrible mistake") || {}
+//       return D.set_error("There's been a terrible mistake") || {}
 // 
 //     if(JSON.stringify(value) === '{}') {
 //       words.forEach(function(word) {
@@ -1805,7 +1805,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       } else {
         new_values[key] = fun(val);
       }
-    // } catch(e) {D.onerror(e)}
+    // } catch(e) {D.on_error(e)}
   }
 
   return new_values;
@@ -1940,7 +1940,7 @@ D.scrub_var = function(value) {
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
-    D.onerror('Your object has circular references');
+    D.on_error('Your object has circular references');
     value = D.mean_defunctionize(value);
     if(value === null) value = false;
     return value;
@@ -2020,7 +2020,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
 
   // TODO: add a different mode that returns the unfulfilled model / method etc (for autocomplete)
   if(!next_closed) {
-    D.onerror("No closing brace for '" + string + "'")
+    D.on_error("No closing brace for '" + string + "'")
     return string
   }
 
@@ -2030,7 +2030,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
   var block_name = string.match(/^\{begin (\w+)/)
   if(!block_name) {
     // FIXME: handle this situation better
-    D.onerror(string, 'Something weird happened')
+    D.on_error(string, 'Something weird happened')
     return string
   }
   block_name = block_name[1];
@@ -2041,7 +2041,7 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     
   if(!end_begin) {
     // FIXME: handle this situation better
-    D.onerror(string, "No end tag for block '" + block_name + "'");
+    D.on_error(string, "No end tag for block '" + block_name + "'");
     return string;
   }
   
@@ -2119,7 +2119,7 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   } 
   else {
     if(string[0] != '{' && string.slice(-1) != '}') {
-      D.setError('That string is not a pipeline')
+      D.set_error('That string is not a pipeline')
       return []
     }
   
@@ -2640,7 +2640,7 @@ D.SegmentTypes.Pipeline = {
     var last_replacement = new_tokens[new_tokens.length - 1]
     
     if(!last_replacement){
-      // D.setError('The previous replacement does not exist')
+      // D.set_error('The previous replacement does not exist')
       return [L, R]
     }
     
@@ -2730,7 +2730,7 @@ D.SegmentTypes.Fancy = {
     var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
   
     if(!D.FANCIES[glyph]) {
-      D.setError('Your fancies are borken:' + glyph + ' ' + token.value)
+      D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
       return [L, R]
     }
 
@@ -2794,7 +2794,7 @@ D.SegmentTypes.VariableSet = {
                                             && future_segment.value.name == name })
      .forEach(function(future_segment) { 
        if(future_segment.value.prevkey)
-         return D.setError('Pipeline variables may be set at most once per pipeline')
+         return D.set_error('Pipeline variables may be set at most once per pipeline')
        future_segment.value.prevkey = new_key
      })
   
@@ -2849,7 +2849,7 @@ D.SegmentTypes.PortSend = {
       }
     }
     else {
-      D.setError('Invalid port " + to + " detected')
+      D.set_error('Invalid port " + to + " detected')
     }
     
     return inputs[0]
@@ -3156,7 +3156,7 @@ D.SegmentTypes.Command = {
       var word = items.shift()
 
       if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.setError('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
+        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
         if(items.length)
           items.shift()
         continue
@@ -3206,7 +3206,7 @@ D.SegmentTypes.Command = {
 
     if(!method) {
       // THINK: error?
-      D.setError('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
+      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
@@ -3260,7 +3260,7 @@ D.SegmentTypes.Command = {
       return method.fun.apply(handler, params.concat(prior_starter, process))
     } else {
       errors.forEach(function(error) {
-        D.setError(error)
+        D.set_error(error)
       })
       return ""
     }
@@ -3276,7 +3276,7 @@ D.SegmentTypes.Alias = {
     var new_tokens = D.ALIASES[token.value.word]
     
     if(!new_tokens) {
-      D.setError("The alias '" + token.value.word + "' stares at you blankly")
+      D.set_error("The alias '" + token.value.word + "' stares at you blankly")
       return [L, R]
     }
     
@@ -3683,16 +3683,16 @@ D.Port = function(port_template, space) {
   var pflav = D.PORTFLAVOURS[flavour]
   
   if(!pflav)
-    return D.setError('Port flavour "' + flavour + '" could not be identified')
+    return D.set_error('Port flavour "' + flavour + '" could not be identified')
   
   // if(D.PORTS[name])
-  //   return D.setError('That port has already been added')
+  //   return D.set_error('That port has already been added')
     
   if(!name)
     name = 'port-' + Math.random()
     
   // if(!space)
-  //   return D.setError('Every port must have a space')
+  //   return D.set_error('Every port must have a space')
   
   var port = Object.create(pflav)
   
@@ -3733,7 +3733,7 @@ D.Space = function(seed_id, parent) {
     , self = this
   
   if(!seed)
-    return D.setError('Invalid spaceseed')
+    return D.set_error('Invalid spaceseed')
     
   // TODO: validate parent
   
@@ -3968,7 +3968,7 @@ D.Space.prototype.change_seed = function(seed_id) {
 //   var index = this.stations.indexOf(station)
 //   
 //   if(index == -1)
-//     return D.setError('No such station found')
+//     return D.set_error('No such station found')
 //   
 //   // TODO: remove the station's ports
 //   
@@ -4010,7 +4010,7 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   // if(!when_done) {
   //   when_done = function(result) {
   //     // THINK: what should we do here?
-  //     D.setError("No when_done callback sent to space.execute for result: " + D.stringify(result))
+  //     D.set_error("No when_done callback sent to space.execute for result: " + D.stringify(result))
   //   }
   // }
   
@@ -4067,7 +4067,7 @@ D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners
     result = process.run()
     self.cleanup(process, listeners)
   } catch(e) {
-    D.setError(e.message)
+    D.set_error(e.message)
     self.cleanup(process, listeners)
   }
   
@@ -4986,7 +4986,7 @@ D.seedlikes_from_string = function(stringlike) {
             route.push(part + '.in')
             // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
-              D.setError('Port not found in line: ' + line)
+              D.set_error('Port not found in line: ' + line)
               route = []
             }
             else {
@@ -5001,7 +5001,7 @@ D.seedlikes_from_string = function(stringlike) {
         if(route.length == 2) {
           // TODO: ensure pushed route isn't null,null
           if(!route[0] || !route[1])
-            D.setError('Port not found in line: ' + line)
+            D.set_error('Port not found in line: ' + line)
           else 
             this_seed.routes.push(route)
           
@@ -5092,9 +5092,9 @@ D.make_spaceseeds = function(seedlikes) {
           , two = port_key_to_index[route[1]]
           
         if(!one)
-          D.setError('Invalid route: ' + route[0])
+          D.set_error('Invalid route: ' + route[0])
         if(!two)
-          D.setError('Invalid route: ' + route[1])
+          D.set_error('Invalid route: ' + route[1])
         
         if(!one || !two)
           return []
@@ -5494,7 +5494,7 @@ D.import_models({
           var k, v, hash = {}
           
           if(data.length < 2) {            
-            return D.setError('The data parameter must contain at least two elements') || {}
+            return D.set_error('The data parameter must contain at least two elements') || {}
           }
 
           while(data.length > 1) 
@@ -6336,7 +6336,7 @@ D.import_models({
             // TODO: indexOf doesn't coerce strings and numbers so {"2" | is in (2)} fails.
             if(D.isNice(_in)) return _in.indexOf(value) !== -1
             
-            if(!Array.isArray(value)) return D.onerror("Requires 'in', 'like', or a value list")
+            if(!Array.isArray(value)) return D.on_error("Requires 'in', 'like', or a value list")
             
             var base = value[0] // test each item
             for(var i=1, l=value.length; i < l; i++) {
@@ -6742,7 +6742,7 @@ D.import_models({
         fun: function(value, by) {
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
-              return D.setError('Division by zero is a crime against nature') || 0
+              return D.set_error('Division by zero is a crime against nature') || 0
             return a / b
           });
         },
@@ -6774,7 +6774,7 @@ D.import_models({
           // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
           return D.ETC.Math.solver(value, by, function(a, b) {
             if(!b) 
-              return D.setError('Modulation by zero is a crime against nature') || 0
+              return D.set_error('Modulation by zero is a crime against nature') || 0
             
             return a >= 0 == b > 0 ? a % b : a % b + b
             // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
@@ -6809,7 +6809,7 @@ D.import_models({
         fun: function(value, exp) {
           // THINK: can we solver this?
           if(value < 0 && exp % 1)
-            return D.setError('Roots of negatives are not real') || 0
+            return D.set_error('Roots of negatives are not real') || 0
             
           return Math.pow(value, exp) || 0
         },
@@ -7033,7 +7033,7 @@ D.ETC.Math.singleArray = function(value, to, fun) {
 
 D.ETC.Math.naryanArray = function(value, to, fun) {
   if(!D.ETC.isNumeric(value)) {
-    D.setError("That is not a numeric value")
+    D.set_error("That is not a numeric value")
     value = 0
   }
   if(!D.ETC.isNumeric(to)) {
@@ -7130,7 +7130,7 @@ D.import_models({
                      })[0] 
 
           if(!port)
-            return D.setError('No corresponding port exists on this station')
+            return D.set_error('No corresponding port exists on this station')
           
           // send the value, go async while we wait for the reply
           
@@ -7960,7 +7960,7 @@ D.import_models({
         ],
         fun: function(sheet, type, id, data) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           data = data || {};
           data.id = id;
@@ -7988,10 +7988,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.remove()) return sheet.id;
         },
@@ -8089,7 +8089,7 @@ D.import_models({
         ],
         fun: function(sheet, type, daimio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           if(sheet.set_template(type, daimio)) return sheet.id;
         },
@@ -8125,10 +8125,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, key, value) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
           
@@ -8181,7 +8181,7 @@ D.import_models({
         ],
         fun: function(sheet, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.pan(dx, dy);
           return sheet.id;
@@ -8206,7 +8206,7 @@ D.import_models({
         ],
         fun: function(sheet, ratio) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           sheet.scale(ratio);
           return sheet.id;
@@ -8253,10 +8253,10 @@ D.import_models({
         ],
         fun: function(sheet, thing, x, y, dx, dy) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           // NOTE: thing's x/y are in the svg coord space (so we don't have to change them all with each zoom/pan), so we need to translate the incoming page-based x/y.
           if(x || x === 0) {
@@ -8291,10 +8291,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           if(thing.render()) return thing.id;
         },
@@ -8318,10 +8318,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_back(thing.el);
           
@@ -8347,10 +8347,10 @@ D.import_models({
         ],
         fun: function(sheet, thing) {
           sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.onerror('Invalid sheet id');
+          if(!sheet) return D.on_error('Invalid sheet id');
           
           thing = sheet.things[thing];
-          if(!thing) return D.onerror('Invalid thing id');
+          if(!thing) return D.on_error('Invalid thing id');
           
           sheet.to_front(thing.el);
           
@@ -8377,7 +8377,7 @@ D.import_models({
 });
 
 if(window.Daggr) {
-  Daggr.onerror = D.onerror;
+  Daggr.onerror = D.on_error;
 }
 // The dagoba interface model
 
@@ -8435,7 +8435,7 @@ D.import_models({
         ],
         fun: function(graph, id, data) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           data = data || {};
           data.id = id;
@@ -8475,10 +8475,10 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and node?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           node = graph.nodes[node];
-          if(!node) return D.onerror('Invalid node id');
+          if(!node) return D.on_error('Invalid node id');
           
           data = data || {};
           data.id = id;
@@ -8524,13 +8524,13 @@ D.import_models({
           // THINK: is there a way to not have to require both graph and ports?
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           startport = graph.ports[startport];
-          if(!startport) return D.onerror('Invalid startport id');
+          if(!startport) return D.on_error('Invalid startport id');
           
           endport = graph.ports[endport];
-          if(!endport) return D.onerror('Invalid endport id');
+          if(!endport) return D.on_error('Invalid endport id');
           
           data = data || {};
           data.id = id;
@@ -8559,7 +8559,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node, nodes = {};
           
@@ -8591,7 +8591,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port, ports = {};
           
@@ -8623,7 +8623,7 @@ D.import_models({
         ],
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge, edges = {};
           
@@ -8665,11 +8665,11 @@ D.import_models({
           // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
           
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var sorter = Dagoba.sort[by];
           if(!sorter) {
-            D.onerror('Invalid sort function id, falling back to natural');
+            D.on_error('Invalid sort function id, falling back to natural');
             sorter = Dagoba.sort['natural'];
           }
           
@@ -8697,7 +8697,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var node;
           
@@ -8728,7 +8728,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var port;
           
@@ -8759,7 +8759,7 @@ D.import_models({
         ],
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
           var edge;
           
@@ -8810,12 +8810,12 @@ D.import_models({
         ],
         fun: function(graph, id, type, path, value) {
           graph = Dagoba.graphs[graph];
-          if(!graph) return D.onerror('Invalid graph id');
+          if(!graph) return D.on_error('Invalid graph id');
           
-          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.onerror('Invalid type');
+          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
           
           var thing = graph[type][id];
-          if(!thing) D.onerror('Invalid id');
+          if(!thing) D.on_error('Invalid id');
           
           // TODO: scrub bad paths, like 'startport'
           
@@ -8879,5 +8879,5 @@ D.ETC.dagoba.set_actions = function(graph, topic) {
 
 // TODO: this won't work on the server
 if(window.Dagoba) {
-  Dagoba.onerror = D.onerror;
+  Dagoba.onerror = D.on_error;
 }

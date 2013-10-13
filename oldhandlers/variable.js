@@ -45,7 +45,7 @@ D.import_models({
           }
           
           else 
-            return D.setError('Invalid variable type')
+            return D.set_error('Invalid variable type')
           
           value = state[name]
           
@@ -98,13 +98,13 @@ D.import_models({
         ],
         fun: function(path, value, prior_starter, process) {
           if(!path)
-            return D.setError('Invalid path')
+            return D.set_error('Invalid path')
           
           if(!process)
-            return D.setError('Invalid process')
+            return D.set_error('Invalid process')
           
           if(!process.space)
-            return D.setError('Invalid process space')
+            return D.set_error('Invalid process space')
           
           var state = process.space.state
             , words = path.split('.')

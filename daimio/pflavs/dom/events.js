@@ -57,10 +57,10 @@ D.import_port_type('dom-set-text', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })
 
@@ -75,10 +75,10 @@ D.import_port_type('dom-set-html', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -93,10 +93,10 @@ D.import_port_type('dom-set-value', {
     this.element = document.getElementById(this.settings.thing)
 
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
     if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
+      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
@@ -111,9 +111,9 @@ D.import_port_type('dom-do-submit', {
     this.element = document.getElementById(this.settings.thing)
     
     if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
+      return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
     if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
+      return D.set_error('That dom thing has no innerText')
   }
 })

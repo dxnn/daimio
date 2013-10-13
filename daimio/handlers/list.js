@@ -377,7 +377,7 @@ D.import_models({
           var k, v, hash = {}
           
           if(data.length < 2) {            
-            return D.setError('The data parameter must contain at least two elements') || {}
+            return D.set_error('The data parameter must contain at least two elements') || {}
           }
 
           while(data.length > 1) 

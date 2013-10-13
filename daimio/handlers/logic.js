@@ -83,7 +83,7 @@ D.import_models({
             // TODO: indexOf doesn't coerce strings and numbers so {"2" | is in (2)} fails.
             if(D.isNice(_in)) return _in.indexOf(value) !== -1
             
-            if(!Array.isArray(value)) return D.onerror("Requires 'in', 'like', or a value list")
+            if(!Array.isArray(value)) return D.on_error("Requires 'in', 'like', or a value list")
             
             var base = value[0] // test each item
             for(var i=1, l=value.length; i < l; i++) {

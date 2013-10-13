@@ -16,7 +16,7 @@ D.import_port_type('svg-move', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(element.x !== undefined) { // a regular element
       
@@ -59,7 +59,7 @@ D.import_port_type('svg-rotate', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     var x = typeof ship.x === 'number' ? ship.x : element.x.baseVal.value + (element.width.baseVal.value / 2)
       , y = typeof ship.y === 'number' ? ship.y : element.y.baseVal.value + (element.height.baseVal.value / 2)
@@ -84,10 +84,10 @@ D.import_port_type('svg-add-line', {
     var element = document.getElementById(ship.thing)
     
     if(!element)
-      return D.setError('You seem to be lacking elementary flair')
+      return D.set_error('You seem to be lacking elementary flair')
     
     if(!element.getCTM)
-      return D.setError("That doesn't look like an svg element to me")
+      return D.set_error("That doesn't look like an svg element to me")
     
     var x1 = ship.x1 || 0
       , y1 = ship.y1 || 0

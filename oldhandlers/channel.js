@@ -113,12 +113,12 @@ D.import_models({
             , gateway = D.GATEWAYS[gateway_name]
           
           if(!channel) {
-            D.setError('That is not a valid channel')
+            D.set_error('That is not a valid channel')
             return name
           }
           
           if(!gateway) {
-            D.setError('That is not a valid gateway')
+            D.set_error('That is not a valid gateway')
             return name
           }
           
@@ -156,12 +156,12 @@ D.import_models({
             , gateway = D.GATEWAYS[gateway_name]
           
           if(!channel) {
-            D.setError('That is not a valid channel')
+            D.set_error('That is not a valid channel')
             return name
           }
           
           if(!gateway) {
-            D.setError('That is not a valid gateway')
+            D.set_error('That is not a valid gateway')
             return name
           }
           
@@ -191,7 +191,7 @@ D.import_models({
           var channel = D.CHANNELS[name]
           
           if(!channel) {
-            D.setError('That is not a valid channel')
+            D.set_error('That is not a valid channel')
             return name
           }
           
