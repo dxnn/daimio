@@ -604,7 +604,7 @@ D.import_models({
               } else if(D.isBlock(temp)) { // block
                 hash[key] = temp
               } else { // list
-                hash[key] = D.commands.list.methods.union.fun(stack)
+                hash[key] = D.Commands.list.methods.union.fun(stack)
               }
             }
           }

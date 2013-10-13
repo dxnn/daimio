@@ -50,16 +50,17 @@ D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
 */
 D = {}
-D.Etc = {}
+
 D.ABLOCKS = {}
 D.SPACESEEDS = {}
 D.DIALECTS = {}
-D.Types = {}
-D.Aliases = {}
+D.Aliases = {} // aliases are a grey area: one day they may be able to grow at runtime
 D.AliasMap = {}
 
+D.Etc = {}
+D.Types = {}
 D.Parser = {}
-D.commands = {}
+D.Commands = {}
 D.SegmentTypes = {}
 
 D.command_open = '{'
@@ -604,11 +605,11 @@ D.import_terminator('→', { // send [old]
 D.import_models = function(new_models) {
   for(var model_key in new_models) {
     var model = new_models[model_key]
-    if(!D.commands[model_key]) {
-      D.commands[model_key] = model
+    if(!D.Commands[model_key]) {
+      D.Commands[model_key] = model
     } 
     else {
-      D.extend(D.commands[model_key]['methods'], model['methods'])
+      D.extend(D.Commands[model_key]['methods'], model['methods'])
     }
   }
 }
@@ -2558,7 +2559,7 @@ D.SegmentTypes.Alias = {
 
 // D.Dialect = function(models, aliases, parent) {
 D.Dialect = function(commands, aliases) {
-  this.commands = commands ? D.deep_copy(commands) : D.commands
+  this.commands = commands ? D.deep_copy(commands) : D.Commands
   this.aliases = aliases ? D.clone(aliases) : D.Aliases
   // this.parent = parent
 }

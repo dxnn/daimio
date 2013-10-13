@@ -219,7 +219,7 @@ funtest = function(string, result) {
 // 
 //           [ { type: "Command"
 //             , value: {Handler:"math", Method:"add"} 
-//             , method: D.commands.math.methods.add
+//             , method: D.Commands.math.methods.add
 //             , paramlist: [null,null] } ])
 // 
 // 
@@ -232,7 +232,7 @@ funtest = function(string, result) {
 //             , value: {Handler:"math", Method:"add"} 
 //             , params: { value: {"type":"Number","value":2}
 //                       , to: {"type":"Number","value":4} }
-//             , method: D.commands.math.methods.add
+//             , method: D.Commands.math.methods.add
 //             , paramlist: [{"type":"Number","value":2},{"type":"Number","value":4}] } ])
 //     
 //     
@@ -244,7 +244,7 @@ funtest = function(string, result) {
 //             , value: {Handler:"math", Method:"add"} 
 //             , params: {"value":null,"__pipe__":null}
 //             , ins: {"__pipe__":0}
-//             , method: D.commands.math.methods.add
+//             , method: D.Commands.math.methods.add
 //             , paramlist: [{"type":"Input","value":0},null] } ])
 // 
 // 
@@ -423,8 +423,8 @@ funtest('{"pxxffxfasdf" | string transform from "/x(.)/" to "{__ | string upperc
 // 
 // for(var i = 2; i<160; i+=2) {console.log(i, seqfun([1,1,i,1,1,1,1,1]))}
 
-// for(var i = 2; i<46; i+=1) {console.log(i, seqfun(D.commands.list.methods.range.fun(i, 1, 1)[2]))}
-// for(var i = 2; i<246; i+=1) {x = seqfun(D.commands.list.methods.range.fun(i, 1, 1)); if(x && x[1]) {console.log(x[1])} }
+// for(var i = 2; i<46; i+=1) {console.log(i, seqfun(D.Commands.list.methods.range.fun(i, 1, 1)[2]))}
+// for(var i = 2; i<246; i+=1) {x = seqfun(D.Commands.list.methods.range.fun(i, 1, 1)); if(x && x[1]) {console.log(x[1])} }
 // all 2s: 5,-,-
 // 2s w/ 1 1: 7,- or 5,-,- or -
 

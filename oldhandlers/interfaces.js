@@ -68,7 +68,7 @@ D.import_models({
             // switch (keyCode) {
             //   case arrow.up:
             //     D.execute('history', 'get_prev', [self.search, self.current]);
-            //     // obj = D.commands.history.methods.get_prev(self.search, self.current);
+            //     // obj = D.Commands.history.methods.get_prev(self.search, self.current);
             //     if(obj && obj.string) {
             //       $('#commander').val(obj.string);
             //       self.current = obj.current;
@@ -77,7 +77,7 @@ D.import_models({
             //   case arrow.down:
             //     // TODO: down arrow at bottom should recover search phrase
             //     D.execute('history', 'get_next', [self.search, self.current]);
-            //     // obj = D.commands.history.methods.get_next(self.search, self.current);
+            //     // obj = D.Commands.history.methods.get_next(self.search, self.current);
             //     if(obj && obj.string) {
             //       $('#commander').val(obj.string);
             //       self.current = obj.current;
@@ -99,7 +99,7 @@ D.import_models({
             //     var words=[], model={}, method={}, param={}, last_param_index=0, stuff={}, autoval='';
             // 
             //     words = $('#commander').val().split(/ /);
-            //     model = D.commands[words[0]] || {};
+            //     model = D.Commands[words[0]] || {};
             // 
             //     if(words.length == 1) {
             //       stuff = {
@@ -108,7 +108,7 @@ D.import_models({
             //         desc: model.desc ? model.desc : '', 
             //         auto: function(string) {
             //           var regex = new RegExp('^' + string);
-            //           return _.select(Object.keys(D.commands || []), function(value) {return regex.test(value);});
+            //           return _.select(Object.keys(D.Commands || []), function(value) {return regex.test(value);});
             //         }(words[0]),
             //       };
             //     } 
