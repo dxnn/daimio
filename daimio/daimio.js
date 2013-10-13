@@ -268,7 +268,8 @@ D.track_event = function(type, target, callback) {
           || ( target.value != undefined && target.value )
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
-          || D.scrub_var(target)
+          || D.scrub_var(event)
+          || true
         listener(value, event)
       }
     }, false)
@@ -296,7 +297,6 @@ D.send_value_to_js_port = function(to, value) {
     document.dispatchEvent(event)
   }
 }
-
 
 
 // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
@@ -363,377 +363,6 @@ D.import_port_type = function(flavour, pflav) {
   D.PORTFLAVOURS[flavour] = pflav
   return true
 }
-
-
-D.import_port_type('from-js', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    
-    var callback = function(ship) {
-      self.enter(ship.detail)
-    }
-
-    document.addEventListener(this.settings.thing, callback)
-  }
-})
-
-D.import_port_type('to-js', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    // this is very very stupid
-    
-    var fun = D.ETC.fun && D.ETC.fun[this.settings.thing]
-    if(!fun)
-      return D.setError('No fun found')
-    
-    fun(ship)
-  }
-})
-
-
-D.import_port_type('dom-on-click', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    D.track_event('click', this.settings.thing, function(value) {self.enter(value)})
-  }
-})
-    
-D.import_port_type('dom-on-blur', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    D.track_event('blur', this.settings.thing, function(value) {self.enter(value)})
-  }
-})
-    
-D.import_port_type('dom-on-change', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    D.track_event('change', this.settings.thing, function(value) {self.enter(value)})
-  }
-})
-
-D.import_port_type('dom-on-submit', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    
-    var callback = function(value, event) {
-      var ship = {}
-        , element = event.target
-        
-      // TODO: buckle down and have this suck out all form values, not just the easy ones. yes, it's ugly. but do it for the kittens.
-      for(var i=0, l=element.length; i < l; i++) {
-        ship[element[i].name] = element[i].value
-      }
-      self.enter(ship) 
-    }
-        
-    D.track_event('submit', this.settings.thing, callback)
-  }
-})
-
-
-// TODO: convert these 'set' style ports to use track_event
-
-// THINK: can we genericize this to handle both set-text & set-value?
-D.import_port_type('dom-set-text', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
-    if(this.element) 
-      this.element.innerText = D.stringify(ship)
-  },
-  outside_add: function() {
-    this.element = document.getElementById(this.settings.thing)
-    
-    if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
-    
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
-  }
-})
-
-D.import_port_type('dom-set-html', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
-    if(this.element) 
-      this.element.innerHTML = D.stringify(ship)
-  },
-  outside_add: function() {
-    this.element = document.getElementById(this.settings.thing)
-
-    if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
-
-    if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
-  }
-})
-
-D.import_port_type('dom-set-value', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
-    if(this.element) 
-      this.element.value = D.stringify(ship)
-  },
-  outside_add: function() {
-    this.element = document.getElementById(this.settings.thing)
-
-    if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
-
-    if(!this.element.hasOwnProperty('innerHTML'))
-      return D.setError('That dom thing has no innerHTML')
-  }
-})
-
-
-D.import_port_type('dom-do-submit', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    if(this.element)
-      this.element.submit()
-  },
-  outside_add: function() {
-    this.element = document.getElementById(this.settings.thing)
-    
-    if(!this.element)
-      return D.setError('That dom thing ("' + this.settings.thing + '") is not present')
-    
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.setError('That dom thing has no innerText')
-  }
-})
-
-
-
-
-D.import_port_type('socket-add-user', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-      , callback = function (ship) {
-          if(!ship.user) return false
-          self.enter(ship)
-        }
-      
-    socket.on('connected', callback)
-    socket.on('add-user', callback)
-    
-  }
-})
-
-D.import_port_type('socket-remove-user', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    
-    socket.on('disconnected', function (ship) {
-      if(!ship.user) return false
-      self.enter(ship)
-    })
-    
-  }
-})
-
-D.import_port_type('socket-in', {
-  dir: 'in',
-  outside_add: function() {
-    var self = this
-    
-    socket.on('bounced', function (ship) {
-      if(!ship.user) return false
-      self.enter(ship)
-    })
-    
-  }
-})
-
-D.import_port_type('socket-out', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    if(socket)
-      socket.emit('bounce', ship)
-  }
-})
-
-
-
-D.import_port_type('in', {
-  dir: 'in'
-})
-
-D.import_port_type('err', {
-  dir: 'out'
-  // TODO: ???
-})
-
-D.import_port_type('out', {
-  dir: 'out'
-})
-
-D.import_port_type('up', {
-  dir: 'up'
-  // THINK: this can only live on a space, not a station
-})
-
-D.import_port_type('down', {
-  dir: 'down',
-  exit: function(ship, process, callback) {
-    // go down, then return back up...
-    // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
-    
-    var self = this
-    setImmediate(function() { 
-      // THINK: ideally there's only ONE route from a downport. can we formalize that?
-      // self.outs.forEach(function(port) { 
-      //   port.enter(ship) 
-      // }) 
-      port = self.outs[0]
-      if(port) {
-        port.enter(ship, process, callback) // wat
-      }
-      else {
-        callback(1234)
-      }
-    })
-  }
-})
-
-D.import_port_type('exec', {
-  dir: 'in',
-  exit: function(ship) { 
-    if(!this.space)
-      return false
-    
-    // this.space.secret = ship
-    this.space.execute(D.Parser.string_to_block_segment(ship.code), {secret: ship}) // TODO: ensure this is a block, not a string
-  }
-})
-
-
-
-
-// ugh hack ugh
-D.string_to_svg_frag = function(string) {
-  var div= document.createElementNS('http://www.w3.org/1999/xhtml', 'div'),
-      frag= document.createDocumentFragment();
-  div.innerHTML= '<svg xmlns="http://www.w3.org/2000/svg">' + string + '</svg>';
-  while (div.firstElementChild.firstElementChild)
-    frag.appendChild(div.firstElementChild.firstElementChild);
-  return frag;
-};
-
-
-D.import_port_type('svg-move', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    var element = document.getElementById(ship.thing)
-    
-    if(!element)
-      return D.setError('You seem to be lacking elementary flair')
-    
-    if(element.x !== undefined) { // a regular element
-      
-      if(typeof ship.x == 'number')
-        element.x.baseVal.value = ship.x
-      if(typeof ship.y == 'number')
-        element.y.baseVal.value = ship.y
-    
-      if(typeof ship.dx == 'number')
-        element.x.baseVal.value += ship.dx
-      if(typeof ship.dy == 'number')
-        element.y.baseVal.value += ship.dy
-    
-    }
-    else { // a g tag or some such
-      
-      var x = ship.x
-        , y = ship.y
-        , ctm = element.getCTM()
-        
-      if(typeof x != 'number')
-        x = ctm.e
-      if(typeof y != 'number')
-        y = ctm.f
-    
-      if(typeof ship.dx == 'number')
-        x += ship.dx
-      if(typeof ship.dy == 'number')
-        y += ship.dy
-      
-      element.setAttribute('transform', 'translate(' + x + ', ' + y + ')')
-    }
-        
-  }
-})
-
-D.import_port_type('svg-rotate', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    var element = document.getElementById(ship.thing)
-    
-    if(!element)
-      return D.setError('You seem to be lacking elementary flair')
-    
-    var x = typeof ship.x === 'number' ? ship.x : element.x.baseVal.value + (element.width.baseVal.value / 2)
-      , y = typeof ship.y === 'number' ? ship.y : element.y.baseVal.value + (element.height.baseVal.value / 2)
-      , a = ship.angle
-      
-    if(typeof a != 'number') {
-      var ctm = element.getCTM()
-      a = Math.atan2(ctm.b, ctm.a) / Math.PI * 180
-    }
-    
-    if(typeof ship.dangle == 'number')
-      a += ship.dangle
-    
-    element.setAttribute('transform', 'rotate(' + a + ' ' + x + ' ' + y + ')' )  
-    
-  }
-})
-
-D.import_port_type('svg-add-line', {
-  dir: 'out',
-  outside_exit: function(ship) {
-    var element = document.getElementById(ship.thing)
-    
-    if(!element)
-      return D.setError('You seem to be lacking elementary flair')
-    
-    if(!element.getCTM)
-      return D.setError("That doesn't look like an svg element to me")
-    
-    var x1 = ship.x1 || 0
-      , y1 = ship.y1 || 0
-      , x2 = ship.x2 || 0
-      , y2 = ship.y2 || 0
-      , width = ship.width || 1
-      , alpha = ship.alpha || 1
-      , color = ship.color || 'black'
-    
-    var newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line')
-    newLine.setAttribute('stroke-opacity', alpha)
-    newLine.setAttribute('stroke-width', width)
-    newLine.setAttribute('stroke', color)
-    newLine.setAttribute('x1', x1)
-    newLine.setAttribute('y1', y1)
-    newLine.setAttribute('x2', x2)
-    newLine.setAttribute('y2', y2)
-    
-    element.appendChild(newLine)
-  }
-})
-
-
-
 
 
 
@@ -1940,7 +1569,7 @@ D.scrub_var = function(value) {
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
-    D.onerror('Your object has circular references');
+    // D.onerror('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
     value = D.mean_defunctionize(value);
     if(value === null) value = false;
     return value;
@@ -1953,15 +1582,24 @@ D.mean_defunctionize = function(values, seen) {
   if(!values) return values;
 
   if(typeof values == 'function') return null;
-  if(typeof values != 'object') return values; // number, string, or boolean
+  if(typeof values != 'object') return values;            // number, string, or boolean
+  
+  var sig = values.constructor.toString().slice(0,12)     // prevents DOM yuckyucks. details here:
+  if ( sig == "function Nod"                              // https://github.com/dxnn/daimio/issues/1
+    || sig == "function HTM"                              // THINK: can this still leak too much info?
+    || sig == "function win" 
+    || sig == "function Win" 
+    || sig == "function Mim" 
+    || sig == "function DOM" )    
+       return null
 
-  seen = seen || []; // only YOU can prevent infinite recursion...
-  if(seen.indexOf(values) !== -1) return null;
+  seen = seen || [];
+  if(seen.indexOf(values) !== -1) return null;            // only YOU can prevent infinite recursion
   seen.push(values);
 
   var new_values = (Array.isArray(values) ? [] : {});
   
-  for(var key in values) { // list or hash: lish
+  for(var key in values) {                                // list or hash: lish
     var new_value, value = values[key];
     new_value = D.mean_defunctionize(value, seen);
     if(new_value === null) continue;
@@ -4530,98 +4168,6 @@ D.mungeLR = function(items, fun) {
 
 
 
-// HACK HACK HACK
-
-
-// OPT: this function generates tons of garbage when run aggressively. maybe we can trim that down?
-
-~function() {
-  var timeouts = [];
-  var messageName = 12345;
-
-  // Like setTimeout, but only takes a function argument.  There's
-  // no time argument (always zero) and no arguments (you have to
-  // use a closure).
-  function setImmediate(fn) {
-    timeouts.push(fn);
-    window.postMessage(messageName, "*");
-  }
-
-  function handleMessage(event) {
-    if(event.data == messageName) {
-      event.stopPropagation();
-      if(timeouts.length > 0) {
-        timeouts.shift()()
-      }
-    }
-  }
-  
-  if(typeof window != 'undefined') {
-    window.addEventListener("message", handleMessage, true);
-
-    // Add the one thing we want added to the window object.
-    window.setImmediate = setImmediate;
-  }
-}();
-
-// we should include the murmurhash lib instead of inlining it here... :[
-function murmurhash(key, seed) {
-	var remainder, bytes, h1, h1b, c1, c1b, c2, c2b, k1, i;
-
-	remainder = key.length & 3; // key.length % 4
-	bytes = key.length - remainder;
-	h1 = seed;
-	c1 = 0xcc9e2d51;
-	c2 = 0x1b873593;
-	i = 0;
-
-	while (i < bytes) {
-	  	k1 = 
-	  	  ((key.charCodeAt(i) & 0xff)) |
-	  	  ((key.charCodeAt(++i) & 0xff) << 8) |
-	  	  ((key.charCodeAt(++i) & 0xff) << 16) |
-	  	  ((key.charCodeAt(++i) & 0xff) << 24);
-		++i;
-
-		k1 = ((((k1 & 0xffff) * c1) + ((((k1 >>> 16) * c1) & 0xffff) << 16))) & 0xffffffff;
-		k1 = (k1 << 15) | (k1 >>> 17);
-		k1 = ((((k1 & 0xffff) * c2) + ((((k1 >>> 16) * c2) & 0xffff) << 16))) & 0xffffffff;
-
-		h1 ^= k1;
-        h1 = (h1 << 13) | (h1 >>> 19);
-		h1b = ((((h1 & 0xffff) * 5) + ((((h1 >>> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
-		h1 = (((h1b & 0xffff) + 0x6b64) + ((((h1b >>> 16) + 0xe654) & 0xffff) << 16));
-	}
-
-	k1 = 0;
-
-	switch (remainder) {
-		case 3: k1 ^= (key.charCodeAt(i + 2) & 0xff) << 16;
-		case 2: k1 ^= (key.charCodeAt(i + 1) & 0xff) << 8;
-		case 1: k1 ^= (key.charCodeAt(i) & 0xff);
-
-		k1 = (((k1 & 0xffff) * c1) + ((((k1 >>> 16) * c1) & 0xffff) << 16)) & 0xffffffff;
-		k1 = (k1 << 15) | (k1 >>> 17);
-		k1 = (((k1 & 0xffff) * c2) + ((((k1 >>> 16) * c2) & 0xffff) << 16)) & 0xffffffff;
-		h1 ^= k1;
-	}
-
-	h1 ^= key.length;
-
-	h1 ^= h1 >>> 16;
-	h1 = (((h1 & 0xffff) * 0x85ebca6b) + ((((h1 >>> 16) * 0x85ebca6b) & 0xffff) << 16)) & 0xffffffff;
-	h1 ^= h1 >>> 13;
-	h1 = ((((h1 & 0xffff) * 0xc2b2ae35) + ((((h1 >>> 16) * 0xc2b2ae35) & 0xffff) << 16))) & 0xffffffff;
-	h1 ^= h1 >>> 16;
-
-	return h1 >>> 0;
-}
-
-
-// END HACK HACK HACK
-
-
-
 // HELPER FUNCTIONS
 // THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
 
@@ -4724,61 +4270,7 @@ D.ETC.niceifyish = function(value, whitespace) {
   return JSON.stringify(value, purge, whitespace)
 }
 
-D.import_aliases({
-  'do':     'list each block',
-  'wait':   'process sleep for 0',
 
-  'grep':   'string grep on',
-  'join':   'string join value',
-  'split':  'string split value',
-  
-  '*':      'list pair data',
-  'merge':  'list merge',
-  'each':   'list each',
-  'map':    'list map',
-  'reduce': 'list reduce',
-  'fold':   'list reduce',
-  'sort':   'list sort',
-  'group':  'list group',
-  'filter': 'list filter',
-  'count':  'list count data',
-  'union':  'list union data',
-  'unique': 'list unique data',
-  'range':  'list range length',
-  'first':  'list first',
-  'zip':    'list zip data',
-  'peek':   'list peek path',
-  'poke':   'list poke value',
-  
-  'eq':     'logic is like',
-  'is':     'logic is', // for 'is in'
-  'if':     'logic if value',
-  'then':   'logic if value __ then',
-  'else':   'logic if value __ then __ else',
-  'and':    'logic and value',
-  'or':     'logic or value',
-  'not':    'logic not value',
-  'cond':   'logic cond value',
-  'switch': 'logic switch value',
-  
-  'add':      'math add value',
-  'minus':    'math subtract value', 
-  'subtract': 'math subtract value', 
-  'multiply': 'math multiply value',
-  'times':    'math multiply value',
-  'divide':   'math divide', // careful, this one is different
-  'round':    'math round',
-  'mod':      'math mod by',
-  'less':     'math less',
-  'min':      'math min value',
-  'max':      'math max value',
-  
-  'run':      'process run block',
-  'quote':    'process quote',
-  'unquote':  'process unquote',
-  'log':      'process log value',
-  'tap':      'process log passthru 1 value',
-})
 
 
 D.DIALECTS.top = new D.Dialect() // no params means "use whatever i've imported"
