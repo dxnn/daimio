@@ -67,6 +67,7 @@ D.AliasMap = {}                       // one day they may be able to grow at run
 D.Etc = {}
 D.Types = {}
 D.Parser = {}
+D.Fancies = {}
 D.Commands = {}
 D.SegmentTypes = {}
 D.PortFlavours = {}
@@ -80,6 +81,8 @@ D.Constants.quote = '"'               // currently unused
 
 D.Etc.process_counter = 1             // this is a bit silly
 D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
+
+D.Etc.FancyRegex = ""                 // this is also pretty silly
 
 D.noop = function() {}
 D.identity = function(x) {return x}
@@ -382,19 +385,17 @@ D.import_port_type = function(flavour, pflav) {
 
 /* FANCIES! */
 
-D.FANCIES = {}
-D.FancyRegex = ""
 D.import_fancy = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
   // ch = ch[0] // only first char matters
-  if(!D.FANCIES[ch]) {
+  if(!D.Fancies[ch]) {
     // TODO: check obj.eat
-    D.FANCIES[ch] = obj
+    D.Fancies[ch] = obj
   } else {
     D.set_error('Your fancies are more borken')
   }
   
-  D.FancyRegex = RegExp(Object.keys(D.FANCIES)
+  D.Etc.FancyRegex = RegExp(Object.keys(D.Fancies)
                                  .sort(function(a, b) {return a.length - b.length})
                                  .map(function(str) {return '^' + D.regex_escape(str) + '\\w'})
                                  .join('|'))
@@ -1917,7 +1918,7 @@ D.SegmentTypes.Fancy = {
   try_lex: function(string) {
     // var regex = new RegExp('^[' + D.FancyGlyphs + ']') // THINK: would anything else ever start with a fancy glyph?
 
-    if(D.FancyRegex.test(string)) 
+    if(D.Etc.FancyRegex.test(string)) 
       return new D.Token('Fancy', string)
 
     return string
@@ -1926,12 +1927,12 @@ D.SegmentTypes.Fancy = {
     // var glyph = token.value.slice(0,1)
     var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
   
-    if(!D.FANCIES[glyph]) {
+    if(!D.Fancies[glyph]) {
       D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
       return [L, R]
     }
 
-    var new_tokens = D.FANCIES[glyph].eat(token)
+    var new_tokens = D.Fancies[glyph].eat(token)
       , last_replacement = new_tokens[new_tokens.length - 1]
     
     if(last_replacement) {
