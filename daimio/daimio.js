@@ -54,8 +54,14 @@ D = {}
 D.ABLOCKS = {}
 D.DIALECTS = {}
 D.SPACESEEDS = {}
-D.Aliases = {} // aliases are a grey area: one day they may be able to grow at runtime
-D.AliasMap = {}
+D.DECORATORS = []
+
+D.DecoratorIndices.ByType = {}        // technically these should be all caps,
+D.DecoratorIndices.ByBlock = {}       // but it's just too much yelling really
+D.DecoratorIndices.ByTypeBlock = {}
+
+D.Aliases = {}                        // aliases are a grey area: 
+D.AliasMap = {}                       // one day they may be able to grow at runtime
 
 D.Etc = {}
 D.Types = {}
@@ -64,15 +70,15 @@ D.Commands = {}
 D.SegmentTypes = {}
 D.PortFlavours = {}
 
-D.Constants = {} // CONSTANTSFRY
+D.Constants = {}                      // constants fry, constants fry, any time at all
 D.Constants.command_open = '{'
 D.Constants.command_closed = '}'
-D.Constants.list_open = '('      // currently unused
-D.Constants.list_closed = ')'    // currently unused
-D.Constants.quote = '"'          // currently unused
+D.Constants.list_open = '('           // currently unused
+D.Constants.list_closed = ')'         // currently unused
+D.Constants.quote = '"'               // currently unused
 
-D.Etc.process_counter = 1
-D.Etc.token_counter = 100000 // this is stupid // FIXME: make Rekey work even with overlapping keys
+D.Etc.process_counter = 1             // this is a bit silly
+D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
 
 D.noop = function() {}
 D.identity = function(x) {return x}
@@ -172,15 +178,8 @@ if (typeof exports !== 'undefined') {
   exports.D = D
 }
 
-D.CHANNELS = {}
-
 
 /* DECORATORS! */
-
-D.DECORATORS = []
-D.DecoratorsByType = {}
-D.DecoratorsByBlock = {}
-D.DecoratorsByTypeBlock = {}
 
 D.addDecorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
@@ -195,20 +194,20 @@ D.addDecorator = function(block_id, type, value, unique) {
     }
   }
   
-  if(!D.DecoratorsByType[type]) {
-    D.DecoratorsByType[type] = []
+  if(!D.DecoratorIndices.ByType[type]) {
+    D.DecoratorIndices.ByType[type] = []
   }
-  if(!D.DecoratorsByBlock[block_id]) {
-    D.DecoratorsByBlock[block_id] = []
+  if(!D.DecoratorIndices.ByBlock[block_id]) {
+    D.DecoratorIndices.ByBlock[block_id] = []
   }
-  if(!D.DecoratorsByTypeBlock[type + '-' + block_id]) {
-    D.DecoratorsByTypeBlock[type + '-' + block_id] = []
+  if(!D.DecoratorIndices.ByTypeBlock[type + '-' + block_id]) {
+    D.DecoratorIndices.ByTypeBlock[type + '-' + block_id] = []
   }
   
   D.DECORATORS.push(decorator)
-  D.DecoratorsByType[type].push(decorator)
-  D.DecoratorsByBlock[block_id].push(decorator)
-  D.DecoratorsByTypeBlock[type + '-' + block_id].push(decorator)
+  D.DecoratorIndices.ByType[type].push(decorator)
+  D.DecoratorIndices.ByBlock[block_id].push(decorator)
+  D.DecoratorIndices.ByTypeBlock[type + '-' + block_id].push(decorator)
   
   return decorator
 }
@@ -218,14 +217,14 @@ D.getDecorators = function(by_block, by_type) {
   
   if(!by_block) {
     if(by_type) {
-      decorators = D.DecoratorsByType[by_type]
+      decorators = D.DecoratorIndices.ByType[by_type]
     }
   }
   else {
     if(by_type) {
-      decorators = D.DecoratorsByTypeBlock[by_type + '-' + by_block]
+      decorators = D.DecoratorIndices.ByTypeBlock[by_type + '-' + by_block]
     } else {
-      decorators = D.DecoratorsByBlock[by_block]
+      decorators = D.DecoratorIndices.ByBlock[by_block]
     }
   }
   
