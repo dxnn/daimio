@@ -182,14 +182,14 @@ if (typeof exports !== 'undefined') {
 
 /* DECORATORS! */
 
-D.addDecorator = function(block_id, type, value, unique) {
+D.add_decorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
                   , type: type
                   , value: value }
     , existing_decorators
   
   if(unique) {
-    existing_decorators = D.getDecorators(block_id, type)
+    existing_decorators = D.get_decorators(block_id, type)
     if(existing_decorators && existing_decorators.length) {
       return existing_decorators[0]
     }
@@ -213,7 +213,7 @@ D.addDecorator = function(block_id, type, value, unique) {
   return decorator
 }
 
-D.getDecorators = function(by_block, by_type) {
+D.get_decorators = function(by_block, by_type) {
   var decorators = D.DECORATORS
   
   if(!by_block) {
@@ -1260,9 +1260,9 @@ D.Parser.string_to_block_segment = function(string) {
   
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
-    // , decorators = D.getDecorators(block_id)
+    // , decorators = D.get_decorators(block_id)
   
-  D.addDecorator(block_id, 'OriginalString', string, true)
+  D.add_decorator(block_id, 'OriginalString', string, true)
   // if(!decorators) {
   //   // TODO: check to ensure there's already an OriginalString for this
   //   // TODO: refactor
@@ -1787,7 +1787,7 @@ D.SegmentTypes.Block = {
   }
 , toJSON: function(segment) {
     var block_id = segment.value.id
-      , decorators = D.getDecorators(block_id, 'OriginalString')
+      , decorators = D.get_decorators(block_id, 'OriginalString')
       
     if(decorators) {
       return decorators[0].value
