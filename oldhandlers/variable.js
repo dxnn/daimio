@@ -49,7 +49,7 @@ D.import_models({
           
           value = state[name]
           
-          if(!D.isNice(value))
+          if(!D.is_nice(value))
             return false
           
           return D.deep_copy(value) // OPT: this is HUGELY wasteful in cpu and memory, and rarely needed...

@@ -55,7 +55,7 @@ D.import_pathfinder('position', {
     
     return [ value[ vkeys[ position ] ] ]
     
-    // value = D.toArray(value)
+    // value = D.to_array(value)
     // var position = Math.abs(+key.slice(1)) // THINK: if |value| < N for #-N then do this backward...
     // 
     // for(var i=0, l=position; i <= l; i++)

@@ -355,7 +355,7 @@ D.import_models({
           },
         ],
         fun: function(value, also) {
-          value = D.toArray(value)
+          value = D.to_array(value)
 
           if(also != undefined)
             value.push(also)
@@ -381,7 +381,7 @@ D.import_models({
           },
         ],
         fun: function(value, also) {
-          value = D.toArray(value)
+          value = D.to_array(value)
 
           if(also != undefined)
             value.push(also)
@@ -399,14 +399,14 @@ D.Etc.Math = {}
 
 D.Etc.Math.solver = function(value, to, fun) {
   // TODO: we don't need this if the type is "array|number"
-  value = (typeof value == 'object') ? D.toArray(value) : value
-  to = (typeof to == 'object') ? D.toArray(to) : to
+  value = (typeof value == 'object') ? D.to_array(value) : value
+  to = (typeof to == 'object') ? D.to_array(to) : to
   // var arrays = (typeof value == 'object') + (typeof to == 'object');
 
   // are these arrays or numbers?
   var arrays = Array.isArray(value) + Array.isArray(to)
   
-  // THINK: maybe wrap these with D.Etc.toNumeric to keep out NaNs
+  // THINK: maybe wrap these with D.to_numeric to keep out NaNs
   if(arrays == 2) return D.Etc.Math.doubleArray(value, to, fun);
   if(arrays == 1) return D.Etc.Math.singleArray(value, to, fun);
   if(arrays == 0) return D.Etc.Math.naryanArray(value, to, fun);
@@ -414,7 +414,7 @@ D.Etc.Math.solver = function(value, to, fun) {
 
 D.Etc.Math.doubleArray = function(value, to, fun) {
   return value.map(function(val, key) {
-    return fun(D.Etc.toNumeric(val), D.Etc.toNumeric(to[key]));
+    return fun(D.to_numeric(val), D.to_numeric(to[key]));
   });
 };
 
@@ -425,31 +425,31 @@ D.Etc.Math.singleArray = function(value, to, fun) {
   }
   
   // one array, one number
-  if(D.Etc.isNumeric(to)) {
+  if(D.is_numeric(to)) {
     return value.map(function(val) {
-      return fun(D.Etc.toNumeric(val), D.Etc.toNumeric(to));
+      return fun(D.to_numeric(val), D.to_numeric(to));
     });
   }
 
   // just the one array
   var total = false;
-  value = D.toArray(value);
+  value = D.to_array(value);
   for(var i=0, l=value.length; i < l; i++) {
     // NOTE: this essentially bypasses identity concerns -- total=0 poisons *, total=1 taints +. it means subtraction and division are relative to the first value in the array, but that's ok.
-    if(total === false) total = D.Etc.toNumeric(value[i]);
-    else total = fun(total, D.Etc.toNumeric(value[i]));
+    if(total === false) total = D.to_numeric(value[i]);
+    else total = fun(total, D.to_numeric(value[i]));
   }
   return total;
 };
 
 D.Etc.Math.naryanArray = function(value, to, fun) {
-  if(!D.Etc.isNumeric(value)) {
+  if(!D.is_numeric(value)) {
     D.set_error("That is not a numeric value")
     value = 0
   }
-  if(!D.Etc.isNumeric(to)) {
-    // D.Etc.toNumeric(value)
+  if(!D.is_numeric(to)) {
+    // D.to_numeric(value)
     to = 0
   }
-  return fun(D.Etc.toNumeric(value), D.Etc.toNumeric(to));        
+  return fun(D.to_numeric(value), D.to_numeric(to));        
 };

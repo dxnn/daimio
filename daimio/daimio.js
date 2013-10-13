@@ -634,7 +634,7 @@ D.add_type = function(key, fun) {
 
 
 D.add_type('string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.block_ref_to_string(value)
   }
   
@@ -664,29 +664,29 @@ D.add_type('integer', function(value) {
 })
 
 D.add_type('anything', function(value) {
-  if(!D.isNice(value)) return ""
+  if(!D.is_nice(value)) return ""
   return value // THINK: what about blocks? 
 })
 
 D.add_type('array', function(value) { // ugh...
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('list', function(value) {
   if(value && typeof value === 'object') 
     return value.type == 'Block' ? [value] : value
-  return D.toArray(value)
+  return D.to_array(value)
 })
 
 D.add_type('maybe-list', function(value) {
-  if(value === false || !D.isNice(value))
+  if(value === false || !D.is_nice(value))
     return false
   else
     return D.Types['list'](value)
 })
 
 D.add_type('block', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     // value is a block ref...
     return function(prior_starter, scope, process) {
       // TODO: check value.value.id first, because it might not be in ABLOCKS
@@ -696,7 +696,7 @@ D.add_type('block', function(value) {
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.REAL_execute(D.ABLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.ABLOCKS[value.value.id], scope, prior_starter) 
     }
   }
   else {
@@ -711,7 +711,7 @@ D.add_type('block', function(value) {
 })
 
 D.add_type('either:block,string', function(value) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.Types['block'](value)
   } else {
     return D.Types['string'](value)
@@ -814,7 +814,7 @@ D.import_pathfinder = function(name, pf) {
 
 
 D.peek = function(base, path) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   if(!path.length)
     return value
@@ -864,7 +864,7 @@ D.peek = function(base, path) {
 
 // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
 D.poke = function(base, path, value) {
-  path = D.toArray(path)
+  path = D.to_array(path)
   
   // THINK: no path works like push, because that's a reasonable use case for this...  
   // if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
@@ -967,7 +967,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
       var val = values[key]
       // this is only called from toPrimitive and deep_copy, which both want blocks
-      if(D.isBlock(val)) {
+      if(D.is_block(val)) {
         new_values[key] = fun(val); // blocks are immutable
       } else if(typeof val == 'object') {
         new_values[key] = D.recursive_leaves_copy(val, fun, seen);
@@ -1007,7 +1007,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 
 // run every function in a tree (but not funs funs return)
 // D.recursive_run = function(values, seen) {
-//   if(D.isBlock(values)) return values;
+//   if(D.is_block(values)) return values;
 //   if(typeof values == 'function') return values();
 //   if(!values || typeof values != 'object') return values;
 //   
@@ -1041,7 +1041,7 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 // 
 //   if(values.__nodefunc) return values;
 //   
-//   if(D.isBlock(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
+//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
 //   if(typeof values == 'function') return D.defunctionize(values());
 //   if(typeof values != 'object') return values;
 //   
@@ -1125,7 +1125,7 @@ D.recursive_insert = function(into, keys, value) {
 // NOTE: this is basically toPrimitive, for things that are already primitives. 
 D.deep_copy = function(value) {
   if(!value || typeof value != 'object') return value; // number, string, or boolean
-  if(D.isBlock(value)) return value; // blocks are immutable, so pass-by-ref is ok.
+  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
   return D.recursive_leaves_copy(value, D.deep_copy);
 };
 
@@ -1143,7 +1143,7 @@ D.scrub_var = function(value) {
 
 // this is like defunc, but not as nice -- it trashes funcs and snips circular refs
 D.mean_defunctionize = function(values, seen) {
-  if(!D.isNice(values)) return false;
+  if(!D.is_nice(values)) return false;
   if(!values) return values;
 
   if(typeof values == 'function') return null;
@@ -1611,7 +1611,7 @@ D.Token = function(type, value) {
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
-  this.value = D.isNice(value) ? value : ""
+  this.value = D.is_nice(value) ? value : ""
   
   if(!token) 
     token = {}
@@ -1823,7 +1823,7 @@ D.SegmentTypes.Blockjoin = {
       return D.execute_then_stringify(value, {}, process)
     }
 
-    return D.dataTrampoline(inputs, processfun, D.string_concat, prior_starter)
+    return D.data_trampoline(inputs, processfun, D.string_concat, prior_starter)
   }
 }
 
@@ -2097,7 +2097,7 @@ D.SegmentTypes.Variable = {
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
       value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
       
-    if(!D.isNice(value))
+    if(!D.is_nice(value))
       return false
     
     // return value // OPT: cloning each time is terrible
@@ -2426,7 +2426,7 @@ D.SegmentTypes.Command = {
         param_value = inputs[name_index]
       }
       
-      if(!piped && !D.isNice(param_value)) {
+      if(!piped && !D.is_nice(param_value)) {
         name_index = segment.value.names.indexOf('__pipe__')
         piped = true
         if(name_index != -1) {
@@ -2902,7 +2902,7 @@ D.Port = function(port_template, space) {
   port.flavour = flavour
   port.station = station || undefined
   port.typehint = typehint
-  port.settings = D.isNice(settings) ? settings : {}
+  port.settings = D.is_nice(settings) ? settings : {}
   
   port.pair = false
   
@@ -3216,7 +3216,7 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   if(this.processes.length && this.only_one_process) {
     // NOTE: we kind of need this -- it keeps all the process requests in order (using JS's event loop) and clears our closet of skeletal callstacks
     var thunk = function() {
-      var result = self.REAL_execute(block, scope, prior_starter, listeners)
+      var result = self.real_execute(block, scope, prior_starter, listeners)
       if(result === result)
         prior_starter(result) // we're asynced, but the process didn't know it
     }
@@ -3225,15 +3225,15 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
     // setTimeout(thunk, 0)
     
     // this.queue.push(function() {
-    //   self.REAL_execute(block, scope, prior_starter, when_done)
+    //   self.real_execute(block, scope, prior_starter, when_done)
     // })
     return NaN
   }
 
-  return self.REAL_execute(block, scope, prior_starter, listeners)
+  return self.real_execute(block, scope, prior_starter, listeners)
 }
 
-D.Space.prototype.REAL_execute = function(block, scope, prior_starter, listeners) {
+D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners) {
   var self = this
     , process
     , result
@@ -3441,7 +3441,7 @@ D.Process.prototype.done = function() {
     }
   } 
   
-  output = D.isNice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
+  output = D.is_nice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
 
   if(this.asynced) {
     this.asynced = false // ORLY??
@@ -3488,7 +3488,7 @@ D.Process.prototype.next = function() {
     , key = segment.key || this.current
 
   if(wiring[key]) {
-    inputs = wiring[key].map(function(index) {return D.isNice(state[index]) ? state[index] : null}) // THINK: why null?
+    inputs = wiring[key].map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) // THINK: why null?
   }
   
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
@@ -3522,7 +3522,7 @@ D.Process.prototype.next = function() {
   Used in small doses it makes your possibly-async command logic much simpler.
 */
 
-D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
+D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
   var keys = Object.keys(data)
   , size = keys.length
   , index = -1
@@ -3565,14 +3565,14 @@ D.dataTrampoline = function(data, processfun, joinerfun, prior_starter, finalfun
 }
 
 D.string_concat = function(total, value) {
-  total = D.isNice(total) ? total : ''
-  value = D.isNice(value) ? value : ''
+  total = D.is_nice(total) ? total : ''
+  value = D.is_nice(value) ? value : ''
   return D.stringify(total) + D.stringify(value)
 }
 
 D.list_push = function(total, value) {
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   total.push(value)
   return total
 }
@@ -3583,7 +3583,7 @@ D.list_set = function(total, value, key) {
   var keys = Object.keys(total)
   if(!key) key = keys.length
   
-  value = D.isNice(value) ? value : ""
+  value = D.is_nice(value) ? value : ""
   
   total[key] = value
   return total
@@ -3595,7 +3595,7 @@ D.scrub_list = function(list) {
   if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
     return list
     
-  return D.toArray(list)
+  return D.to_array(list)
 }
 
 
@@ -3732,7 +3732,7 @@ D.mungeLR = function(items, fun) {
 // HELPER FUNCTIONS
 // THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
 
-D.isFalse = function(value) {
+D.is_false = function(value) {
   if(!value) 
     return true // '', 0, false, NaN, null, undefined
   
@@ -3749,17 +3749,17 @@ D.isFalse = function(value) {
   return true
 }
 
-D.isNice = function(value) {
+D.is_nice = function(value) {
   return !!value || value == false; // not NaN, null, or undefined
   // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
 };
 
 // this converts non-iterable items into a single-element array
-D.toArray = function(value) {
+D.to_array = function(value) {
   if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
   if(typeof value == 'object') return D.obj_to_array(value);
   if(value === false) return []; // hmmm...
-  if(!D.isNice(value)) return []; // double hmmm.
+  if(!D.is_nice(value)) return []; // double hmmm.
   return [value];
 };
 
@@ -3776,25 +3776,25 @@ D.stringify = function(value) {
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
-  if(D.isBlock(value)) {
+  if(D.is_block(value)) {
     return D.Types['block'](value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
 }
 
-D.isBlock = function(value) {
+D.is_block = function(value) {
   if(!value instanceof D.Segment)
     return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
 
   return value && value.type == 'Block' && value.value && value.value.id
 }
 
-D.Etc.isNumeric = function(value) {
+D.is_numeric = function(value) {
   return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
 }
 
-D.Etc.toNumeric = function(value) {
+D.to_numeric = function(value) {
   if(value === '0') return 0
   if(typeof value == 'number') return value
   if(typeof value == 'string') return +value ? +value : 0
@@ -3803,7 +3803,7 @@ D.Etc.toNumeric = function(value) {
 
 D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
 
-D.Etc.string_to_regex = function(string, global) {
+D.string_to_regex = function(string, global) {
   if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
     return RegExp(D.regex_escape(string), (global ? 'g' : ''))
   }
@@ -3814,23 +3814,22 @@ D.Etc.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
-D.Etc.niceifyish = function(value, whitespace) {
-  // this takes an array of un-stringify-able values and returns the nice bits, mostly
-  // probably pretty slow -- this is just a quick hack for console debugging
-  
-  var purge = function(key, value) {
-    try {
-      JSON.stringify(value)
-    } catch(e) {
-      if(key && +key !== +key)
-        value = undefined
-    }
-    return value
-  }
-  
-  return JSON.stringify(value, purge, whitespace)
-}
-
+// D.Etc.niceifyish = function(value, whitespace) {
+//   // this takes an array of un-stringify-able values and returns the nice bits, mostly
+//   // probably pretty slow -- this is just a quick hack for console debugging
+//   
+//   var purge = function(key, value) {
+//     try {
+//       JSON.stringify(value)
+//     } catch(e) {
+//       if(key && +key !== +key)
+//         value = undefined
+//     }
+//     return value
+//   }
+//   
+//   return JSON.stringify(value, purge, whitespace)
+// }
 
 
 

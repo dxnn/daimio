@@ -463,7 +463,7 @@ D.Etc.dagoba.scrubber = function(things) {
         clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
       } 
       else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
-        if(D.isBlock(thing[key])) {
+        if(D.is_block(thing[key])) {
           clean_thing[key] = thing[key];
         } else {
           clean_thing[key] = D.scrub_var(thing[key]);
