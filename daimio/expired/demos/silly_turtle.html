@@ -1,0 +1,122 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>I Like Turtles</title>
+  <script type="text/javascript" src="../get.php?file=daimio"></script>
+</head>
+
+<body>
+  
+  <svg id="mainsvg" width="500px" height="500px" viewBox="0 0 500 500">
+    <g id="turtlebox" transform="translate(30,30)">
+      <rect width="30" height="50" id="turtle"></rect>
+    </g>
+  </svg>
+  
+  <form id="button">
+    <div><textarea id="code" name="code" rows="10" cols="80"></textarea></div>
+    <div><input type="submit" name="send" value="send" id="send" /></div>
+  </form>
+  
+  <pre id="hints">
+    {* (:dy 10 :thing :turtlebox) | port send name :svg-move}
+    
+    {* (:dangle 25 :thing :turtle) | port send name :svg-rotate}
+    {* (:angle {$angle | add 25 | >$angle} :thing :turtle) | port send name :svg-rotate}
+    
+    {range 360 | each block "{__ | >$x | process sleep | * (:dangle $x :thing :turtle) | port send name :svg-rotate}"}
+    
+    {range 20 | each block "{__ | process sleep for __ | times 5 | * (:y1 __ :x2 100 :y2 __ :thing :mainsvg) | port send name :svg-add-line}"}
+    
+    
+    {0 | >$angle | 30 | >$x | 30 | >$y | 10 | >$forward | 10 | >$turn | "black" | >$color | 1 | >$alpha}
+    
+    
+    {begin foo | >$foo}   
+      { $x | >$oldx | $y | >$oldy
+      
+      | $angle | add 90 | math cos | times $forward | >$dx
+      | add $x | >$x | less than 0 | then 0 else $x | >$x
+      | 450 | less than $x | then 450 else $x | >$x
+      
+      | $angle | add 90 | math sin | times $forward | >$dy
+      | add $y | >$y | less than 0 | then 0 else $y | >$y
+      | 450 | less than $y | then 450 else $y | >$y
+      
+      | * (:y $y :x $x :thing :turtlebox) | port send name :svg-move}
+      
+      {* (:y1 {$oldy | add 15} :x1 {$oldx | add 15} :x2 {$x | add 15} :y2 {$y | add 15} :color $color :alpha $alpha :thing :mainsvg) | port send name :svg-add-line}
+      
+      {* (:angle {$angle | add $turn | >$angle} :thing :turtle) | port send name :svg-rotate}
+    {end foo}
+    
+    {14.2 | >$turn | :green | >$color | 0.5 | >$alpha}    
+    {range 400 | each block "{__ | times 0.04 | add 3.2 | >$forward | $foo | run | process sleep}"}
+    
+    
+    {14.2 | >$turn | :red | >$color | 0.5 | >$alpha}    
+    {7 | range 200 | each block "{__ | divide value 200 | >$forward | $foo | run | process sleep}"}
+    
+
+  </pre>
+  
+  <pre id="output"></pre>
+
+  <script type="text/daimio" id="hello_daimio">
+    
+    { :code        | gateway add thing __ type :dom-on-change
+    | :output      | gateway add thing __ type :dom-set-text
+    | :button      | gateway add thing __ type :dom-on-submit 
+    | :svg-move    | gateway add type __ 
+    | :svg-rotate  | gateway add type __ 
+    | :svg-addline | gateway add type __ }
+    
+    { @code
+      → "{__ | >$code}"}
+    
+    { @button
+      → "{$code | unquote | run}"
+      → @output }
+    
+  </script>
+  
+  <script type="text/json" id="spaceseeds">
+    { outer: 
+      { ports: 
+        { code: ["dom-on-change"] 
+        , button: ["dom-on-submit"]
+        , "svg-move": ["svg-move"]
+        , "svg-rotate": ["svg-rotate"]
+        , "svg-add-line": ["svg-add-line"]
+        }
+      , stations: 
+        { exec: "{$code | unquote | run}" 
+        , setter: "{__ | >$code}"
+        }
+      , routes: 
+        [ ['code', 'setter.in']
+        , ['button', 'exec.in'] 
+        ]
+      }
+    }
+    // yicky yick
+  </script>
+  
+  <script type="text/javascript">    
+    document.addEventListener('DOMContentLoaded', function() {
+      eval('var seedlikes = ' + document.getElementById('spaceseeds').text) // OH NO WHY ARE YOU DOING THIS
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // note published (not necessary, just here for debug)
+    })
+    
+    
+    /*
+      TODOS!!!
+      - 
+    */
+    
+  </script>
+  
+</body>
+</html>

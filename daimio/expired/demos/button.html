@@ -1,0 +1,181 @@
+<!doctype html> 
+<html> 
+<head> 
+  <title>Push My Button!</title>
+  <script type="text/javascript" src="../get.php?file=daimio"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+  <p>NOTE: this is old and broken and should be replaced by something new and fancy.</p>
+
+  <div id="counter_div">
+    <p>The button has been pushed <span id="count">0.707</span> times!</p>
+  </div>
+  
+  <form id="button_form">
+    <p><input type="submit" value="Click me!!"></p>
+  </form>
+  
+  <script type="text/daimio" id="hello_daimio">
+    {//begin $count-S}
+      {//__ | run | out}
+    {//end $count-S}
+    
+    {// $count-S 
+    ^ gateway add type :space-in message "{$count | add 1 | > :count}" | >$inc-count-G
+    ^ gateway add type :space-in message "{__ | > :count}" | >$set-count-G
+    ^ gateway add type :space-out | >$out-count-G
+    }
+    
+    
+    
+    {//:counter | gateway add type :dom-set-text thing __}
+
+    {//:button | gateway add type :dom-on-submit thing __ 
+      -> "{count inc | >@everyone}" | >@Server}
+
+    {//@Init 
+      -> "{count get | >@me}" | >@Server}
+
+    {//@Server 
+      -> +=$count | >@counter}
+    
+    
+    
+        {// :counter | gateway dom-set-text thing __}
+
+        {// :button | gateway dom-on-submit thing __}
+
+    {:counter | gateway add type :dom-set-text thing __}
+
+    {:button | gateway add type :dom-on-submit thing __}
+
+    {@button
+      -> "{__ | + $count | >$count}"
+      -> @counter}
+  
+    
+    
+    
+      {:counter | gateway add type :dom-set-text thing __}
+
+      {:button | gateway add type :dom-on-submit thing __}
+
+      {@Init 
+        -> "{count get | >@Me}" 
+        -> @Server}
+    
+      {@button
+        -> "{count inc | >@Everyone}"
+        -> @Server}
+    
+      {@Server
+        -> "{__ | + $count | >$count}"
+        -> @counter}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    -> is a terminator meaning 'channel add from *prev* to {space add block *next*}'
+       --OR-- 'channel add from *prev* to *next*' (if next is a gateway)
+    
+    channel add needs to take either gateways or spaces in this case, and default intelligently on spaces to stdin / stdout -- maybe it adds a gateway if provided a name for one that doesn't exist, like
+    {$myspace -> $youspace from :foo-out to :foo-in}
+    would add foo-out to myspace and foo-in to youspace if they didn't exist, and they'd be accessible from inside those spaces. 
+    
+    
+    
+    {// counter space //}
+    {// space add name :counterspace block "{$count | add 1 | > :count}"
+    | gateway add type :space-in name :inc-counterspace-gateway
+   || gateway add type :space-in name :set-counterspace-gateway thing :counterspace decorate "{__ | > :count}"
+   || gateway add type :space-out name :out-counterspace-gateway thing :counterspace}
+    
+    {// make dom gateways //}
+    {//gateway add name :button-gateway type :dom-on-submit thing :button_form}
+    {//gateway add name :display-gateway type :dom-text thing :count}
+    
+    {// channel button-to-space //}
+    {// channel add name :button-to-space
+    | channel attach-to-start gateway :button-gateway
+    | channel attach-to-end gateway :inc-counterspace-gateway}
+    
+    {// channel space-to-display //}
+    {// channel add name :space-to-display 
+    | channel attach-to-start gateway :out-counterspace-gateway
+    | channel attach-to-end gateway :display-gateway}
+    
+    {// send count to server //}
+    {//gateway add name :server-inc-gateway type :server-send thing :increment}
+
+    {// channel add name :button-to-server 
+    | channel attach-to-start gateway :button-gateway
+    | channel attach-to-end gateway :server-inc-gateway}
+    
+    {// space add ... block "{network send "{button get-value}"}" 
+    | gateway add ...
+    | }
+    
+    
+    {// bind to bounce channel //}
+    {// gateway add name :foo type :socket thing :bounce
+    | // connect to new space gateway for setting the value directly}
+    
+    {// get initial data //}
+    {//network send "{button get-value}" | >@space.count} 
+    {// THINK: new space gateway that wraps the message differently? //}
+    
+    
+    {// THINK: why do we have to name gateways and spaces and channels at all? Sometimes it's useless... //}
+    {// TODO: yeah, we should ref those by variable instead, and return like guids or something //}
+    
+  </script>
+  
+  <script type="text/javascript">
+    var socket = io.connect('http://sherpa.local:8008', { log: false })
+    
+    socket.on('return', function (data) {
+      // THINK: how do we restart the process here?
+      console.log(data)
+    });
+  
+    socket.on('bounced', function (data) {
+      console.log(data)
+      var output = D.run(data.daimio, data.context)
+      // var new_span = $('<span></span>').text(output)
+      // $('#stuff').append($('<p>' + data.context.name + ': </p>').append(new_span))
+    });
+    
+  
+    document.addEventListener('DOMContentLoaded', function() {
+      var code = document.getElementById('hello_daimio')
+      D.run(code.text, function() {})
+    })
+  </script>
+  
+  <!-- 
+  
+    D.run('{space add name :ticker block "{process sleep for 1000 then 1}" | gateway add name :tickergateway type :space | channel attach-to-end name :button-to-space | channel attach-to-start gateway :tickergateway}')
+    
+    D.run('{space add name :ticker block "{process sleep for 1000 then 1}"}')
+    D.run('{gateway add name :tickergateway type :space thing :ticker}')
+    D.run('{channel attach-to-end name :button-to-space gateway :tickergateway}')
+    D.run('{channel attach-to-start name :button-to-space gateway :tickergateway}')
+  
+    D.run('{range 500 | map block "{__ | process wait for 1 | times __ | channel send name :counter}"}')
+    {//3 | process wait for 1000 | add 99}
+    {3 | process wait for 1000 then "{__}" | add 99}
+    
+    {48 | >@counter}
+    
+    
+   -->
+</body>
+</html>
