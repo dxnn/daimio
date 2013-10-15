@@ -1,57 +1,35 @@
-/*
-  Initial setup:
-  - create the top-level space 
-  - run code in the top level space which
-    - builds subspaces with their own dialects
-    - builds gateways to I/O
-    - connects those gateways to channels
-    - connects subspaces to channels
-
-  The basic execution process:
-  - create a new Block from a string S and a Space (which has a Dialect and a Varset)
-    - breaks S into components (text, pipelines, blocks)
-    - recursively converts any further blocks
-    - builds Pipelines from a string, dialect and state
-      - recursively builds inner pipelines and blocks
-      - perform compile-time operations (escaping blocks, etc)
-  - call block.execute() ... or space.execute? no, space.execute(block) always takes a param (possibly an empty one)
+/* 
     
-      
-  
-  Q: how do we keep from initially compiling subspace init blocks, since those should be compiled with their parent dialect? 
-  A: don't worry about it for now -- recompile as often as needed.
-  
-  Q: how do we detect and activate compile-time operations? this happens in block init pipelines, including possibly our initial (top-level) block. it can also happen in regular pipelines. e.g. {begin foo | string quote}
-  
-  Q: how do we attach execution code to a space? A space has init code that builds it... maybe {space create} takes a block? yeah, suppose so. is that block compiled with the space's dialect? yep, that makes sense. {space create block $B dialect $D | > :MYSPACE} or something.
+            _            _                    _         _   _          _          _       
+          /\ \         / /\                 /\ \      /\_\/\_\ _     /\ \       /\ \     
+         /  \ \____   / /  \                \ \ \    / / / / //\_\   \ \ \     /  \ \    
+        / /\ \_____\ / / /\ \               /\ \_\  /\ \/ \ \/ / /   /\ \_\   / /\ \ \   
+       / / /\/___  // / /\ \ \             / /\/_/ /  \____\__/ /   / /\/_/  / / /\ \ \  
+      / / /   / / // / /  \ \ \           / / /   / /\/________/   / / /    / / /  \ \_\ 
+     / / /   / / // / /___/ /\ \         / / /   / / /\/_// / /   / / /    / / /   / / / 
+    / / /   / / // / /_____/ /\ \       / / /   / / /    / / /   / / /    / / /   / / /  
+    \ \ \__/ / // /_________/\ \ \  ___/ / /__ / / /    / / /___/ / /__  / / /___/ / /   
+     \ \___\/ // / /_       __\ \_\/\__\/_/___\\/_/    / / //\__\/_/___\/ / /____\/ /    
+      \/_____/ \_\___\     /____/_/\/_________/        \/_/ \/_________/\/_________/     
+    
 
 
-
-// NEW THOUGHTS
-collects
-checks
-calculates
-effects
-
-gather
-conditions
-calculations
-effects
-
-Maybe add Frink as a handler?
-
-*/ 
+    Hi, welcome to Daimio! 
+    
+    As you make your way through the code you'll often 
+    see comments like this one. You should read them, 
+    because they're helpful and occasionally funny!
 
 
-/* Naming conventions for Daimio:
-
-   D.import_commands   <--- snake_case for functions and constants
-   D.SegmentTypes      <--- CamelCase for built-in objects
-   D.SPACESEEDS        <--- ALLCAPS for runtime containers
+    Naming conventions:
+    D.import_commands   <--- snake_case for functions and constants
+    D.SegmentTypes      <--- CamelCase for built-in objects
+    D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
 */
 
-D = {}
+
+D = {}                                // this is where the magic happens
 
 D.BLOCKS = {}
 D.DIALECTS = {}
@@ -90,27 +68,29 @@ D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overla
 D.Etc.FancyRegex = ""                 // this is also pretty silly
 D.Etc.Tglyphs = ""                    // and this one too
 
+
+
+  /*ooo   ooooo oooooooooooo ooooo        ooooooooo.   oooooooooooo ooooooooo.    .oooooo..o 
+  `888'   `888' `888'     `8 `888'        `888   `Y88. `888'     `8 `888   `Y88. d8P'    `Y8 
+   888     888   888          888          888   .d88'  888          888   .d88' Y88bo.      
+   888ooooo888   888oooo8     888          888ooo88P'   888oooo8     888ooo88P'   `"Y8888o.  
+   888     888   888    "     888          888          888    "     888`88b.         `"Y88b 
+   888     888   888       o  888       o  888          888       o  888  `88b.  oo     .d8P 
+  o888o   o888o o888ooooood8 o888ooooood8 o888o        o888ooooood8 o888o  o888o 8""88888*/
+
+
+
 D.noop = function() {}
 D.identity = function(x) {return x}
 D.concat = function(a,b) {return a.concat(b)}
 
-
-
-/////// SOME HELPER METHODS ///////////
-
-// TODO: clean up this error stuff... 
-
-// THINK: maybe every station has a stderr outport, and you tap those ports to do anything with errors (instead of having them act as a global cross-cutting concern). you could run them to the console.log outport by default (or just in debug mode) and do something else in production like log in the db and send an email or something, based on error message / metadata. [oh... errors should probably have metadata]
-// we can also put the error text/data in the command definition as an array, and then reference it from the error sender as an index (or object/key is probably better)
-// that would simplify e.g. translation, and allows automated error stuff (eg show what errors a command can throw, practice throwing those to see what happens, pick out all potential errors of type foo from all stations (like, which stations are capable of producing *extreme* errors?))
-
-// use this to set simple errors
 D.set_error = function(error) {
+  // use this to set simple errors
   return D.on_error('', error)
 }
 
-// use this to report errors in low-level daimio processes
 D.on_error = function(command, error) {
+  // use this to report errors in low-level daimio processes
   console.log('error: ' + error, command)
   return ""
 }
@@ -130,10 +110,6 @@ D.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
-
-
-// HELPER FUNCTIONS
-// THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
 
 D.is_false = function(value) {
   if(!value) 
@@ -157,8 +133,8 @@ D.is_nice = function(value) {
   // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
 };
 
-// this converts non-iterable items into a single-element array
 D.to_array = function(value) {
+  // this converts non-iterable items into a single-element array
   if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
   if(typeof value == 'object') return D.obj_to_array(value);
   if(value === false) return []; // hmmm...
@@ -218,7 +194,6 @@ D.string_to_regex = function(string, global) {
 }
 
 
-
 // NOTE: this extends by reference, but also returns the new value
 D.extend = function(base, value) {
   for(var key in value) {
@@ -254,7 +229,6 @@ D.recursive_extend = function(base, value) {
   return base
 }
 
-
 // apply a function to every leaf of a tree, but generate a new copy of it as we go
 // THINK: only used by D.deep_copy, which we maybe don't need anymore
 D.recursive_leaves_copy = function(values, fun, seen) {
@@ -284,7 +258,6 @@ D.recursive_leaves_copy = function(values, fun, seen) {
   return new_values;
 };
 
-
 // this is different from recursive_merge, because it replaces subvalues instead of merging
 D.recursive_insert = function(into, keys, value) {
   // THINK: we're not blocking infinite recursion here -- is it likely to ever happen?
@@ -302,7 +275,6 @@ D.recursive_insert = function(into, keys, value) {
   
   return into;
 };
-
 
 // deep copy an internal variable (primitives and blocks only)
 // NOTE: this is basically toPrimitive, for things that are already primitives. 
@@ -382,6 +354,165 @@ D.recursive_sort_object_keys = function(obj, sorter) { // THINK: this allocates 
 }
 
 
+D.get_block = function(ablock_or_segment) {
+  if(!ablock_or_segment)
+    return new D.Block()
+  if(ablock_or_segment.segments)
+    return ablock_or_segment
+  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.BLOCKS[ablock_or_segment.value.id])
+    return D.BLOCKS[ablock_or_segment.value.id]
+  else
+    return new D.Block()
+}
+
+
+D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
+  /*
+    This *either* returns a value or calls prior_starter and returns NaN.
+    It *always* calls finalfun if it is provided.
+    Used in small doses it makes your possibly-async command logic much simpler.
+  */
+
+  var keys = Object.keys(data)
+  , size = keys.length
+  , index = -1
+  , result = joinerfun()
+  , asynced = false
+  , value, key
+  
+  // if(typeof finalfun != 'function') {
+  //   finalfun = function(x) {return x}
+  // }
+  
+  finalfun = finalfun || D.identity
+  
+  // THINK: can we add a simple short-circuit to this? undefined, maybe? for things like 'first' and 'every' it'll help a lot over big data
+  
+  var inner = function() {
+    while(++index < size) {
+      key = keys[index]
+      value = processfun(data[key], my_starter, key, result)
+      if(value !== value) {
+        asynced = true // we'll need to call prior_starter when we finish up
+        return NaN // send stack killer up the chain 
+        // [unleash the NaNobots|NaNites]
+      }
+      result = joinerfun(result, value, key)
+    }
+    
+    if(asynced)
+      return prior_starter(finalfun(result))
+
+    return finalfun(result)
+  }
+  
+  var my_starter = function(value) {
+    result = joinerfun(result, value, key)
+    inner()
+  }
+    
+  // might need a fun for sorting object properties...
+
+  return inner()
+}
+
+D.string_concat = function(total, value) {
+  total = D.is_nice(total) ? total : ''
+  value = D.is_nice(value) ? value : ''
+  return D.stringify(total) + D.stringify(value)
+}
+
+D.list_push = function(total, value) {
+  if(!Array.isArray(total)) return [] // THINK: is this always ok?
+  value = D.is_nice(value) ? value : ""
+  total.push(value)
+  return total
+}
+
+D.list_set = function(total, value, key) {
+  if(typeof total != 'object') return {}
+  
+  var keys = Object.keys(total)
+  if(!key) key = keys.length
+  
+  value = D.is_nice(value) ? value : ""
+  
+  total[key] = value
+  return total
+}
+
+D.scrub_list = function(list) {
+  var keys = Object.keys(list)
+
+  if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
+    return list
+    
+  return D.to_array(list)
+}
+
+
+// give each item its time in the sun. also, allow other items to be added, removed, reordered or generally mangled
+D.mungeLR = function(items, fun) {
+  var L = []
+    , R = items
+    , item = {}
+    , result = []
+  
+  if(!items.length) return items
+  
+  do {
+    item = R.shift() // OPT: shift is slow
+    result = fun(L, item, R)
+    L = result[0]
+    R = result[1]
+  } while(R.length)
+  
+  return L
+}
+
+
+
+// This is *always* async, so provide a callback.
+D.run = function(daimio, ultimate_callback, space) {
+  if(!daimio) return ""
+  
+  daimio = "" + daimio // TODO: ensure this is a string in a nicer fashion...
+  
+  if(typeof ultimate_callback != 'function') {
+    if(!space)
+      space = ultimate_callback
+    ultimate_callback = null
+  }
+  
+  if(!space) {
+    space = D.ExecutionSpace
+  }
+  
+  if(!ultimate_callback) {
+    ultimate_callback = function(result) {
+      // THINK: what should we do here?
+      console.log(result)
+    }
+  }
+  
+  // THINK: can we refactor this into a different type of space.execute? can we convert this whole thing into a temporary channel on the space? with a 'log' type gateway or something?
+  var prior_starter = function(value) {
+    var result = D.execute_then_stringify(value, ultimate_callback)
+    if(result === result) 
+      ultimate_callback(result)
+  }
+    
+  var result = space.execute(D.Parser.string_to_block_segment(daimio), null, prior_starter)
+  if(result === result)
+    prior_starter(result)
+  
+  return ""
+}
+
+
+
+
+
 
 // D.Etc.niceifyish = function(value, whitespace) {
 //   // this takes an array of un-stringify-able values and returns the nice bits, mostly
@@ -400,54 +531,128 @@ D.recursive_sort_object_keys = function(obj, sorter) { // THINK: this allocates 
 //   return JSON.stringify(value, purge, whitespace)
 // }
 
+// DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
+// NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
+// D.recursive_walk = function(data, pattern, fun) {
+//   var true_pattern = false
+//   
+//   try {
+//     true_pattern = pattern(data) // prevents bad pattern
+//   } catch (e) {}
+//   
+//   
+//   if(true_pattern) {
+//     try {
+//       fun(data) // prevents bad fun
+//     } catch (e) {}
+//   }
+//   
+//   if(!data || typeof data != 'object') return
+//   
+//   for(var key in data) {
+//     if(!data.hasOwnProperty(key)) return
+//     D.recursive_walk(data[key], pattern, fun)
+//   }
+// }
+
+// run every function in a tree (but not funs funs return)
+// D.recursive_run = function(values, seen) {
+//   if(D.is_block(values)) return values;
+//   if(typeof values == 'function') return values();
+//   if(!values || typeof values != 'object') return values;
+//   
+//   seen = seen || []; // only YOU can prevent infinite recursion...
+//   if(seen.indexOf(values) !== -1) return values;
+//   seen.push(values);
+// 
+//   var new_values = (Array.isArray(values) ? [] : {});
+//   
+//   for(var key in values) {
+//     var value = values[key];
+//     if(typeof value == 'function') {
+//       new_values[key] = value();
+//     }
+//     else if(typeof value == 'object') {
+//       new_values[key] = D.recursive_run(value, seen);
+//     }
+//     else {
+//       new_values[key] = value;
+//     }
+//   }
+//   return new_values;
+// };
+
+// NOTE: defunctionize does a deep clone of 'values', so the value returned does not == (pointers don't match)
+// THINK: there may be cases where this doesn't actually deep clone...
+
+// run functions in a tree until there aren't any left (runs funs funs return)
+// D.defunctionize = function(values) {
+//   if(!values) return values; // THINK: should we purge this of nasties first?
+// 
+//   if(values.__nodefunc) return values;
+//   
+//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
+//   if(typeof values == 'function') return D.defunctionize(values());
+//   if(typeof values != 'object') return values;
+//   
+//   var new_values = (Array.isArray(values) ? [] : {});
+// 
+//   // this is a) a little weird b) probably slow and c) probably borked in old browsers.
+//   Object.defineProperties(new_values, {
+//     __nodefunc: {
+//       value: true, 
+//       enumerable:false
+//     }
+//   });
+//   
+//   for(var key in values) {
+//     var value = values[key];
+//     if(typeof value == 'function') new_values[key] = D.defunctionize(value());
+//     else if(typeof value == 'object') new_values[key] = D.defunctionize(value); 
+//     else new_values[key] = value;
+//   }
+//   
+//   return new_values;
+// };
+
+// walk down into a list following the path, running a callback on each end-of-path item
+// D.recursive_path_walk = function(list, path, callback, parent) {
+//   if(typeof list != 'object') {
+//     if(!path) callback(list, parent); // done walking, let's eat
+//     return; 
+//   }
+// 
+//   // parents for child items
+//   // THINK: this is inefficient and stupid...
+//   var this_parent = {'parent': parent};
+//   for(var key in list) {
+//     this_parent[key] = list[key];
+//   }
+// 
+//   // end of the path?
+//   if(!path) {
+//     for(var key in list) {
+//       callback(list[key], this_parent);
+//     }
+//     return; // out of gas, going home
+//   }
+// 
+//   var first_dot = path.indexOf('.') >= 0 ? path.indexOf('.') : path.length;
+//   var part = path.slice(0, first_dot); // the first bit
+//   path = path.slice(first_dot + 1); // the remainder
+// 
+//   if(part == '*') {
+//     for(var key in list) {
+//       D.recursive_path_walk(list[key], path, callback, this_parent);
+//     }
+//   } else {
+//     if(typeof list[part] != 'undefined') {
+//       D.recursive_path_walk(list[part], path, callback, this_parent);
+//     }
+//   }
+// };
 
 
-
-
-
-/*
-  If we make the event log a little stronger, can we use it to update local stores? 
-  example: Bowser is auditing in his browser. He pulls up an audit and gets to work. This loads up all the audit data, but it also subscribes to the update channels for those _things_. Then Peach loads the same audit and makes some changes. 
-  - Bowser's browser receives those events and updates the cached audit data accordingly (and hence the display).
-  - Any queries to loaded objects can just hit the local cache, because it's automatically kept in sync.
- implies the local commands understand how to modify local cache based on events... hmmm.
- 
- Log commands as a 3-element list: [H, M, P], with H&M as strings and P as a param map. this is canonical. also log time and user id. 
- thing: this is findable if it matches H+P.id. some commands might affect multiple things (but most don't). so... always log thing? never log thing? if the command is atomic, then the command is the bottom, not the thing. so changes on a thing are found via command search? need to list use cases. 
- 
- there will be lots of 'standard form' commands, like {noun add} and {noun set-type} and {my set collection :nouns}. can we do something useful with them? 
- 
- {my set} becomes a fauxcommand which includes a call to {attr set} and has user:* exec perms.
- {attr set} allows setting of a things' attributes if you have perms on that thing. (superdo can bypass, natch)
- so... how do you know what a thing's schema is? for example, given @thing, is it @thing.name or @thing.my.name?
- is it {thing set-name} or {my set attr :name}? are these formally defined somewhere or ad hoc? 
- defined: discoverable, programatically constrained, but requires locking in the schema before building
- ad hoc: flexible, friendly, but difficult to generate knowledge of thing structure -- leading to confusion and "sample querying"
- we have a fixed mechanical schema. that exists, if only in our heads. why not make it formal? could aid in migration, also, when needed.
- then anything not covered in the schema is available for attr'ing. so you can have super-friendly attrs like @thing.name, without having to specify anything (by simply *not* putting them in the formal schema).
- so a {name set} fauxcommand and the ilk for things in general? and {my set} for user-created ad hoc attrs?
- 
- commands are the atomic bottom. things are underneath that. most commands change one attr on one thing at a time. but some more complex ones might change many attrs on several things at once. we want to:
- - track changes to a thing over time
- - see the system at a particular moment in time
- - rewind and fast forward through time
- - allow unlimited undoability
- complex commands are like a transaction. so maybe commands are 'simple' (one thing/attr, undo means redo prior command w/ same params (id, maybe collection for {attr set}) but different value). 
- whereas a 'complex' command requires a custom 'undo' function as part of the command definition. so the bottom command itself contains information on the collection+attr. (automated for set-* style commands)
- 
- also need to allow custom events in the event log, not just commands. this is important for... i don't know what. maybe those go in a different collection. command log for commands. error log for errors. event log for other things. maybe the event log is just there for attaching listeners? but if you're using a command for firing an event then that's going to go in the command log. so you could just trigger off of that...
- (so a no-op command that goes in the command log w/ a param and allows for attaching listeners? that seems weird... but maybe with some adjustment that's the right way to go.)
-  
-  
-  
-  something like a scatter-gather + stm, where you grab data from different urls in parallel and merge it into a data structure in a potentially overlapping fashion [photos from flickr plus tweets plus google news or something?, then arranged in circles that overlap or move?]
-  
-  
-*/
-
-// Daimio var keys match /^[-_A-Za-z0-9]+$/ but don't match /^[_-]+$/ -- i.e. at least one alphanumeric
-// this way we've got lots of room for fancy options for keys, like #N
-// and also we can use something like {value: 5, to: {!:__}} in our pipeline vars, where the ! means 'check the state'
 
 if (typeof exports !== 'undefined') {
 
@@ -462,7 +667,14 @@ if (typeof exports !== 'undefined') {
 }
 
 
-/* DECORATORS! */
+  /*oooooooo.                                                        .                                                                  
+  `888'   `Y8b                                                     .o8                                                                  
+   888      888  .ooooo.   .ooooo.   .ooooo.  oooo d8b  .oooo.   .o888oo  .ooooo.  oooo d8b  .oooo.o                                    
+   888      888 d88' `88b d88' `"Y8 d88' `88b `888""8P `P  )88b    888   d88' `88b `888""8P d88(  "8                                    
+   888      888 888ooo888 888       888   888  888      .oP"888    888   888   888  888     `"Y88b.                                     
+   888     d88' 888    .o 888   .o8 888   888  888     d8(  888    888 . 888   888  888     o.  )88b                                    
+  o888bood8P'   `Y8bod8P' `Y8bod8P' `Y8bod8P' d888b    `Y888""8o   "888" `Y8bod8P' d888b    8""888*/
+
 
 D.add_decorator = function(block_id, type, value, unique) {
   var decorator = { block: block_id
@@ -515,22 +727,18 @@ D.get_decorators = function(by_block, by_type) {
 }
 
 
-/* PORTS! */
+
+  /*ooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o 
+  `888   `Y88.  d8P'  `Y8b  `888   `Y88. 8'   888   `8 d8P'    `Y8 
+   888   .d88' 888      888  888   .d88'      888      Y88bo.      
+   888ooo88P'  888      888  888ooo88P'       888       `"Y8888o.  
+   888         888      888  888`88b.         888           `"Y88b 
+   888         `88b    d88'  888  `88b.       888      oo     .d8P 
+  o888o         `Y8bood8P'  o888o  o888o     o888o     8""88888*/
+
+
 
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
-
-
-/*
-  space ports to add: up, down, EXEC, INIT, SEED
-  stations have one dock but multiple depart ports... there's technically no reason they couldn't also have multiple implicit dock ports, although oh right. ALWAYS ONLY ONE DOCK, because it's triggered by an async event (ship arriving), but everything inside is dataflow so requires *all* inputs before processing. having only one input bridges that gap. if your block is super complicated, break it into multiple stations in a space...
-  so: 
-  - a port w/o a pair and w/ a station is special-cased in port.enter
-  - a port w/o a pair and w/o a station is errored in port.enter
-  - otherwise port.enter calls port.pair.exit
-  - for port pairs on the 'outside', a special outside-pair fun is activated at pairing time
-  - likewise those ports have a special outside-exit fun
-  - a regular space port on the outside doesn't have either of those, so it functions like a disconnected port [nothing enters, exit is noop]
-*/
 
 
 D.track_event = function(type, target, callback) {
@@ -594,10 +802,10 @@ D.send_value_to_js_port = function(to, value) {
 }
 
 
-// THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
 D.port_standard_exit = function(ship) { 
   var self = this
   
+  // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
     setImmediate(function() { self.outs.forEach(function(port) { port.enter(ship) }) })
   else
@@ -662,7 +870,15 @@ D.import_port_type = function(flavour, pflav) {
 
 
 
-/* FANCIES! */
+  /*oooooooooo       .o.       ooooo      ooo   .oooooo.   ooooo oooooooooooo  .oooooo..o 
+  `888'     `8      .888.      `888b.     `8'  d8P'  `Y8b  `888' `888'     `8 d8P'    `Y8 
+   888             .8"888.      8 `88b.    8  888           888   888         Y88bo.      
+   888oooo8       .8' `888.     8   `88b.  8  888           888   888oooo8     `"Y8888o.  
+   888    "      .88ooo8888.    8     `88b.8  888           888   888    "         `"Y88b 
+   888          .8'     `888.   8       `888  `88b    ooo   888   888       o oo     .d8P 
+  o888o        o88o     o8888o o8o        `8   `Y8bood8P'  o888o o888ooooood8 8""88888*/
+
+
 
 D.import_fancy = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Fancy character must be a string')
@@ -813,7 +1029,15 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 
 
 
-/* TERMINATORS! */
+  /*ooooooooooo                                       o8o                            .                               
+  8'   888   `8                                       `"'                          .o8                               
+       888       .ooooo.  oooo d8b ooo. .oo.  .oo.   oooo  ooo. .oo.    .oooo.   .o888oo  .ooooo.  oooo d8b  .oooo.o 
+       888      d88' `88b `888""8P `888P"Y88bP"Y88b  `888  `888P"Y88b  `P  )88b    888   d88' `88b `888""8P d88(  "8 
+       888      888ooo888  888      888   888   888   888   888   888   .oP"888    888   888   888  888     `"Y88b.  
+       888      888    .o  888      888   888   888   888   888   888  d8(  888    888 . 888   888  888     o.  )88b 
+      o888o     `Y8bod8P' d888b    o888o o888o o888o o888o o888o o888o `Y888""8o   "888" `Y8bod8P' d888b    8""888*/
+
+
 
 D.import_terminator = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
@@ -864,9 +1088,15 @@ D.import_terminator('/', { // comment
 
 
 
+        /*.       ooooo        ooooo       .o.        .oooooo..o oooooooooooo  .oooooo..o 
+       .888.      `888'        `888'      .888.      d8P'    `Y8 `888'     `8 d8P'    `Y8 
+      .8"888.      888          888      .8"888.     Y88bo.       888         Y88bo.      
+     .8' `888.     888          888     .8' `888.     `"Y8888o.   888oooo8     `"Y8888o.  
+    .88ooo8888.    888          888    .88ooo8888.        `"Y88b  888    "         `"Y88b 
+   .8'     `888.   888       o  888   .8'     `888.  oo     .d8P  888       o oo     .d8P 
+  o88o     o8888o o888ooooood8 o888o o88o     o8888o 8""88888P'  o888ooooood8 8""88888*/
 
 
-/* ALIASES! */
 
 D.import_models = function(new_models) {
   for(var model_key in new_models) {
@@ -895,58 +1125,23 @@ D.import_aliases = function(values) {
 
 
 
+  /*ooooooooooo oooooo   oooo ooooooooo.   oooooooooooo  .oooooo..o 
+  8'   888   `8  `888.   .8'  `888   `Y88. `888'     `8 d8P'    `Y8 
+       888        `888. .8'    888   .d88'  888         Y88bo.      
+       888         `888.8'     888ooo88P'   888oooo8     `"Y8888o.  
+       888          `888'      888          888    "         `"Y88b 
+       888           888       888          888       o oo     .d8P 
+      o888o         o888o     o888o        o888ooooood8 8""88888*/
 
 
-/* TYPES! */
 
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.import_type = function(key, fun) {
-  // TODO: add some type checking
   D.Types[key] = fun
+  // TODO: add some type checking
 };
 
-// [string] is a list of strings, block|string is a block or a string, and ""|list is false or a list (like maybe-list)
 
-
-
-
-
-// D.run is a serialized endpoint. Most gateways are also. If you want raw data use spacial execution
-D.run = function(daimio, ultimate_callback, space) {
-  if(!daimio) return ""
-  
-  daimio = "" + daimio // TODO: ensure this is a string in a nicer fashion...
-  
-  if(typeof ultimate_callback != 'function') {
-    if(!space)
-      space = ultimate_callback
-    ultimate_callback = null
-  }
-  
-  if(!space) {
-    space = D.ExecutionSpace
-  }
-  
-  if(!ultimate_callback) {
-    ultimate_callback = function(result) {
-      // THINK: what should we do here?
-      console.log(result)
-    }
-  }
-  
-  // THINK: can we refactor this into a different type of space.execute? can we convert this whole thing into a temporary channel on the space? with a 'log' type gateway or something?
-  var prior_starter = function(value) {
-    var result = D.execute_then_stringify(value, ultimate_callback)
-    if(result === result) 
-      ultimate_callback(result)
-  }
-    
-  var result = space.execute(D.Parser.string_to_block_segment(daimio), null, prior_starter)
-  if(result === result)
-    prior_starter(result)
-  
-  return ""
-}
 
 
 
@@ -984,6 +1179,16 @@ D.run = function(daimio, ultimate_callback, space) {
   C: ONLY DO WHAT YOU NEED
 
 */
+
+
+  /*ooooooo.         .o.       ooooooooooooo ooooo   ooooo  .oooooo..o 
+  `888   `Y88.      .888.      8'   888   `8 `888'   `888' d8P'    `Y8 
+   888   .d88'     .8"888.          888       888     888  Y88bo.      
+   888ooo88P'     .8' `888.         888       888ooooo888   `"Y8888o.  
+   888           .88ooo8888.        888       888     888       `"Y88b 
+   888          .8'     `888.       888       888     888  oo     .d8P 
+  o888o        o88o     o8888o     o888o     o888o   o888o 8""88888*/
+
 
 D.import_pathfinder = function(name, pf) {
   if(typeof pf.keymatch != 'function')
@@ -1106,137 +1311,6 @@ D.poke = function(base, path, value) {
 
 
 
-// DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
-// NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
-// D.recursive_walk = function(data, pattern, fun) {
-//   var true_pattern = false
-//   
-//   try {
-//     true_pattern = pattern(data) // prevents bad pattern
-//   } catch (e) {}
-//   
-//   
-//   if(true_pattern) {
-//     try {
-//       fun(data) // prevents bad fun
-//     } catch (e) {}
-//   }
-//   
-//   if(!data || typeof data != 'object') return
-//   
-//   for(var key in data) {
-//     if(!data.hasOwnProperty(key)) return
-//     D.recursive_walk(data[key], pattern, fun)
-//   }
-// }
-
-// run every function in a tree (but not funs funs return)
-// D.recursive_run = function(values, seen) {
-//   if(D.is_block(values)) return values;
-//   if(typeof values == 'function') return values();
-//   if(!values || typeof values != 'object') return values;
-//   
-//   seen = seen || []; // only YOU can prevent infinite recursion...
-//   if(seen.indexOf(values) !== -1) return values;
-//   seen.push(values);
-// 
-//   var new_values = (Array.isArray(values) ? [] : {});
-//   
-//   for(var key in values) {
-//     var value = values[key];
-//     if(typeof value == 'function') {
-//       new_values[key] = value();
-//     }
-//     else if(typeof value == 'object') {
-//       new_values[key] = D.recursive_run(value, seen);
-//     }
-//     else {
-//       new_values[key] = value;
-//     }
-//   }
-//   return new_values;
-// };
-
-// NOTE: defunctionize does a deep clone of 'values', so the value returned does not == (pointers don't match)
-// THINK: there may be cases where this doesn't actually deep clone...
-
-// run functions in a tree until there aren't any left (runs funs funs return)
-// D.defunctionize = function(values) {
-//   if(!values) return values; // THINK: should we purge this of nasties first?
-// 
-//   if(values.__nodefunc) return values;
-//   
-//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
-//   if(typeof values == 'function') return D.defunctionize(values());
-//   if(typeof values != 'object') return values;
-//   
-//   var new_values = (Array.isArray(values) ? [] : {});
-// 
-//   // this is a) a little weird b) probably slow and c) probably borked in old browsers.
-//   Object.defineProperties(new_values, {
-//     __nodefunc: {
-//       value: true, 
-//       enumerable:false
-//     }
-//   });
-//   
-//   for(var key in values) {
-//     var value = values[key];
-//     if(typeof value == 'function') new_values[key] = D.defunctionize(value());
-//     else if(typeof value == 'object') new_values[key] = D.defunctionize(value); 
-//     else new_values[key] = value;
-//   }
-//   
-//   return new_values;
-// };
-
-// walk down into a list following the path, running a callback on each end-of-path item
-// D.recursive_path_walk = function(list, path, callback, parent) {
-//   if(typeof list != 'object') {
-//     if(!path) callback(list, parent); // done walking, let's eat
-//     return; 
-//   }
-// 
-//   // parents for child items
-//   // THINK: this is inefficient and stupid...
-//   var this_parent = {'parent': parent};
-//   for(var key in list) {
-//     this_parent[key] = list[key];
-//   }
-// 
-//   // end of the path?
-//   if(!path) {
-//     for(var key in list) {
-//       callback(list[key], this_parent);
-//     }
-//     return; // out of gas, going home
-//   }
-// 
-//   var first_dot = path.indexOf('.') >= 0 ? path.indexOf('.') : path.length;
-//   var part = path.slice(0, first_dot); // the first bit
-//   path = path.slice(first_dot + 1); // the remainder
-// 
-//   if(part == '*') {
-//     for(var key in list) {
-//       D.recursive_path_walk(list[key], path, callback, this_parent);
-//     }
-//   } else {
-//     if(typeof list[part] != 'undefined') {
-//       D.recursive_path_walk(list[part], path, callback, this_parent);
-//     }
-//   }
-// };
-
-
-
-// D.execute = function(handler, method, params, prior_starter, process) {
-//   var dialect = D.OuterSpace.dialect
-//     , real_handler = dialect.get_handler(handler)
-//     , real_method = dialect.get_method(handler, method)
-//   
-//   return real_method.fun.apply(real_handler, params, prior_starter, process)
-// }
-
 
 // D.Parser.split_string = function(string) {
 //   var chunks = []
@@ -1262,6 +1336,16 @@ D.poke = function(base, path, value) {
 //   return chunks
 // }
 
+
+  /*ooooooo.         .o.       ooooooooo.    .oooooo..o oooooooooooo ooooooooo.   
+  `888   `Y88.      .888.      `888   `Y88. d8P'    `Y8 `888'     `8 `888   `Y88. 
+   888   .d88'     .8"888.      888   .d88' Y88bo.       888          888   .d88' 
+   888ooo88P'     .8' `888.     888ooo88P'   `"Y8888o.   888oooo8     888ooo88P'  
+   888           .88ooo8888.    888`88b.         `"Y88b  888    "     888`88b.    
+   888          .8'     `888.   888  `88b.  oo     .d8P  888       o  888  `88b.  
+  o888o        o88o     o8888o o888o  o888o 8""88888P'  o888ooooood8 o888o  o88*/
+  
+  
 D.Parser.get_next_thing = function(string, ignore_begin) {
   var first_open, next_open, next_closed
   
@@ -1540,6 +1624,117 @@ D.Parser.lexify = function(string) {
   return Array.isArray(string) ? string : [string]
 }
 
+D.Parser.split_on = function(string, regex, label) {
+  if(typeof string != 'string') 
+    return string
+  
+  if(!(regex instanceof RegExp))
+    regex = RegExp('[' + D.regex_escape(regex) + ']')
+  
+  var output = []
+    , inside = []
+    , special = /["{()}]/
+    , match_break = 0
+    , char_matches = false
+    , we_are_matching = false
+    
+  for(var index=0, l=string.length; index < l; index++) {
+    
+    /*
+      we need to not match when
+      - inside quotes
+      - unmatched parens
+      - unmatched braces
+    */
+    
+    var this_char = string[index]
+      , am_inside = inside.length
+    
+    if(this_char == '"' && inside.length == 1 && inside[0] == '"')
+      inside = []
+    
+    if(this_char == '"' && !am_inside)
+      inside = ['"']
+    
+    if(this_char == '{') 
+      inside.push('{')
+    
+    if(this_char == '(')
+      inside.push('(')
+    
+    if(this_char == '}' || this_char == ')')
+      inside.pop() // NOTE: this means unpaired braces or parens in quotes are explicitly not allowed... 
+    
+    char_matches = regex.test(this_char)
+    
+    // if(!!am_inside == !!inside.length) // not transitioning
+    //   continue
+    //   output.push(string.slice(match_break, index + 1))
+    //   match_break = index + 1
+    // }
+    // 
+    // if(!am_inside && inside.length) {
+    //   output.push(string.slice(match_break, index))
+    //   match_break = index
+    // }
+    // 
+    // if(special.test(this_char))
+    //   continue
+    // 
+
+    if(am_inside && inside.length)
+      continue
+    
+    if(we_are_matching === char_matches) 
+      continue
+
+    if(we_are_matching) { // stop matching
+      if(label)
+        output.push(new D.Token(label, string.slice(match_break, index)))
+      
+      match_break = index
+      we_are_matching = false
+    }
+    
+    else { // start matching
+      if(index)
+        output.push(string.slice(match_break, index))
+
+      match_break = index
+      we_are_matching = true      
+    }
+  }
+  
+  // if(match_break < index) {
+  //   var lastbit = string.slice(match_break, index)
+  //   if(lastbit.length) {
+  //     output.push(lastbit)      
+  //   }
+  // }
+  
+  if(match_break < index) {
+    var lastbit = string.slice(match_break, index)
+    if(regex.test(lastbit[0])) { // at this point lastbit is homogenous
+      if(label)
+        output.push(new D.Token(label, string.slice(match_break, index)))
+    } else {
+      output.push(lastbit)      
+    }
+  }
+  return output
+}
+
+D.Parser.split_on_terminators = function(string) {
+  // TODO: make Tglyphs work with multi-char Terminators
+  return D.Parser.split_on(string, D.Etc.Tglyphs, 'Terminator')
+}
+
+D.Parser.split_on_space = function(string) {
+  return D.Parser.split_on(string, /[\s\u00a0]/)
+}
+
+
+
 // D.partially_apply = function(fun, arg, number) {
 //   
 // }
@@ -1590,6 +1785,18 @@ D.Transformers.rekey = function(L, segment, R) {
   return [L.concat(segment), R]
 }
 
+
+
+    /*ooooo.   oooooooooo.     oooo oooooooooooo   .oooooo.   ooooooooooooo  .oooooo..o 
+   d8P'  `Y8b  `888'   `Y8b    `888 `888'     `8  d8P'  `Y8b  8'   888   `8 d8P'    `Y8 
+  888      888  888     888     888  888         888               888      Y88bo.      
+  888      888  888oooo888'     888  888oooo8    888               888       `"Y8888o.  
+  888      888  888    `88b     888  888    "    888               888           `"Y88b 
+  `88b    d88'  888    .88P     888  888       o `88b    ooo       888      oo     .d8P 
+   `Y8bood8P'  o888bood8P'  .o. 88P o888ooooood8  `Y8bood8P'      o888o     8""88888P'  
+                            `Y88*/
+
+// Blocks, Tokens, Segments, Dialects, Ports
 
 D.Block = function(segments, wiring) {
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
@@ -1770,192 +1977,6 @@ D.Dialect.prototype.get_method = function(handler, method) {
 // 
 
 
-/*
-  We could consider having a NULL global value. nothing would return it. 
-  undefined variables are NULL. a param set to NULL like {math add value (1 2 3) to NULL} will drop the param (so that would return 6). as opposed to {math add value (1 2 3) to FALSE} which would return (1 2 3) or {math add value (1 2 3) to TRUE} which would return (2 3 4)
-
-  yuck type conversions yuck yuck. 
-  maybe just NULL and not TRUE/FALSE? what's the use case for those again?
-*/
-
-D.get_block = function(ablock_or_segment) {
-  if(!ablock_or_segment)
-    return new D.Block()
-  if(ablock_or_segment.segments)
-    return ablock_or_segment
-  else if(ablock_or_segment.value && ablock_or_segment.value.id && D.BLOCKS[ablock_or_segment.value.id])
-    return D.BLOCKS[ablock_or_segment.value.id]
-  else
-    return new D.Block()
-}
-
-
-/*
-  Adding a new SPACESEED is complicated.
-  - does it have an id?
-    - remove if != hash(json)
-  - do the parts check out? 
-    - if dialect, stations, subspaces, ports, routes or state are invalid, err
-  - order all the parts
-  - hash, add, and return id
-*/
-
-D.spaceseed_add = function(seed) {
-  var good_props = {dialect: 1, stations: 1, subspaces: 1, ports: 1, routes: 1, state: 1}
-    , item
-  
-  for(var key in seed) 
-    if(!good_props[key])
-      delete seed[key] // ensure no errant properties, including id
-  
-  // TODO: check dialect [id -> D.DIALECTS]
-  // TODO: check stations [array of id -> D.BLOCKS]
-  // TODO: check subspaces [array of id -> D.SPACESEEDS]
-  // TODO: check ports [array of port things]
-  // TODO: check routes [array of port indices]
-  // TODO: check state [a jsonifiable object] [badseeds]
-  
-  seed = D.clone(seed) // keep the ref popo off our tails
-  seed = D.sort_object_keys(seed)
-  seed.state = D.sort_object_keys(seed.state)
-
-
-  var sorted_stations = D.clone(seed.stations).sort(function(a,b) {return a - b})
-    , station_index_to_ports = {}
-    , new_stations = []
-    , last_offset = {}
-  
-  if(JSON.stringify(seed.stations) != JSON.stringify(sorted_stations)) {
-    
-    seed.ports.forEach(function(port) {
-      var item = station_index_to_ports[port.station]
-      item ? item.push(port) : station_index_to_ports[port.station] = [port]
-    })
-    
-    seed.stations.forEach(function(station, index) {
-      var old_index = index + 1
-        , new_index = sorted_stations.indexOf(station, last_offset[station]) + 1
-      
-      if(station_index_to_ports[old_index]) {
-        station_index_to_ports[old_index].forEach(function(port) {
-          port.station = new_index
-        })
-      }
-        
-      last_offset[station] = new_index
-    })
-    
-    seed.stations = sorted_stations
-  }
-
-
-  var sorted_subspaces = D.clone(seed.subspaces).sort(function(a,b) {return a - b})
-    , space_index_to_ports = {}
-    , new_subspaces = []
-    , last_offset = {}
-  
-  if(JSON.stringify(seed.subspaces) != JSON.stringify(sorted_subspaces)) {
-    
-    seed.ports.forEach(function(port) {
-      var item = space_index_to_ports[port.space]
-      item ? item.push(port) : space_index_to_ports[port.space] = [port]
-    })
-    
-    seed.subspaces.forEach(function(subspace, index) {
-      var old_index = index + 1
-        , new_index = sorted_subspaces.indexOf(subspace, last_offset[subspace]) + 1
-      
-      if(space_index_to_ports[old_index]) {
-        space_index_to_ports[old_index].forEach(function(port) {
-          port.space = new_index
-        })
-      }
-        
-      last_offset[subspace] = new_index
-    })
-    
-    seed.subspaces = sorted_subspaces
-  }
-  
-  
-  // oh dear
-
-
-  var port_sort = function(portA, portB) {
-    if(portA.space != portB.space)
-      return portA.space > portB.space
-
-    if(portA.station && portA.station != portB.station)
-      return portA.station > portB.station
-
-    if(portA.subspace && portA.subspace != portB.subspace)
-      return portA.subspace > portB.subspace
-      
-    return portA.name > portB.name
-  }
-  
-  // ensure the right properties, in sort order
-  var good_port_props = ['space', 'station', 'name', 'flavour', 'typehint', 'settings']
-  var ports = seed.ports.map(function(port) {
-    var newport = {}
-    for(var key in good_port_props) 
-      newport[good_port_props[key]] = port[good_port_props[key]] 
-    return newport
-  })
-  var sorted_string_ports = ports.map(JSON.stringify).sort()
-  var route_clone = D.clone(seed.routes)
-
-  if(JSON.stringify(seed.ports) != JSON.stringify(sorted_string_ports)) {
-    // go through each item, find its match and modify all containing routes
-    
-    var port_index_to_routes = {}
-      
-    route_clone.forEach(function(route, index) {
-      route.index = index
-      
-      item = port_index_to_routes[route[0]]
-      item ? item.push(route) : port_index_to_routes[route[0]] = [route]
-
-      item = port_index_to_routes[route[1]]
-      item ? item.push(route) : port_index_to_routes[route[1]] = [route]
-    })
-    
-    ports.forEach(function(port, index) {
-      var port = ports[index]
-        , old_index = index + 1 // +1 for offset array indices
-        , new_index = sorted_string_ports.indexOf(JSON.stringify(port)) + 1
-      
-      if(port_index_to_routes[old_index]) {
-        port_index_to_routes[old_index].forEach(function(route) { 
-          if(route[0] == old_index)
-            seed.routes[route.index][0] = new_index
-          if(route[1] == old_index)
-            seed.routes[route.index][1] = new_index
-        })
-      }
-    })
-
-  }
-  seed.ports = sorted_string_ports.map(JSON.parse)
-  
-  // these we can just sort. phew!
-  seed.routes.sort(function(routeA, routeB) {
-    if(routeA[0] != routeB[0])
-      return routeA[0] > routeB[0]
-      
-    return routeA[1] > routeB[1]
-  })
-  
-  seed.id = D.spaceseed_hash(seed)
-  D.SPACESEEDS[seed.id] = seed // THINK: collision resolution? 
-  
-  return seed.id
-}
-
-D.spaceseed_hash = function(seed) {
-  return murmurhash(JSON.stringify(seed))
-}
-
 
 // D.dialect_add = function(dialect) {
 //   dialect = JSON.parse(JSON.stringify(dialect)) // no refs, no muss
@@ -2056,7 +2077,16 @@ D.Port = function(port_template, space) {
 }
 
 
-// something about using []s and {}s to map something... _and_ vs _or_? it was really clever, whatever it was.
+
+
+   /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo  .oooooo..o 
+  d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8 d8P'    `Y8 
+  Y88bo.       888   .d88'     .8"888.     888           888         Y88bo.      
+   `"Y8888o.   888ooo88P'     .8' `888.    888           888oooo8     `"Y8888o.  
+       `"Y88b  888           .88ooo8888.   888           888    "         `"Y88b 
+  oo     .d8P  888          .8'     `888.  `88b    ooo   888       o oo     .d8P 
+  8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888ooooood8 8""88888*/
+
 
 
 D.Space = function(seed_id, parent) {
@@ -2427,6 +2457,8 @@ D.Space.prototype.scrub_process = function(pid) {
   }
 }
 
+
+
 // this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
 D.Space.prototype.try_optimize = function(block, scope) {
 
@@ -2442,6 +2474,7 @@ D.Space.prototype.try_optimize = function(block, scope) {
   return undefined
   // return {value: 'foo'}
 }
+
 
 D.Optimizers = []
 D.import_optimizer = function(name, fun) {
@@ -2510,6 +2543,15 @@ D.import_optimizer = function(name, fun) {
   Each Process is used only once, for that one Block execution, and then goes away.
   A Process may launch sub-processes, depending on the segments in the Block.
 */
+
+
+  /*ooooooo.   ooooooooo.     .oooooo.     .oooooo.   oooooooooooo  .oooooo..o  .oooooo..o 
+  `888   `Y88. `888   `Y88.  d8P'  `Y8b   d8P'  `Y8b  `888'     `8 d8P'    `Y8 d8P'    `Y8 
+   888   .d88'  888   .d88' 888      888 888           888         Y88bo.      Y88bo.      
+   888ooo88P'   888ooo88P'  888      888 888           888oooo8     `"Y8888o.   `"Y8888o.  
+   888          888`88b.    888      888 888           888    "         `"Y88b      `"Y88b 
+   888          888  `88b.  `88b    d88' `88b    ooo   888       o oo     .d8P oo     .d8P 
+  o888o        o888o  o888o  `Y8bood8P'   `Y8bood8P'  o888ooooood8 8""88888P'  8""88888*/
 
 
 D.Process = function(space, block, scope, prior_starter) {
@@ -2640,238 +2682,6 @@ D.Process.prototype.next = function() {
 
 
 
-//////// MORE HELPERS //////////
-
-// D.trampoline = function(fun, then) {
-//   var output = true
-//   while (output) {output = fun()}
-//   if(output === output) then()
-// }
-
-// might need a fun for sorting object properties...
-
-/*
-  This *either* returns a value or calls prior_starter and returns NaN.
-  It *always* calls finalfun if it is provided.
-  Used in small doses it makes your possibly-async command logic much simpler.
-*/
-
-D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfun) {
-  var keys = Object.keys(data)
-  , size = keys.length
-  , index = -1
-  , result = joinerfun()
-  , asynced = false
-  , value, key
-  
-  // if(typeof finalfun != 'function') {
-  //   finalfun = function(x) {return x}
-  // }
-  
-  finalfun = finalfun || D.identity
-  
-  // THINK: can we add a simple short-circuit to this? undefined, maybe? for things like 'first' and 'every' it'll help a lot over big data
-  
-  var inner = function() {
-    while(++index < size) {
-      key = keys[index]
-      value = processfun(data[key], my_starter, key, result)
-      if(value !== value) {
-        asynced = true // we'll need to call prior_starter when we finish up
-        return NaN // send stack killer up the chain 
-        // [unleash the NaNobots|NaNites]
-      }
-      result = joinerfun(result, value, key)
-    }
-    
-    if(asynced)
-      return prior_starter(finalfun(result))
-
-    return finalfun(result)
-  }
-  
-  var my_starter = function(value) {
-    result = joinerfun(result, value, key)
-    inner()
-  }
-  
-  return inner()
-}
-
-D.string_concat = function(total, value) {
-  total = D.is_nice(total) ? total : ''
-  value = D.is_nice(value) ? value : ''
-  return D.stringify(total) + D.stringify(value)
-}
-
-D.list_push = function(total, value) {
-  if(!Array.isArray(total)) return [] // THINK: is this always ok?
-  value = D.is_nice(value) ? value : ""
-  total.push(value)
-  return total
-}
-
-D.list_set = function(total, value, key) {
-  if(typeof total != 'object') return {}
-  
-  var keys = Object.keys(total)
-  if(!key) key = keys.length
-  
-  value = D.is_nice(value) ? value : ""
-  
-  total[key] = value
-  return total
-}
-
-D.scrub_list = function(list) {
-  var keys = Object.keys(list)
-
-  if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
-    return list
-    
-  return D.to_array(list)
-}
-
-
-D.Parser.split_on = function(string, regex, label) {
-  if(typeof string != 'string') 
-    return string
-  
-  if(!(regex instanceof RegExp))
-    regex = RegExp('[' + D.regex_escape(regex) + ']')
-  
-  var output = []
-    , inside = []
-    , special = /["{()}]/
-    , match_break = 0
-    , char_matches = false
-    , we_are_matching = false
-    
-  for(var index=0, l=string.length; index < l; index++) {
-    
-    /*
-      we need to not match when
-      - inside quotes
-      - unmatched parens
-      - unmatched braces
-    */
-    
-    var this_char = string[index]
-      , am_inside = inside.length
-    
-    if(this_char == '"' && inside.length == 1 && inside[0] == '"')
-      inside = []
-    
-    if(this_char == '"' && !am_inside)
-      inside = ['"']
-    
-    if(this_char == '{') 
-      inside.push('{')
-    
-    if(this_char == '(')
-      inside.push('(')
-    
-    if(this_char == '}' || this_char == ')')
-      inside.pop() // NOTE: this means unpaired braces or parens in quotes are explicitly not allowed... 
-    
-    char_matches = regex.test(this_char)
-    
-    // if(!!am_inside == !!inside.length) // not transitioning
-    //   continue
-    //   output.push(string.slice(match_break, index + 1))
-    //   match_break = index + 1
-    // }
-    // 
-    // if(!am_inside && inside.length) {
-    //   output.push(string.slice(match_break, index))
-    //   match_break = index
-    // }
-    // 
-    // if(special.test(this_char))
-    //   continue
-    // 
-
-    if(am_inside && inside.length)
-      continue
-    
-    if(we_are_matching === char_matches) 
-      continue
-
-    if(we_are_matching) { // stop matching
-      if(label)
-        output.push(new D.Token(label, string.slice(match_break, index)))
-      
-      match_break = index
-      we_are_matching = false
-    }
-    
-    else { // start matching
-      if(index)
-        output.push(string.slice(match_break, index))
-
-      match_break = index
-      we_are_matching = true      
-    }
-  }
-  
-  // if(match_break < index) {
-  //   var lastbit = string.slice(match_break, index)
-  //   if(lastbit.length) {
-  //     output.push(lastbit)      
-  //   }
-  // }
-  
-  if(match_break < index) {
-    var lastbit = string.slice(match_break, index)
-    if(regex.test(lastbit[0])) { // at this point lastbit is homogenous
-      if(label)
-        output.push(new D.Token(label, string.slice(match_break, index)))
-    } else {
-      output.push(lastbit)      
-    }
-  }
-  return output
-}
-
-D.Parser.split_on_terminators = function(string) {
-  // TODO: make Tglyphs work with multi-char Terminators
-  return D.Parser.split_on(string, D.Etc.Tglyphs, 'Terminator')
-}
-
-D.Parser.split_on_space = function(string) {
-  return D.Parser.split_on(string, /[\s\u00a0]/)
-}
-
-// give each item its time in the sun. also, allow other items to be added, removed, reordered or generally mangled
-D.mungeLR = function(items, fun) {
-  var L = []
-    , R = items
-    , item = {}
-    , result = []
-  
-  if(!items.length) return items
-  
-  do {
-    item = R.shift() // OPT: shift is slow
-    result = fun(L, item, R)
-    L = result[0]
-    R = result[1]
-  } while(R.length)
-  
-  return L
-}
-
-
-
-
-
-D.DIALECTS.top = new D.Dialect() // no params means "use whatever i've imported"
-
-D.ExecutionSpace = 
-  new D.Space(
-    D.spaceseed_add(
-      {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
-
 
 
 /*
@@ -2906,12 +2716,192 @@ D.ExecutionSpace =
 
 
 
+   /*ooooo..o                                                                             .o8           
+  d8P'    `Y8                                                                            "888           
+  Y88bo.      oo.ooooo.   .oooo.    .ooooo.   .ooooo.   .oooo.o  .ooooo.   .ooooo.   .oooo888   .oooo.o 
+   `"Y8888o.   888' `88b `P  )88b  d88' `"Y8 d88' `88b d88(  "8 d88' `88b d88' `88b d88' `888  d88(  "8 
+       `"Y88b  888   888  .oP"888  888       888ooo888 `"Y88b.  888ooo888 888ooo888 888   888  `"Y88b.  
+  oo     .d8P  888   888 d8(  888  888   .o8 888    .o o.  )88b 888    .o 888    .o 888   888  o.  )88b 
+  8""88888P'   888bod8P' `Y888""8o `Y8bod8P' `Y8bod8P' 8""888P' `Y8bod8P' `Y8bod8P' `Y8bod88P" 8""888P' 
+               888                                                                                      
+              o88*/
+
 
 /*
 
   EVERYTHING BELOW HERE IS CRAZYPANTS
 
 */
+
+
+/*
+  Adding a new SPACESEED is complicated.
+  - does it have an id?
+    - remove if != hash(json)
+  - do the parts check out? 
+    - if dialect, stations, subspaces, ports, routes or state are invalid, err
+  - order all the parts
+  - hash, add, and return id
+*/
+
+D.spaceseed_add = function(seed) {
+  var good_props = {dialect: 1, stations: 1, subspaces: 1, ports: 1, routes: 1, state: 1}
+    , item
+  
+  for(var key in seed) 
+    if(!good_props[key])
+      delete seed[key] // ensure no errant properties, including id
+  
+  // TODO: check dialect [id -> D.DIALECTS]
+  // TODO: check stations [array of id -> D.BLOCKS]
+  // TODO: check subspaces [array of id -> D.SPACESEEDS]
+  // TODO: check ports [array of port things]
+  // TODO: check routes [array of port indices]
+  // TODO: check state [a jsonifiable object] [badseeds]
+  
+  seed = D.clone(seed) // keep the ref popo off our tails
+  seed = D.sort_object_keys(seed)
+  seed.state = D.sort_object_keys(seed.state)
+
+
+  var sorted_stations = D.clone(seed.stations).sort(function(a,b) {return a - b})
+    , station_index_to_ports = {}
+    , new_stations = []
+    , last_offset = {}
+  
+  if(JSON.stringify(seed.stations) != JSON.stringify(sorted_stations)) {
+    
+    seed.ports.forEach(function(port) {
+      var item = station_index_to_ports[port.station]
+      item ? item.push(port) : station_index_to_ports[port.station] = [port]
+    })
+    
+    seed.stations.forEach(function(station, index) {
+      var old_index = index + 1
+        , new_index = sorted_stations.indexOf(station, last_offset[station]) + 1
+      
+      if(station_index_to_ports[old_index]) {
+        station_index_to_ports[old_index].forEach(function(port) {
+          port.station = new_index
+        })
+      }
+        
+      last_offset[station] = new_index
+    })
+    
+    seed.stations = sorted_stations
+  }
+
+
+  var sorted_subspaces = D.clone(seed.subspaces).sort(function(a,b) {return a - b})
+    , space_index_to_ports = {}
+    , new_subspaces = []
+    , last_offset = {}
+  
+  if(JSON.stringify(seed.subspaces) != JSON.stringify(sorted_subspaces)) {
+    
+    seed.ports.forEach(function(port) {
+      var item = space_index_to_ports[port.space]
+      item ? item.push(port) : space_index_to_ports[port.space] = [port]
+    })
+    
+    seed.subspaces.forEach(function(subspace, index) {
+      var old_index = index + 1
+        , new_index = sorted_subspaces.indexOf(subspace, last_offset[subspace]) + 1
+      
+      if(space_index_to_ports[old_index]) {
+        space_index_to_ports[old_index].forEach(function(port) {
+          port.space = new_index
+        })
+      }
+        
+      last_offset[subspace] = new_index
+    })
+    
+    seed.subspaces = sorted_subspaces
+  }
+  
+  
+  // oh dear
+
+
+  var port_sort = function(portA, portB) {
+    if(portA.space != portB.space)
+      return portA.space > portB.space
+
+    if(portA.station && portA.station != portB.station)
+      return portA.station > portB.station
+
+    if(portA.subspace && portA.subspace != portB.subspace)
+      return portA.subspace > portB.subspace
+      
+    return portA.name > portB.name
+  }
+  
+  // ensure the right properties, in sort order
+  var good_port_props = ['space', 'station', 'name', 'flavour', 'typehint', 'settings']
+  var ports = seed.ports.map(function(port) {
+    var newport = {}
+    for(var key in good_port_props) 
+      newport[good_port_props[key]] = port[good_port_props[key]] 
+    return newport
+  })
+  var sorted_string_ports = ports.map(JSON.stringify).sort()
+  var route_clone = D.clone(seed.routes)
+
+  if(JSON.stringify(seed.ports) != JSON.stringify(sorted_string_ports)) {
+    // go through each item, find its match and modify all containing routes
+    
+    var port_index_to_routes = {}
+      
+    route_clone.forEach(function(route, index) {
+      route.index = index
+      
+      item = port_index_to_routes[route[0]]
+      item ? item.push(route) : port_index_to_routes[route[0]] = [route]
+
+      item = port_index_to_routes[route[1]]
+      item ? item.push(route) : port_index_to_routes[route[1]] = [route]
+    })
+    
+    ports.forEach(function(port, index) {
+      var port = ports[index]
+        , old_index = index + 1 // +1 for offset array indices
+        , new_index = sorted_string_ports.indexOf(JSON.stringify(port)) + 1
+      
+      if(port_index_to_routes[old_index]) {
+        port_index_to_routes[old_index].forEach(function(route) { 
+          if(route[0] == old_index)
+            seed.routes[route.index][0] = new_index
+          if(route[1] == old_index)
+            seed.routes[route.index][1] = new_index
+        })
+      }
+    })
+
+  }
+  seed.ports = sorted_string_ports.map(JSON.parse)
+  
+  // these we can just sort. phew!
+  seed.routes.sort(function(routeA, routeB) {
+    if(routeA[0] != routeB[0])
+      return routeA[0] > routeB[0]
+      
+    return routeA[1] > routeB[1]
+  })
+  
+  seed.id = D.spaceseed_hash(seed)
+  D.SPACESEEDS[seed.id] = seed // THINK: collision resolution? 
+  
+  return seed.id
+}
+
+D.spaceseed_hash = function(seed) {
+  return murmurhash(JSON.stringify(seed))
+}
+
+
+
 
 
 D.make_some_space = function(stringlike) {
@@ -3200,3 +3190,19 @@ D.make_spaceseeds = function(seedlikes) {
   
   return seedmap['outer'] || seedmap[seedkey]
 }
+
+
+
+
+// FIRE IT UP
+
+
+D.DIALECTS.top = new D.Dialect() // no params means "use whatever i've imported"
+
+D.ExecutionSpace = 
+  new D.Space(
+    D.spaceseed_add(
+      {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
+
+
+
