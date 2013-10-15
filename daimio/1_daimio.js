@@ -44,11 +44,13 @@ Maybe add Frink as a handler?
 
 
 /* Naming conventions for Daimio:
-D.import_commands   <--- snake_case for functions and constants
-D.SegmentTypes      <--- CamelCase for built-in objects
-D.SPACESEEDS        <--- ALLCAPS for runtime containers
+
+   D.import_commands   <--- snake_case for functions and constants
+   D.SegmentTypes      <--- CamelCase for built-in objects
+   D.SPACESEEDS        <--- ALLCAPS for runtime containers
 
 */
+
 D = {}
 
 D.BLOCKS = {}
@@ -128,6 +130,279 @@ D.regex_escape = function(str) {
   var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
+
+
+// HELPER FUNCTIONS
+// THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
+
+D.is_false = function(value) {
+  if(!value) 
+    return true // '', 0, false, NaN, null, undefined
+  
+  if(typeof value != 'object')
+    return false // THINK: is this always right?
+  
+  if(Array.isArray(value))
+    return !value.length
+
+  for(var key in value)
+    if(value.hasOwnProperty(key))
+      return false
+  
+  return true
+}
+
+D.is_nice = function(value) {
+  return !!value || value == false; // not NaN, null, or undefined
+  // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
+};
+
+// this converts non-iterable items into a single-element array
+D.to_array = function(value) {
+  if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
+  if(typeof value == 'object') return D.obj_to_array(value);
+  if(value === false) return []; // hmmm...
+  if(!D.is_nice(value)) return []; // double hmmm.
+  return [value];
+};
+
+D.obj_to_array = function(obj) {
+  var arr = [];
+  for(key in obj) {
+    arr.push(obj[key]);
+  }
+  return arr;
+};
+
+D.stringify = function(value) {
+  return D.Types['string'](value)
+}
+
+D.execute_then_stringify = function(value, prior_starter, process) {
+  if(D.is_block(value)) {
+    return D.Types['block'](value)(prior_starter, {}, process)
+  } else {
+    return D.stringify(value)
+  }
+}
+
+D.is_block = function(value) {
+  if(!value instanceof D.Segment)
+    return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
+
+  return value && value.type == 'Block' && value.value && value.value.id
+}
+
+D.is_numeric = function(value) {
+  return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
+}
+
+D.to_numeric = function(value) {
+  if(value === '0') return 0
+  if(typeof value == 'number') return value
+  if(typeof value == 'string') return +value ? +value : 0
+  return 0
+}
+
+D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
+
+D.string_to_regex = function(string, global) {
+  if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
+    return RegExp(D.regex_escape(string), (global ? 'g' : ''))
+  }
+  
+  var flags = string.slice(string.lastIndexOf('/') + 1)
+  string = string.slice(1, string.lastIndexOf('/'))
+  
+  return RegExp(string, flags)
+}
+
+
+
+// NOTE: this extends by reference, but also returns the new value
+D.extend = function(base, value) {
+  for(var key in value) {
+    if(!value.hasOwnProperty(key)) continue
+    base[key] = value[key]
+  }
+  return base
+}
+
+// NOTE: this extends by reference, but also returns the new value
+D.recursive_extend = function(base, value) {
+  for(var key in value) {
+    if(!value.hasOwnProperty(key)) continue
+    
+    if(typeof base[key] == 'undefined') {
+      base[key] = value[key]
+      continue
+    }
+    
+    if(typeof base[key] != 'object') continue  // ignore scalars in base
+    
+    if(typeof value[key] != 'object') continue // can't recurse into scalar
+    
+    if(Array.isArray(base) && Array.isArray(value)) {
+      if(base[key] == value[key]) continue
+      base.push(value[key])
+      continue // THINK: this bit is pretty specialized for my use case -- can we make it more general?
+    }
+    
+    D.recursive_extend(base[key], value[key])
+  }
+  
+  return base
+}
+
+
+// apply a function to every leaf of a tree, but generate a new copy of it as we go
+// THINK: only used by D.deep_copy, which we maybe don't need anymore
+D.recursive_leaves_copy = function(values, fun, seen) {
+  if(!values || typeof values != 'object') return fun(values);
+
+  seen = seen || []; // only YOU can prevent infinite recursion...
+  if(seen.indexOf(values) !== -1) return values;
+  seen.push(values);
+  
+  var new_values = (Array.isArray(values) ? [] : {}); // NOTE: using new_values in the parse phase (rebuilding the object each time we hit this function) causes an order-of-magnitude slowdown. zoiks, indeed.
+  
+  for(var key in values) {
+    // try { // NOTE: accessing e.g. input.selectionDirection throws an error, which is super-duper lame
+      // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
+      var val = values[key]
+      // this is only called from toPrimitive and deep_copy, which both want blocks
+      if(D.is_block(val)) {
+        new_values[key] = fun(val); // blocks are immutable
+      } else if(typeof val == 'object') {
+        new_values[key] = D.recursive_leaves_copy(val, fun, seen);
+      } else {
+        new_values[key] = fun(val);
+      }
+    // } catch(e) {D.on_error(e)}
+  }
+
+  return new_values;
+};
+
+
+// this is different from recursive_merge, because it replaces subvalues instead of merging
+D.recursive_insert = function(into, keys, value) {
+  // THINK: we're not blocking infinite recursion here -- is it likely to ever happen?
+  if(!into || typeof into != 'object') into = {};
+  
+  if(typeof keys == 'string') keys = keys.split('.');
+  
+  if(keys.length) {
+    var key = keys.shift();
+    into[key] = D.recursive_insert(into[key], keys, value);
+  }
+  else {
+    into = value;
+  }
+  
+  return into;
+};
+
+
+// deep copy an internal variable (primitives and blocks only)
+// NOTE: this is basically toPrimitive, for things that are already primitives. 
+D.deep_copy = function(value) {
+  if(!value || typeof value != 'object') return value; // number, string, or boolean
+  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
+  return D.recursive_leaves_copy(value, D.deep_copy);
+};
+
+// copy and scrub a variable from the outside world
+D.scrub_var = function(value) {
+  try {
+    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
+  } catch (e) {
+    // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
+    value = D.mean_defunctionize(value);
+    if(value === null) value = false;
+    return value;
+  }
+};
+
+// this is like defunc, but not as nice -- it trashes funcs and snips circular refs
+D.mean_defunctionize = function(values, seen) {
+  if(!D.is_nice(values)) return false;
+  if(!values) return values;
+
+  if(typeof values == 'function') return null;
+  if(typeof values != 'object') return values;            // number, string, or boolean
+  
+  var sig = values.constructor.toString().slice(0,12)     // prevents DOM yuckyucks. details here:
+  if ( sig == "function Nod"                              // https://github.com/dxnn/daimio/issues/1
+    || sig == "function HTM"                              // THINK: can this still leak too much info?
+    || sig == "function win" 
+    || sig == "function Win" 
+    || sig == "function Mim" 
+    || sig == "function DOM" )    
+       return null
+
+  seen = seen || [];
+  if(seen.indexOf(values) !== -1) return null;            // only YOU can prevent infinite recursion
+  seen.push(values);
+
+  var new_values = (Array.isArray(values) ? [] : {});
+  
+  for(var key in values) {                                // list or hash: lish
+    var new_value, value = values[key];
+    new_value = D.mean_defunctionize(value, seen);
+    if(new_value === null) continue;
+    new_values[key] = new_value;
+  }
+  
+  return new_values;
+};
+
+
+D.sort_object_keys = function(obj, sorter) {
+  if(typeof obj != 'object')
+    return {}
+    
+  var newobj = {}
+    , keys = Object.keys(obj).sort(sorter)
+  
+  for(var i=0, l=keys.length; i < l; i++)
+    newobj[keys[i]] = obj[keys[i]]
+  
+  return newobj
+}
+
+D.recursive_sort_object_keys = function(obj, sorter) { // THINK: this allocates like a fiend
+  if(typeof obj != 'object')
+    return obj
+  
+  for(var key in obj)
+    obj[key] = D.recursive_sort_object_keys(obj[key], sorter)
+   
+  return D.sort_object_keys(obj, sorter)
+}
+
+
+
+// D.Etc.niceifyish = function(value, whitespace) {
+//   // this takes an array of un-stringify-able values and returns the nice bits, mostly
+//   // probably pretty slow -- this is just a quick hack for console debugging
+//   
+//   var purge = function(key, value) {
+//     try {
+//       JSON.stringify(value)
+//     } catch(e) {
+//       if(key && +key !== +key)
+//         value = undefined
+//     }
+//     return value
+//   }
+//   
+//   return JSON.stringify(value, purge, whitespace)
+// }
+
+
+
+
 
 
 /*
@@ -587,11 +862,7 @@ D.import_terminator('/', { // comment
   }
 })
 
-D.import_terminator('→', { // send [old]
-  eat: function(stream, state) {
-    /// dum dum dum herpderp
-  }
-})
+
 
 
 
@@ -624,6 +895,8 @@ D.import_aliases = function(values) {
 
 
 
+
+
 /* TYPES! */
 
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
@@ -634,16 +907,17 @@ D.add_type = function(key, fun) {
 
 
 D.add_type('string', function(value) {
-  if(D.is_block(value)) {
+  if(D.is_block(value))
     return D.block_ref_to_string(value)
-  }
   
-  if(typeof value == 'string') value = value
-  else if(typeof value == 'number') value = value + ""
-  else if(typeof value == 'boolean') value = "" // THINK: we should only cast like this on output...
-  else if(value && typeof value == 'object') value = JSON.stringify(value, function(key, value) {if(value===null) return ""; return value}) // OPT: sucking nulls out here is probably costly
-  else if(value && value.toString) value = value.toString()
-  else value = ''
+       if(typeof value == 'string')           value = value
+  else if(typeof value == 'number')           value = value + ""
+  else if(typeof value == 'boolean')          value = "" // THINK: we should only cast like this on output...
+  else if(value && typeof value == 'object')  value = JSON.stringify(value, function(key, value) 
+                                                {if(value===null) return ""; return value}) 
+                                                // OPT: sucking nulls out here is probably costly
+  else if(value && value.toString)            value = value.toString()
+  else                                        value = ''
   
   return value
 })
@@ -719,6 +993,9 @@ D.add_type('either:block,string', function(value) {
 })
 
 // [string] is a list of strings, block|string is a block or a string, and ""|list is false or a list (like maybe-list)
+
+
+
 
 
 // D.run is a serialized endpoint. Most gateways are also. If you want raw data use spacial execution
@@ -915,71 +1192,6 @@ D.poke = function(base, path, value) {
 
 
 
-// NOTE: this extends by reference, but also returns the new value
-D.extend = function(base, value) {
-  for(var key in value) {
-    if(!value.hasOwnProperty(key)) continue
-    base[key] = value[key]
-  }
-  return base
-}
-
-// NOTE: this extends by reference, but also returns the new value
-D.recursive_extend = function(base, value) {
-  for(var key in value) {
-    if(!value.hasOwnProperty(key)) continue
-    
-    if(typeof base[key] == 'undefined') {
-      base[key] = value[key]
-      continue
-    }
-    
-    if(typeof base[key] != 'object') continue  // ignore scalars in base
-    
-    if(typeof value[key] != 'object') continue // can't recurse into scalar
-    
-    if(Array.isArray(base) && Array.isArray(value)) {
-      if(base[key] == value[key]) continue
-      base.push(value[key])
-      continue // THINK: this bit is pretty specialized for my use case -- can we make it more general?
-    }
-    
-    D.recursive_extend(base[key], value[key])
-  }
-  
-  return base
-}
-
-
-// apply a function to every leaf of a tree, but generate a new copy of it as we go
-// THINK: only used by D.deep_copy, which we maybe don't need anymore
-D.recursive_leaves_copy = function(values, fun, seen) {
-  if(!values || typeof values != 'object') return fun(values);
-
-  seen = seen || []; // only YOU can prevent infinite recursion...
-  if(seen.indexOf(values) !== -1) return values;
-  seen.push(values);
-  
-  var new_values = (Array.isArray(values) ? [] : {}); // NOTE: using new_values in the parse phase (rebuilding the object each time we hit this function) causes an order-of-magnitude slowdown. zoiks, indeed.
-  
-  for(var key in values) {
-    // try { // NOTE: accessing e.g. input.selectionDirection throws an error, which is super-duper lame
-      // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
-      var val = values[key]
-      // this is only called from toPrimitive and deep_copy, which both want blocks
-      if(D.is_block(val)) {
-        new_values[key] = fun(val); // blocks are immutable
-      } else if(typeof val == 'object') {
-        new_values[key] = D.recursive_leaves_copy(val, fun, seen);
-      } else {
-        new_values[key] = fun(val);
-      }
-    // } catch(e) {D.on_error(e)}
-  }
-
-  return new_values;
-};
-
 
 // DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
 // NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
@@ -1102,77 +1314,6 @@ D.recursive_leaves_copy = function(values, fun, seen) {
 //   }
 // };
 
-// this is different from recursive_merge, because it replaces subvalues instead of merging
-D.recursive_insert = function(into, keys, value) {
-  // THINK: we're not blocking infinite recursion here -- is it likely to ever happen?
-  if(!into || typeof into != 'object') into = {};
-  
-  if(typeof keys == 'string') keys = keys.split('.');
-  
-  if(keys.length) {
-    var key = keys.shift();
-    into[key] = D.recursive_insert(into[key], keys, value);
-  }
-  else {
-    into = value;
-  }
-  
-  return into;
-};
-
-
-// deep copy an internal variable (primitives and blocks only)
-// NOTE: this is basically toPrimitive, for things that are already primitives. 
-D.deep_copy = function(value) {
-  if(!value || typeof value != 'object') return value; // number, string, or boolean
-  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
-  return D.recursive_leaves_copy(value, D.deep_copy);
-};
-
-// copy and scrub a variable from the outside world
-D.scrub_var = function(value) {
-  try {
-    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
-  } catch (e) {
-    // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
-    value = D.mean_defunctionize(value);
-    if(value === null) value = false;
-    return value;
-  }
-};
-
-// this is like defunc, but not as nice -- it trashes funcs and snips circular refs
-D.mean_defunctionize = function(values, seen) {
-  if(!D.is_nice(values)) return false;
-  if(!values) return values;
-
-  if(typeof values == 'function') return null;
-  if(typeof values != 'object') return values;            // number, string, or boolean
-  
-  var sig = values.constructor.toString().slice(0,12)     // prevents DOM yuckyucks. details here:
-  if ( sig == "function Nod"                              // https://github.com/dxnn/daimio/issues/1
-    || sig == "function HTM"                              // THINK: can this still leak too much info?
-    || sig == "function win" 
-    || sig == "function Win" 
-    || sig == "function Mim" 
-    || sig == "function DOM" )    
-       return null
-
-  seen = seen || [];
-  if(seen.indexOf(values) !== -1) return null;            // only YOU can prevent infinite recursion
-  seen.push(values);
-
-  var new_values = (Array.isArray(values) ? [] : {});
-  
-  for(var key in values) {                                // list or hash: lish
-    var new_value, value = values[key];
-    new_value = D.mean_defunctionize(value, seen);
-    if(new_value === null) continue;
-    new_values[key] = new_value;
-  }
-  
-  return new_values;
-};
 
 
 // D.execute = function(handler, method, params, prior_starter, process) {
@@ -1653,904 +1794,6 @@ D.Segment.prototype.toJSON = function() {
 // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
 
 
-D.SegmentTypes.Terminator = {
-  try_lex: function(string) {
-    return string // THINK: hmmmm.... these are made elsewhere. what are we doing??
-  }
-, extract_tokens: function(L, token, R) {
-    // LE COMMENTS
-    if(/^\//.test(token.value)) {
-      if(/^\/\//.test(token.value)) {
-        return [L, []] // double slash comment goes to end of pipe
-      }
-      R.shift() // a single slash comment just pops the next segment off
-    }
-
-    // LE ARROW
-    if(/^→/.test(token.value)) {
-      var next = R[0]
-        , prev = L[L.length - 1]
-
-      if(!next || !prev)
-        return [L, R] // if we aren't infix, don't bother
-
-      var new_token = new D.Token('Command', 'channel bind')
-      new_token.names = ['from', 'to']
-      new_token.inputs = [prev.key, next.key]
-      
-      return [L, [next, new_token].concat(R.slice(1))]
-    }
-
-    // LE PIPE
-    if(/^\|/.test(token.value)) {
-      var next = R[0]
-        , prev = L[L.length - 1]
-
-      /*
-        Pipes connect the next and prev segments.
-        Double pipes don't change the wiring.
-        Double pipe at the end cancels output.
-      */
-
-
-      // TODO: what if 'next' is eg a comment?
-      // TODO: double pipe means something different
-      // TODO: pipe at beginning / end (double pipe at end is common)
-
-      // set the prevkey
-      if(next) {
-        if(prev) {
-          next.prevkey = prev.key
-        } else {
-          next.prevkey = '__in' // THINK: really? this only applies to  {| add __} which is weird and stupid
-        }
-      }
-
-      // bind the segments
-      if(/^\|\|/.test(token.value)) { // double pipe
-        if(!next) {
-          R = [new D.Token('String', "")] // squelch output by returning empty string
-        }
-      }
-      else if(next && prev) {
-        // if(next.value.params) {
-        //   next.value.params['__pipe__'] = prev.key
-        // }
-        
-        if(next.type == 'Command') {
-          next.names = next.names || [] // TODO: fix me this is horrible
-          next.inputs = next.inputs || []
-          next.names.push('__pipe__')
-          next.inputs.push(prev.key)
-          // next.params['__pipe__'] = new D.Segment('Input', prev.key)      
-          // return [L, R]
-        }
-        
-      }
-    }
-
-    return [L, R]
-  }
-, token_to_segments: function(token) {
-    return []
-    // this shouldn't happen
-  } 
-, execute: function(segment) {
-    // nor this
-  }
-}
-
-D.SegmentTypes.Number = {
-  try_lex: function(string) {
-    return (+string === +string) // NaN !== NaN
-        && !/^\s*$/.test(string) // +" " -> 0
-         ? new D.Token('Number', string) 
-         : string
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment('Number', +token.value, token)]
-  } 
-, execute: function(segment) {
-    return segment.value
-  }
-}
-
-D.SegmentTypes.String = {
-  try_lex: function(string) {
-    if(string[0] != '"' || string.slice(-1) != '"')
-      return string    
-
-    if(string.indexOf(D.Constants.command_open) != -1)
-      return string
-
-    return new D.Token('String', string.slice(1, -1))
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment('String', token.value, token)]
-  }
-, execute: function(segment) {
-    return segment.value
-  }
-}
-
-D.SegmentTypes.Block = {
-  try_lex: function(string) {
-    if(string[0] != '"' || string.slice(-1) != '"')
-      return string    
-
-    if(string.indexOf(D.Constants.command_open) == -1)
-      return string
-
-    return new D.Token('Block', string.slice(1, -1))
-  }
-, token_to_segments: function(token) {
-    var segment = D.Parser.string_to_block_segment(token.value)
-    segment.key = token.key
-    return [segment]
-  }
-, toJSON: function(segment) {
-    var block_id = segment.value.id
-      , decorators = D.get_decorators(block_id, 'OriginalString')
-      
-    if(decorators) {
-      return decorators[0].value
-    }
-    
-    return ""
-  }
-, execute: function(segment, inputs, dialect, prior_starter) {
-    return segment
-  }
-}
-
-// puts together discrete segments, or something
-D.SegmentTypes.Blockjoin = {
-  try_lex: function(string) {
-    return string
-    // these probably never get lexed
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment('Blockjoin', token.value, token)]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var output = ""
-      , counter = 0
-    
-    if(!inputs.length)
-      return ""
-
-    var processfun = function(value) {
-      return D.execute_then_stringify(value, {}, process)
-    }
-
-    return D.data_trampoline(inputs, processfun, D.string_concat, prior_starter)
-  }
-}
-
-D.SegmentTypes.Pipeline = {
-  try_lex: function(string) {
-    if(string[0] != D.Constants.command_open || string.slice(-1) != D.Constants.command_closed)
-      return string
-
-    return new D.Token('Pipeline', string)
-  }
-, munge_tokens: function(L, token, R) {
-    var new_tokens = D.Parser.string_to_tokens(token.value)
-    
-    var last_replacement = new_tokens[new_tokens.length - 1]
-    
-    if(!last_replacement){
-      // D.set_error('The previous replacement does not exist')
-      return [L, R]
-    }
-    
-    last_replacement.key = token.key
-    // last_replacement.prevkey = token.prevkey
-    // last_replacement.position = token.position
-    // last_replacement.inputs.concat(token.inputs)
-    // last_replacement.names.concat(token.names)
-    
-    // if(new_tokens.length)
-    //   new_tokens[0].position = true
-    
-    return [L, new_tokens.concat(R)] // NOTE: the new tokens are *pre* munged, and shouldn't contain fancy segments 
-    
-  }
-, token_to_segments: function(token) {
-    // shouldn't ever get here...
-    return []
-  }
-, execute: function(segment) {
-    // shouldn't ever get here
-  }
-}
-
-D.SegmentTypes.List = {
-  try_lex: function(string) {
-    if(string[0] != '(' || string.slice(-1) != ')')
-      return string
-
-    return new D.Token('List', string.slice(1, -1))
-  }
-, munge_tokens: function(L, token, R) {
-    if(token.done)
-      return [L.concat(token), R]
-  
-    var new_token_sets = D.Parser.split_on_space(token.value)
-                                    .map(D.Parser.strings_to_tokens)
-
-    if(!new_token_sets.length)
-      return [L.concat(token), R]
-      
-    token.inputs = token.inputs || []
-    token.done = true
-    
-    // it's important to only take inputs from the last token to prevent double linking of nested lists and pipelines
-    for(var i=0, l=new_token_sets.length; i < l; i++) {
-      var last_new_token_from_this_set_oy_vey = new_token_sets[i][new_token_sets[i].length - 1]
-      if(last_new_token_from_this_set_oy_vey && last_new_token_from_this_set_oy_vey.key)
-        token.inputs.push(last_new_token_from_this_set_oy_vey.key)
-    }
-    
-    var new_tokens = new_token_sets.reduce(D.concat, [])
-
-    /* what we need here:
-       - all 'top' magic pipes point to previous segment
-       - except magic pipes in pipelines
-       
-       
-    */
-
-    for(var i=0, l=new_tokens.length; i < l; i++) {
-      if(!new_tokens[i].prevkey)
-        new_tokens[i].prevkey = token.prevkey
-    }
-
-    return [L, new_tokens.concat(token, R)]
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment('List', [], token)]
-  }
-, execute: function(segment, inputs) {
-    return inputs
-  }
-}
-
-D.SegmentTypes.Fancy = {
-  try_lex: function(string) {
-    // var regex = new RegExp('^[' + D.FancyGlyphs + ']') // THINK: would anything else ever start with a fancy glyph?
-
-    if(D.Etc.FancyRegex.test(string)) 
-      return new D.Token('Fancy', string)
-
-    return string
-  }
-, munge_tokens: function(L, token, R) {
-    // var glyph = token.value.slice(0,1)
-    var glyph = token.value.replace(/^([^a-z0-9.]+).*/i, "$1")
-  
-    if(!D.Fancies[glyph]) {
-      D.set_error('Your fancies are borken:' + glyph + ' ' + token.value)
-      return [L, R]
-    }
-
-    var new_tokens = D.Fancies[glyph].eat(token)
-      , last_replacement = new_tokens[new_tokens.length - 1]
-    
-    if(last_replacement) {
-      var token_key = token.key
-        , token_prevkey = token.prevkey
-      
-      new_tokens.filter(function(token) {return token.key == token_key})
-                .forEach(function(token) {token.key = last_replacement.key})
-                                          // token.prevkey = last_replacement.prevkey})
-
-      new_tokens = new_tokens.map(function(token) {
-        if(token.inputs)
-          token.inputs = token.inputs.map(function(input) {return input == token_key ? last_replacement.key : input})
-        return token
-      })
-
-      last_replacement.key = token_key
-      // last_replacement.prevkey = token_prevkey
-    }
-    
-    return [L, new_tokens.concat(R)] 
-    // NOTE: the new tokens are *pre* munged, and shouldn't contain fancy segments [erp nope!]
-    // THINK: but what about wiring???
-  }
-, token_to_segments: function(token) {
-    // you shouldn't ever get here
-  }
-, execute: function(segment) {
-    // or here
-  }
-}
-
-D.SegmentTypes.VariableSet = {
-  try_lex: function(string) {
-    return string // this is never lexed
-  }
-, munge_tokens: function(L, token, R) {
-    if(L.length)
-      token.inputs = [L[L.length-1].key]
-    return [L.concat(token), R]
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, munge_segments: function(L, segment, R) {
-    var type = segment.value.type
-      , name = segment.value.name
-      , my_key = segment.key
-      , new_key = segment.inputs[0]  //segment.prevkey
-      , key_index
-  
-    if(type == 'space') // space vars have to be set at runtime
-      return [L.concat(segment), R]
-  
-    // but pipeline vars can be converted into wiring
-    R.filter(function(future_segment) { return future_segment.type == 'Variable' 
-                                            && future_segment.value.name == name })
-     .forEach(function(future_segment) { 
-       if(future_segment.value.prevkey)
-         return D.set_error('Pipeline variables may be set at most once per pipeline')
-       future_segment.value.prevkey = new_key
-     })
-  
-    // and likewise for anything referencing this segment 
-    R.forEach(function(future_segment) { // but others can be converted into wiring
-      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
-        future_segment.inputs[key_index] = new_key
-    })
-    
-    return [L, R]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var state = process.space.state
-      , name  = segment.value.name
-      
-    // state[name] = inputs[0] // OPT: only copy if you have to
-
-    state[name] = D.clone(inputs[0]) 
-    // state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
-    
-    return inputs[0]
-  }
-}
-
-D.SegmentTypes.PortSend = {
-  // THINK: surely there's some other way to do this -- please destroy this segtype
-  try_lex: function(string) {
-    return string // this is never lexed
-  }
-, munge_tokens: function(L, token, R) {
-    if(L.length)
-      token.inputs = [L[L.length-1].key]
-    return [L.concat(token), R]
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var to  = segment.value.to
-      , my_station = process.space.station_id
-      , port = process.space.ports.filter(function(port) {
-                 return (port.name == to && port.station === my_station) // triple so undefined != 0
-               })[0] 
-    
-    // TODO: check not only this station but outer stations as well, so we can send to ports from within inner blocks. but first think about how this affects safety and whatnot
-    
-    if(port) {
-      if(my_station === undefined) { // HACK
-        port.enter(inputs[0], process) // weird hack for exec spaces
-      } else {
-        port.exit(inputs[0], process) 
-      }
-    }
-    else {
-      D.set_error('Invalid port " + to + " detected')
-    }
-    
-    return inputs[0]
-  }
-}
-
-D.SegmentTypes.Variable = {
-  try_lex: function(string) {
-    return string // this is never lexed
-  }
-, token_to_segments: function(token) {
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, munge_segments: function(L, segment, R) {
-    if(segment.value.type == 'space') // space vars have to be collected at runtime
-      return [L.concat(segment), R]
-  
-    var my_key = segment.key
-      , new_key = segment.value.prevkey
-      , key_index
-
-    // TODO: if !R.length, wire __out to the value [otherwise {2 | >foo | "" | _foo} doesn't work]
-  
-    if(!new_key && !R.length) // some pipeline vars have to be collected then too
-      return [L.concat(segment), R]
-
-    if(!new_key)
-      new_key = segment.value.name
-    
-    R.forEach(function(future_segment) { // but others can be converted into wiring
-      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
-        future_segment.inputs[key_index] = new_key
-    })
-  
-    return [L, R]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var type = segment.value.type
-      , name = segment.value.name
-      , value = ''
-      , clone = true // OPT: figure when this can be false and make it that way
-      
-    if(type == 'space')
-      value = process.space.get_state(name)
-    else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
-      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
-      
-    if(!D.is_nice(value))
-      return false
-    
-    // return value // OPT: cloning each time is terrible
-    return D.clone(value)
-    // return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
-  }
-}
-
-
-D.SegmentTypes.PipeVar = {
-  try_lex: function(string) {
-    return string // these are always created as Fancy tokens
-  }
-// , munge_tokens: function(L, token, R) {
-//     return [L.concat(token), R]
-
-    // if(token.value == '__') {
-      // return [L.concat(token), R]
-      // if(L.length || R.length)
-      
-      // __ is the last token in the pipeline
-      // token.type = 'Command'
-      // token.value = 'variable get name "__in" type :pipeline' // THINK: this is pretty weird
-      // return [L, [token].concat(R)]
-    // }
-    
-    // ceci n'est pas une pipe magique
-    
-    /*
-    
-      We have to munge this here instead of during Fancyization because we need L and R to distinguish the following cases (which we aren't doing yet but should).
-     
-      CASE 1: {(1 2 3) | >_a | (_a _a _a)}
-        --> TODO: compile _a into the wiring
-          
-      CASE 2: {* (:a 1 :b 2) | merge block "{_a} x {_b}"}
-        --> have to use {var get} to collect the values at runtime instead of compiling them into the wiring, 
-            because this use reflects the shape of the data rather than an arbitrary intermediate label
-
-    
-    ACTUALLY...
-      { 111 | *>a | (*a *a *a)}
-
-      { 111 | __pipe }                         | > these both are shortened to __
-      { (1 1 1) | each block "{__in}"}         | > but they mean different things
-
-      so what IS a pipeline var? 
-      --> the above becomes [{N: 111}, {LIST}], {1: [0,0,0]} for segments,wiring
-      - what about the "{__}" case?   does [{PLACEHOLDER}], {0: [__in]} make sense? is this crazy?
-        or [{scope: __in}] or something? we can wire it from the scope, but... oh, yeah. placeholder. oy.
-        this: {* (:a 1 :b 2) | (__) | map block "{_a}"} is actually pretty viable...
-      - but how do we keep them from being mutated?
-        ... maybe stringify, then compare the var to the cached stringified version each time... still painful, but slightly less allocating? yuck yuck yuck. if we knew *which* commands mutated this wouldn't be an issue -- can we do that? it's only an issue if the command mutates AND the value is piped to multiple places (and if only one mutates you could in theory do that last). maybe we can do that. put a 'mutates' flag on the param...
-      - this is going to be REALLY painful...
-  
-    */
-    
-    
-    
-//    var name = token.value.slice(1)
-//
-//    token.type = 'Variable'
-//    token.value = {type: 'pipeline', name: name}
-//    // token.type = 'Command'
-//    // token.value = 'variable get name "' + name + '" type :pipeline'
-//    
-//    return [L.concat(token), R]
-//    // return [L, [token].concat(R)]
-  // }
-, token_to_segments: function(token) {
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, munge_segments: function(L, segment, R) {
-    var my_key = segment.key
-      , new_key = segment.prevkey || '__in'
-    
-    // handles cases like "{__}"
-    if(segment.value == '__in' || (!R.length && segment.prevkey == '__in')) {
-      segment.type = 'Variable'
-      segment.value = {type: 'pipeline', name: '__in'}
-      return [L.concat(segment), R]
-    }
-    
-    R.forEach(function(future_segment) {
-      var pipe_index = future_segment.names.indexOf('__pipe__')
-        , this_key = new_key
-        , key_index
-
-      // this is to handle our strangely done aliases // THINK: really only for those?
-      if(    new_key    != '__in'                               // not 'first'
-          && pipe_index != -1                                  // is piped
-          && my_key     != future_segment.inputs[pipe_index])  // and not piped to pipevar?
-        this_key = future_segment.inputs[pipe_index]           // then keep on piping 
-
-      while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
-        future_segment.inputs[key_index] = this_key
-    })
-    
-    // handles the weird case of {(1 2 3) | map block "{__ | __}"}
-    if(R.length && R[0].type == 'PipeVar')
-      R[0].prevkey = new_key
-    
-    return [L, R]
-    
-    
-    // D.replumb(R, new_key, function(future_segment, input) {
-    // })
-
-    
-    //   , outputs = R.filter(function(segment) {
-    //                         return segment.inputs.indexOf(my_key) != -1
-    //                       })
-    // 
-    // if(!segment.prevkey) { // first in our class
-    //   // console.log(segment, 'yo!!!')
-    //   new_key = '__in'
-    // }
-
-    // this is a magic pipe
-    
-    /*
-      CASES:
-        1: {__ | ...}
-    
-        2: {2 | __}
-    
-        3: {3 | __ | ...}
-        
-        4: {__}
-    
-        5: {(__)}
-        
-        NOPE: 1, 4 and 5 are all the same case -- they access the process input. 2 and 3 are the normal case of passing along the previous segment value. 
-        
-        NEW RULES!
-        2, 3 and 5 always grab the previous segment value
-        1 and 4 are process input IF they're in quotes, otherwise psv
-        
-    */
-    
-    
-    // if(!outputs.length) { // nothing to do
-    //   return [L, R]
-    // }
-
-    // else {
-    //   // get the previous *top* segment's key
-    //   for(var i=L.length-1; i >= 0; i--) {
-    //     if(L[i].top) {
-    //       new_key = L[i].key
-    //       break
-    //     }
-    //   }
-    // 
-    //   if(new_key === segment.value) {
-    //     if(L.length) {
-    //       new_key = L[L.length-1].key // THINK: first segment doesn't get marked as top, so we grab it here anyway
-    //     } else {
-    //       new_key = '__in' // nothing prior to __ so we give it __in for Process operating context
-    //     }
-    //   }      
-    // }
-    
-    // then replace our key with the previous key
-//    outputs.forEach(function(future_segment) {
-//      var pipe_index = future_segment.names.indexOf('__pipe__')
-//        , this_key = new_key
-//        , key_index
-//      
-//      if(    new_key    != '__in'    // not 'first'
-//          && pipe_index != -1       // is piped
-//          && my_key     != future_segment.inputs[pipe_index])  // not piped to pipevar
-//      {
-//        this_key = future_segment.inputs[pipe_index]            // then keep on piping (mostly for aliases)
-//      }
-//      
-//      while((key_index = future_segment.inputs.indexOf(my_key)) != -1) {
-//        future_segment.inputs[key_index] = this_key
-//        // segment.inputs[key_index] =  new_key
-//      }
-//      
-//      // TODO: make this work for multiple connections (can those exist? [yes they can])
-//    })
-        
-    // OPT: do this in a single pass, dude
-  } 
-, execute: function(segment) {
-    // nor this
-  }
-}
-
-D.SegmentTypes.Command = {
-  try_lex: function(string) {
-    if(!/[a-z]/.test(string[0])) // TODO: move all regexs into a single constants farm
-      return string
-
-    return new D.Token('Command', string)
-  }
-, munge_tokens: function(L, token, R) {
-    if(token.done)
-      return [L.concat(token), R]
-      
-    var items = D.Parser.split_on_space(token.value)
-      , new_tokens = []
-      
-    token.names = token.names || []
-    token.inputs = token.inputs || []
-    
-    if(items.length == 1) {  // {math}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items = []
-    }
-
-    else if(items.length == 2) {
-      if(/^[a-z]/.test(items[1])) {  // {math add}
-        token.type = 'Command'
-        token.value = {Handler: items[0], Method: items[1]}
-      }
-      else {  // {add 1}
-        token.type = 'Alias'
-        token.value = {word: items[0]}
-        token.names.push('__alias__')
-        
-        var value = items[1]
-          , some_tokens = D.Parser.strings_to_tokens(value)
-          , some_token = some_tokens[some_tokens.length - 1] || {}
-        
-        token.inputs.push(some_token.key || null)
-        new_tokens = new_tokens.concat(some_tokens)
-        // new_tokens = new_tokens.concat(D.Parser.strings_to_tokens(items[1]))
-      }
-
-      items = []
-    }
-
-    else if(!/^[a-z]/.test(items[1])) {  // {add 1 to 3}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items[0] = '__alias__'
-    }
-    else if(!/^[a-z]/.test(items[2])) {  // {add to 1}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items.shift() // OPT: these shifts are probably slow...
-    }
-    else {  // {math add value 1}
-      // collect H & M
-      token.type = 'Command'
-      token.value = { Handler: items.shift()
-                    , Method: items.shift()}
-    }
-
-    // collect params
-    while(items.length) {
-      var word = items.shift()
-
-      if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
-        if(items.length)
-          items.shift()
-        continue
-      }
-
-      if(!items.length) { // THINK: ???
-        // params[word] = null
-        token.names.push(word)
-        token.inputs.push(null)
-        continue
-      }
-
-      var value = items.shift()
-        , some_tokens = D.Parser.strings_to_tokens(value)
-        , some_token = some_tokens[some_tokens.length - 1] || {}
-        
-      token.names.push(word)
-      token.inputs.push(some_token.key || null)
-      new_tokens = new_tokens.concat(some_tokens)
-      
-      // params[word] = D.Parser.strings_to_tokens(value)[0] // THINK: is taking the first one always right?
-    }
-    
-    for(var i=0, l=new_tokens.length; i < l; i++) {
-      if(!new_tokens[i].prevkey)
-        new_tokens[i].prevkey = token.prevkey
-    }
-    
-    // if(!new_tokens.length)
-    //   return [L.concat(token), R]
-      
-    token.done = true
-
-    // for(var i=0, l=new_tokens.length; i < l; i++)
-    //   token.inputs.push(new_tokens[i].key)
-
-    return [L, new_tokens.concat(token, R)] // aliases need to be reconverted even if there's no new tokens
-  }
-, token_to_segments: function(token) {
-    token.value.names = token.names
-    // TODO: suck out any remaining null params here
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var handler = dialect.get_handler(segment.value.Handler)
-      , method = dialect.get_method(segment.value.Handler, segment.value.Method)
-
-    if(!method) {
-      // THINK: error?
-      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
-      return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
-    }
-    
-    var piped = false
-      , params = []
-      , errors = []
-      , typefun
-    
-    // build paramlist, a properly ordered list of input values
-    for(var index in method.params) {
-      var method_param = method.params[index]
-      var param_value = undefined
-      var key = method_param.key
-      var name_index = segment.value.names.indexOf(key)
-      
-      if(name_index != -1) {
-        param_value = inputs[name_index]
-      }
-      
-      if(!piped && !D.is_nice(param_value)) {
-        name_index = segment.value.names.indexOf('__pipe__')
-        piped = true
-        if(name_index != -1) {
-          param_value = inputs[name_index]
-        }
-      }
-  
-      if(method_param.type && D.Types[method_param.type])
-        typefun = D.Types[method_param.type]
-      else
-        typefun = D.Types.anything
-  
-      if(param_value !== undefined) {
-        param_value = typefun(param_value)
-      }
-      else if(method_param.fallback) {
-        param_value = typefun(method_param.fallback)
-      }
-      else if(method_param.required) {
-        errors.push('Missing required parameter "' + method_param.key + '" for command "' + segment.value.Handler + " " + segment.value.Method + '"')
-        param_value = typefun(undefined)
-      }
-      else if(!method_param.undefined) {
-        param_value = typefun(undefined)
-      }
-      
-      params.push(param_value)
-    }
-      
-    if(!errors.length) {
-      return method.fun.apply(handler, params.concat(prior_starter, process))
-    } else {
-      errors.forEach(function(error) {
-        D.set_error(error)
-      })
-      return ""
-    }
-  }
-}
-
-D.SegmentTypes.Alias = {
-  try_lex: function(string) {
-    return new D.Token('Command', string) // THINK: this is weird...
-    // return new D.Token('Alias', string) // NOTE: this has to run last...
-  }
-, munge_tokens: function(L, token, R) {
-    var new_tokens = D.Aliases[token.value.word]
-    
-    if(!new_tokens) {
-      D.set_error("The alias '" + token.value.word + "' stares at you blankly")
-      return [L, R]
-    }
-    
-    new_tokens =  D.clone(new_tokens)
-
-    // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.Transformers.rekey)
-    
-
-    // fiddle with wiring
-    
-    var last_replacement = new_tokens[new_tokens.length - 1]
-    
-    if(!last_replacement) {
-      // first in line, so no previous wiring... curiously, this works in {(1 2 3) | map block "{add __ to 3}"}
-      return [L, R]
-    }
-    
-    last_replacement.key = token.key
-    last_replacement.prevkey = token.prevkey
-    // last_replacement.inputs.concat(token.inputs)
-    // last_replacement.names.concat(token.names)
-    
-    for(var i=0, l=new_tokens.length; i < l; i++) {
-      if(!new_tokens[i].prevkey || new_tokens[i].prevkey == '__in') // for __ in aliases like 'else'
-        new_tokens[i].prevkey = token.prevkey
-    }
-    
-    if(token.names) {
-      // last_replacement.params = last_replacement.params || {}
-    
-      for(var i=0, l=token.names.length; i < l; i++) {
-        var key = token.names[i]
-          , value = token.inputs[i]
-          , lr_index = last_replacement.names.indexOf(key)
-          , lr_position = lr_index == -1 ? last_replacement.names.length : lr_index
-          , lr_null_index = last_replacement.inputs.indexOf(null)
-        
-        if(key == '__pipe__') { // always add the __pipe__
-          last_replacement.names[lr_position] = '__pipe__'
-          last_replacement.inputs[lr_position] = value 
-        }
-        else if(key == '__alias__') { // find last_replacement's dangling param
-          if(lr_null_index != -1) {
-            last_replacement.inputs[lr_null_index] = value
-          }
-        }
-        else if(lr_index == -1) { // unoccupied param
-          last_replacement.names.push(key)
-          last_replacement.inputs.push(value)
-        }
-      }
-      
-    }
-
-    return [L.concat(new_tokens), R] // NOTE: the new tokens are *pre* munged, and shouldn't contain fancy segments 
-  }
-, token_to_segments: function(token) {
-    // token.value.names = token.names
-    // return [new D.Segment('Alias', token.value, token)]
-  }
-, execute: function(segment, inputs, dialect) {
-    // shouldn't happen
-  }
-}
-
-
-// D.Parser.try_begin = function(string) {
-//   var matches = string.match(/^begin (.?\w+)/)
-//   if(!matches) return string
-//   
-//   return [new D.Segment('Begin', matches[1])]
-// }
-
 
 // D.Dialect = function(models, aliases, parent) {
 D.Dialect = function(commands, aliases) {
@@ -2800,28 +2043,6 @@ D.spaceseed_hash = function(seed) {
   return murmurhash(JSON.stringify(seed))
 }
 
-D.sort_object_keys = function(obj, sorter) {
-  if(typeof obj != 'object')
-    return {}
-    
-  var newobj = {}
-    , keys = Object.keys(obj).sort(sorter)
-  
-  for(var i=0, l=keys.length; i < l; i++)
-    newobj[keys[i]] = obj[keys[i]]
-  
-  return newobj
-}
-
-D.recursive_sort_object_keys = function(obj, sorter) { // THINK: this allocates like a fiend
-  if(typeof obj != 'object')
-    return obj
-  
-  for(var key in obj)
-    obj[key] = D.recursive_sort_object_keys(obj[key], sorter)
-   
-  return D.sort_object_keys(obj, sorter)
-}
 
 // D.dialect_add = function(dialect) {
 //   dialect = JSON.parse(JSON.stringify(dialect)) // no refs, no muss
@@ -3728,108 +2949,6 @@ D.mungeLR = function(items, fun) {
 }
 
 
-
-// HELPER FUNCTIONS
-// THINK: some of these are here just to remove the dependency on underscore. should we just include underscore instead?
-
-D.is_false = function(value) {
-  if(!value) 
-    return true // '', 0, false, NaN, null, undefined
-  
-  if(typeof value != 'object')
-    return false // THINK: is this always right?
-  
-  if(Array.isArray(value))
-    return !value.length
-
-  for(var key in value)
-    if(value.hasOwnProperty(key))
-      return false
-  
-  return true
-}
-
-D.is_nice = function(value) {
-  return !!value || value == false; // not NaN, null, or undefined
-  // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
-};
-
-// this converts non-iterable items into a single-element array
-D.to_array = function(value) {
-  if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
-  if(typeof value == 'object') return D.obj_to_array(value);
-  if(value === false) return []; // hmmm...
-  if(!D.is_nice(value)) return []; // double hmmm.
-  return [value];
-};
-
-D.obj_to_array = function(obj) {
-  var arr = [];
-  for(key in obj) {
-    arr.push(obj[key]);
-  }
-  return arr;
-};
-
-D.stringify = function(value) {
-  return D.Types['string'](value)
-}
-
-D.execute_then_stringify = function(value, prior_starter, process) {
-  if(D.is_block(value)) {
-    return D.Types['block'](value)(prior_starter, {}, process)
-  } else {
-    return D.stringify(value)
-  }
-}
-
-D.is_block = function(value) {
-  if(!value instanceof D.Segment)
-    return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
-
-  return value && value.type == 'Block' && value.value && value.value.id
-}
-
-D.is_numeric = function(value) {
-  return (typeof(value) === 'number' || typeof(value) === 'string') && value !== '' && !isNaN(value)
-}
-
-D.to_numeric = function(value) {
-  if(value === '0') return 0
-  if(typeof value == 'number') return value
-  if(typeof value == 'string') return +value ? +value : 0
-  return 0
-}
-
-D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
-
-D.string_to_regex = function(string, global) {
-  if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
-    return RegExp(D.regex_escape(string), (global ? 'g' : ''))
-  }
-  
-  var flags = string.slice(string.lastIndexOf('/') + 1)
-  string = string.slice(1, string.lastIndexOf('/'))
-  
-  return RegExp(string, flags)
-}
-
-// D.Etc.niceifyish = function(value, whitespace) {
-//   // this takes an array of un-stringify-able values and returns the nice bits, mostly
-//   // probably pretty slow -- this is just a quick hack for console debugging
-//   
-//   var purge = function(key, value) {
-//     try {
-//       JSON.stringify(value)
-//     } catch(e) {
-//       if(key && +key !== +key)
-//         value = undefined
-//     }
-//     return value
-//   }
-//   
-//   return JSON.stringify(value, purge, whitespace)
-// }
 
 
 
