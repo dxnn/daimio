@@ -900,97 +900,10 @@ D.import_aliases = function(values) {
 /* TYPES! */
 
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
-D.add_type = function(key, fun) {
+D.import_type = function(key, fun) {
   // TODO: add some type checking
   D.Types[key] = fun
 };
-
-
-D.add_type('string', function(value) {
-  if(D.is_block(value))
-    return D.block_ref_to_string(value)
-  
-       if(typeof value == 'string')           value = value
-  else if(typeof value == 'number')           value = value + ""
-  else if(typeof value == 'boolean')          value = "" // THINK: we should only cast like this on output...
-  else if(value && typeof value == 'object')  value = JSON.stringify(value, function(key, value) 
-                                                {if(value===null) return ""; return value}) 
-                                                // OPT: sucking nulls out here is probably costly
-  else if(value && value.toString)            value = value.toString()
-  else                                        value = ''
-  
-  return value
-})
-
-D.add_type('number', function(value) {
-  if(typeof value == 'number') value = value
-  else if(typeof value == 'string') value = +value
-  // else if(typeof value == 'object') value = Object.keys(value).length // THINK: this is a little weird
-  else value = 0
-
-  return value
-})
-
-D.add_type('integer', function(value) {
-  value = D.Types['number'](value) // TODO: make a simpler way to call these
-  
-  return Math.round(value)
-})
-
-D.add_type('anything', function(value) {
-  if(!D.is_nice(value)) return ""
-  return value // THINK: what about blocks? 
-})
-
-D.add_type('array', function(value) { // ugh...
-  return D.to_array(value)
-})
-
-D.add_type('list', function(value) {
-  if(value && typeof value === 'object') 
-    return value.type == 'Block' ? [value] : value
-  return D.to_array(value)
-})
-
-D.add_type('maybe-list', function(value) {
-  if(value === false || !D.is_nice(value))
-    return false
-  else
-    return D.Types['list'](value)
-})
-
-D.add_type('block', function(value) {
-  if(D.is_block(value)) {
-    // value is a block ref...
-    return function(prior_starter, scope, process) {
-      // TODO: check value.value.id first, because it might not be in ABLOCKS
-      // TODO: how does this fit with parent processes and parallelization? 
-      space = process ? process.space : D.ExecutionSpace
-      if(process && process.state && process.state.secret) { // FIXME: this seems really quite silly
-        scope.parent_process = process
-        scope.secret = process.state.secret
-      }
-      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
-    }
-  }
-  else {
-    return function() {
-      return D.stringify(value) // strings just fire away
-    }
-    // value = D.stringify(value)
-    // return function(prior_starter) {
-    //   return prior_starter(value) // strings just fire away
-    // }
-  }
-})
-
-D.add_type('either:block,string', function(value) {
-  if(D.is_block(value)) {
-    return D.Types['block'](value)
-  } else {
-    return D.Types['string'](value)
-  }
-})
 
 // [string] is a list of strings, block|string is a block or a string, and ""|list is false or a list (like maybe-list)
 
