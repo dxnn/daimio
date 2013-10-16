@@ -444,7 +444,8 @@ D.Etc.Math.singleArray = function(value, to, fun) {
 
 D.Etc.Math.naryanArray = function(value, to, fun) {
   if(!D.is_numeric(value)) {
-    D.set_error("That is not a numeric value")
+    if(value)
+      D.set_error("That is not a numeric value")
     value = 0
   }
   if(!D.is_numeric(to)) {

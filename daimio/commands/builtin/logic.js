@@ -35,7 +35,7 @@ D.import_models({
             return branch
           
           if(branch.constructor == D.Segment) // TODO: remove me when "block|anything" is supported
-            branch = D.Types['block'](branch)
+            branch = D.blockify(branch)
           
           if(typeof branch != 'function')
             return branch
@@ -102,9 +102,8 @@ D.import_models({
           if(is_obj == 2)
             return JSON.stringify(value) == JSON.stringify(like)
           
-          if(like[0] !== '/' || !D.Etc.flag_checker_regex.test(like)) {
+          if(!D.is_regex(like))
             return value == like // exact match, ish.
-          }
           
           like = D.string_to_regex(like)
           return like.test(value)
@@ -147,7 +146,7 @@ D.import_models({
             
             if(found === count) {
               if(item instanceof D.Segment)
-                return D.Types['block'](item)(my_tramp_prior_starter, scope)
+                return D.blockify(item)(my_tramp_prior_starter, scope)
               else
                 return item
             }
@@ -159,7 +158,7 @@ D.import_models({
               return null
 
             if(item instanceof D.Segment)
-              bool = D.Types['block'](item)(my_tramp_prior_starter, scope)
+              bool = D.blockify(item)(my_tramp_prior_starter, scope)
             else
               bool = item
               
@@ -235,7 +234,7 @@ D.import_models({
             if(test == on) {
               var result = value[i+1]
               if(_with && (result instanceof D.Segment))
-                return D.Types['block'](result)(prior_starter, _with, process)
+                return D.blockify(result)(prior_starter, _with, process)
               else
                 return result
             }

@@ -1,7 +1,7 @@
 D.import_type('either:block,string', function(value) {
   if(D.is_block(value)) {
-    return D.Types['block'](value)
+    return D.blockify(value)
   } else {
-    return D.Types['string'](value)
+    return D.stringify(value)
   }
 })

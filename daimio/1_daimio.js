@@ -53,7 +53,6 @@ D.Terminators = {}
 D.Pathfinders = []                    // one of these things is not like the others
 D.SegmentTypes = {}
 D.PortFlavours = {}
-D.Transformers = {}
 
 D.Constants = {}                      // constants fry, constants fry, any time at all
 D.Constants.command_open = '{'
@@ -61,7 +60,7 @@ D.Constants.command_closed = '}'
 D.Constants.list_open = '('           // currently unused
 D.Constants.list_closed = ')'         // currently unused
 D.Constants.quote = '"'               // currently unused
-
+  
 D.Etc.process_counter = 1             // this is a bit silly
 D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
 
@@ -80,9 +79,9 @@ D.Etc.Tglyphs = ""                    // and this one too
 
 
 
-D.noop = function() {}
+D.noop     = function() {}
 D.identity = function(x) {return x}
-D.concat = function(a,b) {return a.concat(b)}
+D.concat   = function(a,b) {return a.concat(b)}
 
 D.set_error = function(error) {
   // use this to set simple errors
@@ -104,11 +103,6 @@ D.clone = function(value) {
   } catch (e) {
     return D.deep_copy(value)
   }
-}
-
-D.regex_escape = function(str) {
-  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
-  return str.replace(specials, "\\$&")
 }
 
 D.is_false = function(value) {
@@ -150,13 +144,17 @@ D.obj_to_array = function(obj) {
   return arr;
 };
 
+D.blockify = function(value) {
+  return D.Types['block'](value)
+}
+
 D.stringify = function(value) {
   return D.Types['string'](value)
 }
 
 D.execute_then_stringify = function(value, prior_starter, process) {
   if(D.is_block(value)) {
-    return D.Types['block'](value)(prior_starter, {}, process)
+    return D.blockify(value)(prior_starter, {}, process)
   } else {
     return D.stringify(value)
   }
@@ -166,7 +164,7 @@ D.is_block = function(value) {
   if(!value instanceof D.Segment)
     return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
 
-  return value && value.type == 'Block' && value.value && value.value.id
+  return value && value.type == 'Block' && value.value && value.value.id // THINK: why do we need this?
 }
 
 D.is_numeric = function(value) {
@@ -180,12 +178,19 @@ D.to_numeric = function(value) {
   return 0
 }
 
-D.Etc.flag_checker_regex = /\/(g|i|gi|m|gm|im|gim)?$/
+D.is_regex = function(str) {
+  var regex_regex = /^\/.+?\/(g|i|gi|m|gm|im|gim)?$/
+  return regex_regex.test(str)
+}
+
+D.regex_escape = function(str) {
+  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
+  return str.replace(specials, "\\$&")
+}
 
 D.string_to_regex = function(string, global) {
-  if(string[0] !== '/' || !D.Etc.flag_checker_regex.test(string)) {
+  if(!D.is_regex(string))
     return RegExp(D.regex_escape(string), (global ? 'g' : ''))
-  }
   
   var flags = string.slice(string.lastIndexOf('/') + 1)
   string = string.slice(1, string.lastIndexOf('/'))
@@ -470,6 +475,12 @@ D.mungeLR = function(items, fun) {
   return L
 }
 
+D.block_ref_to_string = function(value) {
+  // var json = JSON.stringify(value)
+  // return json.slice(1, -1) // JSON puts extra quotes around the string value that we don't want
+  return value.toJSON()
+}
+
 
 
 // This is *always* async, so provide a callback.
@@ -511,6 +522,18 @@ D.run = function(daimio, ultimate_callback, space) {
 
 
 
+
+if (typeof exports !== 'undefined') {
+
+  //     mmh = require('murmurhash3')
+  // 
+  // var murmurhash = mmh.murmur128HexSync
+     
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = D
+  }
+  exports.D = D
+}
 
 
 
@@ -653,27 +676,22 @@ D.run = function(daimio, ultimate_callback, space) {
 // };
 
 
-
-if (typeof exports !== 'undefined') {
-
-  //     mmh = require('murmurhash3')
-  // 
-  // var murmurhash = mmh.murmur128HexSync
-     
-  if (typeof module !== 'undefined' && module.exports) {
-    exports = module.exports = D
-  }
-  exports.D = D
-}
+  /*ooo ooo        ooooo ooooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o 
+  `888' `88.       .888' `888   `Y88.  d8P'  `Y8b  `888   `Y88. 8'   888   `8 d8P'    `Y8 
+   888   888b     d'888   888   .d88' 888      888  888   .d88'      888      Y88bo.      
+   888   8 Y88. .P  888   888ooo88P'  888      888  888ooo88P'       888       `"Y8888o.  
+   888   8  `888'   888   888         888      888  888`88b.         888           `"Y88b 
+   888   8    Y     888   888         `88b    d88'  888  `88b.       888      oo     .d8P 
+  o888o o8o        o888o o888o         `Y8bood8P'  o888o  o888o     o888o     8""88888*/
 
 
-  /*oooooooo.                                                        .                                                                  
-  `888'   `Y8b                                                     .o8                                                                  
-   888      888  .ooooo.   .ooooo.   .ooooo.  oooo d8b  .oooo.   .o888oo  .ooooo.  oooo d8b  .oooo.o                                    
-   888      888 d88' `88b d88' `"Y8 d88' `88b `888""8P `P  )88b    888   d88' `88b `888""8P d88(  "8                                    
-   888      888 888ooo888 888       888   888  888      .oP"888    888   888   888  888     `"Y88b.                                     
-   888     d88' 888    .o 888   .o8 888   888  888     d8(  888    888 . 888   888  888     o.  )88b                                    
-  o888bood8P'   `Y8bod8P' `Y8bod8P' `Y8bod8P' d888b    `Y888""8o   "888" `Y8bod8P' d888b    8""888*/
+
+
+
+//    ______  _______ _______  _____   ______ _______ _______  _____   ______ _______
+//    |     \ |______ |       |     | |_____/ |_____|    |    |     | |_____/ |______
+//    |_____/ |______ |_____  |_____| |    \_ |     |    |    |_____| |    \_ ______|
+//
 
 
 D.add_decorator = function(block_id, type, value, unique) {
@@ -727,15 +745,10 @@ D.get_decorators = function(by_block, by_type) {
 }
 
 
-
-  /*ooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o 
-  `888   `Y88.  d8P'  `Y8b  `888   `Y88. 8'   888   `8 d8P'    `Y8 
-   888   .d88' 888      888  888   .d88'      888      Y88bo.      
-   888ooo88P'  888      888  888ooo88P'       888       `"Y8888o.  
-   888         888      888  888`88b.         888           `"Y88b 
-   888         `88b    d88'  888  `88b.       888      oo     .d8P 
-  o888o         `Y8bood8P'  o888o  o888o     o888o     8""88888*/
-
+//     _____   _____   ______ _______ _______
+//    |_____] |     | |_____/    |    |______
+//    |       |_____| |    \_    |    ______|
+//    
 
 
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
@@ -868,16 +881,10 @@ D.import_port_type = function(flavour, pflav) {
 }
 
 
-
-
-  /*oooooooooo       .o.       ooooo      ooo   .oooooo.   ooooo oooooooooooo  .oooooo..o 
-  `888'     `8      .888.      `888b.     `8'  d8P'  `Y8b  `888' `888'     `8 d8P'    `Y8 
-   888             .8"888.      8 `88b.    8  888           888   888         Y88bo.      
-   888oooo8       .8' `888.     8   `88b.  8  888           888   888oooo8     `"Y8888o.  
-   888    "      .88ooo8888.    8     `88b.8  888           888   888    "         `"Y88b 
-   888          .8'     `888.   8       `888  `88b    ooo   888   888       o oo     .d8P 
-  o888o        o88o     o8888o o8o        `8   `Y8bood8P'  o888o o888ooooood8 8""88888*/
-
+//    _______ _______ __   _ _______ _____ _______ _______
+//    |______ |_____| | \  | |         |   |______ |______
+//    |       |     | |  \_| |_____  __|__ |______ ______|
+//    
 
 
 D.import_fancy = function(ch, obj) {
@@ -1028,16 +1035,10 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 }
 
 
-
-  /*ooooooooooo                                       o8o                            .                               
-  8'   888   `8                                       `"'                          .o8                               
-       888       .ooooo.  oooo d8b ooo. .oo.  .oo.   oooo  ooo. .oo.    .oooo.   .o888oo  .ooooo.  oooo d8b  .oooo.o 
-       888      d88' `88b `888""8P `888P"Y88bP"Y88b  `888  `888P"Y88b  `P  )88b    888   d88' `88b `888""8P d88(  "8 
-       888      888ooo888  888      888   888   888   888   888   888   .oP"888    888   888   888  888     `"Y88b.  
-       888      888    .o  888      888   888   888   888   888   888  d8(  888    888 . 888   888  888     o.  )88b 
-      o888o     `Y8bod8P' d888b    o888o o888o o888o o888o o888o o888o `Y888""8o   "888" `Y8bod8P' d888b    8""888*/
-
-
+//    _______ _______  ______ _______ _____ __   _ _______ _______  _____   ______ _______
+//       |    |______ |_____/ |  |  |   |   | \  | |_____|    |    |     | |_____/ |______
+//       |    |______ |    \_ |  |  | __|__ |  \_| |     |    |    |_____| |    \_ ______|
+//    
 
 D.import_terminator = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
@@ -1087,15 +1088,10 @@ D.import_terminator('/', { // comment
 })
 
 
-
-        /*.       ooooo        ooooo       .o.        .oooooo..o oooooooooooo  .oooooo..o 
-       .888.      `888'        `888'      .888.      d8P'    `Y8 `888'     `8 d8P'    `Y8 
-      .8"888.      888          888      .8"888.     Y88bo.       888         Y88bo.      
-     .8' `888.     888          888     .8' `888.     `"Y8888o.   888oooo8     `"Y8888o.  
-    .88ooo8888.    888          888    .88ooo8888.        `"Y88b  888    "         `"Y88b 
-   .8'     `888.   888       o  888   .8'     `888.  oo     .d8P  888       o oo     .d8P 
-  o88o     o8888o o888ooooood8 o888o o88o     o8888o 8""88888P'  o888ooooood8 8""88888*/
-
+//    _______        _____ _______ _______ _______ _______
+//    |_____| |        |   |_____| |______ |______ |______
+//    |     | |_____ __|__ |     | ______| |______ ______|
+//    
 
 
 D.import_models = function(new_models) {
@@ -1125,15 +1121,10 @@ D.import_aliases = function(values) {
 
 
 
-  /*ooooooooooo oooooo   oooo ooooooooo.   oooooooooooo  .oooooo..o 
-  8'   888   `8  `888.   .8'  `888   `Y88. `888'     `8 d8P'    `Y8 
-       888        `888. .8'    888   .d88'  888         Y88bo.      
-       888         `888.8'     888ooo88P'   888oooo8     `"Y8888o.  
-       888          `888'      888          888    "         `"Y88b 
-       888           888       888          888       o oo     .d8P 
-      o888o         o888o     o888o        o888ooooood8 8""88888*/
-
-
+//    _______ __   __  _____  _______ _______
+//       |      \_/   |_____] |______ |______
+//       |       |    |       |______ ______|
+//    
 
 // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
 D.import_type = function(key, fun) {
@@ -1180,14 +1171,10 @@ D.import_type = function(key, fun) {
 
 */
 
-
-  /*ooooooo.         .o.       ooooooooooooo ooooo   ooooo  .oooooo..o 
-  `888   `Y88.      .888.      8'   888   `8 `888'   `888' d8P'    `Y8 
-   888   .d88'     .8"888.          888       888     888  Y88bo.      
-   888ooo88P'     .8' `888.         888       888ooooo888   `"Y8888o.  
-   888           .88ooo8888.        888       888     888       `"Y88b 
-   888          .8'     `888.       888       888     888  oo     .d8P 
-  o888o        o88o     o8888o     o888o     o888o   o888o 8""88888*/
+//     _____  _______ _______ _     _ _______ _____ __   _ ______  _______  ______ _______
+//    |_____] |_____|    |    |_____| |______   |   | \  | |     \ |______ |_____/ |______
+//    |       |     |    |    |     | |       __|__ |  \_| |_____/ |______ |    \_ ______|
+//    
 
 
 D.import_pathfinder = function(name, pf) {
@@ -1417,7 +1404,7 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
   
-  segments = D.mungeLR(segments, D.Transformers.rekey)
+  segments = D.mungeLR(segments, D.Parser.rekey)
   
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
@@ -1734,36 +1721,7 @@ D.Parser.split_on_space = function(string) {
 }
 
 
-
-// D.partially_apply = function(fun, arg, number) {
-//   
-// }
-
-// D.maybe_call = function(member) {
-//   return function(item) {
-//     if(typeof item.member == 'function') {
-//       return item.member()
-//     }
-//   }
-// }
-
-D.block_ref_to_string = function(value) {
-  // var json = JSON.stringify(value)
-  // return json.slice(1, -1) // JSON puts extra quotes around the string value that we don't want
-  return value.toJSON()
-}
-
-
-/*
-  TRANSFORMERS!
-
-  each Transformer takes a left-set of segments, the segment in question, and a right-set of segments. 
-  it returns the new left and right set. the next segment from the right set is then considered, until no items remain.
-  for now, all the fancy and terminator code is stuffed into these two functions.
-  TODO: split out the fancys and terminators so they're added like types.
-*/
-
-D.Transformers.rekey = function(L, segment, R) {
+D.Parser.rekey = function(L, segment, R) {
   var old_key = segment.key
     , new_key = L.length
     
@@ -1787,6 +1745,21 @@ D.Transformers.rekey = function(L, segment, R) {
 
 
 
+// D.partially_apply = function(fun, arg, number) {
+//   
+// }
+
+// D.maybe_call = function(member) {
+//   return function(item) {
+//     if(typeof item.member == 'function') {
+//       return item.member()
+//     }
+//   }
+// }
+
+
+
+
     /*ooooo.   oooooooooo.     oooo oooooooooooo   .oooooo.   ooooooooooooo  .oooooo..o 
    d8P'  `Y8b  `888'   `Y8b    `888 `888'     `8  d8P'  `Y8b  8'   888   `8 d8P'    `Y8 
   888      888  888     888     888  888         888               888      Y88bo.      
@@ -1796,7 +1769,12 @@ D.Transformers.rekey = function(L, segment, R) {
    `Y8bood8P'  o888bood8P'  .o. 88P o888ooooood8  `Y8bood8P'      o888o     8""88888P'  
                             `Y88*/
 
-// Blocks, Tokens, Segments, Dialects, Ports
+
+//     ______          _____  _______ _     _
+//     |_____] |      |     | |       |____/ 
+//     |_____] |_____ |_____| |_____  |    \_
+//     
+
 
 D.Block = function(segments, wiring) {
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
@@ -1863,12 +1841,23 @@ D.Block = function(segments, wiring) {
   Aliases are converted to Commands prior to PBlockiness (and Command values are then enhanced with method pointer)
 */
 
+//    _______  _____  _     _ _______ __   _
+//       |    |     | |____/  |______ | \  |
+//       |    |_____| |    \_ |______ |  \_|
+//    
 
 D.Token = function(type, value) {
   this.key = D.Etc.token_counter++
   this.type = type
   this.value = value
 }
+
+
+//    _______ _______  ______ _______ _______ __   _ _______
+//    |______ |______ |  ____ |  |  | |______ | \  |    |   
+//    ______| |______ |_____| |  |  | |______ |  \_|    |   
+//    
+
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
@@ -1912,6 +1901,12 @@ D.Segment.prototype.toJSON = function() {
 }
 
 // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
+
+
+//    ______  _____ _______        _______ _______ _______
+//    |     \   |   |_____| |      |______ |          |   
+//    |_____/ __|__ |     | |_____ |______ |_____     |   
+//    
 
 
 
@@ -2028,6 +2023,12 @@ D.Dialect.prototype.get_method = function(handler, method) {
   
 */
 
+
+//     _____   _____   ______ _______
+//    |_____] |     | |_____/    |   
+//    |       |_____| |    \_    |   
+//    
+
 D.Port = function(port_template, space) {
   var flavour = port_template.flavour
     , settings = port_template.settings
@@ -2079,13 +2080,13 @@ D.Port = function(port_template, space) {
 
 
 
-   /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo  .oooooo..o 
-  d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8 d8P'    `Y8 
-  Y88bo.       888   .d88'     .8"888.     888           888         Y88bo.      
-   `"Y8888o.   888ooo88P'     .8' `888.    888           888oooo8     `"Y8888o.  
-       `"Y88b  888           .88ooo8888.   888           888    "         `"Y88b 
-  oo     .d8P  888          .8'     `888.  `88b    ooo   888       o oo     .d8P 
-  8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888ooooood8 8""88888*/
+   /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo 
+  d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8 
+  Y88bo.       888   .d88'     .8"888.     888           888         
+   `"Y8888o.   888ooo88P'     .8' `888.    888           888oooo8    
+       `"Y88b  888           .88ooo8888.   888           888    "    
+  oo     .d8P  888          .8'     `888.  `88b    ooo   888       o 
+  8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888oooooo*/ 
 
 
 
