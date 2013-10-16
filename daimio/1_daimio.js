@@ -129,20 +129,19 @@ D.is_nice = function(value) {
 
 D.to_array = function(value) {
   // this converts non-iterable items into a single-element array
-  if(Array.isArray(value)) return Array.prototype.slice.call(value); // OPT: THINK: why clone it here?
-  if(typeof value == 'object') return D.obj_to_array(value);
-  if(value === false) return []; // hmmm...
-  if(!D.is_nice(value)) return []; // double hmmm.
-  return [value];
-};
+  if(Array.isArray(value))      return value
+  if(typeof value == 'object')  return D.obj_to_array(value)
+  if(value === false)           return []                     // hmmm...
+  if(!D.is_nice(value))         return []                     // double hmmm.
+                                return [value]
+}
 
 D.obj_to_array = function(obj) {
-  var arr = [];
-  for(key in obj) {
-    arr.push(obj[key]);
-  }
-  return arr;
-};
+  var arr = []
+  for(key in obj)
+    arr.push(obj[key])
+  return arr
+}
 
 D.blockify = function(value) {
   return D.Types['block'](value)
