@@ -390,3 +390,202 @@ You can just do JSON.stringify(value, D.scrub_var, 2) instead:
     //     }
     //   }
     // };
+
+
+
+
+    // Find some positions for a variable path... then mod them with a callback, in-place
+    /*
+
+      Okay. This is ridiculous.
+
+      We want to run fun over every path-matching item in base.
+      Path can contain arrays and wildcards.
+      If base doesn't contain a path segment we'll create it. [optionally]
+      We also want to use this to gather items... so maybe a wrapper where fun is an closured accumulator?
+      This is essentially recursive walk, without the recursion and with our crazy pathing semantics.
+
+      $foo.(:a :b "*") is weird, because it gives you back ($foo.a $foo.b $foo.*)... but if that's what you want ok.
+
+      on last words, do foo(value[word]) for all values and all words [or the appropriate eq]
+      otherwise, return [value[word]] for all values for all words
+
+
+      D.Pathfinders = [{
+        is_it_in_here?
+        get_all_the_ones_that_are_in_here [and return safe refs to them]
+        run some fun over everything in here
+      },{...},...]
+
+      so. given a tree, we want to run a selection function over it and put nodes on our todo queue. 
+        (in this case the selector changes based on tree layer.)
+        (also we might create nodes where they don't exist, or modify existing nodes [like 5->() ])
+      then we want to run a different fun over each "finally left leaf", whatever that means.
+
+
+      A: DON'T OPTIMIZE
+      B: DO PEEK ONLY, NOT POKE
+      C: ONLY DO WHAT YOU NEED
+
+    */
+    
+    
+Re: peek / poke
+// TODO: lookahead matching (does nothing in create mode?)
+// TODO: go up one level (is this the same as capture/boxing?)
+// TODO: filter by daimio code (does nothing in create mode?)
+
+// TODO: generalize this more so it runs a callback function instead of setting a static value
+// TODO: have a callback for branch creation as well, then combine this with peek
+// YAGNI: seriously, just get it done and stop abstracting.
+
+
+
+
+
+
+// D.Parser.split_string = function(string) {
+//   var chunks = []
+//     , chunk = ""
+//   
+//   while(chunk = D.Parser.get_next_thing(string)) {
+//     string = string.slice(chunk.length)
+// 
+//     if(chunk[0] == D.Constants.command_open)
+//       chunk = {block: chunk}
+//       
+//     chunks.push(chunk)
+//   }
+//   
+//   /* "asdf {begin foo | string reverse} la{$x}la {end foo}{lkdjfj} askdfj" ==>
+//        ["asdf ", 
+//         {block: "{begin foo | string reverse} la{$x}la {end foo}"}, 
+//         {block: "{lkdjfj}"}, 
+//         " askdfj"]
+//   */
+//   
+// 
+//   return chunks
+// }
+
+
+
+
+// D.partially_apply = function(fun, arg, number) {
+//   
+// }
+
+// D.maybe_call = function(member) {
+//   return function(item) {
+//     if(typeof item.member == 'function') {
+//       return item.member()
+//     }
+//   }
+// }
+
+
+// D.dialect_get_handler = function(dialect, handler) {
+//   if(  handler 
+//     && dialect.commands
+//     && dialect.commands[handler]
+//     && dialect.commands[handler]
+//   ) {
+//     return dialect.commands[handler]
+//   }
+// 
+//   return false
+// }
+// 
+// D.dialect_get_method = function(dialect, handler, method) {
+//   if(  handler 
+//     && method
+//     && dialect.commands
+//     && dialect.commands[handler]
+//     && dialect.commands[handler].methods
+//     && dialect.commands[handler].methods[method]
+//   ) {
+//     return dialect.commands[handler].methods[method]
+//   }
+// 
+//   return false
+// }
+// 
+// 
+
+
+
+// D.dialect_add = function(dialect) {
+//   dialect = JSON.parse(JSON.stringify(dialect)) // no refs, no muss
+//   dialect = D.recursive_sort_object_keys(dialect)
+//   
+//   dialect.id = D.spaceseed_hash(dialect)
+//   D.DIALECTS[dialect.id] = dialect
+// 
+//   return dialect.id
+// }
+
+
+// NOTE: these two aren't used:
+
+// D.Space.prototype.run_listeners = function(value, listeners) {
+//   listeners = listeners || this.listeners
+//   if(value !== undefined) {
+//     for(var i=0, l=listeners.length; i < l; i++) {
+//       // listeners[i](value) // call the registered listeners
+//       // THINK: do we really have to go async here? it's pretty costly. blech.
+// 
+//       ~ function() {var fun = listeners[i]; setImmediate(function() {fun(value)} )} ()
+//       // ~ function() {var fun = listeners[i]; setTimeout(function() {fun(value)}, 0)} ()
+//     }
+//   }
+// }
+
+// D.Space.prototype.run_queue = function() {
+//   if(this.queue.length) {
+//     this.queue.pop()()
+//   }
+// }
+
+
+
+// D.Process.prototype.bound_next = function() {
+//   return this.next.bind(this)
+// } 
+
+// D.Process.prototype.reset = function() {
+//   // THINK: this is probably a bad idea, but it makes debugging easier... can we reuse stacks?
+//   this.last_value = null
+//   this.pcounter = 0
+// } 
+
+
+
+
+
+  lessons learned from JSTT presentation:
+  - spacial structure code needs improvements
+  - variable get/set needs sugar / rethinking (space vars are weird)
+  - need space viz interface
+  - partial application would be great
+  - making new commands needs to be trivial
+  - consuming incoming ships / pipeline param needs to be trivial: {foo x __.x y __.y} or {__ | >_(:x :y) | foo x _x y _y} or something
+  - if types are disjoint maybe powerful commands are ok... (e.g. add) [static analysis is hard anyway]
+  
+  - interop w/ other libraries is good (simple wrapping mechanisms)
+  - demos are really good
+  - paper is maybe a good way to go... maybe excel also. 
+  - CQ separation is good. return id from things that change state. don't for queries. bake this in deeply. "changing state" is a query in a sense, because we store the mutate events and can go back in time, so we're really changing the cached projection of those add-only events to the present time. (we can project to a moment in time but also over a particular set of events: what would this look like *now* with only events from *user 42*?)
+  - start with an empty object, set state via events, cache the most recent projection for queries
+  - objects are only data. commands are "methods". a query command might take one or more object ids and perform some calculation using that data. a command command (oy) might some object ids and perform an operation that changes state -- meaning it add events and reprocesses the projection.
+  - making new commands has issues: 
+    - you want to allow exec code to use them, but either all the command definitions have to be sent along each time or you have to have a response mechanism of "i don't understand/have that block" or you need to compile them down to bare commands
+    - but then how do you do lens-type commands that have elevated permission? is it only done with ports instead? but then you lose the ability to override commands like math -> vectormath or something. 
+    - how do you associate them with a dialect if they're created at runtime like in an exec?
+    - how does the inherent input of a pipeline play with the command's pipeline vars? is this useful?
+    - two different ways to add commands -- at compile time (can have different dialect underneath) and at runtime (just a function wrapper, compiled down to base commands before being sent)... 
+    - or maybe you have to explicitly port requests to a higher oh we said that already
+    
+  - lambda explanation needs work... the quotes really throw people
+  - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | >$ :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
+
+

@@ -947,50 +947,14 @@ D.import_aliases = function(values) {
 //       |       |    |       |______ ______|
 //    
 
-// Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
+
 D.import_type = function(key, fun) {
+  // Daimio's type system is dynamic, weak, and latent, with implicit user-definable casting via type methods.
   D.Types[key] = fun
   // TODO: add some type checking
 };
 
 
-
-
-
-// Find some positions for a variable path... then mod them with a callback, in-place
-/*
-
-  Okay. This is ridiculous.
-  
-  We want to run fun over every path-matching item in base.
-  Path can contain arrays and wildcards.
-  If base doesn't contain a path segment we'll create it. [optionally]
-  We also want to use this to gather items... so maybe a wrapper where fun is an closured accumulator?
-  This is essentially recursive walk, without the recursion and with our crazy pathing semantics.
-
-  $foo.(:a :b "*") is weird, because it gives you back ($foo.a $foo.b $foo.*)... but if that's what you want ok.
-  
-  on last words, do foo(value[word]) for all values and all words [or the appropriate eq]
-  otherwise, return [value[word]] for all values for all words
-
-
-  D.Pathfinders = [{
-    is_it_in_here?
-    get_all_the_ones_that_are_in_here [and return safe refs to them]
-    run some fun over everything in here
-  },{...},...]
-  
-  so. given a tree, we want to run a selection function over it and put nodes on our todo queue. 
-    (in this case the selector changes based on tree layer.)
-    (also we might create nodes where they don't exist, or modify existing nodes [like 5->() ])
-  then we want to run a different fun over each "finally left leaf", whatever that means.
-
-  
-  A: DON'T OPTIMIZE
-  B: DO PEEK ONLY, NOT POKE
-  C: ONLY DO WHAT YOU NEED
-
-*/
 
 //     _____  _______ _______ _     _ _______ _____ __   _ ______  _______  ______ _______
 //    |_____] |_____|    |    |_____| |______   |   | \  | |     \ |______ |_____/ |______
@@ -1010,11 +974,6 @@ D.import_pathfinder = function(name, pf) {
   D.Pathfinders.push(pf)
   // find returns a list of matching items, empty for none, null for N/A [or value/null, if amount is one]
 }
-
-// TODO: lookahead matching (does nothing in create mode?)
-// TODO: go up one level (is this the same as capture/boxing?)
-// TODO: filter by daimio code (does nothing in create mode?)
-
 
 D.peek = function(base, path) {
   path = D.to_array(path)
@@ -1061,12 +1020,9 @@ D.peek = function(base, path) {
   return todo.length ? todo[0] : false
 }
 
-// TODO: generalize this more so it runs a callback function instead of setting a static value
-// TODO: have a callback for branch creation as well, then combine this with peek
-// YAGNI: seriously, just get it done and stop abstracting.
-
-// NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
 D.poke = function(base, path, value) {
+  // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
+  
   path = D.to_array(path)
   
   // THINK: no path works like push, because that's a reasonable use case for this...  
@@ -1116,33 +1072,6 @@ D.poke = function(base, path, value) {
   return base
 }
 
-
-
-
-
-// D.Parser.split_string = function(string) {
-//   var chunks = []
-//     , chunk = ""
-//   
-//   while(chunk = D.Parser.get_next_thing(string)) {
-//     string = string.slice(chunk.length)
-// 
-//     if(chunk[0] == D.Constants.command_open)
-//       chunk = {block: chunk}
-//       
-//     chunks.push(chunk)
-//   }
-//   
-//   /* "asdf {begin foo | string reverse} la{$x}la {end foo}{lkdjfj} askdfj" ==>
-//        ["asdf ", 
-//         {block: "{begin foo | string reverse} la{$x}la {end foo}"}, 
-//         {block: "{lkdjfj}"}, 
-//         " askdfj"]
-//   */
-//   
-// 
-//   return chunks
-// }
 
 
   /*ooooooo.         .o.       ooooooooo.    .oooooo..o oooooooooooo ooooooooo.   
@@ -1413,8 +1342,9 @@ D.Parser.string_to_segments = function(string) {
 }
 
 
-/// NOTE: this always returns an ARRAY of tokens!
 D.Parser.lexify = function(string) {
+  /// NOTE: this always returns an ARRAY of tokens!
+
   var P = D.Parser
     , types = Object.keys(D.SegmentTypes)
     , lexers = types.map(function(type) {return D.SegmentTypes[type].try_lex})
@@ -1566,20 +1496,6 @@ D.Parser.rekey = function(L, segment, R) {
 
 
 
-// D.partially_apply = function(fun, arg, number) {
-//   
-// }
-
-// D.maybe_call = function(member) {
-//   return function(item) {
-//     if(typeof item.member == 'function') {
-//       return item.member()
-//     }
-//   }
-// }
-
-
-
 
     /*ooooo.   oooooooooo.     oooo oooooooooooo   .oooooo.   ooooooooooooo  .oooooo..o 
    d8P'  `Y8b  `888'   `Y8b    `888 `888'     `8  d8P'  `Y8b  8'   888   `8 d8P'    `Y8 
@@ -1596,8 +1512,31 @@ D.Parser.rekey = function(L, segment, R) {
 //     |_____] |_____ |_____| |_____  |    \_
 //     
 
-
 D.Block = function(segments, wiring) {
+  
+  /*
+    head is an array of Segment objects, which look like {
+      type: ""
+      value: ...
+      params: {}
+      ins: {}
+      outs: []
+    }
+    required:
+    type is Number, String, List, Command, Alias, Block 
+      --> during processing, various transformer types are available (currently Terminator and Fancy)
+    value is {Handler: "", Method: ""} for Command, raw value otherwise
+    optional:
+    params is an 1D key/value for Command or Alias with "!" as implicit key and NULL for referenced values
+    ins' keys are param keys, values are previous outs
+    outs are labels for partial products
+
+    Block is a block reference -- typically hash id
+    Transformers are processed prior to ABlockiness (currently terminators and fancy)
+    Aliases are converted to Commands prior to PBlockiness (and Command values are then enhanced with method pointer)
+  */
+
+
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
   // 
   // if(head) {
@@ -1618,6 +1557,7 @@ D.Block = function(segments, wiring) {
   // 
   // if(!this.head && !this.body) // THINK: when does this happen? what should we return?
   //   this.body = [] 
+  
   
   if(!Array.isArray(segments))
     segments = []
@@ -1640,27 +1580,6 @@ D.Block = function(segments, wiring) {
   this.id = hash
 }
 
-/*
-  head is an array of Segment objects, which look like {
-    type: ""
-    value: ...
-    params: {}
-    ins: {}
-    outs: []
-  }
-  required:
-  type is Number, String, List, Command, Alias, Block 
-    --> during processing, various transformer types are available (currently Terminator and Fancy)
-  value is {Handler: "", Method: ""} for Command, raw value otherwise
-  optional:
-  params is an 1D key/value for Command or Alias with "!" as implicit key and NULL for referenced values
-  ins' keys are param keys, values are previous outs
-  outs are labels for partial products
-  
-  Block is a block reference -- typically hash id
-  Transformers are processed prior to ABlockiness (currently terminators and fancy)
-  Aliases are converted to Commands prior to PBlockiness (and Command values are then enhanced with method pointer)
-*/
 
 //    _______  _____  _     _ _______ __   _
 //       |    |     | |____/  |______ | \  |
@@ -1679,7 +1598,6 @@ D.Token = function(type, value) {
 //    ______| |______ |_____| |  |  | |______ |  \_|    |   
 //    
 
-
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
   this.value = D.make_nice(value)
@@ -1691,6 +1609,8 @@ D.Segment = function(type, value, token) {
   this.names = token.names || []
   this.inputs = token.inputs || []
   this.key = token.key || false
+
+  // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
 
   // TODO: refactor the above... oy. pseudosegments vs real segments, default values, etc...
     
@@ -1721,18 +1641,51 @@ D.Segment.prototype.toJSON = function() {
   }
 }
 
-// THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
-
 
 //    ______  _____ _______        _______ _______ _______
 //    |     \   |   |_____| |      |______ |          |   
 //    |_____/ __|__ |     | |_____ |______ |_____     |   
 //    
 
-
-
-// D.Dialect = function(models, aliases, parent) {
 D.Dialect = function(commands, aliases) {
+  
+  /*
+    A Space is an execution context for Blocks.
+    Each Space has a fixed Block that handles incoming messages by
+    - dispatching based on message parameters
+    - executing the message as code
+    - feeding the message through the fixed Block as data
+    Spaces may send messages to each other through channels via the space gateway.
+    Each Space has a private variable context for mutable space variables.
+    Each Space is responsible for its own Processes, but we're using a setTimeout to queue messages 
+      (to avoid blowing the stack and to keep things ordered correctly)
+
+
+
+    Frozen space data: 
+      state: {}
+      dialect: 
+        commands: {}
+        aliases: {}
+      ports: 
+        name:
+        flavour: name [contains: dir, add, dock]
+        settings: flavour data
+        outs: [port_index]
+        typehint: 
+        space: id
+        station: index?
+      stations: 
+        block: id
+        name: ?
+
+    Instances of ports have the flavour in prototype, and have more outs added by parent space. 
+
+    D.SPACESEEDS is for abstract spaces, ie the spacial data that is imported/exported.
+    D.OuterSpace refers to the outermost space [but we should make this an array to allow multiple independent "bubbles" to operate... maybe].
+    An individual space is only referenced from its parent space... or maybe there's a weakmap cache somewhere or something.
+  */
+
   this.commands = commands ? D.deep_copy(commands) : D.Commands
   this.aliases = aliases ? D.clone(aliases) : D.Aliases
   // this.parent = parent
@@ -1763,86 +1716,6 @@ D.Dialect.prototype.get_method = function(handler, method) {
 
   return false
 }
-
-// D.dialect_get_handler = function(dialect, handler) {
-//   if(  handler 
-//     && dialect.commands
-//     && dialect.commands[handler]
-//     && dialect.commands[handler]
-//   ) {
-//     return dialect.commands[handler]
-//   }
-// 
-//   return false
-// }
-// 
-// D.dialect_get_method = function(dialect, handler, method) {
-//   if(  handler 
-//     && method
-//     && dialect.commands
-//     && dialect.commands[handler]
-//     && dialect.commands[handler].methods
-//     && dialect.commands[handler].methods[method]
-//   ) {
-//     return dialect.commands[handler].methods[method]
-//   }
-// 
-//   return false
-// }
-// 
-// 
-
-
-
-// D.dialect_add = function(dialect) {
-//   dialect = JSON.parse(JSON.stringify(dialect)) // no refs, no muss
-//   dialect = D.recursive_sort_object_keys(dialect)
-//   
-//   dialect.id = D.spaceseed_hash(dialect)
-//   D.DIALECTS[dialect.id] = dialect
-// 
-//   return dialect.id
-// }
-
-
-/*
-  A Space is an execution context for Blocks.
-  Each Space has a fixed Block that handles incoming messages by
-  - dispatching based on message parameters
-  - executing the message as code
-  - feeding the message through the fixed Block as data
-  Spaces may send messages to each other through channels via the space gateway.
-  Each Space has a private variable context for mutable space variables.
-  Each Space is responsible for its own Processes, but we're using a setTimeout to queue messages 
-    (to avoid blowing the stack and to keep things ordered correctly)
-
-  
-
-  Frozen space data: 
-    state: {}
-    dialect: 
-      commands: {}
-      aliases: {}
-    ports: 
-      name:
-      flavour: name [contains: dir, add, dock]
-      settings: flavour data
-      outs: [port_index]
-      typehint: 
-      space: id
-      station: index?
-    stations: 
-      block: id
-      name: ?
-      
-  Instances of ports have the flavour in prototype, and have more outs added by parent space. 
-  
-  D.SPACESEEDS is for abstract spaces, ie the spacial data that is imported/exported.
-  D.OuterSpace refers to the outermost space [but we should make this an array to allow multiple independent "bubbles" to operate... maybe].
-  An individual space is only referenced from its parent space... or maybe there's a weakmap cache somewhere or something.
-  
-  
-*/
 
 
 //     _____   _____   ______ _______
@@ -1900,7 +1773,6 @@ D.Port = function(port_template, space) {
 
 
 
-
    /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo 
   d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8 
   Y88bo.       888   .d88'     .8"888.     888           888         
@@ -1908,7 +1780,6 @@ D.Port = function(port_template, space) {
        `"Y88b  888           .88ooo8888.   888           888    "    
   oo     .d8P  888          .8'     `888.  `88b    ooo   888       o 
   8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888oooooo*/ 
-
 
 
 D.Space = function(seed_id, parent) {
@@ -2337,36 +2208,6 @@ D.import_optimizer = function(name, fun) {
 //})
 
 
-// NOTE: these two aren't used:
-
-// D.Space.prototype.run_listeners = function(value, listeners) {
-//   listeners = listeners || this.listeners
-//   if(value !== undefined) {
-//     for(var i=0, l=listeners.length; i < l; i++) {
-//       // listeners[i](value) // call the registered listeners
-//       // THINK: do we really have to go async here? it's pretty costly. blech.
-// 
-//       ~ function() {var fun = listeners[i]; setImmediate(function() {fun(value)} )} ()
-//       // ~ function() {var fun = listeners[i]; setTimeout(function() {fun(value)}, 0)} ()
-//     }
-//   }
-// }
-
-// D.Space.prototype.run_queue = function() {
-//   if(this.queue.length) {
-//     this.queue.pop()()
-//   }
-// }
-
-
-/*
-  A Process executes a single Block from start to finish, executing each segment in turn and handling the wiring.
-  Returns the last value from the Block's pipeline, or passes that value to prior_starter() and returns NaN if any segments go async.
-  Each Process is used only once, for that one Block execution, and then goes away.
-  A Process may launch sub-processes, depending on the segments in the Block.
-*/
-
-
   /*ooooooo.   ooooooooo.     .oooooo.     .oooooo.   oooooooooooo  .oooooo..o  .oooooo..o 
   `888   `Y88. `888   `Y88.  d8P'  `Y8b   d8P'  `Y8b  `888'     `8 d8P'    `Y8 d8P'    `Y8 
    888   .d88'  888   .d88' 888      888 888           888         Y88bo.      Y88bo.      
@@ -2377,6 +2218,14 @@ D.import_optimizer = function(name, fun) {
 
 
 D.Process = function(space, block, scope, prior_starter) {
+
+  /*
+      A Process executes a single Block from start to finish, executing each segment in turn and handling the wiring.
+      Returns the last value from the Block's pipeline, or passes that value to prior_starter() and returns NaN if any segments go async.
+      Each Process is used only once, for that one Block execution, and then goes away.
+      A Process may launch sub-processes, depending on the segments in the Block.
+  */
+
   this.pid = D.Etc.process_counter++
   this.starttime = Date.now()
   this.current = 0
@@ -2491,51 +2340,6 @@ D.Process.prototype.next = function() {
   
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
 }
-
-// D.Process.prototype.bound_next = function() {
-//   return this.next.bind(this)
-// } 
-
-// D.Process.prototype.reset = function() {
-//   // THINK: this is probably a bad idea, but it makes debugging easier... can we reuse stacks?
-//   this.last_value = null
-//   this.pcounter = 0
-// } 
-
-
-
-
-
-/*
-  lessons learned from JSTT presentation:
-  - spacial structure code needs improvements
-  - variable get/set needs sugar / rethinking (space vars are weird)
-  - need space viz interface
-  - partial application would be great
-  - making new commands needs to be trivial
-  - consuming incoming ships / pipeline param needs to be trivial: {foo x __.x y __.y} or {__ | >_(:x :y) | foo x _x y _y} or something
-  - if types are disjoint maybe powerful commands are ok... (e.g. add) [static analysis is hard anyway]
-  
-  - interop w/ other libraries is good (simple wrapping mechanisms)
-  - demos are really good
-  - paper is maybe a good way to go... maybe excel also. 
-  - CQ separation is good. return id from things that change state. don't for queries. bake this in deeply. "changing state" is a query in a sense, because we store the mutate events and can go back in time, so we're really changing the cached projection of those add-only events to the present time. (we can project to a moment in time but also over a particular set of events: what would this look like *now* with only events from *user 42*?)
-  - start with an empty object, set state via events, cache the most recent projection for queries
-  - objects are only data. commands are "methods". a query command might take one or more object ids and perform some calculation using that data. a command command (oy) might some object ids and perform an operation that changes state -- meaning it add events and reprocesses the projection.
-  - making new commands has issues: 
-    - you want to allow exec code to use them, but either all the command definitions have to be sent along each time or you have to have a response mechanism of "i don't understand/have that block" or you need to compile them down to bare commands
-    - but then how do you do lens-type commands that have elevated permission? is it only done with ports instead? but then you lose the ability to override commands like math -> vectormath or something. 
-    - how do you associate them with a dialect if they're created at runtime like in an exec?
-    - how does the inherent input of a pipeline play with the command's pipeline vars? is this useful?
-    - two different ways to add commands -- at compile time (can have different dialect underneath) and at runtime (just a function wrapper, compiled down to base commands before being sent)... 
-    - or maybe you have to explicitly port requests to a higher oh we said that already
-    
-  - lambda explanation needs work... the quotes really throw people
-  - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | >$ :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
-  
-  
-*/
-
 
 
    /*ooooo..o                                                                             .o8           
@@ -2721,9 +2525,6 @@ D.spaceseed_add = function(seed) {
 D.spaceseed_hash = function(seed) {
   return murmurhash(JSON.stringify(seed))
 }
-
-
-
 
 
 D.make_some_space = function(stringlike) {
@@ -2921,7 +2722,6 @@ D.seedlikes_from_string = function(stringlike) {
   return seedlikes
 }
 
-
 D.make_spaceseeds = function(seedlikes) {
   var seedmap = {}
     , newseeds = {}
@@ -3015,7 +2815,6 @@ D.make_spaceseeds = function(seedlikes) {
 
 
 
-
 // FIRE IT UP
 
 
@@ -3025,6 +2824,4 @@ D.ExecutionSpace =
   new D.Space(
     D.spaceseed_add(
       {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
-
-
 
