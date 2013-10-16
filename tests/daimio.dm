@@ -482,55 +482,26 @@
       {21 | add (__ __ -1)}
         [42,42,20]
 
-    Rethinking Case 2. Having two different meanings of <code>__</code> is probably overly complicated. I still like the idea of imagining the process input peeking in through the beginning of the pipeline, and I'd like to use that some day for things like {(1 2 3) | map "{add 1}"} but if we're going to be explicit about it why not use a different symbol? 
-    [well, for one reason, some aliases have pipes in them: <code>{(1 0 3) | map "{then :ham else :foo}"}</code> -> <code>(:ham :foo :ham)</code> via front-pipes]
-    maybe... maybe having <code>({__} {__})</code> freak out and do stupid things is reasonable, in the same way that other languages give syntax errors for stupid things. it's hard making a language with no real errors!
-    and it's not like that construct is really that stupid -- if you really want the process input maybe that should give it to you? or... no, it's really stupid. it's inside another pipeline, so it can't be the outermost thing in the process. it should probably just return nothing, or "". Probably ("{__}" "{__}") -> ("" "") also. 
-    BUT, {(1 2 3) | map "{__}"} -> (1 2 3). We really need an identity block. It's just that in the above it's getting the identity of nothing. 
-  
-  
-    Case 2: access to process input. These are simple cases involving a single pipeline. Notice that the magic pipe must be in the first segment to access the process's input value. Magic pipes in later segments will reference the previous segment value.
-  
-    ----- thoughts on this:
-    - if we made 'process input' a different symbol we wouldn't have embedded pipeline reference issues 
-      - referencing the previous segment from inside a list is an important case
-      - is it the only case??
-    - starting a pipeline with __ is beautifully simple
-      - it clearly indicates the intention of pulling in outside input
-      - it demonstrates the linear nature of a pipeline: one thing in, one thing out
-      - we lose this if we allow references inside a pipeline (oh we're doing that already oh dear)
-    - the block case with multiple pipelines each referencing input is important, because
-      - we want those to be able to run in parallel
-      - a given pipeline should work the same regardless of context
-      - so we can't just rely on 'first use' of __ and alias it after
+  Case 2: process input
+    "{__}" links to process input
+     {__}  links to previous value
+    so: if it's in a string, it's input.
+        if it's in a list or param value it's previous value.
     
-    so it sounds like a different symbol is in order to refer universally to the input.
-    OR we do something fiddly like {__} means input if it's outermost but embedded it never does (yuck).
-    //   {__ | add 1}
-    //   {_in | add 1}
-    //   {*in | add 1}
-    //   {___ | add 1}
-    
-    er... if it's inside a string, it maps to '*in'.
-    if it's inside a list, it maps to prevval.
-    is it that simple?
-    // this is a pipe
-    // ceci n'est pas une pipe
-    
-    {(1 2 3) | map block "{__ | add 4}"}
-      [5,6,7]
-    {(1 2 3) | map block "{add __ to 4}"}
-      [5,6,7]
-    {(1 2 3) | map block "{add __ to __}"}
-      [2,4,6]
-    {(1 2 3) | map block "{__}"}
-      [1,2,3]
-    {(1 2 3) | map block "{__ | __}"}
-      [1,2,3]
-    {(1 2 3) | map block "{__ | __ | add 1}"}
-      [2,3,4]
-    {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
-      [3,4,5]
+      {(1 2 3) | map block "{__ | add 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add __ to 4}"}
+        [5,6,7]
+      {(1 2 3) | map block "{add __ to __}"}
+        [2,4,6]
+      {(1 2 3) | map block "{__}"}
+        [1,2,3]
+      {(1 2 3) | map block "{__ | __}"}
+        [1,2,3]
+      {(1 2 3) | map block "{__ | __ | add 1}"}
+        [2,3,4]
+      {(1 2 3) | map block "{__ | add 1 | __ | add 1}"}
+        [3,4,5]
   
     Case 2a: block-level access. Multiple pipelines in a block can each access the process input.
       {begin foo | each data (1 2 3)} {__ | add 3} x {__ | add 7} ::{end foo}
@@ -543,7 +514,7 @@
         4 x 8 :: 5 x 9 :: 6 x 10 ::
   
     Notes:
-    To connect to the process input you must explicitly add the magic pipe to the first segment:
+    To connect to the process input you must explicitly add the magic pipe to the first segment.
       {(1 2 3) | map block "{__ | add to 4}"}
         [5,6,7]
       {(1 2 3) | map block "{add to 4}" // bad}
@@ -552,18 +523,6 @@
         [5,6,7]
       {(1 2 3) | map block "{add 4}" // bad}
         [4,4,4]
-    
-    
-////    //The first segment of an inline pipeline also grab the process input instead of the previous segment value -- this is almost certainly not what you want. 
-////THINK: how does this square off with __.foo? that essentially becomes {__ | list peek path (:foo)} and could be a param value or in a list. so {1 | ({__} {__})} should be (1 1) by that logic. what was the issue with that?
-////If, while using a pipeline as a param value, you want access to the previous pipe segment's value, then you should either refactor the pipeline to do the processing beforehand (as above), or assign the value to a pipeline var.
-
-
-    NEW RULES!
-    - "{__}" links to process input
-    - {__} links to previous value
-    so: if it's in a string, it's input.
-        if it's in a list or param value it's previous value.
 
 
       {20 | add {__ | add 2}}
@@ -3019,46 +2978,6 @@ BASIC SYNTAX TESTS
         777
 
 
-<div class="page-header" id="id_pipeline_parallelism">
-  <h2>Some notes on pipeline parallelism</h2>
-</div>
-
-A few example pipelines we can parallelize internally.
-
-//    {  123 
-//     | >in | add 1 | >out1
-//    || _in | add 2 | >out2
-//    || _in | add 3 | >out3
-//    || (out1 out2 out3)}
-Those three middle pipelines could run in parallel.
-
-//    {123 | (
-//      {__ | add 1}
-//      {__ | add 2}
-//      {__ | add 3}
-//    )}
-
-//    {123 | (
-//      {__ | add $x | >$x}
-//      {__ | add $x | >$x}
-//      {__ | add $x | >$x}
-//    )}
-
-That last one leads to non-determinism if you parallelize without fixing the execution order. 
-
-If we're going to allow in-pipeline parallelism, we open up two questions: 
-1) what is $x inside each pipeline?
-2) what is $x at the end? 
-
-And probably, the answers are
-1) A separate copy of the initial $x for each pipeline (clearly this hurts performance, but a: we don't care b: don't use space vars in parallel pipelines c: don't be daft)
-2) Last Write Wins, in expressed order [does compilation ever hurt reasoning about this, or is it guaranteed order invariant?]
-
-EXCEPT. Except if we do the above, $x is completely different at the end than if we don't run in parallel. 
-SO: space vars CAN NOT be written in pipelines run in parallel -- writing a space var forces the entire sequence to be run sequentially. 
-Same holds true for writing to like-named pipeline vars: those are errors, and force sequential execution.
-
-
 <div class="page-header" id="id_app_known">
   <h2>Known Bugs</h2>
 </div>
@@ -3105,31 +3024,3 @@ Same holds true for writing to like-named pipeline vars: those are errors, and f
     Tail position pipeline vars flake out [probably requires placeholder segtype]
       {2 | >two | "" | _two}
         2
-
-
-<div class="page-header" id="id_app_dec">
-    <h2>Decisions to be Made</h2>
-</div>
-    In approximate order of importance... write about these when you make them.
-
-    Blocks aren't strings. How do we distinguish them? How do they work? When are they executed? What's their syntax? Can we make string manipulation easier? Can we keep string generation just as easy? List all cases.
-
-    Objects vs Arrays in JSON output: 
-      - which commands retain keys? all that possibly can?
-      - when are objects converted back into arrays? only on demand? not specified? anytime there's integer keys? finally a use for to_json?
-  
-    How do we walk a tree to prune things, extract things, etc?
-      -- peek/poke partially solves this, but we want to combine pathfinders with lambda blocks (one to decide whether to run the other).
-  
-    Port creation / port invocation / command invocation: these are very similar. 
-    - can we consolidate them?
-    - how do we give port creation/invocation the same degree of helpful insight commands have?
-  
-    If all side effects are in outside ports, commands become pure and controlling access to them is less necessary. 
-    - how do we limit access to outside ports in a safe and progressively available way?
-    - do dialects matter? can we compile down based on a particular "library" of commands we expect to have available anywhere the code is executed?
-    - we'll still want to overwrite commands and possible white/black list them, but it's really the ports we're limiting... do commands contain ports? can we pull this back in to the command level in some way? do we want to?
-  
-    Knowing when exactly a block will execute is hard.
-
-    What should booleans coerce to? 0 and 1 seem reasonable, but "" is nice for certain UI use cases (which ones?).
