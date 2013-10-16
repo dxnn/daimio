@@ -123,7 +123,7 @@ D.is_false = function(value) {
 }
 
 D.make_nice = function(value, otherwise) {
-  return D.is_nice ? value : (otherwise || '')
+  return D.is_nice(value) ? value : (otherwise || '')
 }
 
 D.is_nice = function(value) {
