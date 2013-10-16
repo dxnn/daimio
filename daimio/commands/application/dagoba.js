@@ -438,7 +438,8 @@ D.import_models({
           
           // TODO: scrub bad paths, like 'startport'
           
-          D.recursive_insert(thing, path.split('.'), value);
+          // maybe instead D.recursive_extend(thing, path.split('.'), value);
+          // D.recursive_insert(thing, path.split('.'), value);
           
           return graph.id;
         },

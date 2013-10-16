@@ -94,17 +94,6 @@ D.on_error = function(command, error) {
   return ""
 }
 
-D.clone = function(value) {
-  if(value && value.toJSON)
-    return D.deep_copy(value)
-
-  try {
-    return JSON.parse(JSON.stringify(value))
-  } catch (e) {
-    return D.deep_copy(value)
-  }
-}
-
 D.is_false = function(value) {
   if(!value) 
     return true // '', 0, false, NaN, null, undefined
@@ -122,12 +111,12 @@ D.is_false = function(value) {
   return true
 }
 
-D.make_nice = function(value, otherwise) {
-  return D.is_nice(value) ? value : (otherwise || '')
-}
-
 D.is_nice = function(value) {
   return !!value || value == false    // not NaN, null, or undefined
+}
+
+D.make_nice = function(value, otherwise) {
+  return D.is_nice(value) ? value : (otherwise || '')
 }
 
 D.to_array = function(value) {
@@ -201,44 +190,27 @@ D.string_to_regex = function(string, global) {
 }
 
 
-// NOTE: this extends by reference, but also returns the new value
-D.extend = function(base, value) {
-  for(var key in value) {
-    if(!value.hasOwnProperty(key)) continue
-    base[key] = value[key]
+D.clone = function(value) {
+  if(value && value.toJSON)
+    return D.deep_copy(value)
+
+  try {
+    return JSON.parse(JSON.stringify(value))
+  } catch (e) {
+    return D.deep_copy(value)
   }
-  return base
 }
 
-// NOTE: this extends by reference, but also returns the new value
-D.recursive_extend = function(base, value) {
-  for(var key in value) {
-    if(!value.hasOwnProperty(key)) continue
-    
-    if(typeof base[key] == 'undefined') {
-      base[key] = value[key]
-      continue
-    }
-    
-    if(typeof base[key] != 'object') continue  // ignore scalars in base
-    
-    if(typeof value[key] != 'object') continue // can't recurse into scalar
-    
-    if(Array.isArray(base) && Array.isArray(value)) {
-      if(base[key] == value[key]) continue
-      base.push(value[key])
-      continue // THINK: this bit is pretty specialized for my use case -- can we make it more general?
-    }
-    
-    D.recursive_extend(base[key], value[key])
-  }
-  
-  return base
+D.deep_copy = function(value) {
+  // deep copy an internal variable (primitives and blocks only)
+  if(!value || typeof value != 'object')  return value // number, string, or boolean
+  if(D.is_block(value))                   return value // blocks are immutable, so pass-by-ref is ok.
+                                          return D.recursive_leaves_copy(value, D.deep_copy)
 }
 
-// apply a function to every leaf of a tree, but generate a new copy of it as we go
-// THINK: only used by D.deep_copy, which we maybe don't need anymore
 D.recursive_leaves_copy = function(values, fun, seen) {
+  // apply a function to every leaf of a tree, but generate a new copy of it as we go
+  // THINK: only used by D.deep_copy, which we maybe don't need anymore
   if(!values || typeof values != 'object') return fun(values);
 
   seen = seen || []; // only YOU can prevent infinite recursion...
@@ -265,34 +237,44 @@ D.recursive_leaves_copy = function(values, fun, seen) {
   return new_values;
 };
 
-// this is different from recursive_merge, because it replaces subvalues instead of merging
-D.recursive_insert = function(into, keys, value) {
-  // THINK: we're not blocking infinite recursion here -- is it likely to ever happen?
-  if(!into || typeof into != 'object') into = {};
-  
-  if(typeof keys == 'string') keys = keys.split('.');
-  
-  if(keys.length) {
-    var key = keys.shift();
-    into[key] = D.recursive_insert(into[key], keys, value);
-  }
-  else {
-    into = value;
-  }
-  
-  return into;
-};
 
-// deep copy an internal variable (primitives and blocks only)
-// NOTE: this is basically toPrimitive, for things that are already primitives. 
-D.deep_copy = function(value) {
-  if(!value || typeof value != 'object') return value; // number, string, or boolean
-  if(D.is_block(value)) return value; // blocks are immutable, so pass-by-ref is ok.
-  return D.recursive_leaves_copy(value, D.deep_copy);
-};
+D.extend = function(base, value) {
+  // NOTE: this extends by reference, but also returns the new value
+  for(var key in value) {
+    if(!value.hasOwnProperty(key)) continue
+    base[key] = value[key]
+  }
+  return base
+}
 
-// copy and scrub a variable from the outside world
+D.recursive_extend = function(base, value) {
+  // NOTE: this extends by reference, but also returns the new value
+  for(var key in value) {
+    if(!value.hasOwnProperty(key))    continue
+    
+    if(typeof base[key] == 'undefined') {
+      base[key] = value[key]
+      continue
+    }
+    
+    if(typeof base[key]  != 'object') continue  // ignore scalars in base
+    if(typeof value[key] != 'object') continue  // can't recurse into scalar
+    
+    if(Array.isArray(base) && Array.isArray(value)) {
+      if(base[key] == value[key])     continue
+      base.push(value[key])
+      continue // THINK: this bit is pretty specialized for my use case -- can we make it more general?
+    }
+    
+    D.recursive_extend(base[key], value[key])
+  }
+  
+  return base
+}
+
+
 D.scrub_var = function(value) {
+  // copy and scrub a variable from the outside world
   try {
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
   } catch (e) {
@@ -303,8 +285,8 @@ D.scrub_var = function(value) {
   }
 };
 
-// this is like defunc, but not as nice -- it trashes funcs and snips circular refs
 D.mean_defunctionize = function(values, seen) {
+  // this trashes funs and snips circular refs
   if(!D.is_nice(values)) return false;
   if(!values) return values;
 
@@ -350,18 +332,9 @@ D.sort_object_keys = function(obj, sorter) {
   return newobj
 }
 
-D.recursive_sort_object_keys = function(obj, sorter) { // THINK: this allocates like a fiend
-  if(typeof obj != 'object')
-    return obj
-  
-  for(var key in obj)
-    obj[key] = D.recursive_sort_object_keys(obj[key], sorter)
-   
-  return D.sort_object_keys(obj, sorter)
-}
-
 
 D.get_block = function(ablock_or_segment) {
+  // this is only used in D.Space.prototype.execute
   if(!ablock_or_segment)
     return new D.Block()
   if(ablock_or_segment.segments)
@@ -457,9 +430,8 @@ D.scrub_list = function(list) {
   return D.to_array(list)
 }
 
-
-// give each item its time in the sun. also, allow other items to be added, removed, reordered or generally mangled
 D.mungeLR = function(items, fun) {
+  // give each item its time in the sun. also, allow other items to be added, removed, reordered or generally mangled
   var L = []
     , R = items
     , item = {}
@@ -477,16 +449,9 @@ D.mungeLR = function(items, fun) {
   return L
 }
 
-D.block_ref_to_string = function(value) {
-  // var json = JSON.stringify(value)
-  // return json.slice(1, -1) // JSON puts extra quotes around the string value that we don't want
-  return value.toJSON()
-}
 
-
-
-// This is *always* async, so provide a callback.
 D.run = function(daimio, ultimate_callback, space) {
+  // This is *always* async, so provide a callback.
   if(!daimio) return ""
   
   daimio = "" + daimio // TODO: ensure this is a string in a nicer fashion...
@@ -523,17 +488,11 @@ D.run = function(daimio, ultimate_callback, space) {
 }
 
 
-
-
 if (typeof exports !== 'undefined') {
-
-  //     mmh = require('murmurhash3')
-  // 
-  // var murmurhash = mmh.murmur128HexSync
-     
-  if (typeof module !== 'undefined' && module.exports) {
+  // TODO: make this work!
+  // var murmurhash = require('murmurhash3')
+  if (typeof module !== 'undefined' && module.exports)
     exports = module.exports = D
-  }
   exports.D = D
 }
 
