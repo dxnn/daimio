@@ -483,8 +483,8 @@
         [42,42,20]
 
   Case 2: process input
-    "{__}" links to process input
-     {__}  links to previous value
+    -- "{__}" links to process input
+    --  {__}  links to previous value
     so: if it's in a string, it's input.
         if it's in a list or param value it's previous value.
     

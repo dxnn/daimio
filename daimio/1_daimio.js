@@ -122,10 +122,13 @@ D.is_false = function(value) {
   return true
 }
 
+D.make_nice = function(value, otherwise) {
+  return D.is_nice ? value : (otherwise || '')
+}
+
 D.is_nice = function(value) {
-  return !!value || value == false; // not NaN, null, or undefined
-  // return (!!value || (value === value && value !== null && value !== void 0)); // not NaN, null, or undefined
-};
+  return !!value || value == false    // not NaN, null, or undefined
+}
 
 D.to_array = function(value) {
   // this converts non-iterable items into a single-element array
@@ -421,14 +424,14 @@ D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfu
 }
 
 D.string_concat = function(total, value) {
-  total = D.is_nice(total) ? total : ''
-  value = D.is_nice(value) ? value : ''
+  total = D.make_nice(total)
+  value = D.make_nice(value)
   return D.stringify(total) + D.stringify(value)
 }
 
 D.list_push = function(total, value) {
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
-  value = D.is_nice(value) ? value : ""
+  value = D.make_nice(value)
   total.push(value)
   return total
 }
@@ -439,7 +442,7 @@ D.list_set = function(total, value, key) {
   var keys = Object.keys(total)
   if(!key) key = keys.length
   
-  value = D.is_nice(value) ? value : ""
+  value = D.make_nice(value)
   
   total[key] = value
   return total
@@ -1860,7 +1863,7 @@ D.Token = function(type, value) {
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
-  this.value = D.is_nice(value) ? value : ""
+  this.value = D.make_nice(value)
   
   if(!token) 
     token = {}
@@ -2057,7 +2060,7 @@ D.Port = function(port_template, space) {
   port.flavour = flavour
   port.station = station || undefined
   port.typehint = typehint
-  port.settings = D.is_nice(settings) ? settings : {}
+  port.settings = D.make_nice(settings, {})
   
   port.pair = false
   
@@ -2617,7 +2620,7 @@ D.Process.prototype.done = function() {
     }
   } 
   
-  output = D.is_nice(output) ? output : "" // THINK: should probably do this for each possible output in the array form
+  output = D.make_nice(output)   // THINK: should probably do this for each possible output in the array form
 
   if(this.asynced) {
     this.asynced = false // ORLY??
