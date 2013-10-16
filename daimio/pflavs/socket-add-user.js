@@ -1,4 +1,4 @@
-D.import_port_type('socket-add-user', {
+D.import_port_flavour('socket-add-user', {
   dir: 'in',
   outside_add: function() {
     var self = this

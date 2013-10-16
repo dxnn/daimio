@@ -1,4 +1,4 @@
-D.import_port_type('dom-on-submit', {
+D.import_port_flavour('dom-on-submit', {
   dir: 'in',
   outside_add: function() {
     var self = this

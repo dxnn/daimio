@@ -1,4 +1,4 @@
-D.import_port_type('svg-rotate', {
+D.import_port_flavour('svg-rotate', {
   dir: 'out',
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)

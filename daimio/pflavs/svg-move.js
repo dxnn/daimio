@@ -10,7 +10,7 @@ D.string_to_svg_frag = function(string) {
 };
 
 
-D.import_port_type('svg-move', {
+D.import_port_flavour('svg-move', {
   dir: 'out',
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)

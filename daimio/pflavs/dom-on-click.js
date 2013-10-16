@@ -1,4 +1,4 @@
-D.import_port_type('dom-on-click', {
+D.import_port_flavour('dom-on-click', {
   dir: 'in',
   outside_add: function() {
     var self = this

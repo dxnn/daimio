@@ -1,24 +1,24 @@
 
 
-D.import_port_type('in', {
+D.import_port_flavour('in', {
   dir: 'in'
 })
 
-D.import_port_type('err', {
+D.import_port_flavour('err', {
   dir: 'out'
   // TODO: ???
 })
 
-D.import_port_type('out', {
+D.import_port_flavour('out', {
   dir: 'out'
 })
 
-D.import_port_type('up', {
+D.import_port_flavour('up', {
   dir: 'up'
   // THINK: this can only live on a space, not a station
 })
 
-D.import_port_type('down', {
+D.import_port_flavour('down', {
   dir: 'down',
   exit: function(ship, process, callback) {
     // go down, then return back up...
@@ -41,7 +41,7 @@ D.import_port_type('down', {
   }
 })
 
-D.import_port_type('exec', {
+D.import_port_flavour('exec', {
   dir: 'in',
   exit: function(ship) { 
     if(!this.space)

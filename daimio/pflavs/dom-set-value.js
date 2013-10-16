@@ -1,6 +1,6 @@
 // TODO: convert these 'set' style ports to use track_event
 
-D.import_port_type('dom-set-value', {
+D.import_port_flavour('dom-set-value', {
   dir: 'out',
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.

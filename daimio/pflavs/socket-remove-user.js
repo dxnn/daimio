@@ -1,4 +1,4 @@
-D.import_port_type('socket-remove-user', {
+D.import_port_flavour('socket-remove-user', {
   dir: 'in',
   outside_add: function() {
     var self = this

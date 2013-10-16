@@ -1,4 +1,4 @@
-D.import_port_type('dom-do-submit', {
+D.import_port_flavour('dom-do-submit', {
   dir: 'out',
   outside_exit: function(ship) {
     if(this.element)

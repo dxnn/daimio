@@ -1,4 +1,4 @@
-D.import_port_type('dom-on-blur', {
+D.import_port_flavour('dom-on-blur', {
   dir: 'in',
   outside_add: function() {
     var self = this

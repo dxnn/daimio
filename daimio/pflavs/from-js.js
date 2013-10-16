@@ -1,4 +1,4 @@
-D.import_port_type('from-js', {
+D.import_port_flavour('from-js', {
   dir: 'in',
   outside_add: function() {
     var self = this

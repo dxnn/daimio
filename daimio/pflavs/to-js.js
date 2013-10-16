@@ -1,4 +1,4 @@
-D.import_port_type('to-js', {
+D.import_port_flavour('to-js', {
   dir: 'out',
   outside_exit: function(ship) {
     // this is very very stupid

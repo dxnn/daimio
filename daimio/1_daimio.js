@@ -94,27 +94,6 @@ D.on_error = function(command, error) {
   return ""
 }
 
-D.is_false = function(value) {
-  if(!value) 
-    return true // '', 0, false, NaN, null, undefined
-  
-  if(typeof value != 'object')
-    return false // THINK: is this always right?
-  
-  if(Array.isArray(value))
-    return !value.length
-
-  for(var key in value)
-    if(value.hasOwnProperty(key))
-      return false
-  
-  return true
-}
-
-D.is_nice = function(value) {
-  return !!value || value == false    // not NaN, null, or undefined
-}
-
 D.make_nice = function(value, otherwise) {
   return D.is_nice(value) ? value : (otherwise || '')
 }
@@ -135,6 +114,19 @@ D.obj_to_array = function(obj) {
   return arr
 }
 
+D.sort_object_keys = function(obj, sorter) {
+  if(typeof obj != 'object')
+    return {}
+    
+  var newobj = {}
+    , keys = Object.keys(obj).sort(sorter)
+  
+  for(var i=0, l=keys.length; i < l; i++)
+    newobj[keys[i]] = obj[keys[i]]
+  
+  return newobj
+}
+
 D.blockify = function(value) {
   return D.Types['block'](value)
 }
@@ -149,6 +141,27 @@ D.execute_then_stringify = function(value, prior_starter, process) {
   } else {
     return D.stringify(value)
   }
+}
+
+D.is_false = function(value) {
+  if(!value) 
+    return true // '', 0, false, NaN, null, undefined
+  
+  if(typeof value != 'object')
+    return false // THINK: is this always right?
+  
+  if(Array.isArray(value))
+    return !value.length
+
+  for(var key in value)
+    if(value.hasOwnProperty(key))
+      return false
+  
+  return true
+}
+
+D.is_nice = function(value) {
+  return !!value || value == false    // not NaN, null, or undefined
 }
 
 D.is_block = function(value) {
@@ -319,20 +332,6 @@ D.mean_defunctionize = function(values, seen) {
 };
 
 
-D.sort_object_keys = function(obj, sorter) {
-  if(typeof obj != 'object')
-    return {}
-    
-  var newobj = {}
-    , keys = Object.keys(obj).sort(sorter)
-  
-  for(var i=0, l=keys.length; i < l; i++)
-    newobj[keys[i]] = obj[keys[i]]
-  
-  return newobj
-}
-
-
 D.get_block = function(ablock_or_segment) {
   // this is only used in D.Space.prototype.execute
   if(!ablock_or_segment)
@@ -496,145 +495,6 @@ if (typeof exports !== 'undefined') {
   exports.D = D
 }
 
-
-
-// D.Etc.niceifyish = function(value, whitespace) {
-//   // this takes an array of un-stringify-able values and returns the nice bits, mostly
-//   // probably pretty slow -- this is just a quick hack for console debugging
-//   
-//   var purge = function(key, value) {
-//     try {
-//       JSON.stringify(value)
-//     } catch(e) {
-//       if(key && +key !== +key)
-//         value = undefined
-//     }
-//     return value
-//   }
-//   
-//   return JSON.stringify(value, purge, whitespace)
-// }
-
-// DFS over data. apply fun whenever pattern returns true. pattern and fun each take one arg.
-// NOTE: no checks for infinite recursion. call D.scrub_var if you need it.
-// D.recursive_walk = function(data, pattern, fun) {
-//   var true_pattern = false
-//   
-//   try {
-//     true_pattern = pattern(data) // prevents bad pattern
-//   } catch (e) {}
-//   
-//   
-//   if(true_pattern) {
-//     try {
-//       fun(data) // prevents bad fun
-//     } catch (e) {}
-//   }
-//   
-//   if(!data || typeof data != 'object') return
-//   
-//   for(var key in data) {
-//     if(!data.hasOwnProperty(key)) return
-//     D.recursive_walk(data[key], pattern, fun)
-//   }
-// }
-
-// run every function in a tree (but not funs funs return)
-// D.recursive_run = function(values, seen) {
-//   if(D.is_block(values)) return values;
-//   if(typeof values == 'function') return values();
-//   if(!values || typeof values != 'object') return values;
-//   
-//   seen = seen || []; // only YOU can prevent infinite recursion...
-//   if(seen.indexOf(values) !== -1) return values;
-//   seen.push(values);
-// 
-//   var new_values = (Array.isArray(values) ? [] : {});
-//   
-//   for(var key in values) {
-//     var value = values[key];
-//     if(typeof value == 'function') {
-//       new_values[key] = value();
-//     }
-//     else if(typeof value == 'object') {
-//       new_values[key] = D.recursive_run(value, seen);
-//     }
-//     else {
-//       new_values[key] = value;
-//     }
-//   }
-//   return new_values;
-// };
-
-// NOTE: defunctionize does a deep clone of 'values', so the value returned does not == (pointers don't match)
-// THINK: there may be cases where this doesn't actually deep clone...
-
-// run functions in a tree until there aren't any left (runs funs funs return)
-// D.defunctionize = function(values) {
-//   if(!values) return values; // THINK: should we purge this of nasties first?
-// 
-//   if(values.__nodefunc) return values;
-//   
-//   if(D.is_block(values)) return values.run(); // THINK: D.defunctionize(values.run()) ??  
-//   if(typeof values == 'function') return D.defunctionize(values());
-//   if(typeof values != 'object') return values;
-//   
-//   var new_values = (Array.isArray(values) ? [] : {});
-// 
-//   // this is a) a little weird b) probably slow and c) probably borked in old browsers.
-//   Object.defineProperties(new_values, {
-//     __nodefunc: {
-//       value: true, 
-//       enumerable:false
-//     }
-//   });
-//   
-//   for(var key in values) {
-//     var value = values[key];
-//     if(typeof value == 'function') new_values[key] = D.defunctionize(value());
-//     else if(typeof value == 'object') new_values[key] = D.defunctionize(value); 
-//     else new_values[key] = value;
-//   }
-//   
-//   return new_values;
-// };
-
-// walk down into a list following the path, running a callback on each end-of-path item
-// D.recursive_path_walk = function(list, path, callback, parent) {
-//   if(typeof list != 'object') {
-//     if(!path) callback(list, parent); // done walking, let's eat
-//     return; 
-//   }
-// 
-//   // parents for child items
-//   // THINK: this is inefficient and stupid...
-//   var this_parent = {'parent': parent};
-//   for(var key in list) {
-//     this_parent[key] = list[key];
-//   }
-// 
-//   // end of the path?
-//   if(!path) {
-//     for(var key in list) {
-//       callback(list[key], this_parent);
-//     }
-//     return; // out of gas, going home
-//   }
-// 
-//   var first_dot = path.indexOf('.') >= 0 ? path.indexOf('.') : path.length;
-//   var part = path.slice(0, first_dot); // the first bit
-//   path = path.slice(first_dot + 1); // the remainder
-// 
-//   if(part == '*') {
-//     for(var key in list) {
-//       D.recursive_path_walk(list[key], path, callback, this_parent);
-//     }
-//   } else {
-//     if(typeof list[part] != 'undefined') {
-//       D.recursive_path_walk(list[part], path, callback, this_parent);
-//     }
-//   }
-// };
 
 
   /*ooo ooo        ooooo ooooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o 
@@ -807,7 +667,7 @@ D.port_standard_enter = function(ship, process) {
 }
 
 
-D.import_port_type = function(flavour, pflav) {
+D.import_port_flavour = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
     return D.set_error('That port flavour has already been im-port-ed')
   

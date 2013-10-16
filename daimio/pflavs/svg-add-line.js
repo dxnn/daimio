@@ -1,4 +1,4 @@
-D.import_port_type('svg-add-line', {
+D.import_port_flavour('svg-add-line', {
   dir: 'out',
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)
