@@ -621,15 +621,16 @@ D.track_event = function(type, target, callback) {
   }
 }
 
-D.send_value_to_js_port = function(to, value) {
-  // THINK: this should require a space... right?
+D.send_value_to_js_port = function(spaceseed_id, port_thing, value) {
+  // TODO: use an individual space instead of a space class
+  var eventname = spaceseed_id + '-' + port_thing
   
   try {
-    document.dispatchEvent(new CustomEvent(to, { 'detail': value }))
+    document.dispatchEvent(new CustomEvent(eventname, { 'detail': value }))
   } catch(e) {
     // hack for old safari :(
     var event = document.createEvent('Event')
-    event.initEvent(to, true, true)
+    event.initEvent(eventname, true, true)
     event.detail = value
     document.dispatchEvent(event)
   }
