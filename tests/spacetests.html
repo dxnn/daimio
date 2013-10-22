@@ -1,0 +1,155 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+  <title>Daimio Tests</title>
+  <!--
+  <script type="text/javascript" src="../daimio_composite.js"></script>
+  -->
+    <script type="text/javascript" src="../get.php?file=daimio"></script>
+
+  <link rel="stylesheet" href="../css/styles.css" type="text/css" media="screen">
+  
+  <style>
+    .good {
+      background-color: #9f9
+    }
+    .bad {
+      background-color: #f99
+    }
+  </style>
+  
+  <script type="text/javascript" charset="utf-8">
+    // load daimio file
+    function xhr_get(target, callback) {
+      var xhr = new XMLHttpRequest()
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          callback(xhr.responseText)
+        }
+      }
+      xhr.open('GET', target, true)
+      xhr.send(null)
+    }
+    
+    xhr_get('spacetests.dm', function(data) {
+      var chunks = chunker(data)
+        , evaled = evaler(chunks)
+        , output = decorater(evaled)
+      
+      display(output)
+    })
+    
+    function chunker(data) {
+      var lines = data.split(/\n/)
+        , inside_count = 0
+        , grouper = []
+        , count = lines.length - 1
+      
+      return lines.reduce(function(acc, line, index) {
+        var wscount = line.search(/\S/)
+        
+        if(inside_count) {
+          if(wscount < inside_count || index == count) {
+            inside_count = 0
+            if(index == count)
+              grouper.push(line)
+            acc.push({type: 'space', value: grouper.join("\n")})
+            if(index != count)
+              acc.push({type: 'text', value: line, offset: wscount})
+            return acc
+          }
+          
+          grouper.push(line)
+          return acc
+        }
+        
+        if(/^\s*outer$/.test(line)) {
+          inside_count = wscount
+          grouper = [line]
+          return acc
+        }
+          
+        if(/^\s*[\w-]+!!!$/.test(line)) {
+          inside_count = wscount
+          grouper = [line.slice(0, -3)]
+          return acc
+        }
+          
+        if(/^\s*$/.test(line)) {
+          acc.push({type: 'blank'})
+          return acc
+        }
+        
+        acc.push({type: 'text', value: line, offset: wscount})
+        return acc
+        
+      }, [])
+    }
+    
+    function evaler(chunks) {
+      return chunks.map(function(chunk, index) {
+        chunk.index = index
+        
+        if(chunk.type != 'space')
+          return chunk
+        
+        setTimeout(function() {          
+          try {
+            var seedlikes = chunk.value
+              , seed      = D.make_some_space(seedlikes)
+              , space     = new D.Space(seed)
+        
+            space.silly_chunk_id_thing = index
+        
+            D.send_value_to_js_port(seed, 'init')
+          } catch(e) {
+            D.set_error(e)
+            // chunk = {type: 'blank'}
+          }
+        }, 0)
+        
+        return chunk
+      })
+    }
+    
+    
+    D.import_port_flavour('assert', {
+      dir: 'out',
+      outside_exit: function(ship) {
+        var classy = 'good'
+        if(ship != this.settings.thing) {
+          console.log('Should be "' + this.settings.thing + '" but was "' + ship + '" instead.')
+          classy = 'bad'
+        }
+        
+        document.getElementById(this.pair.space.silly_chunk_id_thing)
+                .setAttribute('class', classy)
+      }
+    })
+    
+    
+    function decorater(items) {
+      return items.map(function(item) {
+        if(item.type == 'blank')
+          return "<p></p>"
+        
+        if(item.type == 'text')
+          return '<p id=' + item.index + ' class="ws-' + item.offset + '">' + item.value + '</p>'
+        
+        return '<code><pre id="' + item.index + '">' + item.value + '</pre></code>'
+      })
+    }
+    
+    function display(lines) {
+      document.getElementById('tests').innerHTML = lines.join("\n")
+    }
+    
+    
+  </script>
+</head>
+
+<body>
+  <div id="tests"></div>
+  <div id="stats"></div>  
+</body>
+</html>
