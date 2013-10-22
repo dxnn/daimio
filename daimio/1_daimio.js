@@ -1824,7 +1824,10 @@ D.Space = function(seed_id, parent) {
     //               ).filter(function(val) {return val !== false})
 
     subspace.ports
-      .filter(function(port) {return port.space === subspace && !port.station}) // outer ports
+      .filter(function(port) {return port.space === subspace           // THINK: when is it not?
+                                     && !port.station                  // keep out stations
+                                     && !port.pair                     // keep out subsubspaces
+                                     && port_name_to_port[port.name]}) // just in case we've missed something
       .forEach(function(port) {port_name_to_port[port.name].pairup(port)})
         // port.pairup(portmap[] self.ports.filter(function(my_port) {return my_port.})[0] )})
   })
@@ -2529,7 +2532,13 @@ D.spaceseed_hash = function(seed) {
 
 
 D.make_some_space = function(stringlike) {
-  return D.make_spaceseeds(D.seedlikes_from_string(stringlike))
+  try {
+    return D.make_spaceseeds(D.seedlikes_from_string(stringlike))
+  } 
+  catch (e) {
+    D.set_error("Sorry, but that space has some problems: " + e.message)
+    return {}
+  }
 }
 
 D.seedlikes_from_string = function(stringlike) {
@@ -2570,7 +2579,7 @@ D.seedlikes_from_string = function(stringlike) {
         prop_offset = this_offset
       }
     
-      if(this_offset > prop_offset) {
+      if(this_offset > prop_offset && line.indexOf('->') == -1) {
         continuation += " " +line
         return
       }
