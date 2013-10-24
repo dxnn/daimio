@@ -589,3 +589,11 @@ Re: peek / poke
   - maybe you can do audio etc nodes with a space that contains a single command in a station, like {osc $freq offset $offset id $node_id | >$ :node_id} and input ports that set $freq and $offset and retrigger the osc station (which SARs to the audio node manager), and then a special output port that sends the id of the node to oh wait maybe it doesn't need to be special? just send the id from the osc station. if you receive an audio node id, connect it, otherwise set it to that value (offset goes away, maybe... oy.)
 
 
+  // var trials   = []
+  //   , eater_of_ports = function(key, value) {return key == 'ports' ? "" : value}
+  // 
+  // if( JSON.stringify(old_seed, eater_of_ports)
+  //  != JSON.stringify(new_seed, eater_of_ports)
+  //     D.noop()  
+  // 
+  // trials.every(Boolean)

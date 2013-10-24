@@ -270,6 +270,7 @@ Spacial tests and other fun stuff!
   
   Exec ports / virtual spaces
   move this test suite into daimio
+  parallel execution like {__ | add $total | wait | $>total} times 2 or 3
   Two same subspaces with different state [?]
 
   Define subspace after referencing it (BUG)

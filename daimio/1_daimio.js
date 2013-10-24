@@ -1784,15 +1784,15 @@ D.Port = function(port_template, space) {
 
 
 D.Space = function(seed_id, parent) {
-  // the template a pointer to D.SPACESEEDS, which contains: id, dialect, state, ports, stations, subspaces, routes
+  // D.SPACESEEDS[seed_id] contains id, dialect, state, ports, stations, subspaces, routes
+  // TODO: validate parent
+  // THINK: validate seed_id?
   
   var seed = D.SPACESEEDS[seed_id]
     , self = this
   
   if(!seed)
     return D.set_error('Invalid spaceseed')
-    
-  // TODO: validate parent
   
   this.seed = seed
   this.state = {}
@@ -1809,8 +1809,8 @@ D.Space = function(seed_id, parent) {
   
   // pair my subspace ports 
   this.subspaces.forEach(function(subspace, subspace_index) {
-    
     var port_name_to_port = {}
+    
     for(var key in seed.ports) {
       var port = seed.ports[key]
       if(port.space != subspace_index+1) // 1-indexed
@@ -1818,111 +1818,47 @@ D.Space = function(seed_id, parent) {
       port_name_to_port[port.name] = self.ports[key]
     }
     
-    
-    // seed.ports.map(
-    //                 function(port, index) {return port.space == subspace_index+1 ? index : false}  // 1-indexed
-    //               ).filter(function(val) {return val !== false})
-
     subspace.ports
-      .filter(function(port) {return port.space === subspace           // THINK: when is it not?
-                                     && !port.station                  // keep out stations
-                                     && !port.pair                     // keep out subsubspaces
-                                     && port_name_to_port[port.name]}) // just in case we've missed something
+      .filter(function(port) {return port.space === subspace         // THINK: when is it not?
+                                  && !port.station                   // keep out stations
+                                  && !port.pair                      // keep out subsubspaces
+                                  && port_name_to_port[port.name]})  // just in case we've missed something
       .forEach(function(port) {port_name_to_port[port.name].pairup(port)})
-        // port.pairup(portmap[] self.ports.filter(function(my_port) {return my_port.})[0] )})
   })
   
   // revise dialect
   this.dialect = D.DIALECTS.top // TODO: this probably isn't right, but the timing gets weird otherwise
   
-  if(this.parent) {
-    var parent_dialect = this.parent.dialect ? this.parent.dialect : D.DIALECTS.top
-    this.dialect = new D.Dialect(parent_dialect.commands, parent_dialect.aliases)
-    // if(seed.dialect.commands && seed.dialect.commands.minus) {
-    //   var minus = seed.dialect.commands.minus
-    if(seed.dialect.commands && seed.dialect.minus) {
-      var minus = seed.dialect.minus
-      for(var key in minus) {
-        var value = minus[key]
-
-        if(value === true) {
-          delete this.dialect.commands[key]
-          continue
-        }
-
-        value.forEach(function(method) {
-          try {
-            delete this.dialect.commands[key].methods[method]
-          } catch(e) {}
-        })
-
-      }
-    }
-    
-  }
+// NOTE: DON'T DELETE THIS YET -- decide what you're doing with dialects first.
+//  if(this.parent) {
+//    var parent_dialect = this.parent.dialect ? this.parent.dialect : D.DIALECTS.top
+//    this.dialect = new D.Dialect(parent_dialect.commands, parent_dialect.aliases)
+//    // if(seed.dialect.commands && seed.dialect.commands.minus) {
+//    //   var minus = seed.dialect.commands.minus
+//    if(seed.dialect.commands && seed.dialect.minus) {
+//      var minus = seed.dialect.minus
+//      for(var key in minus) {
+//        var value = minus[key]
+//
+//        if(value === true) {
+//          delete this.dialect.commands[key]
+//          continue
+//        }
+//
+//        value.forEach(function(method) {
+//          try {
+//            delete this.dialect.commands[key].methods[method]
+//          } catch(e) {}
+//        })
+//      }
+//    }
+//  }
 
   // yoiks
   this.only_one_process = true
   this.processes = []
   this.listeners = []
   this.queue = []
-  
-  
-  // var self = this
-  // this.loading = true
-  // this.template = template // TODO: validate template
-  
-  // this.id = template.id 
-  // this.dialect = template.dialect
-
-  // this.stations = []
-  // ;(template.stations || []).forEach(this.add_station)
-  // stations = stations.map(function(block_id) { return D.BLOCKS[block_id] })
-
-  // this.ports = []
-  // ;(template.ports || []).filter(function(port) { return port.space == this.id })
-  //                        .forEach(this.add_port) // add only my own ports
-  
-  
-  // this.ports = ports
-  // .map(function(port) {
-  //   return port.space == id 
-  //        ? new D.Port(self, port.flavour, port.settings, this.stations[port.station], port.name, port.typehint)
-  //        : false
-  // })
-  
-  // this.ports
-  // .filter()
-  // .forEach(function(port, i) { 
-  //   ports[i].outs.forEach(function(index) { 
-  //     port.add_out(self.ports[index]) 
-  //   }) 
-  // })
-  
-  
-  
-  // ask my parent to add its outs to my ports
-  // if(parent)
-  //   parent.hi_im_here_fill_my_ports_please(this, this.ports) // this adds me to parent.children, replaces parent's fake ports with my actual ports, and adds parents routes to my ports
-  // else // i'm in outer space?
-  //   this.foo = 123 
-  
-  // switch my ports outs to valid port links
-  
-  // except my child space's ports won't be valid yet...
-  // oh, except i don't have to worry about those -- they don't need to be valid until my kids ask for port info, then we trade the port ref for the proper outs. okay, maybe that works? timing, though... timing. merglepuffs.
-  
-  // this.wiring = this.ports.map(function(port) {return port.outs})
-                     // .filter(function(outs) {return outs.length}) // have to retain indices...
-  
-  
-  // this.children = []
-  
-  // this.block = D.get_block(block)
-  
-  // THINK: validate id?
-  
-  // delete this.loading
 }
 
 D.Space.prototype.get_state = function(param) {
@@ -1944,6 +1880,52 @@ D.Space.prototype.dock = function(ship, station_id) {
   
   // this.station_id = false // THINK: if we go async in here it toasts the station_id...
   // THINK: do we need to send back NaN? there's probably no callstack here to speak of...
+}
+
+D.Space.prototype.please_change_your_seed_to = function(seed_id) {
+  var old_seed = this.seed
+    , new_seed = D.SPACESEEDS[seed_id]
+    
+  if(!new_seed)
+    return D.set_error('You done messed up')
+  
+  if(JSON.stringify(old_seed) == JSON.stringify(new_seed))
+    console.log('Identical seeds')
+
+  // we're going to assume that if a subspace has changed, we'll receive a tell_my_parent request instead of a please_change_your_seed_to request. so if we're here and subspaces are different its because we need to add/remove subspaces.
+  
+  if(JSON.stringify(old_seed.subspaces) != JSON.stringify(new_seed.subspaces))
+    console.log('dialects differ')
+  
+  if(JSON.stringify(old_seed.stations) != JSON.stringify(new_seed.stations))
+    console.log('stations differ')
+
+  if(JSON.stringify(old_seed.routes) != JSON.stringify(new_seed.routes))
+    console.log('routes differ')
+
+  if(JSON.stringify(old_seed.ports) != JSON.stringify(new_seed.ports))
+    console.log('routes differ')
+
+
+
+  // so we just...
+  // - make a new space.
+  // - re-pair my ports.
+  // uh but timers... and unfinished processes... and state...
+  // let's assume we're making the smallest change we can, in a single space.
+  // we can copy the state of the old space... 
+  // but can we copy over the processes?
+  // this is a bad way of doing it.
+
+  if(JSON.stringify(old_seed.dialect) != JSON.stringify(new_seed.dialect))  // dialect don't exist yet
+    console.log('dialects differ')
+  
+  if(JSON.stringify(old_seed.state) != JSON.stringify(new_seed.state))      // seed state is just a fallthrough
+    console.log('state differs')
+  
+  
+  this.seed = new_seed
+  this.tell_my_parent(new_seed)
 }
 
 D.Space.prototype.change_seed = function(seed_id) {
@@ -1968,19 +1950,6 @@ D.Space.prototype.change_seed = function(seed_id) {
 }
 
 
-// D.Space.prototype.here_have_some_ports_thanks = function(child_ports) {
-//   // this adds me to parent.children, replaces parent's fake ports with my actual ports, and adds parents routes to my ports
-//   this.children.push(child)
-//   this.ports.filter(function(port) {return port.space == child})
-//             .forEach()
-// }
-
-// D.Space.prototype.switch_template = function(template) {
-//   // this gives me a new template, makes the needed changes, and tells my parent
-//   // get deltas of old template and new template
-//   // is this the right thing to do? this seems silly.
-// }
-// 
 // D.Space.prototype.hi_i_have_a_new_template_please_update_yourself = function(child, old_template) {
 //   // this tells the parent that i have a new template so it needs to update itself and its own template 
 //   
@@ -2156,8 +2125,8 @@ D.Space.prototype.scrub_process = function(pid) {
 
 
 
-// this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
 D.Space.prototype.try_optimize = function(block, scope) {
+  // this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
 
   for(var i=0, l=D.Optimizers.length; i < l; i++) {
     var result = D.Optimizers[i].fun(block, scope)
@@ -2182,34 +2151,38 @@ D.import_optimizer = function(name, fun) {
   
   D.Optimizers.push(opt)
   // fun returns {value: xyyzy} if it finds something, false otherwise
+  
+  
+  // figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
+
+  //D.Etc.opt_memos = {}
+  //D.import_optimizer('memoize', function(block, scope) {
+  //  var memos = D.Etc.opt_memos
+  //  if(!memos[block.id])
+  //    memos[block.id] = {}
+  //
+  //  var block_memos = memos[block.id]
+  //    , scope_id = murmurhash(JSON.stringify(scope))
+  //    
+  //  if(typeof block_memos[scope_id] == 'undefined') { // first time through primes it
+  //    block_memos[scope_id] = true
+  //    return false
+  //  }
+  //  
+  //  if(!block_memos[scope_id])
+  //    return false
+  //  
+  //  if(block_memos[scope_id] == true) { // second time runs it
+  //    var result = 
+  //    block_memos[scope_id] = {value: result}
+  //  }
+  //    
+  //  return block_memos[scope_id] 
+  //})
+  
+  
 }
 
-// figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
-
-//D.Etc.opt_memos = {}
-//D.import_optimizer('memoize', function(block, scope) {
-//  var memos = D.Etc.opt_memos
-//  if(!memos[block.id])
-//    memos[block.id] = {}
-//
-//  var block_memos = memos[block.id]
-//    , scope_id = murmurhash(JSON.stringify(scope))
-//    
-//  if(typeof block_memos[scope_id] == 'undefined') { // first time through primes it
-//    block_memos[scope_id] = true
-//    return false
-//  }
-//  
-//  if(!block_memos[scope_id])
-//    return false
-//  
-//  if(block_memos[scope_id] == true) { // second time runs it
-//    var result = 
-//    block_memos[scope_id] = {value: result}
-//  }
-//    
-//  return block_memos[scope_id] 
-//})
 
 
   /*ooooooo.   ooooooooo.     .oooooo.     .oooooo.   oooooooooooo  .oooooo..o  .oooooo..o 
