@@ -1895,16 +1895,17 @@ D.Space.prototype.please_change_your_seed_to = function(seed_id) {
   // we're going to assume that if a subspace has changed, we'll receive a tell_my_parent request instead of a please_change_your_seed_to request. so if we're here and subspaces are different its because we need to add/remove subspaces.
   
   if(JSON.stringify(old_seed.subspaces) != JSON.stringify(new_seed.subspaces))
-    console.log('dialects differ')
+    console.log('subspaces differ')
   
   if(JSON.stringify(old_seed.stations) != JSON.stringify(new_seed.stations))
     console.log('stations differ')
+  // station mod -> no change, but add/remove needs change... how do we tell?
 
   if(JSON.stringify(old_seed.routes) != JSON.stringify(new_seed.routes))
     console.log('routes differ')
 
   if(JSON.stringify(old_seed.ports) != JSON.stringify(new_seed.ports))
-    console.log('routes differ')
+    console.log('ports differ')
 
 
 
