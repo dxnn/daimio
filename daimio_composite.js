@@ -100,6 +100,7 @@ D.make_nice = function(value, otherwise) {
 
 D.to_array = function(value) {
   // this converts non-iterable items into a single-element array
+  if(D.is_block(value))         return []
   if(Array.isArray(value))      return value
   if(typeof value == 'object')  return D.obj_to_array(value)
   if(value === false)           return []                     // hmmm...
@@ -3623,10 +3624,9 @@ D.SegmentTypes.Alias = {
     }
     
     new_tokens =  D.clone(new_tokens)
-
-    // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
+    // ensure we don't eat pipe in {0 | else "{9}" | add 1} --> 1
+    var alias_eats_pipe = D.AliasMap[token.value.word].indexOf('__') != -1
 
     // fiddle with wiring
     
@@ -3639,8 +3639,6 @@ D.SegmentTypes.Alias = {
     
     last_replacement.key = token.key
     last_replacement.prevkey = token.prevkey
-    // last_replacement.inputs.concat(token.inputs)
-    // last_replacement.names.concat(token.names)
     
     for(var i=0, l=new_tokens.length; i < l; i++) {
       if(!new_tokens[i].prevkey || new_tokens[i].prevkey == '__in') // for __ in aliases like 'else'
@@ -3656,6 +3654,9 @@ D.SegmentTypes.Alias = {
           , lr_index = last_replacement.names.indexOf(key)
           , lr_position = lr_index == -1 ? last_replacement.names.length : lr_index
           , lr_null_index = last_replacement.inputs.indexOf(null)
+        
+        if(key == '__pipe__' && alias_eats_pipe)
+          continue
         
         if(key == '__pipe__') { // always add the __pipe__
           last_replacement.names[lr_position] = '__pipe__'
@@ -7144,7 +7145,44 @@ D.import_models({
     }
   }
 })
+// commands for managing temporal anomalies
 
+D.import_models({
+  time: {
+    desc: "Commands for exploding temporal quonsets",
+    methods: {
+      
+      stampwrap: {
+        desc: "",
+        params: [
+          {
+            key: 'value',
+            desc: 'A timestamp',
+            type: 'number',
+          }
+        ],
+        fun: function(value) {
+          var date = value
+                   ? new Date(value * 1000) // convert to milliseconds
+                   : new Date()
+          
+          if(!date.valueOf())
+            return D.set_error('Invalid timestamp')
+            
+          return { year:   date.getFullYear()
+                 , month:  date.getMonth() + 1
+                 , day:    date.getDate()
+                 , hour:   date.getHours()
+                 , minute: date.getMinutes()
+                 , second: date.getSeconds()
+                 , stamp:  date.getTime()
+                 }
+        },
+      },
+      
+    }
+  }
+});
 D.import_type('anything', function(value) {
   return D.make_nice(value) // THINK: what about blocks? 
 })
