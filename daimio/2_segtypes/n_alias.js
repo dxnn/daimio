@@ -12,10 +12,9 @@ D.SegmentTypes.Alias = {
     }
     
     new_tokens =  D.clone(new_tokens)
-
-    // alias keys are low numbers and conflict with rekeying...
-    // segments = D.mungeLR(segments, D.Transformers.rekey)
     
+    // ensure we don't eat pipe in {0 | else "{9}" | add 1} --> 1
+    var alias_eats_pipe = D.AliasMap[token.value.word].indexOf('__') != -1
 
     // fiddle with wiring
     
@@ -28,8 +27,6 @@ D.SegmentTypes.Alias = {
     
     last_replacement.key = token.key
     last_replacement.prevkey = token.prevkey
-    // last_replacement.inputs.concat(token.inputs)
-    // last_replacement.names.concat(token.names)
     
     for(var i=0, l=new_tokens.length; i < l; i++) {
       if(!new_tokens[i].prevkey || new_tokens[i].prevkey == '__in') // for __ in aliases like 'else'
@@ -45,6 +42,9 @@ D.SegmentTypes.Alias = {
           , lr_index = last_replacement.names.indexOf(key)
           , lr_position = lr_index == -1 ? last_replacement.names.length : lr_index
           , lr_null_index = last_replacement.inputs.indexOf(null)
+        
+        if(key == '__pipe__' && alias_eats_pipe)
+          continue
         
         if(key == '__pipe__') { // always add the __pipe__
           last_replacement.names[lr_position] = '__pipe__'
