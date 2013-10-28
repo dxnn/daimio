@@ -100,6 +100,7 @@ D.make_nice = function(value, otherwise) {
 
 D.to_array = function(value) {
   // this converts non-iterable items into a single-element array
+  if(D.is_block(value))         return []
   if(Array.isArray(value))      return value
   if(typeof value == 'object')  return D.obj_to_array(value)
   if(value === false)           return []                     // hmmm...
