@@ -1451,10 +1451,14 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {1 | else "{fff fff}" | add 1}
       2
     
+    These two weird tests confirm that if an alias as an explicit pipe in it the implicit pipe in the usage is ignored. On reflection the real problem here is likely with the 'with' param, so maybe this is a non-issue.
     TODO: this fails because the 'else' alias hardcodes two pipe slots, so 'with' eats the implicit pipe. same thing happens for 'then', and probably other aliases. might be a symptom of the recent pipe troubles. put some more tests in to check for it and set it right. (BUG)
     
     {0 | else "{9}" | add 1}
+      []
+    {1 | >$ggg | then "{$ggg | add 1 | >$ggg}" else "" | $ggg}
       1
+    
     {0 | else "{9}" with :foo | add 1}
       10
     {10 | then "{__}" with __ | add 1}
@@ -1466,8 +1470,6 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
     {1 | else "{fff fff}" | add 1}
       2
-    {0 | else "{9}" | add 1}
-      10
 
     {if :true then :awesome}
       awesome
@@ -2337,7 +2339,7 @@ coercion is easy: no polymorphism => no confusion
   {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | add 0}
     [0,1,0,1,0,0,0,0,0]
 
-  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | then 1 else 0}"}
+  {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | if __ then 1 else 0}"}
     [0,1,0,1,1,1,0,1,1]
   
   {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | string lowercase}"}
@@ -3024,3 +3026,7 @@ BASIC SYNTAX TESTS
     Tail position pipeline vars flake out [probably requires placeholder segtype]
       {2 | >two | "" | _two}
         2
+
+    Aliases with pipes in them bork as second segment in lambdas, because the pipevar segtype munger doesn't properly replace the prevkey with __in. 
+    {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | then 1 else 0}"}
+      [0,1,0,1,1,1,0,1,1]
