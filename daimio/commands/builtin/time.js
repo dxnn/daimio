@@ -28,7 +28,7 @@ D.import_models({
                  , hour:   date.getHours()
                  , minute: date.getMinutes()
                  , second: date.getSeconds()
-                 , stamp:  date.getTime()
+                 , stamp:  Math.floor(date.getTime() / 1000) // convert to seconds
                  }
         },
       },
