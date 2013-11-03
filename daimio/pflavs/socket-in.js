@@ -7,8 +7,10 @@ D.import_port_flavour('socket-in', {
     if(self.settings.all.length > 2)
       channel = self.settings.thing // explicit third param only -- no sugar
     
-    socket.on(channel, function (ship) {
-      // if(!ship.user) return false
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+
+    D.Etc.socket.on(channel, function (ship) {
       self.enter(ship)
     })
     

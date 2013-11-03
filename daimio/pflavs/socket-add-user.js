@@ -6,9 +6,11 @@ D.import_port_flavour('socket-add-user', {
           if(!ship.user) return false
           self.enter(ship)
         }
-      
-    socket.on('connected', callback)
-    socket.on('add-user', callback)
     
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+    
+    D.Etc.socket.on('connected', callback)
+    D.Etc.socket.on('add-user', callback)
   }
 })
