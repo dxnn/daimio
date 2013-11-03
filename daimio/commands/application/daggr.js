@@ -475,6 +475,6 @@ D.import_models({
   }
 });
 
-if(window.Daggr) {
+if((typeof window !== 'undefined') && window.Daggr) {
   Daggr.onerror = D.on_error;
 }

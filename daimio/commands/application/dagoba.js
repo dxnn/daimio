@@ -498,6 +498,6 @@ D.Etc.dagoba.set_actions = function(graph, topic) {
 }
 
 // TODO: this won't work on the server
-if(window.Dagoba) {
+if((typeof window !== 'undefined') && window.Dagoba) {
   Dagoba.onerror = D.on_error;
 }
