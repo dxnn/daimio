@@ -1,7 +1,6 @@
 D.import_port_flavour('socket-out', {
   dir: 'out',
   outside_exit: function(ship) {
-<<<<<<< HEAD
     var channel = 'bounce'
     
     if(this.settings.all.length > 2)
