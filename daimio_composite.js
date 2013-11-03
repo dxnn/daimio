@@ -4218,7 +4218,7 @@ D.import_models({
   }
 });
 
-if(window.Daggr) {
+if((typeof window !== 'undefined') && window.Daggr) {
   Daggr.onerror = D.on_error;
 }
 // The dagoba interface model
@@ -4721,7 +4721,7 @@ D.Etc.dagoba.set_actions = function(graph, topic) {
 }
 
 // TODO: this won't work on the server
-if(window.Dagoba) {
+if((typeof window !== 'undefined') && window.Dagoba) {
   Dagoba.onerror = D.on_error;
 }
 // A list in Daimio is an ordered sequence of items that are optionally keyed.
@@ -7175,7 +7175,7 @@ D.import_models({
                  , hour:   date.getHours()
                  , minute: date.getMinutes()
                  , second: date.getSeconds()
-                 , stamp:  date.getTime()
+                 , stamp:  Math.floor(date.getTime() / 1000) // convert to seconds
                  }
         },
       },
@@ -7269,24 +7269,24 @@ D.import_type('string', function(value) {
 
 if (typeof exports !== 'undefined') {
 
-  var D = require('./daimio');
+  // var D = require('./daimio');
   module.exports = D;
 
   // something like this might work:
   ~function() {
   
-    var fs = require('fs');
-    var vm = require('vm');
+    // var fs = require('fs');
+    // var vm = require('vm');
+    // 
+    // var includeInThisContext = function(path) {
+    //     var code = fs.readFileSync(path);
+    //     vm.runInThisContext(code, path);
+    // }.bind(this);
 
-    var includeInThisContext = function(path) {
-        var code = fs.readFileSync(path);
-        vm.runInThisContext(code, path);
-    }.bind(this);
-
-    fs.readdirSync(__dirname + '/handlers').forEach(function(filename){
-      if (!/\.js$/.test(filename)) return;
-      includeInThisContext(__dirname+"/handlers/"+filename); // FIXME!!!!!
-    });
+    // fs.readdirSync(__dirname + '/handlers').forEach(function(filename){
+    //   if (!/\.js$/.test(filename)) return;
+    //   includeInThisContext(__dirname+"/handlers/"+filename); // FIXME!!!!!
+    // });
 
   }()
 }
