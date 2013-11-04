@@ -259,8 +259,16 @@ D.import_models({
           var processfun = function(item, prior_starter) {
             for(var key in item)
               scope[key] = item[key]
-              // scope['_' + key] = item[key]
+            
             scope["__in"] = item
+
+            if(typeof item == 'object') {
+              if(!('key' in item))
+                scope.key = key
+              if(!('value' in item))
+                scope.value = item
+            }
+
             return block(
                      function(value) {prior_starter(value)}
                    , scope, process)
