@@ -589,6 +589,7 @@ D.track_event = function(type, target, callback) {
         , cname = target.className
       
       if(!listener && cname) {
+        // TODO: walk the target.parentNode chain up to null, checking each item along the way until you find one
         if(cname.baseVal != undefined)
           cname = cname.baseVal
         cname.split(/\s+/).forEach(function(name) {
@@ -2506,9 +2507,9 @@ D.spaceseed_hash = function(seed) {
 }
 
 
-D.make_some_space = function(stringlike) {
+D.make_some_space = function(stringlike, templates) {
   try {
-    return D.make_spaceseeds(D.seedlikes_from_string(stringlike))
+    return D.make_spaceseeds(D.seedlikes_from_string(stringlike, templates))
   } 
   catch (e) {
     D.set_error("Sorry, but that space has some problems: " + e.message)
@@ -2516,7 +2517,7 @@ D.make_some_space = function(stringlike) {
   }
 }
 
-D.seedlikes_from_string = function(stringlike) {
+D.seedlikes_from_string = function(stringlike, templates) {
   var seedlikes = {}
     , seed_offset = -1
     , prop_offset = -1
@@ -2525,6 +2526,7 @@ D.seedlikes_from_string = function(stringlike) {
     , continuation = ''
     , action = ''
     , action_name = ''
+    , templates = templates || {}
   
   // THINK: if we use parser combinators, can we uncombinate in reverse to get back our string? 
   // first break it apart by lines and organize into seedlikes
@@ -2577,6 +2579,8 @@ D.seedlikes_from_string = function(stringlike) {
       }
       
       if(action == 'station') {
+        if(!continuation && templates[action_name])
+          continuation = templates[action_name]
         this_seed.stations[action_name] = {value: continuation}
       }
       
@@ -2797,6 +2801,10 @@ D.make_spaceseeds = function(seedlikes) {
   
   return seedmap['outer'] || seedmap[seedkey]
 }
+
+
+// TODO: tab detection
+
 
 
 
@@ -4982,11 +4990,19 @@ D.import_models({
           if(Array.isArray(_with))
             scope = {'__in': _with[0]}
 
-          var processfun = function(item, prior_starter) {
+          var processfun = function(item, prior_starter, item_key) {
             for(var key in item)
               scope[key] = item[key]
-              // scope['_' + key] = item[key]
+            
             scope["__in"] = item
+
+            if(typeof item == 'object') {
+              if(!('key' in item))
+                scope.key = item_key
+              if(!('value' in item))
+                scope.value = item
+            }
+
             return block(
                      function(value) {prior_starter(value)}
                    , scope, process)
@@ -7269,24 +7285,24 @@ D.import_type('string', function(value) {
 
 if (typeof exports !== 'undefined') {
 
-  // var D = require('./daimio');
+  var D = require('./daimio');
   module.exports = D;
 
   // something like this might work:
   ~function() {
   
-    // var fs = require('fs');
-    // var vm = require('vm');
-    // 
-    // var includeInThisContext = function(path) {
-    //     var code = fs.readFileSync(path);
-    //     vm.runInThisContext(code, path);
-    // }.bind(this);
+    var fs = require('fs');
+    var vm = require('vm');
 
-    // fs.readdirSync(__dirname + '/handlers').forEach(function(filename){
-    //   if (!/\.js$/.test(filename)) return;
-    //   includeInThisContext(__dirname+"/handlers/"+filename); // FIXME!!!!!
-    // });
+    var includeInThisContext = function(path) {
+        var code = fs.readFileSync(path);
+        vm.runInThisContext(code, path);
+    }.bind(this);
+
+    fs.readdirSync(__dirname + '/handlers').forEach(function(filename){
+      if (!/\.js$/.test(filename)) return;
+      includeInThisContext(__dirname+"/handlers/"+filename); // FIXME!!!!!
+    });
 
   }()
 }
@@ -8064,19 +8080,27 @@ D.import_port_flavour('socket-add-user', {
           if(!ship.user) return false
           self.enter(ship)
         }
-      
-    socket.on('connected', callback)
-    socket.on('add-user', callback)
     
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+    
+    D.Etc.socket.on('connected', callback)
+    D.Etc.socket.on('add-user', callback)
   }
 })
 D.import_port_flavour('socket-in', {
   dir: 'in',
   outside_add: function() {
     var self = this
+      , channel = 'bounced'
     
-    socket.on('bounced', function (ship) {
-      if(!ship.user) return false
+    if(self.settings.all.length > 2)
+      channel = self.settings.thing // explicit third param only -- no sugar
+    
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+
+    D.Etc.socket.on(channel, function (ship) {
       self.enter(ship)
     })
     
@@ -8085,8 +8109,15 @@ D.import_port_flavour('socket-in', {
 D.import_port_flavour('socket-out', {
   dir: 'out',
   outside_exit: function(ship) {
-    if(socket)
-      socket.emit('bounce', ship)
+    var channel = 'bounce'
+    
+    if(this.settings.all.length > 2)
+      channel = this.settings.thing // explicit third param only -- no sugar
+    
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+
+    D.Etc.socket.emit(channel, ship)
   }
 })
 D.import_port_flavour('socket-remove-user', {
@@ -8094,7 +8125,10 @@ D.import_port_flavour('socket-remove-user', {
   outside_add: function() {
     var self = this
     
-    socket.on('disconnected', function (ship) {
+    if(!D.Etc.socket)
+      return D.set_error('You must place a valid socket connection in D.Etc.socket')
+    
+    D.Etc.socket.on('disconnected', function (ship) {
       if(!ship.user) return false
       self.enter(ship)
     })
