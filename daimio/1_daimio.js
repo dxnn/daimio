@@ -589,6 +589,7 @@ D.track_event = function(type, target, callback) {
         , cname = target.className
       
       if(!listener && cname) {
+        // TODO: walk the target.parentNode chain up to null, checking each item along the way until you find one
         if(cname.baseVal != undefined)
           cname = cname.baseVal
         cname.split(/\s+/).forEach(function(name) {
@@ -2506,9 +2507,9 @@ D.spaceseed_hash = function(seed) {
 }
 
 
-D.make_some_space = function(stringlike) {
+D.make_some_space = function(stringlike, templates) {
   try {
-    return D.make_spaceseeds(D.seedlikes_from_string(stringlike))
+    return D.make_spaceseeds(D.seedlikes_from_string(stringlike, templates))
   } 
   catch (e) {
     D.set_error("Sorry, but that space has some problems: " + e.message)
@@ -2516,7 +2517,7 @@ D.make_some_space = function(stringlike) {
   }
 }
 
-D.seedlikes_from_string = function(stringlike) {
+D.seedlikes_from_string = function(stringlike, templates) {
   var seedlikes = {}
     , seed_offset = -1
     , prop_offset = -1
@@ -2525,6 +2526,7 @@ D.seedlikes_from_string = function(stringlike) {
     , continuation = ''
     , action = ''
     , action_name = ''
+    , templates = templates || {}
   
   // THINK: if we use parser combinators, can we uncombinate in reverse to get back our string? 
   // first break it apart by lines and organize into seedlikes
@@ -2577,6 +2579,8 @@ D.seedlikes_from_string = function(stringlike) {
       }
       
       if(action == 'station') {
+        if(!continuation && templates[action_name])
+          continuation = templates[action_name]
         this_seed.stations[action_name] = {value: continuation}
       }
       
@@ -2797,6 +2801,10 @@ D.make_spaceseeds = function(seedlikes) {
   
   return seedmap['outer'] || seedmap[seedkey]
 }
+
+
+// TODO: tab detection
+
 
 
 

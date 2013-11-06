@@ -2075,6 +2075,12 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       //   {$data | list remove path "*.two"}
       //     {"1":{"one":"first","three":"even"},"3":{"one":"third","three":"even"}}
 
+    ensure removing doesn't change vars (BUG)
+      {(1 2 3) | >x | list remove by_value 2 | _x | add}
+        6
+      {(1 2 3) | >$x | list remove by_value 2 | $x | add}
+        6
+        
 
   <h3>REKEY</h3>
   
@@ -3030,3 +3036,14 @@ BASIC SYNTAX TESTS
     Aliases with pipes in them bork as second segment in lambdas, because the pipevar segtype munger doesn't properly replace the prevkey with __in. 
     {( 0 1 "" "1" "x" "[]" () (1) (() ()) ) | map block "{__ | then 1 else 0}"}
       [0,1,0,1,1,1,0,1,1]
+      
+    Pipeline vars shouldn't be mutated by mutating commands:
+      {(1 2 3) | >x | list remove by_value 2 | _x | add}
+        6
+    
+    // {"{_x | run with {* (:x _x)} }" | >x | run with {* (:x _x)} }
+    // (leads to immediate stack overflow... maybe that's an ok solution for infinite recursion? just let it blow up?)
+    
+    
+      
+  

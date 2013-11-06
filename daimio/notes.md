@@ -597,3 +597,6 @@ Re: peek / poke
   //     D.noop()  
   // 
   // trials.every(Boolean)
+
+
+// Ackermann via stations...

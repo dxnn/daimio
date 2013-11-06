@@ -256,7 +256,7 @@ D.import_models({
           if(Array.isArray(_with))
             scope = {'__in': _with[0]}
 
-          var processfun = function(item, prior_starter) {
+          var processfun = function(item, prior_starter, item_key) {
             for(var key in item)
               scope[key] = item[key]
             
@@ -264,7 +264,7 @@ D.import_models({
 
             if(typeof item == 'object') {
               if(!('key' in item))
-                scope.key = key
+                scope.key = item_key
               if(!('value' in item))
                 scope.value = item
             }
