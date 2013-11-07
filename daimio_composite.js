@@ -585,22 +585,31 @@ D.track_event = function(type, target, callback) {
     
     document.addEventListener(type, function(event) {
       var target = event.target
-        , listener = tracked.by_id[target.id]
-        , cname = target.className
+        , listener
+        , parent
+        , cname
       
-      if(!listener && cname) {
-        // TODO: walk the target.parentNode chain up to null, checking each item along the way until you find one
-        if(cname.baseVal != undefined)
-          cname = cname.baseVal
-        cname.split(/\s+/).forEach(function(name) {
-          listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
-        })
+      // walk the target.parentNode chain up to null, checking each item along the way until you find one
+      // OPT: make walking the parent chain optional (use a port param to ask for it)
+      while(!listener && target) {
+        listener = tracked.by_id[target.id]
+        if(listener) break
+        
+        cname = target.className
+        if(cname) {
+          cname = cname.baseVal || cname
+          cname.split(/\s+/).forEach(function(name) {
+            listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
+          })
+        }
+        
+        if(listener) break
+        target = target.parentNode
       }
-      // listener = listener || tracked.by_class[target.className]
       
       if(listener) {
         event.stopPropagation() // THINK: not sure these are always desired...
-        event.preventDefault()
+        event.preventDefault()  //        maybe use a port param to allow passthru
         var value = 
           ( target.attributes['data-value'] 
             && target.attributes['data-value'].value) // THINK: no empty strings allowed...
@@ -7281,36 +7290,6 @@ D.import_type('string', function(value) {
   return value
 })
 
-// Daimio package packer thing
-
-if (typeof exports !== 'undefined') {
-
-  var D = require('./daimio');
-  module.exports = D;
-
-  // something like this might work:
-  ~function() {
-  
-    var fs = require('fs');
-    var vm = require('vm');
-
-    var includeInThisContext = function(path) {
-        var code = fs.readFileSync(path);
-        vm.runInThisContext(code, path);
-    }.bind(this);
-
-    fs.readdirSync(__dirname + '/handlers').forEach(function(filename){
-      if (!/\.js$/.test(filename)) return;
-      includeInThisContext(__dirname+"/handlers/"+filename); // FIXME!!!!!
-    });
-
-  }()
-}
-
-// fs.readdirSync(__dirname + '/models').forEach(function(filename){
-//   if (!/\.js$/.test(filename)) return;
-//   includeInThisContext(__dirname+"/models/"+filename);
-// });
 /**
  * JS Implementation of MurmurHash3 (r136) (as of May 20, 2011)
  * 
