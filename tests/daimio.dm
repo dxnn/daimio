@@ -1215,7 +1215,13 @@
         {"a":1,"b":2,"c":3,"1000000":[],"1000001":999}
       {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999 | sort}
         [[],1,2,3,999]
-      
+  
+    Sugar for poke and unshift
+      {(1 2 3) | poke 4 path "#0"}
+        [4,1,2,3]
+
+      {(1 2 3) | poke 4 path "#-0"}
+        [1,2,3,4]
       
   by star:
     

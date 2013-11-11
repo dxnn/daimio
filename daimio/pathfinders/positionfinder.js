@@ -15,9 +15,16 @@ D.import_pathfinder('position', {
   },
   create: function(value, key) {
     var vkeys = Object.keys(value)
-      , first_position = +key.slice(1)
-      , abs_first_position = Math.abs(first_position)
-      , position = first_position - (first_position / abs_first_position) // offset by one
+    
+    // special case for push / unshift
+    if(key == '#0')
+      key = '#-' + (vkeys.length + 1)
+    if(key == '#-0')
+      key = '#' + (vkeys.length + 1)
+      
+    var first_position = +key.slice(1)
+    var abs_first_position = Math.abs(first_position)
+    var position = first_position - (first_position / abs_first_position) // offset by one
       
     if(vkeys.length < abs_first_position) { // not enough items
       var this_key
