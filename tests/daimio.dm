@@ -1930,22 +1930,22 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
   <h3>JSON</h3>
 
-    {begin list | list from_json}[["one","row"],["second","row"]]{end list}
+    {begin list | list from-json}[["one","row"],["second","row"]]{end list}
       [["one","row"],["second","row"]]
 
-    {begin list | list from_json}{"one":"row","second":"row"}{end list}
+    {begin list | list from-json}{"one":"row","second":"row"}{end list}
       {"one":"row","second":"row"}
 
-    {((:one :row) (:second :row)) | list to_json}
+    {((:one :row) (:second :row)) | list to-json}
       [["one","row"],["second","row"]]
 
-    {{* (:one :row :second :row)} | list to_json}
+    {{* (:one :row :second :row)} | list to-json}
       {"one":"row","second":"row"}
 
-    {((:one :row) (:second :row)) | list to_json | list from_json}
+    {((:one :row) (:second :row)) | list to-json | list from-json}
       [["one","row"],["second","row"]]
 
-    {{* (:one :row :second :row)} | list to_json | list from_json}
+    {{* (:one :row :second :row)} | list to-json | list from-json}
       {"one":"row","second":"row"}
 
 
@@ -3046,6 +3046,17 @@ BASIC SYNTAX TESTS
     Pipeline vars shouldn't be mutated by mutating commands:
       {(1 2 3) | >x | list remove by_value 2 | _x | add}
         6
+    
+    Weird quote results:
+      {"{123}" | quote}
+        {123}
+
+      {"{777}" | quote}
+        {777}
+
+      {"{xxx}" | quote}
+        {xxx}
+    
     
     // {"{_x | run with {* (:x _x)} }" | >x | run with {* (:x _x)} }
     // (leads to immediate stack overflow... maybe that's an ok solution for infinite recursion? just let it blow up?)

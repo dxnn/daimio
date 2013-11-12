@@ -5021,7 +5021,7 @@ D.import_models({
         },
       },
       
-      from_json: {
+      'from-json': {
         desc: "Convert from a JSON string to a list",
         params: [
           {
@@ -5042,7 +5042,7 @@ D.import_models({
         },
       },
       
-      to_json: {
+      'to-json': {
         desc: "Convert a list to a JSON string",
         params: [
           {
