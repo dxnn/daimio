@@ -7900,6 +7900,20 @@ D.import_port_flavour('dom-on-click', {
     D.track_event('click', this.settings.thing, function(value) {self.enter(value)})
   }
 })
+D.import_port_flavour('dom-on-mouseout', {
+  dir: 'in',
+  outside_add: function() {
+    var self = this
+    D.track_event('mouseout', this.settings.thing, function(value) {self.enter(value)})
+  }
+})
+D.import_port_flavour('dom-on-mouseover', {
+  dir: 'in',
+  outside_add: function() {
+    var self = this
+    D.track_event('mouseover', this.settings.thing, function(value) {self.enter(value)})
+  }
+})
 D.import_port_flavour('dom-on-submit', {
   dir: 'in',
   outside_add: function() {
