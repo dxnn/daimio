@@ -3057,10 +3057,11 @@ BASIC SYNTAX TESTS
       {"{xxx}" | quote}
         {xxx}
     
+    Weird then/else stuff
+      {({1 | then :yay} {1 | not | then :boo})}
+        ["yay",""]
     
     // {"{_x | run with {* (:x _x)} }" | >x | run with {* (:x _x)} }
     // (leads to immediate stack overflow... maybe that's an ok solution for infinite recursion? just let it blow up?)
     
     
-      
-  
