@@ -92,6 +92,8 @@ D.import_models({
             return true;
           }
           
+          // THINK: {5 | is a :number}
+          
           // TODO: make a new 'logic equal' command, that takes a list or two args. then make 'is like' only for regex?
           
           var is_obj = (typeof value == 'object') + (typeof like == 'object') // XOR

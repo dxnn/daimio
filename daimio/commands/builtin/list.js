@@ -278,6 +278,9 @@ D.import_models({
         },
       },
       
+      // THINK: can we do a 'take' type of thing given a lambda?
+      // { "{__ | times 2 | plus 1 | is a :square}" | take 5 over :nats}
+      
       'from-json': {
         desc: "Convert from a JSON string to a list",
         params: [
