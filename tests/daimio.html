@@ -145,7 +145,7 @@
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
       stats += '<div class="alert alert-success">Won ' + win + ' tests.</div>'
       
-      if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests. (40 expected)</div>'
+      if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests. (38 expected)</div>'
       if(!lose) stats += '<p>You win!!!</p>'
       
       document.getElementById('stats').innerHTML = stats

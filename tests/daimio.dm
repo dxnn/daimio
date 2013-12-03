@@ -1179,6 +1179,18 @@
       {(1 2 3) | list poke path (:a) value 999}
         {"0":1,"1":2,"2":3,"a":999}
 
+    when you poke by key to a non-existent var, it borks completely. (BUG)
+      {1234 | >$qwe.rty}
+        {"rty":1234}
+
+    the second set should override the first one (BUG)
+      {"{:foo}x" | >$xxx || 123 | >$xxx.y | $xxx}
+        {y:123}
+    it works this way
+      {"{:foo}x" | >$xxx || 123 | >$xxx.#3 | $xxx}
+        ["{:foo}x",[],123]
+
+
   by position:
     {(1 2 3) | list poke path ("#2") value 999}
       [1,999,3]
@@ -1851,8 +1863,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {$dlist | __.*.*.* | filter block "{__ | less than :4}"}
       [2,3,1,3,3,1,3]
 
-    // NOTE: no _parent is exposed in filter
 
+    no _parent is exposed in filter (BUG)
     {$dlist |  __.*.one | filter block "{_parent.parent.one.1 | eq :3}"}
       [2,3,5]
 
@@ -2155,7 +2167,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {$klist | list sort by "{(__.y __.x) | string join}" | map block "{__.y}{__.x}"}
         ["a3","b4","c2","d1","d2"]
 
-    sort by keys
+    sort by keys (BUG)
       {* (:c 3 :b 2 :a 4) | >l | list keys | sort | map block "{_l.{_value}}" with {* (:l _l)}}
         {"a":4,"b":2,"c":3}
 
@@ -2268,15 +2280,7 @@ Extra braces don't matter. extra quotes do, but are generally ok.
 
 
 Tests for blocks
-  the second set should override the first one (BUG)
-    {"{:foo}x" | >$xxx || 123 | >$xxx.y | $xxx}
-      {y:123}
-  works this way
-    {"{:foo}x" | >$xxx || 123 | >$xxx.#3 | $xxx}
-      ["{:foo}x",[],123]
-
   make sure we're not defuncing pre-merge
-  NOTE: needing the x:1 before poking is a bug (BUG)
     {* (:x 1) | >$qq}
       {"x":1}
     {"{:foo}x" | >$qq.ww.ee || merge data $qq block "{_ee | quote}"}
@@ -2395,9 +2399,10 @@ Tests for pass-by-value. Changing a Daimio variable shouldn't change other varia
     [1,2,3,4,5] x [1,2,3,4]
 
 Tests for self-reference. PBV cures these ills.
-  {* (:a 1 :b 2) | >$x | >$x.c} {// (BUG) //}
+Poke should be returning the poked value, not the whole tree. (BUG)
+  {* (:a 1 :b 2) | >$x | >$x.c}
     {"a":1,"b":2}
-  {$x | >$x.d} {// (BUG) //}
+  {$x | >$x.d}
     {"a":1,"b":2,"c":{"a":1,"b":2}}
   {$x}
     {"a":1,"b":2,"c":{"a":1,"b":2},"d":{"a":1,"b":2,"c":{"a":1,"b":2}}}
@@ -3052,6 +3057,7 @@ BASIC SYNTAX TESTS
     Pipeline vars shouldn't be mutated by mutating commands:
       {(1 2 3) | >x | list remove by_value 2 | _x | add}
         6
+
 
     Weird quote results:
       {"{123}" | quote}
