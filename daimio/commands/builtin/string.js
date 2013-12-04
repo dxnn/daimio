@@ -210,7 +210,7 @@ D.import_models({
             // string_count = result.length
             
             for(var i=0, l=processed_matches.length; i < l; i++) {
-              result += processed_matches[i]
+              result += D.stringify(processed_matches[i])
               index += matches[i].length
               next_index = value.indexOf(matches[i+1], index)
 

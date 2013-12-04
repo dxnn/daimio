@@ -2276,6 +2276,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 notes: the block execution scope isn't being given each item, and also isn't given even the first item correctly. probably need to do this global looping manually over all matches to properly support this effect... maybe two different commands or params? or just don't worry about opt yet.
   {"12 x 34" | string transform from "/\d+/g" to "{__ | add 7}"}
     19 x 41
+  {"12 x 34" | string transform from "/\d/g" to "{({__ | add 1} {__ | add 3})}"}
+    [2,4][3,5] x [4,6][5,7]
 
 Extra braces don't matter. extra quotes do, but are generally ok.
   {{{"{__ | add {"4"}}"}} | map data {(1 2)} }
@@ -2602,7 +2604,7 @@ Here's the use cases, from the user's perspective:
   {string transform value "asdfdd" from "/[d]/g" to "x"}
     asxfxx
 
-- transformations can accept daimio, also. the 'this' variable is loaded with matches.
+- transformations can accept a block. it is run for each match, replacing the contents with its output.
   {"food mood wood" | string transform from "/oo/g" to "{__ | string uppercase}"}
     fOOd mOOd wOOd
 
