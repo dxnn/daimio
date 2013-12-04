@@ -14,12 +14,9 @@ D.import_type('block', function(value) {
   }
   else {
     return function() {
-      return D.stringify(value) // strings just fire away
+      return value
+      // return D.stringify(value) // strings just fire away // THINK: why were we stringifying here?
     }
-    // value = D.stringify(value)
-    // return function(prior_starter) {
-    //   return prior_starter(value) // strings just fire away
-    // }
   }
 })
 

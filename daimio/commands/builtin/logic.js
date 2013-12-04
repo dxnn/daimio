@@ -21,33 +21,11 @@ D.import_models({
             key: 'else',
             desc: 'Returned if value is false'
           },
-          {
-            key: 'with',
-            desc: 'If provided the selection will be executed. Values are imported into the block scope.',
-            help: 'The magic key __in becomes the process input. If scalar the value is taken to be __in.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(value, then, _else, _with, prior_starter, process) {
-          var branch = D.is_false(value) ? _else : then
+        fun: function(value, then, _else, prior_starter, process) {
+          return D.is_false(value) ? _else : then
           
-          if(!_with)
-            return branch
-          
-          if(branch.constructor == D.Segment) // TODO: remove me when "block|anything" is supported
-            branch = D.blockify(branch)
-          
-          if(typeof branch != 'function')
-            return branch
-          
-          if(Array.isArray(_with))
-            _with = {'__in': _with[0]}
-          
-          return branch(function(value) {
-            prior_starter(value)
-          }, _with, process)
-          
-          // THINK: consider an 'invert' param so you can alias something like 'unless'
+          // THINK: consider an 'invert' param so you can alias something like 'unless'. [or stronger aliases?]
           
           // if(!value) return _else;
           // // if(!D.is_nice(value)) return _else;
@@ -114,8 +92,7 @@ D.import_models({
       
 
       'cond': {
-        desc: 'Takes a list with odd elements providing conditions and even elements providing actions. Finds the first true test, runs its action and stops',
-        // desc: 'Given a list of lists, test the first element and run the remainder if true, stopping after the first',
+        desc: 'Takes a list with odd elements providing conditions and even elements providing actions. Finds the first true test and returns its action',
         params: [
           {
             key: 'value',
@@ -123,88 +100,13 @@ D.import_models({
             type: 'list',
             required: true
           },
-          {
-            key: 'with',
-            desc: 'Given a hash, values are imported into the block scope.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(value, _with, prior_starter) {
-          var found = false
-           , count = -1
-           , scope = _with || {}
-
-          if(Array.isArray(_with))
-            scope = {'__in': _with[0]}
-           
-          var my_tramp_prior_starter = function(bool) {
-            if(bool) 
-              found = count+1
-            tramp_prior_starter(null)
-          }
-        
-          var processfun = function(item, tramp_prior_starter) {
-            count++
-            
-            if(found === count) {
-              if(item instanceof D.Segment)
-                return D.blockify(item)(my_tramp_prior_starter, scope)
-              else
-                return item
-            }
-            
-            if(found)
-              return null
-            
-            if(count % 2)
-              return null
-
-            if(item instanceof D.Segment)
-              bool = D.blockify(item)(my_tramp_prior_starter, scope)
-            else
-              bool = item
-              
-            if(bool !== bool) 
-              return NaN
-            
-            if(!D.is_false(bool)) // because bool isn't really a bool, ya know?
-              found = count+1
-            
-            return null
-          }
+        fun: function(value, prior_starter) {
+          for(var i=0, l=value.length; i < l; i = i + 2)
+            if(!D.is_false(value[i]))
+              return value[i+1]
           
-          var joinerfun = function(total, value) {
-            if(D.is_nice(total)) return total
-            if(D.is_nice(value)) return value
-            return null
-          }
-          
-          return D.data_trampoline(value, processfun, joinerfun, prior_starter)
-          
-          
-          // var unwrapped = _.find(value, function(item) {
-          //   return (typeof item != 'object' || D.is_block(item))
-          // })
-          // 
-          // if(unwrapped) {
-          //   var new_value = []
-          //   for(var i=0, l=value.length; i < l; i += 2) {
-          //     new_value.push([value[i], value[i+1]])
-          //   }
-          //   value = new_value
-          // }
-          // 
-          // for(var i=0, l=value.length; i < l; i++) {
-          //   var test = D.run(value[i][0])
-          //   if(test) {
-          //     for(var j=1, l=value[i].length; j < l; j++) {
-          //       test = D.run(value[i][j])
-          //     }
-          //     return test
-          //   }
-          // }
-          // 
-          // return false
+          return false
         },
       },
       
@@ -223,22 +125,14 @@ D.import_models({
             type: 'list',
             required: true
           },
-          {
-            key: 'with',
-            desc: 'Given a hash, values are imported into the block scope.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(on, value, _with, prior_starter, process) {
+        fun: function(on, value, prior_starter, process) {
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
 
             if(test == on) {
               var result = value[i+1]
-              if(_with && (result instanceof D.Segment))
-                return D.blockify(result)(prior_starter, _with, process)
-              else
-                return result
+              return result
             }
           }
           

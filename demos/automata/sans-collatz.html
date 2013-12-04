@@ -82,7 +82,7 @@
       $max   ""
       
       combiner
-        {$cells | and $max | then "{($cells $max) | join | >@send | "" | >$cells | >$max}" with 1}
+        {$cells | and $max | then "{($cells $max) | join | >@send | "" | >$cells | >$max}" | run}
       
       @cells -> {__ | >$cells} -> combiner
       @max   -> {__ | >$max}   -> combiner
@@ -111,7 +111,7 @@
         // {0 | >$cells.{20 | range}.{range 20}}
       
       starter
-        {$ticks | else "{1 | >@go}"}
+        {$ticks | else "{1 | >@go}" | run}
       
       @init -> initializer -> starter
 
@@ -126,9 +126,9 @@
                    ( 0 "{ __ | mod $magic-modulus
                         | then "{ __ | divide by 2}"
                           else "{ $mods | poke (_row _key $add-to-neighbors) | >$mods | $self-transform}"
-                          with {* (:row _row :key _key "__in" __in)} }"
+                        | run with {* (:row _row :key _key "__in" __in)} }"
                      1 "{ __ | times 3 | add 1}")
-                   with {* (:row _row :key _key "__in" __in)} 
+                 | run with {* (:row _row :key _key "__in" __in)} 
                  | else 1 | >result
                  | max $max | >$max | _result | add 0}"}"
         | >$cells

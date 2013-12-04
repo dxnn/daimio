@@ -52,7 +52,6 @@ D.import_aliases({
   'run':      'process run block',
   'quote':    'process quote',
   'unquote':  'process unquote',
-  'log':      'process log value',
-  'tap':      'process log passthru 1 value',
+  'tap':      'process tap send',
 })
 

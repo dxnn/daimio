@@ -38,6 +38,8 @@ D.SegmentTypes.VariableSet = {
     R.forEach(function(future_segment) {                // future inputs convert to wiring also
       while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = new_key
+      if(future_segment.prevkey == my_key)              // and prevkey, which keeps __ happy
+        future_segment.prevkey = new_key
     })
 
     return [L, R]

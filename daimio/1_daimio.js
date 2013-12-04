@@ -1143,24 +1143,12 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
 
 
 D.Parser.string_to_block_segment = function(string) {
-  // HACK FOR SPECIAL CASE
-  // if(string == '{__}')
-  //   string = '{__ | __}'
-
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
-    // , decorators = D.get_decorators(block_id)
 
-  D.add_decorator(block_id, 'OriginalString', string, true)
-  // if(!decorators) {
-  //   // TODO: check to ensure there's already an OriginalString for this
-  //   // TODO: refactor
-  //   // TODO: don't be dum
-  //   decorators = (D.DECORATORS[block_id] = [])
-  //   decorators.push({type: 'OriginalString', value: string})
-  // }
-
-  return segment
+  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique? 
+                                                                      // what should we do with different
+  return segment                                                      // strings that compile to the same block?
 }
 
 D.Parser.segments_to_block_segment = function(segments) {

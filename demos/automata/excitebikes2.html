@@ -2,8 +2,10 @@
 <html lang="en" data-framework="javascript">
 <head>
   <title>Excitable Media</title>
-  <!--<script type="text/javascript" src="../../get.php?file=daimio"></script>-->
+  <!--
   <script type="text/javascript" src="../../daimio_composite.js"></script>
+    -->
+    <script type="text/javascript" src="../../get.php?file=daimio"></script>
 </head>
 <body>
   
@@ -46,12 +48,12 @@
         }
 
       try-change
-        {__ | >cells 
+        { __ | >cells 
         | if $change 
           then "{ "" | >$change | _cells 
                 | list poke path (_change.row _change.col) value _change.val}"
-          with {* (:cells _cells :change $change)} 
-          else _cells}
+          else _cells
+        | run with {* (:cells _cells :change $change)} }
 
       initializer -> process -> changed
       process -> {__ | process sleep for $time} -> try-change -> process

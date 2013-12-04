@@ -1482,17 +1482,15 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {1 | else "{fff fff}" | add 1}
         2
 
-      {0 | else "{9}" with :foo | add 1}
-        10
-      {10 | then "{__}" with __ | add 1}
+      {0 | else "{10}" | run | add 1}
         11
-      {10 | then "{__}" with {* ("__in" __)} | add 1}
+      {10 | >a | then "{__}" | run with _a | add 1}
         11
-      {10 | then "{_x}" with {* (:x __)} | add 1}
+      {10 | >a | then "{_x}" | run with {* (:x _a)} | add 1}
         11
 
-      {1 | else "{fff fff}" | add 1}
-        2
+      {10 | >x | then 1}
+        1
 
       {if :true then :awesome}
         awesome
@@ -1571,27 +1569,20 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
         good
 
     Ensure we always process the result
-      {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d)}") | join}
+      {cond ({1 | subtract 1} :bad {1 | add 1} "{(:g :o :o :d)}") | run | join}
         good
 
-      {cond ($false :bad {:true} "{:good}" $nope :bad) | split}
+      {cond ($false :bad {:true} "{:good}" $nope :bad) | run | split}
         ["g","o","o","d"]
 
-    Ensure result is processed with the correct scope
-      {cond (0 :foo 1 "{_n | add _k}") with {* (:n 11 :k 2)} }
-        13
-
     Ensure proper short-circuiting for results
-      {0 | >$cond1 | cond (0 "{$cond1 | add 1 | >$cond1}" 1 "{$cond1 | add 2 | >$cond1}" 2 "{$cond1 | add 3 | >$cond1}") | $cond1}
+      {0 | >$cond1 | cond (0 "{$cond1 | add 1 | >$cond1}" 1 "{$cond1 | add 2 | >$cond1}" 2 "{$cond1 | add 3 | >$cond1}") | run | $cond1}
         2
 
-    Ensure proper scoping for conditions
-      {cond ("{_n | minus _k}" :bad "{_n | add _k}" :good) with {* (:n 5 :k 5)} }
-        good
+    Ensure blocks are passed properly
+      {cond (0 :foo 1 "{_n | add _k}") | run with {* (:n 11 :k 2)} }
+        13
 
-    Ensure proper short-circuiting for conditions
-      {cond ("{0 | >$cond1}" :foo "{$cond1 | add 1 | >$cond1}" :boo "{$cond1 | add 2 | >$cond1}" :goo) | $cond1}
-        1
 
   <h3>SWITCH</h3>
 
@@ -1612,26 +1603,24 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {12 | switch ("12" :good 12 :bad)}
         good
 
-    Result is only processed if the 'with' param is present
+    Ensure blocks are passed through properly
       {1 | switch (1 "{:good}") | split}
         ["{",":","g","o","o","d","}"]
 
-      {1 | switch (1 "{:good}") with 1 | split}
+      {1 | switch (1 "{:good}") | run | split}
         ["g","o","o","d"]
-
-    Ensure result is processed with the correct scope
-      {2 | switch (1 :bad 2 "{_n | add _k}") with {* (:n 11 :k 2)} }
+      {2 | switch (1 :bad 2 "{_n | add _k}") | run with {* (:n 11 :k 2)} }
         13
 
     Ensure proper short-circuiting for results
-      {0 | >$switch1 | 1 | switch (0 "{$switch1 | add 1 | >$switch1}" 1 "{$switch1 | add 2 | >$switch1}" 2 "{$switch1 | add 3 | >$switch1}") with 1 | $switch1}
+      {0 | >$switch1 | 1 | switch (0 "{$switch1 | add 1 | >$switch1}" 1 "{$switch1 | add 2 | >$switch1}" 2 "{$switch1 | add 3 | >$switch1}") | run | $switch1}
         2
 
     Conditions are never processed
       {:foo | switch ("{:boo}" :bad "{:foo}" :bad :foo :good)}
         good
 
-      {10 | switch ("{_n | minus _k}" :bad "{_n | add _k}" :bad 10 :good) with {* (:n 5 :k 5)} }
+      {10 | switch ("{_n | minus _k}" :bad "{_n | add _k}" :bad 10 :good) | run with {* (:n 5 :k 5)} }
         good
 
 //    TODO: test for 'otherwise'-style default
@@ -2244,15 +2233,29 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
 
   <h3>RUN</h3>
-    { "{12 | add 1}" | run}
-      13
-    {("{1 | add 2}" "{2 | add 7}") | map block "{__ | run}"}
-      [3,9]
-    { "{__ | add 1}" | run with 7}
-      8
-    { "{_foo | add 1}" | run with {* (:foo 91)}}
-      92
-
+    Basic operation
+      {"{12 | add 1}" | run}
+        13
+      {("{1 | add 2}" "{2 | add 7}") | map block "{__ | run}" | add 1}
+        [4,10]
+    
+    Ensure run doesn't damage non-blocks
+      {5 | run | add 1}
+        6
+      {(5 12) | run | add 1}
+        [6,13]
+    
+    Simple 'with' params are passed as process input
+      { "{__ | add 1}" | run with 7}
+        8
+        
+    Keyed 'with' params inject pipeline variables into the process input
+      { "{_foo | add 1}" | run with {* (:foo 91)} | add 1}
+        93
+    
+    Calling run without a 'with' param defaults to passing the current process input
+      {(1 2 3) | map block "{"{__ | add 1}" | run}" | add 1}
+        [3,4,5]
 
 <div class="page-header" id="id_app_edge">
   <h2>Edge Cases</h2>
@@ -3052,7 +3055,7 @@ BASIC SYNTAX TESTS
         ash {"x":1,"two":{"monkey":{"x":{"flu":"ash"},"y":{"flu":"ash"},"z":{"flu":"ash"}}}}
 
     Double pipe leaks values if next segment is an error
-      {123 | >_foo || __foo}
+      {123 | >foo || __foo}
 
     Pipeline vars shouldn't be mutated by mutating commands:
       {(1 2 3) | >x | list remove by_value 2 | _x | add}
@@ -3072,3 +3075,4 @@ BASIC SYNTAX TESTS
     // {"{_x | run with {* (:x _x)} }" | >x | run with {* (:x _x)} }
     // (leads to immediate stack overflow... maybe that's an ok solution for infinite recursion? just let it blow up?)
 
+    // also this: {"{__ | run}" | run with __}

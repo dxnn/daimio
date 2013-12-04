@@ -36,31 +36,55 @@ D.import_models({
         },
       },
       
-      // THINK: a command that lets you pass a handler, method, and hash o' params, for those fancy occasions. 
+      // THINK: a command that lets you pass a handler, method, and hash o' params, for those fancy occasions.
       
-      log: {
-        desc: "Push something into the log",
+      tap: {
+        desc: "Send a message to the _tap port",
         params: [
           {
             key: 'value',
-            desc: 'A string or object to log',
+            desc: 'This is returned from the command, and is the default message value',
             type: 'anything',
             required: true
           },
           {
-            key: 'passthru',
-            desc: 'If true, return the value'
+            key: 'send',
+            desc: 'The message to send; defaults to value param'
           },
         ],
-        fun: function(value, passthru) {
-          // TODO: make this work server-side also (maybe a call to Daimio, with split client/server libs)
-          
+        fun: function(value, send) {          
+          /*
+            {$foo | log}            // for when you want to return nothing after
+            {$foo | tap}            // for when you want to pass that thing along
+            {$foo | log (__ :here)} // pass $foo along, but send (__ :here) to the log
+
+            so... the first case should also return $foo, right? so log and tap are synonyms? 
+            or tap is hardcoded, and you can't give it the second param. 
+            and then log and tap are still different, because the first case does what it says.
+            ok, do that.
+            
+            no no no. you don't need two commands. just this:
+            
+            {123 | tap | add 1}
+            {123 | tap (__ :asdf) | add 1}
+            
+            that's it.
+            
+            longform:
+            
+            {process tap value 123 | add 1}
+            {process tap value 123 send (__ :asdf) | add 1}
+            
+          */
+
           // THINK: we should defunc things, or something, probably... maybe like this?
+          // actually, we should probably use D.scrub_var or the ilk. we want blocks to stringify, but not lists.
           value = (typeof value === 'function') ? value() : value
           
-          console.log(value)
-          
-          if(passthru) return value
+          // TODO: send a message to a _tap port instead of calling console.log
+          console.log(send ? send : value) // THINK: 'send' is "" when unset (why?), so we can't send falsy messages... 
+
+          return value
         },
       },
       
@@ -147,8 +171,14 @@ D.import_models({
           },
         ],
         fun: function(block, _with, prior_starter, process) {
-          if(Array.isArray(_with))
+          if(Array.isArray(_with)) {
             _with = {'__in': _with[0]}
+          } else 
+          if(_with === false || !D.is_nice(_with)) {
+            _with = Object.keys(process.state)
+                          .filter(function(key) {return +key != +key})
+                          .reduce(function(acc, key) {acc[key] = process.state[key]; return acc}, {})
+          }
           
           return block(function(value) {
             prior_starter(value)
