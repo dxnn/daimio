@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Henderson's printer language</title>
+  <script type="text/javascript" src="../get.php?file=daimio"></script>
+</head>
+<body>
+
+  <div id="display" style="position: absolute; width: 400px; height: 400px;"></div>
+
+  <form id="controls">
+<!--    <label for="guess">guess</label>
+    <input type="text" name="guess" value="" id="guess">
+    <input type="submit" value="go">
+-->
+  </form>
+
+  <script type="text/daimio" id="spaceseeds">
+    outer
+      $tree []
+      $url ""
+
+      // INIT
+      start {__}
+      finish {__}
+      @init from-js
+      @init -> { __ | >$url | * (:url __) | (__) } -> start
+
+      // TREE BUILDER
+      below
+        {__ | >branch | ( {* (:origin (0 .50) :a (1.00 .50) :b (0 1.00) :children _branch)}
+                          {* (:origin (0 0)   :a (1.00  0)  :b (0 .50)  :children _branch)})}
+
+      beside
+        {__ | >branch | ( {* (:origin (0 0)   :a (.50  0) :b (0 1.00)  :children _branch)}
+                          {* (:origin (.50 0) :a (1.00 0) :b (.50 1.00) :children _branch)})}
+
+      start -> below -> {__ | process sleep for 1000} -> below -> beside -> {__ | process sleep for 2333} -> beside -> finish
+
+      // OUTPUT
+      @draw draw-thing display
+      finish -> @draw
+
+  </script>
+
+  <script type="text/javascript">
+    D.import_port_flavour('draw-thing', {
+      dir: 'out',
+      outside_exit: function(ship) {
+        var el = document.getElementById(this.settings.thing)
+          , output = ''
+          , whole = {origin: [0,0], a: [1.00,0], b: [0,1.00]}
+
+        function recursive_walk(tree, frame) {
+          if(tree.url) {
+            var left   = frame.origin[0] * 100
+              , bottom = frame.origin[1] * 100
+              , width  = frame.a[0] * 100
+              , height = frame.b[1] * 100
+            output += '<img src="' + tree.url + '" style="position:absolute; left:' + left + '%; bottom:' + bottom + '%; width:' + width + '%; height:' + height + '%">'
+            return
+          }
+
+          if(!tree.origin) {
+            for(var i=0, l=tree.length; i < l; i++) {
+              recursive_walk(tree[i], frame)
+            }
+            return
+          }
+
+          function add_vector(v, w) {
+            return [v[0] + w[0], v[1] + w[1]]
+          }
+
+          function sub_vector(v, w) {
+            return [v[0] - w[0], v[1] - w[1]]
+          }
+
+          function scale_vector(s, v) {
+            return [s * v[0], s * v[1]]
+          }
+
+          function frame_coord_map(aframe, vector) {
+            return add_vector( aframe.origin
+                             , add_vector( scale_vector( vector[0], aframe.a)
+                                         , scale_vector( vector[1], aframe.b) ))
+          }
+
+          // transform frame
+          var new_frame = {}
+            , new_origin = frame_coord_map(frame, tree.origin)
+
+          new_frame.origin = new_origin
+          new_frame.a = sub_vector(frame_coord_map(frame, tree.a), new_origin)
+          new_frame.b = sub_vector(frame_coord_map(frame, tree.b), new_origin)
+
+          // call for kids
+          for(var i=0, l=tree.children.length; i < l; i++) {
+            recursive_walk(tree.children[i], new_frame)
+          }
+        }
+
+
+        recursive_walk(ship, whole)
+        el.innerHTML = output
+        console.log(ship, this, output)
+      }
+    })
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = document.getElementById('spaceseeds').text
+      var outerseed = D.make_some_space(seedlikes)
+      OuterSpace = new D.Space(outerseed) // published for debug
+
+      D.send_value_to_js_port(outerseed, 'init', 'http://denver.mylittlefacewhen.com/media/f/img/mlfw4256-1334843208710.png')
+    })
+  </script>
+
+</body>
+</html>
