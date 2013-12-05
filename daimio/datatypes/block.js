@@ -9,7 +9,7 @@ D.import_type('block', function(value) {
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter, process.station_id) 
     }
   }
   else {

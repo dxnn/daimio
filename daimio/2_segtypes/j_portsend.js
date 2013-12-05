@@ -13,7 +13,7 @@ D.SegmentTypes.PortSend = {
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var to  = segment.value.to
-      , my_station = process.space.station_id
+      , my_station = process.station_id
       , port = process.space.ports.filter(function(port) {
                  return (port.name == to && port.station === my_station) // triple so undefined != 0
                })[0]

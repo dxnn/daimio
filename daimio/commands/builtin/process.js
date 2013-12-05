@@ -106,7 +106,7 @@ D.import_models({
           // find the correct port, using port.name [this is a runtime value, which is stinky -- it can change]
           // TODO: lock the command-port relationship in at spaceseed creation time
           var port = process.space.ports.filter(function(port) {
-                       return (port.name == name && port.station == process.space.station_id) 
+                       return (port.name == name && port.station == process.station_id) 
                      })[0] 
 
           if(!port)
@@ -167,22 +167,29 @@ D.import_models({
             key: 'with',
             desc: 'If provided values are imported into the block scope.',
             help: 'The magic key __in becomes the process input. If scalar the value is taken to be __in.',
-            type: 'maybe-list'
+            type: 'anything'
           },
         ],
         fun: function(block, _with, prior_starter, process) {
-          if(Array.isArray(_with)) {
-            _with = {'__in': _with[0]}
+          var scope = {}
+          
+          if(Array.isArray(_with)) {                    // unkeyed list? pass it as process input
+            scope = {'__in': _with}
           } else 
-          if(_with === false || !D.is_nice(_with)) {
-            _with = Object.keys(process.state)
+          if(typeof _with == 'object') {                //   keyed list? use it as the scope
+            scope = _with
+          } else
+          if(_with === "" || !D.is_nice(_with)) {       // default to current process scope (__in plus injected vars)
+            scope = Object.keys(process.state)
                           .filter(function(key) {return +key != +key})
                           .reduce(function(acc, key) {acc[key] = process.state[key]; return acc}, {})
+          } else {
+            scope = {'__in': _with}                     // scalar value? pass it as process input
           }
           
           return block(function(value) {
             prior_starter(value)
-          }, (_with || {}), process)
+          }, scope, process)
           
           // return NaN
           

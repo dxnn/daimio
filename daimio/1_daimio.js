@@ -1861,7 +1861,6 @@ D.Space = function(seed_id, parent) {
   // yoiks
   this.only_one_process = true
   this.processes = []
-  this.listeners = []
   this.queue = []
 }
 
@@ -1870,14 +1869,12 @@ D.Space.prototype.get_state = function(param) {
 }
 
 D.Space.prototype.dock = function(ship, station_id) {
-  this.station_id = station_id
-
   var block_id = this.seed.stations[station_id - 1]
     , block = D.BLOCKS[block_id]
     , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
     , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
     , scope = {"__in": ship} // TODO: find something better...
-    , value = this.execute(block, scope, prior_starter)
+    , value = this.execute(block, scope, prior_starter, station_id)
 
   if(value === value)
     prior_starter(value)
@@ -2029,15 +2026,15 @@ D.Space.prototype.change_seed = function(seed_id) {
 // }
 
 
-D.Space.prototype.deliver = function(message, prior_starter) {
-  // execute the block, with the message loaded in as __
-  var scope = {"__in": message} // TODO: find something better...
-  this.execute(this.block, scope, prior_starter)
-}
+// D.Space.prototype.deliver = function(message, prior_starter) {
+//   // execute the block, with the message loaded in as __
+//   var scope = {"__in": message} // TODO: find something better...
+//   this.execute(this.block, scope, prior_starter)
+// }
 
 // TODO: move this all into a Process, instead of doing it here.
 // THINK: there's no protection in here again executing multiple processes concurrently in the same space -- which is bad. find a way to bake that in. [except for those cases of desired in-pipeline parallelism, of course]
-D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, listeners) {
+D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, station_id) {
   var self = this
     , block = D.get_block(ablock_or_segment)
 
@@ -2051,7 +2048,7 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
   if(this.processes.length && this.only_one_process) {
     // NOTE: we kind of need this -- it keeps all the process requests in order (using JS's event loop) and clears our closet of skeletal callstacks
     var thunk = function() {
-      var result = self.real_execute(block, scope, prior_starter, listeners)
+      var result = self.real_execute(block, scope, prior_starter, station_id)
       if(result === result)
         prior_starter(result) // we're asynced, but the process didn't know it
     }
@@ -2065,10 +2062,10 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, li
     return NaN
   }
 
-  return self.real_execute(block, scope, prior_starter, listeners)
+  return self.real_execute(block, scope, prior_starter, station_id)
 }
 
-D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners) {
+D.Space.prototype.real_execute = function(block, scope, prior_starter, station_id) {
   var self = this
     , process
     , result
@@ -2087,28 +2084,28 @@ D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners
     prior_starter = function() {}
   }
 
-  // override the prior_starter here -- THIS function is the prior starter now. (basically, remember to cleanup after and fire the listeners.)
+  // override the prior_starter here -- THIS function is the prior starter now. (basically, remember to cleanup after yourself.)
 
   var my_starter = function(value) {
-    self.cleanup(process, listeners)
+    self.cleanup(process)
     prior_starter(value)
   }
 
-  process = new D.Process(this, block, scope, my_starter)
+  process = new D.Process(this, block, scope, my_starter, station_id)
   this.processes.push(process)
 
   try {
     result = process.run()
-    self.cleanup(process, listeners)
+    self.cleanup(process)
   } catch(e) {
     D.set_error(e.message)
-    self.cleanup(process, listeners)
+    self.cleanup(process)
   }
 
   return result
 }
 
-D.Space.prototype.cleanup = function(process, listeners) {
+D.Space.prototype.cleanup = function(process) {
   if(!process.asynced) {
     this.scrub_process(process.pid)
     // this.run_listeners(process.last_value, listeners) // THINK: is process.last_value right?
@@ -2199,7 +2196,7 @@ D.import_optimizer = function(name, fun) {
   o888o        o888o  o888o  `Y8bood8P'   `Y8bood8P'  o888ooooood8 8""88888P'  8""88888*/
 
 
-D.Process = function(space, block, scope, prior_starter) {
+D.Process = function(space, block, scope, prior_starter, station_id) {
 
   /*
       A Process executes a single Block from start to finish, executing each segment in turn and handling the wiring.
@@ -2216,6 +2213,7 @@ D.Process = function(space, block, scope, prior_starter) {
   // this.when_done = when_done
   this.prior_starter = prior_starter
   this.asynced = false
+  this.station_id = station_id
 
   var self = this
   this.my_starter = function(value) {
