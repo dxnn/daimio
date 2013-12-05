@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Client Server Communion</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=daimio"></script>
+</head>
+<body>
+
+  <div id="display"></div>
+
+  <form id="controls">
+<!--    <label for="guess">guess</label>
+    <input type="text" name="guess" value="" id="guess">
+    <input type="submit" value="go">
+-->
+  </form>
+
+  <script type="text/daimio" id="spaceseeds">
+    outer
+      $solved []
+
+      // SOLVER
+      solver
+        { __.#1 | mod 2
+        | then "{__.#1 | times 3 | plus 1}"
+          else "{__.#1 | divide by 2}"       | run
+        | (__ __in.#2 {__in.#3 | add 1})     | >new-tuple
+        | __.#1 | less than 2
+        | then "{__ | >@done}"
+          else "{__ | >@again}"
+        | run with _new-tuple }
+
+      solver.again -> solver
+
+      // INIT
+      @init from-js
+      @init -> {(__ __ 0)} -> solver
+
+      // OUTPUT
+      @display dom-set-html
+      update-display {$solved}
+      update-display2 
+        <ul>
+          {begin list | each data $solved}
+            <li>
+              {_value.#2} iterations for {_value.#1}
+            </li>
+          {end list}
+        </ul>
+      update-display -> @display
+
+      // NETWORK
+      @add-solved  socket-in   add-solved
+      @new-query   socket-in   new-query
+      @new-answer  socket-out  new-answer
+
+      solver.done -> {(__.#2 __.#3)} -> @new-answer
+      @add-solved -> {__ | list poke data $solved | >$solved} -> update-display
+
+  </script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+      D.Etc.socket = io.connect('/')
+
+      var seedlikes = document.getElementById('spaceseeds').text
+      outerseed = D.make_some_space(seedlikes)    // published for debug
+      OuterSpace = new D.Space(outerseed)         // published for debug
+
+      D.send_value_to_js_port(outerseed, 'init', 5)
+    })
+  </script>
+
+</body>
+</html>
