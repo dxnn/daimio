@@ -678,14 +678,14 @@ D.send_value_to_js_port = function(spaceseed_id, port_thing, value) {
 
 
 D.port_standard_exit = function(ship) {
-  var self = this
+  // var self = this
 
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
-    D.port_exit_next_tick(self.outs, ship)
+    D.port_exit_next_tick(this.outs, ship)
     // setImmediate(function() { self.outs.forEach(function(port) { port.enter(ship) }) })
   else
-    self.outside_exit(ship) // ORLY? No delay?
+    this.outside_exit(ship) // ORLY? No delay?
 }
 
 D.port_standard_pairup = function(port) {

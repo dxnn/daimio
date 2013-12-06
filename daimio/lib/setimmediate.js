@@ -32,24 +32,30 @@
 // pure time&space optimization... can maybe delete.
 ~function() {
   var deliveries = D.get_queue()
-  var messageName = 'deliverme!';
+  var messageName = 'deliverme!'
+  var need_a_tick = true
 
   function setImmediate(ports, ship) {
     deliveries([ports, ship]);
-    window.postMessage(messageName, "*");
+    if(need_a_tick) {
+      need_a_tick = false
+      window.postMessage(messageName, "*");
+    }
   }
 
   function handleMessage(event) {
     if(event.data == messageName) {
       event.stopPropagation();
 
-      var delivery = deliveries()
-      if(delivery === undefined) return
-      
-      var ports = delivery[0]
-        , ship = delivery[1]
+      var delivery
+      while(delivery = deliveries()) {
+        var ports = delivery[0]
+          , ship = delivery[1]
 
-      ports.forEach(function(port) { port.enter(ship) })
+        ports.forEach(function(port) { port.enter(ship) })
+      }
+      
+      need_a_tick = true
     }
   }
   
