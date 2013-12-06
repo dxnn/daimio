@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Simple Solo Solver</title>
+  <script type="text/javascript" src="http://sherpa.local/~dann/daimio/get.php?file=daimio"></script>
+</head>
+<body>
+
+  <h1>Simple Solo Solver</h1>
+  
+  <p>
+    A Daimio system for solving the Collatz sequence. 
+  </p>
+  
+  <p>
+    In the JS console, try this: 
+    <code>
+      for(i = 2; i < 100000; i++) D.send_value_to_js_port(outerseed, 'init', i)
+    </code>
+  </p>
+
+  <div id="display"></div>
+  
+  <script type="text/daimio" id="spaceseeds">
+    outer
+      $solved 0
+
+      // SOLVER
+      solver2
+        { __.#1 | mod 2
+        | then "{__.#1 | times 3 | plus 1}"
+          else "{__.#1 | divide by 2}"       | run
+        | (__ __in.#2 {__in.#3 | add 1})     | >new-tuple
+        | __.#1 | less than 2
+        | then "{__ | >@done}"
+          else "{__ | >@again}"
+        | run with _new-tuple }
+
+      solver
+        { __ 
+        | times -1
+        | >val
+        | less than 0
+        | then "{__ | >@again}"
+          else "{__ | >@done}"
+        | run with _val }
+
+      solver.again -> solver
+
+      // INIT
+      @init from-js
+      // @init -> solver
+
+      // OUTPUT
+      @display dom-set-text
+      update-display {$solved}
+
+      @init -> @display
+
+      // solver.done -> {$solved | add 1 | >$solved} -> update-display -> @display
+
+  </script>
+
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+      var seedlikes = document.getElementById('spaceseeds').text
+      outerseed = D.make_some_space(seedlikes)    // published for debug
+      OuterSpace = new D.Space(outerseed)         // published for debug
+
+      D.send_value_to_js_port(outerseed, 'init', 32)
+    })
+    
+    /*
+    
+      with @init -> @display
+      and  for(i = 2; i < 1000000; i++) D.send_value_to_js_port(outerseed, 'init', i)
+
+    
+      1,000 numbers ~= 1 second
+      10,000 ~= 11 seconds
+      100,000 ~= 200s
+      
+      1,000,000 crawled to a halt... probably something to do with using ~1GB of ram (might be a hard limit chrome imposes, or some pagination issues). let it run for a couple hours. 
+      (memory leak, probably from all the closures being created?)
+      
+      
+      
+      changing setimmediate stategy...
+      
+      With the new queueing system:
+         10,000 ~= 1.2 seconds
+        100,000 ~=  12 seconds
+      1,000,000 ~= 120 seconds -- wow!
+
+      still some memory issues -- the chrome tab is using 500MB once the process is done. not sure if it's an actual leak, failed GC, or just Chrome being lazy about freeing the space (because I still have a lot of free memory).
+      ah -- the memory issue doesn't get worse by doing it over and over, so I think it's just laziness.
+      
+      
+    */
+    
+  </script>
+
+</body>
+</html>
