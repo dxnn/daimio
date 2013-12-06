@@ -450,6 +450,34 @@ D.mungeLR = function(items, fun) {
 }
 
 
+
+// inspired by
+// http://code.stephenmorley.org/javascript/queues/
+// http://tomswitzer.net/2011/02/super-simple-javascript-queue/
+D.get_queue = function() {
+  var queue  = []
+    , offset = 0
+    
+  return function(x) {
+    if(x !== undefined)
+      return queue.push(x)
+    
+    var length = queue.length
+    if (length == 0) return undefined
+
+    var item = queue[offset]
+    if(++ offset * 2 >= length || offset > 100000) {
+      queue  = queue.slice(offset)
+      offset = 0
+    }
+
+    return item
+  }
+}
+
+
+
+
 D.run = function(daimio, ultimate_callback, space) {
   // This is *always* async, so provide a callback.
   if(!daimio) return ""
@@ -648,12 +676,14 @@ D.send_value_to_js_port = function(spaceseed_id, port_thing, value) {
 }
 
 
+
 D.port_standard_exit = function(ship) {
   var self = this
 
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
-    setImmediate(function() { self.outs.forEach(function(port) { port.enter(ship) }) })
+    D.port_exit_next_tick(self.outs, ship)
+    // setImmediate(function() { self.outs.forEach(function(port) { port.enter(ship) }) })
   else
     self.outside_exit(ship) // ORLY? No delay?
 }
