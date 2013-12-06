@@ -53,7 +53,7 @@
       // @init -> solver
 
       // OUTPUT
-      @display dom-set-text
+      @display dom-foo-baz
       update-display {$solved}
 
       @init -> @display
@@ -64,6 +64,20 @@
 
   <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
+      big_ship = 0
+      
+      D.import_port_flavour('dom-foo-baz', {
+        dir: 'out',
+        outside_exit: function(ship) {
+          if(ship < big_ship) return false
+          big_ship = ship
+          this.element.innerText = D.stringify(ship)
+        },
+        outside_add: function() {
+          this.element = document.getElementById(this.settings.thing)
+        }
+      })
+      
       var seedlikes = document.getElementById('spaceseeds').text
       outerseed = D.make_some_space(seedlikes)    // published for debug
       OuterSpace = new D.Space(outerseed)         // published for debug
@@ -95,6 +109,23 @@
 
       still some memory issues -- the chrome tab is using 500MB once the process is done. not sure if it's an actual leak, failed GC, or just Chrome being lazy about freeing the space (because I still have a lot of free memory).
       ah -- the memory issue doesn't get worse by doing it over and over, so I think it's just laziness.
+      
+      
+      Of course, it's not very likely you'll have a million events pushed through in a single tick. 
+      This would be far more common:
+      x = function() {setTimeout(function() {p++; for(i = 2; i < 1000; i++) D.send_value_to_js_port(outerseed, 'init', p+i); if(p<1000) x()}, 1)}
+      
+      1,000,000 ~= 100 seconds.
+      
+      
+      oooookay. changed the setimmediate implementation again and suddenly
+      
+        100,000 ~= 2.3s
+      1,000,000 ~=  23s
+      
+      also FAR less mem usage: 250MB max, dropping to 150MB after cleansing.
+      
+      two orders of magnitude is pretty good for one evening, i'd say. bed time.
       
       
     */
