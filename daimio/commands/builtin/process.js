@@ -22,7 +22,7 @@ D.import_models({
         ],
         fun: function(_for, then, prior_starter) {
           if(!_for) {
-            setImmediate(function() {
+            D.setImmediate(function() {
               prior_starter(then)
             })
           }

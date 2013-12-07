@@ -1,66 +1,36 @@
+// inspired by http://dbaron.org/log/20100309-faster-timeouts
 
 ~function() {
-  var timeouts = D.get_queue();
-  var messageName = 12345;
+  var timeouts = []
+  var messageName = 12345
+  var gimme_a_tick = true
 
-  // http://dbaron.org/log/20100309-faster-timeouts
-  // Like setTimeout, but only takes a function argument.  There's
-  // no time argument (always zero) and no arguments (you have to
-  // use a closure).
   function setImmediate(fn) {
-    timeouts(fn);
-    window.postMessage(messageName, "*");
-  }
-
-  function handleMessage(event) {
-    if(event.data == messageName) {
-      event.stopPropagation();
-      var timeout = timeouts()
-      if(timeout !== undefined)
-        timeouts.shift()()
-    }
-  }
-  
-  if(typeof window != 'undefined') {
-    window.addEventListener("message", handleMessage, true)
-    window.setImmediate = setImmediate
-  }
-}();
-
-
-// special branch for port exits
-// pure time&space optimization... can maybe delete.
-~function() {
-  var deliveries = D.get_queue()
-  var messageName = 'deliverme!'
-  var need_a_tick = true
-
-  function setImmediate(ports, ship) {
-    deliveries([ports, ship]);
-    if(need_a_tick) {
-      need_a_tick = false
-      window.postMessage(messageName, "*");
+    timeouts.push(fn)
+    
+    if(gimme_a_tick) {
+      gimme_a_tick = false
+      window.postMessage(messageName, "*")
     }
   }
 
   function handleMessage(event) {
-    if(event.data == messageName) {
-      event.stopPropagation();
+    if(event.data != messageName) return false
 
-      var delivery
-      while(delivery = deliveries()) {
-        var ports = delivery[0]
-          , ship = delivery[1]
+    event.stopPropagation()
 
-        ports.forEach(function(port) { port.enter(ship) })
-      }
-      
-      need_a_tick = true
-    }
+    for(var i=0, l=timeouts.length; i < l; i++)
+      timeouts[i]()
+    
+    // OPT: put a special branch here for array messages, and then handle them like this:
+    // timeouts[i][0].forEach(function(port) { port.enter(timeouts[i][1]) })  // aka ports and ship
+    
+    timeouts = []
+    gimme_a_tick = true
   }
   
   if(typeof window != 'undefined') {
     window.addEventListener("message", handleMessage, true)
-    D.port_exit_next_tick = setImmediate
+    D.setImmediate = setImmediate
   }
-}();
+}()

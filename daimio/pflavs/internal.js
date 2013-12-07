@@ -25,7 +25,7 @@ D.import_port_flavour('down', {
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
     
     var self = this
-    setImmediate(function() { 
+    D.setImmediate(function() { 
       // THINK: ideally there's only ONE route from a downport. can we formalize that?
       // self.outs.forEach(function(port) { 
       //   port.enter(ship) 
