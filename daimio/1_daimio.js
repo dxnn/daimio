@@ -660,19 +660,16 @@ D.track_event = function(type, target, callback) {
   }
 }
 
-D.send_value_to_js_port = function(spaceseed_id, port_thing, value) {
-  // TODO: use an individual space instead of a space class
-  var eventname = spaceseed_id + '-' + port_thing
-
-  try {
-    document.dispatchEvent(new CustomEvent(eventname, { 'detail': value }))
-  } catch(e) {
-    // hack for old safari :(
-    var event = document.createEvent('Event')
-    event.initEvent(eventname, true, true)
-    event.detail = value
-    document.dispatchEvent(event)
-  }
+D.send_value_to_js_port = function(space, port_name, value, port_flavour) {
+  port_flavour = port_flavour || 'from-js'
+  
+  for ( var i=0, l=space.ports.length; i < l; i++)
+    if( space.ports[i].name == port_name
+     && space.ports[i].flavour == port_flavour )
+      { space.ports[i].pair.enter(value)
+        return true }
+  
+  return false
 }
 
 

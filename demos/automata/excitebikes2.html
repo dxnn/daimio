@@ -95,7 +95,7 @@
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed) // published for debug
     
-      D.send_value_to_js_port(outerseed, 'init', 1) // activate init
+      D.send_value_to_js_port(OuterSpace, 'init', 1) // activate init
     })
   </script>
   

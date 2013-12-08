@@ -2,8 +2,10 @@
 <html lang="en" data-framework="javascript">
 <head>
   <title>Excitable Media</title>
-  <!--<script type="text/javascript" src="../../get.php?file=daimio"></script>-->
+  <!--
   <script type="text/javascript" src="../../daimio_composite.js"></script>
+  -->
+    <script type="text/javascript" src="../../get.php?file=daimio"></script>
 </head>
 <body>
   
@@ -82,7 +84,7 @@
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed) // published for debug
     
-      D.send_value_to_js_port(outerseed, 'init', 1) // activate init
+      D.send_value_to_js_port(OuterSpace, 'init', 1) // activate init
     })
   </script>
   

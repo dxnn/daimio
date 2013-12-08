@@ -101,7 +101,7 @@
         
             space.silly_chunk_id_thing = index
         
-            D.send_value_to_js_port(seed, 'init')
+            D.send_value_to_js_port(space, 'init')
           } catch(e) {
             D.set_error(e)
             // chunk = {type: 'blank'}

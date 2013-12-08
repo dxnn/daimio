@@ -216,7 +216,7 @@
       ideas = JSON.parse(localStorage.getItem('ideas')) || [] // TODO: var me
 
       // activate ideas-in port
-      D.send_value_to_js_port(outerseed, 'ideas-in', ideas)
+      D.send_value_to_js_port(OuterSpace, 'ideas-in', ideas)
     })
         
   </script>

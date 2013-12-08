@@ -16,7 +16,7 @@
   <p>
     In the JS console, try this: 
     <code>
-      for(i = 2; i < 100000; i++) D.send_value_to_js_port(outerseed, 'init', i)
+      for(i = 2; i < 100000; i++) D.send_value_to_js_port(OuterSpace, 'init', i)
     </code>
   </p>
 
@@ -56,7 +56,8 @@
       @display dom-foo-baz
       update-display {$solved}
 
-      @init -> @display
+      // @init -> @display
+      @init -> {__ | add 2} -> @display
 
       // solver.done -> {$solved | add 1 | >$solved} -> update-display -> @display
 
@@ -82,8 +83,13 @@
       outerseed = D.make_some_space(seedlikes)    // published for debug
       OuterSpace = new D.Space(outerseed)         // published for debug
 
-      D.send_value_to_js_port(outerseed, 'init', 32)
+      D.send_value_to_js_port(OuterSpace, 'init', 32)
     })
+    
+    function send_some(num) {
+      for(var i = 2; i <= num; i++) 
+        D.send_value_to_js_port(OuterSpace, 'init', i)
+    }
     
     /*
     
@@ -126,6 +132,22 @@
       also FAR less mem usage: 250MB max, dropping to 150MB after cleansing.
       
       two orders of magnitude is pretty good for one evening, i'd say. bed time.
+      
+      
+      Changing the D.send_value_to_js_port function reduces this by another OOM:
+      turns out using document.dispatchEvent(new CustomEvent...) is quite expensive.
+      
+      1,000,000 ~=  3.4s
+      
+      As an added benefit, this approach uses the space instead of the spaceseed, 
+      so it will find the right port when multiple copies of the same space are present.
+      AND it works regardless of the port flavour (hopefully), so we can use it to actively probe.
+      
+      aaaand moving the function into the page instead of doing it through the console makes 
+      
+       1,000,000 ~= 1.4s
+      10,000,000 ~=  12s  (split into 10 groups on the way in)
+      
       
       
     */

@@ -66,10 +66,10 @@
       D.Etc.socket = io.connect('/')
 
       var seedlikes = document.getElementById('spaceseeds').text
-      outerseed = D.make_some_space(seedlikes)    // published for debug
+      var outerseed = D.make_some_space(seedlikes)    // published for debug
       OuterSpace = new D.Space(outerseed)         // published for debug
 
-      D.send_value_to_js_port(outerseed, 'init', 5)
+      D.send_value_to_js_port(OuterSpace, 'init', 5)
     })
     
   </script>

@@ -3,8 +3,11 @@
 <head> 
   <meta charset="utf-8">
   <title>Push My Button! Volume Two</title>
-  <!--<script type="text/javascript" src="../get.php?file=daimio"></script>-->
+  <!--
   <script type="text/javascript" src="../daimio_composite.js"></script>
+  -->
+    <script type="text/javascript" src="../get.php?file=daimio"></script>
+  
 </head>
 
 <body>
@@ -45,7 +48,7 @@
       @button  dom-on-submit
 
       inc    {__ | add $count | >$count}
-      block  {$count | then "" else "{1 | >@start}" with 1} 
+      block  {$count | then "" else "{1 | >@start}" | run with 1} 
       
       @button -> block
       block.start -> inc -> @counter
@@ -102,7 +105,7 @@
       @button  dom-on-submit
 
       inc    {__ | add $count | >$count}
-      block  {$count | then "" else "{1 | >@start}" with 1} 
+      block  {$count | then "" else "{1 | >@start}" | run with 1} 
       
       @button -> block
       block.start -> inc -> @counter
