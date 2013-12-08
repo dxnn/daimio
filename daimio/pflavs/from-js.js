@@ -12,12 +12,7 @@ D.import_port_flavour('from-js', {
     port.pair = this
   },
   enter: function(ship, process) {
-    ship = ship || {}
-    
-    value = ( ship.detail !== undefined ) 
-            ? ship.detail
-            : this.default_value
-
+    var value = ship !== undefined ? ship : this.default_value
     D.port_standard_enter.call(this, value, process)
   }
 })

@@ -600,3 +600,62 @@ Re: peek / poke
 
 
 // Ackermann via stations...
+
+
+on simple_solo_solver
+with @init -> @display
+and  for(i = 2; i < 1000000; i++) D.send_value_to_js_port(outerseed, 'init', i)
+
+
+1,000 numbers ~= 1 second
+10,000 ~= 11 seconds
+100,000 ~= 200s
+
+1,000,000 crawled to a halt... probably something to do with using ~1GB of ram (might be a hard limit chrome imposes, or some pagination issues). let it run for a couple hours. 
+(memory leak, probably from all the closures being created?)
+
+
+
+changing setimmediate stategy...
+
+With the new queueing system:
+   10,000 ~= 1.2 seconds
+  100,000 ~=  12 seconds
+1,000,000 ~= 120 seconds -- wow!
+
+still some memory issues -- the chrome tab is using 500MB once the process is done. not sure if it's an actual leak, failed GC, or just Chrome being lazy about freeing the space (because I still have a lot of free memory).
+ah -- the memory issue doesn't get worse by doing it over and over, so I think it's just laziness.
+
+
+Of course, it's not very likely you'll have a million events pushed through in a single tick. 
+This would be far more common:
+x = function() {setTimeout(function() {p++; for(i = 2; i < 1000; i++) D.send_value_to_js_port(outerseed, 'init', p+i); if(p<1000) x()}, 1)}
+
+1,000,000 ~= 100 seconds.
+
+
+oooookay. changed the setimmediate implementation again and suddenly
+
+  100,000 ~= 2.3s
+1,000,000 ~=  23s
+
+also FAR less mem usage: 250MB max, dropping to 150MB after cleansing.
+
+two orders of magnitude is pretty good for one evening, i'd say. bed time.
+
+
+Changing the D.send_value_to_js_port function reduces this by another OOM:
+turns out using document.dispatchEvent(new CustomEvent...) is quite expensive.
+
+1,000,000 ~=  3.4s
+
+As an added benefit, this approach uses the space instead of the spaceseed, 
+so it will find the right port when multiple copies of the same space are present.
+AND it works regardless of the port flavour (hopefully), so we can use it to actively probe.
+
+aaaand moving the function into the page instead of doing it through the console makes 
+
+ 1,000,000 ~= 1.4s
+10,000,000 ~=  12s  (split into 10 groups on the way in)
+
+woooo!

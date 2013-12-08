@@ -449,33 +449,16 @@ D.mungeLR = function(items, fun) {
   return L
 }
 
-
-
-// inspired by
-// http://code.stephenmorley.org/javascript/queues/
-// http://tomswitzer.net/2011/02/super-simple-javascript-queue/
-D.get_queue = function() {
-  var queue  = []
-    , offset = 0
-    
-  return function(x) {
-    if(x !== undefined)
-      return queue.push(x)
-    
-    var length = queue.length
-    if (length == 0) return undefined
-
-    var item = queue[offset]
-    if(++ offset * 2 >= length || offset > 100000) {
-      queue  = queue.slice(offset)
-      offset = 0
-    }
-
-    return item
-  }
+D.nicify = function(list, state) {
+  var result = []
+  for(var i=0, l=list.length; i < l; i++)              // the map below is really slow, 
+    result.push( D.is_nice(state[list[i]])             // so this is an optimization
+               ? state[list[i]]
+               : null )                                // THINK: why null?
+  
+  return result
+  // return list.map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) 
 }
-
-
 
 
 D.run = function(daimio, ultimate_callback, space) {
@@ -2327,8 +2310,7 @@ D.Process.prototype.run = function() {
 }
 
 D.Process.prototype.next = function() {
-  var self = this
-    , segment = this.block.segments[this.current]
+  var segment = this.block.segments[this.current]
     , wiring = this.block.wiring
     , state = this.state
 
@@ -2337,17 +2319,18 @@ D.Process.prototype.next = function() {
     // return this.done()
   }
 
-  var params = segment.paramlist || []
+  var inputs = []
+    , params = segment.paramlist || []
     , type = D.SegmentTypes[segment.type]
-    , inputs = []
-    , key = segment.key || this.current
+    , key  = segment.key || this.current
 
   if(wiring[key]) {
-    inputs = wiring[key].map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) // THINK: why null?
+    inputs = D.nicify(wiring[key], state)
   }
 
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
 }
+
 
 
    /*ooooo..o                                                                             .o8
