@@ -67,6 +67,7 @@ D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overla
 D.Etc.FancyRegex = ""                 // this is also pretty silly
 D.Etc.Tglyphs = ""                    // and this one too
 
+D.Etc.OptimizationMap = {}            // technically allcaps here too
 
 
   /*ooo   ooooo oooooooooooo ooooo        ooooooooo.   oooooooooooo ooooooooo.    .oooooo..o
@@ -2080,10 +2081,7 @@ D.Space.prototype.real_execute = function(block, scope, prior_starter, station_i
   var self = this
     , process
     , result
-
-  result = this.try_optimize(block, scope)
-  if(result)
-    return result.value
+    , block = D.try_optimize(block)
 
   // var new_when_done = function(value) {
   //   self.cleanup(self.pid, self.last_value)
@@ -2138,62 +2136,33 @@ D.Space.prototype.scrub_process = function(pid) {
 
 
 
-D.Space.prototype.try_optimize = function(block, scope) {
-  // this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
+D.try_optimize = function(block) {
+  var map = D.Etc.OptimizationMap                      // THINK: a weakmap might work well here
+  var block_id = block.id
+  
+  if(map[block_id])
+    return map[block_id]
+  
+  for(var i=0, l=D.Optimizers.length; i < l; i++)
+    block = D.Optimizers[i].fun(block)
 
-  for(var i=0, l=D.Optimizers.length; i < l; i++) {
-    var result = D.Optimizers[i].fun(block, scope)
-
-    if(result)
-      return result
-  }
-
-  // okay, but how do you chain multiple optimizations together? you want the later ones to accept the earlier ones as input, or something...
-
-  return undefined
-  // return {value: 'foo'}
+  map[block_id] = block
+  return block
 }
 
 
 D.Optimizers = []
-D.import_optimizer = function(name, fun) {
-  var opt = {
-    name: name,
-    fun: fun
-  }
+D.import_optimizer = function(name, priority, fun) {
+  if( priority <= 0                                    // priority is between 0 and 1 *exclusive*
+   || priority >= 1 )                                  // this means you can always fit something
+      priority  = 0.5                                  // at start or end, up to float precision.
+  
+  var opt = { fun: fun                                 // fun takes a block as an argument and 
+            , name: name                               // returns a block (same or different)
+            , priority: priority }
 
   D.Optimizers.push(opt)
-  // fun returns {value: xyyzy} if it finds something, false otherwise
-
-
-  // figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
-
-  //D.Etc.opt_memos = {}
-  //D.import_optimizer('memoize', function(block, scope) {
-  //  var memos = D.Etc.opt_memos
-  //  if(!memos[block.id])
-  //    memos[block.id] = {}
-  //
-  //  var block_memos = memos[block.id]
-  //    , scope_id = murmurhash(JSON.stringify(scope))
-  //
-  //  if(typeof block_memos[scope_id] == 'undefined') { // first time through primes it
-  //    block_memos[scope_id] = true
-  //    return false
-  //  }
-  //
-  //  if(!block_memos[scope_id])
-  //    return false
-  //
-  //  if(block_memos[scope_id] == true) { // second time runs it
-  //    var result =
-  //    block_memos[scope_id] = {value: result}
-  //  }
-  //
-  //  return block_memos[scope_id]
-  //})
-
-
+  D.Optimizers.sort(function(a, b) { return a.priority > b.priority })
 }
 
 
@@ -2292,18 +2261,18 @@ D.Process.prototype.done = function() {
 }
 
 D.Process.prototype.run = function() {
-  var self = this
-    , value = ""
+  var value = ""
+    , segs  = this.block.segments
 
-  while(this.block.segments[this.current]) {
+  while(segs[this.current]) {
     value = this.next() // TODO: this is not a trampoline
     if(value !== value) {
       this.asynced = true
       return NaN // NaN is the "I took the callback route" signal...
     }
-    self.last_value = value
-    self.state[self.current] = value // TODO: fix this it isn't general
-    self.current++
+    this.last_value = value
+    this.state[this.current] = value // TODO: fix this it isn't general
+    this.current++
   }
 
   return this.done()
