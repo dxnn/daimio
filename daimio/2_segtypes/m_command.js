@@ -109,10 +109,29 @@ D.SegmentTypes.Command = {
     // TODO: suck out any remaining null params here
     return [new D.Segment(token.type, token.value, token)]
   }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var handler = dialect.get_handler(segment.value.Handler)
-      , method = dialect.get_method(segment.value.Handler, segment.value.Method)
-
+, execute: function(segment, inputs, dialect, prior_starter, process) {  
+    var handler, method
+      , vhandler = segment.value.Handler                 // TODO: this is not the right place for this optimization 
+      , vmethod  = segment.value.Method                  // -- or any optimization really.
+      , cache    = dialect.cache                         // find a different home for it; 
+                                                         // somewhere orthogonal to Process.run, ideally.
+    if(cache) {
+      handler = cache[vhandler]
+      method  = cache[vhandler + ' ' + vmethod]
+    } else {
+      dialect.cache = {}
+    }
+    
+    if(!handler) {
+      handler = dialect.get_handler(vhandler)
+      dialect.cache[vhandler] = handler
+    }
+    
+    if(!method) {
+      method = dialect.get_method(vhandler, vmethod)
+      dialect.cache[vhandler + ' ' + vmethod] = method
+    }                                                    // end dialect caching optimization
+    
     if(!method) {
       // THINK: error?
       D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
