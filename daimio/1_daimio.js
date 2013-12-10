@@ -308,14 +308,17 @@ D.mean_defunctionize = function(values, seen) {
   if(typeof values == 'function') return null;
   if(typeof values != 'object') return values;            // number, string, or boolean
 
-  var sig = values.constructor.toString().slice(0,12)     // prevents DOM yuckyucks. details here:
-  if ( sig == "function Nod"                              // https://github.com/dxnn/daimio/issues/1
-    || sig == "function HTM"                              // THINK: can this still leak too much info?
-    || sig == "function win"
-    || sig == "function Win"
-    || sig == "function Mim"
-    || sig == "function DOM" )
-       return null
+  var type = values.constructor.toString().split(' ')[1]
+  if(type) {
+    var sig = type.slice(0,3)                             // prevents DOM yuckyucks. details here:
+    if ( sig == "Nod"                                     // https://github.com/dxnn/daimio/issues/1
+      || sig == "HTM"                                     // THINK: can this still leak too much info?
+      || sig == "win"
+      || sig == "Win"
+      || sig == "Mim"
+      || sig == "DOM" )
+         return null
+  }
 
   seen = seen || [];
   if(seen.indexOf(values) !== -1) return null;            // only YOU can prevent infinite recursion
