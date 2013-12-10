@@ -6,8 +6,11 @@ D.import_port_flavour('dom-set-text', {
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
     // if(!(ship % 1000))
-      if(this.element) 
-        this.element.innerText = D.stringify(ship)
+      if(this.element)
+        if(this.element.innerText)
+          this.element.innerText = D.stringify(ship)
+        else
+          this.element.textContent = D.stringify(ship)
   },
   outside_add: function() {
     this.element = document.getElementById(this.settings.thing)
@@ -15,7 +18,8 @@ D.import_port_flavour('dom-set-text', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.set_error('That dom thing has no innerText')
+    if( !this.element.hasOwnProperty('innerText')
+     && !this.element.hasOwnProperty('textContent') )
+        return D.set_error('That dom thing has no innerText')
   }
 })
