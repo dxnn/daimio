@@ -10,7 +10,7 @@ D.import_port_flavour('dom-do-submit', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.set_error('That dom thing has no innerText')
+    if(!this.element.hasOwnProperty('submit'))
+      return D.set_error('That dom thing has no submit')
   }
 })
