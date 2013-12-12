@@ -24,7 +24,7 @@ D.SegmentTypes.Command = {
     else if(items.length == 2) {
       if(/^[a-z]/.test(items[1])) {  // {math add}
         token.type = 'Command'
-        token.value = {Handler: items[0], Method: items[1]}
+        token.value = {handler: items[0], method: items[1]}
       }
       else {  // {add 1}
         token.type = 'Alias'
@@ -56,8 +56,8 @@ D.SegmentTypes.Command = {
     else {  // {math add value 1}
       // collect H & M
       token.type = 'Command'
-      token.value = { Handler: items.shift()
-                    , Method: items.shift()}
+      token.value = { handler: items.shift()
+                    , method: items.shift()}
     }
 
     // collect params
@@ -111,8 +111,8 @@ D.SegmentTypes.Command = {
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {  
     var handler, method
-      , vhandler = segment.value.Handler                 // TODO: this is not the right place for this optimization 
-      , vmethod  = segment.value.Method                  // -- or any optimization really.
+      , vhandler = segment.value.handler                 // TODO: this is not the right place for this optimization 
+      , vmethod  = segment.value.method                  // -- or any optimization really.
       , cache    = dialect.cache                         // find a different home for it; 
                                                          // somewhere orthogonal to Process.run, ideally.
     if(cache) {
@@ -134,7 +134,7 @@ D.SegmentTypes.Command = {
     
     if(!method) {
       // THINK: error?
-      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
+      D.set_error('You have failed to provide an adequate method: ' + segment.value.handler + ' ' + segment.value.method)
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
@@ -174,7 +174,7 @@ D.SegmentTypes.Command = {
         param_value = typefun(method_param.fallback)
       }
       else if(method_param.required) {
-        errors.push('Missing required parameter "' + method_param.key + '" for command "' + segment.value.Handler + " " + segment.value.Method + '"')
+        errors.push('Missing required parameter "' + method_param.key + '" for command "' + segment.value.handler + " " + segment.value.method + '"')
         param_value = typefun(undefined)
       }
       else if(!method_param.undefined) {

@@ -1631,8 +1631,8 @@ D.wash_keys = function(segments, wiring) {
      && segment.type != 'VariableSet'                    // 'Put' segtypes are purely side effects
      && segment.type != 'PortSend'                       // TODO: change these to 'PutSpaceVar' and 'PutPort'
      &&  ( segment.type != 'Command'                     
-        && segment.value.Method != 'run'                 // two commands are also side-effect based...
-        && segment.value.Method != 'sleep' ))            // FIXME: find a nice way to deal with that
+        && segment.value.method != 'run'                 // two commands are also side-effect based...
+        && segment.value.method != 'sleep' ))            // FIXME: find a nice way to deal with that
            continue
     
     for(var i=0, l=my_wires.length; i < l; i++) {
