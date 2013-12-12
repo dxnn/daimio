@@ -1,56 +1,73 @@
-// D.import_optimizer('constant_list', 0.5, function(block) {
-//   var changed  = false
-//   var segments = block.segments
-//   var wiring   = block.wiring
-//   var new_segments = []
-//   var new_wiring   = {}
-//   
-//   for(var i=0, l=segments.length; i < l; i++) {
-//     var temp = []
-//     var places = []
-//     var this_segment = segments[i]
-//     
-//     new_segments.push(this_segment)
-// 
-//     if(!wiring[i]) continue    
-// 
-//     if(this_segment.type != 'List') {
-//       new_wiring[i] = wiring[i]
-//       continue
-//     }
-//     
-//     new_wiring[i] = D.clone(wiring[i])                  // only clone if necessary
-//     
-//     for(var j=0, k=wiring[i].length; j < k; j++) {
-//       var wire = wiring[i][j]
-//       var wireseg = segments[wire]
-//       if(!wireseg                                       // note that && binds tighter than ||
-//        || wireseg.type != 'Number'                      // (but don't try this at home, kids)
-//        && wireseg.type != 'String' ) {
-//           temp.push(null)
-//           places.push(j)
-//           continue }
-// 
-//       new_wiring[i][j] = undefined
-//       new_segments[wire] = null
-//       temp.push(wireseg.value)
-//     }
-//     
-//     changed  = true
-//     new_wiring[i] = new_wiring[i].filter(function (x) { return x !== undefined })
-//     var value = { list: temp, places: places.length ? places : false }
-//     new_segments[i] = new D.Segment(value, 'OPT_constant_list', this_segment)
-//   }
-//   
-//   return changed ? new D.Block(segments, wiring) : block
-// })
-// 
-// 
-// 
-// D.SegmentTypes.OPT_simple_peek = {
-//   execute: function(segment, inputs) {
-//     var val = D.clone(segment.value)   // erk really?
-//     
-//     return val
-//   }
-// }
+D.import_optimizer('simple_peek', 0.4, function(block) {
+  if(!D.Etc.OPT_simple_peek)                            // oh hai have some fun
+    D.Etc.OPT_simple_peek = 
+      { pos : D.Pathfinders.filter(function(pf) {return pf.name == "position"})[0].gather
+      , key : D.Pathfinders.filter(function(pf) {return pf.name == "key"})[0].gather }
+  
+  var changed  = false
+  var segments = block.segments
+  var wiring   = block.wiring
+  var new_segments = []
+  var new_wiring   = {}
+  
+  for(var i=0, l=segments.length; i < l; i++) {
+    var temp = []
+    var places = []
+    var this_segment = segments[i]
+    
+    new_segments.push(this_segment)
+
+    if(!wiring[i]) continue
+    new_wiring[i] = wiring[i]
+
+    if( this_segment.type != 'Command'
+     || this_segment.value.handler  != 'list'
+     || this_segment.value.method   != 'peek'
+     || this_segment.value.names[1] != 'path' )         // THINK: we could still opt in this case...
+        continue
+    
+    var pathwire = wiring[i][1]
+    var listseg = segments[pathwire]
+    
+    if( !wiring[pathwire]                               // only one item
+     ||  wiring[pathwire].length != 1 )
+         continue
+    
+    var wire = wiring[pathwire][0]
+    var wireseg = segments[wire]
+
+    if(!wireseg                                         // && binds tighter than ||
+     || wireseg.value == '*'
+     || wireseg.type  != 'Number'
+     && wireseg.type  != 'String' )
+        continue
+
+    changed = true
+    delete new_wiring[pathwire]
+    new_wiring[i] = [wiring[i][0]]
+
+    new_segments[i] = new D.Segment('OPT_simple_peek', wireseg.value, this_segment)
+  }
+
+  return changed ? new D.Block(new_segments, new_wiring) : block
+})
+
+D.SegmentTypes.OPT_simple_peek = {
+  execute: function(segment, inputs) {
+    var key  = segment.value
+    var data = inputs[0]
+
+    if(key[0] == '#') {
+      var position = +key.slice(1)
+      if(Array.isArray(data))
+        if(position < 0)
+          return data[data.length + position]
+        else
+          return data[position - 1]
+      
+      return D.Etc.OPT_simple_peek.pos(inputs[0], segment.value)[0]
+    }
+
+    return D.Etc.OPT_simple_peek.key(inputs[0], segment.value)[0]
+  }
+}
