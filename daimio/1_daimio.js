@@ -68,6 +68,7 @@ D.Etc.FancyRegex = ""                 // this is also pretty silly
 D.Etc.Tglyphs = ""                    // and this one too
 
 D.Etc.OptimizationMap = {}            // technically allcaps here too
+D.Etc.use_optimizations = 1           // you can change this in your app
 
 
   /*ooo   ooooo oooooooooooo ooooo        ooooooooo.   oooooooooooo ooooooooo.    .oooooo..o
@@ -166,11 +167,16 @@ D.is_nice = function(value) {
   return !!value || value == false    // not NaN, null, or undefined
 }
 
-D.is_block = function(value) {
-  if(!value instanceof D.Segment)
-    return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
+D.is_segment = function(value) {
+  return value instanceof D.Segment
+}
 
-  return value && value.type == 'Block' && value.value && value.value.id // THINK: why do we need this?
+D.is_block = function(value) {
+  if(!D.is_segment(value))                      // THINK: this prevents block hijacking (by making an object shaped
+    return false                                // like a block), but requires us to e.g. convert all incoming 
+                                                // JSONified block segments to real segments.
+  return value && value.type == 'Block' 
+      && value.value && value.value.id          // THINK: why do we need this?
 }
 
 D.is_numeric = function(value) {
@@ -241,6 +247,8 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       // this is only called from toPrimitive and deep_copy, which both want blocks
       if(D.is_block(val)) {
         new_values[key] = fun(val); // blocks are immutable
+      } else if(D.is_segment(val)) {
+        new_values[key] = new D.Segment(val.type, val.value, val)
       } else if(typeof val == 'object') {
         new_values[key] = D.recursive_leaves_copy(val, fun, seen);
       } else {
@@ -1169,8 +1177,6 @@ D.Parser.string_to_block_segment = function(string) {
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
 
-  segments = D.mungeLR(segments, D.Parser.rekey)
-
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
     var segment = segments[i]
@@ -1178,14 +1184,9 @@ D.Parser.segments_to_block_segment = function(segments) {
     if(segment.inputs && segment.inputs.length) {
       wiring[segment.key] = segment.inputs
     }
-
-    delete segment.key
-    delete segment.prevkey
-    delete segment.names
-    delete segment.inputs
   }
 
-  var block = new D.Block(segments, wiring)
+  var block   = new D.Block(segments, wiring)
     , segment = new D.Segment('Block', {id: block.id})
 
   return segment
@@ -1487,32 +1488,34 @@ D.Parser.split_on_space = function(string) {
 }
 
 
-D.Parser.rekey = function(L, segment, R) {
-  var old_key = segment.key
-    , new_key = L.length
-
-  // TODO: holymuckymuck, is this ever ugly and slow. clean me!
-  for(var i=0, l=R.length; i < l; i++) {
-    var future_segment = R[i]
-      , index
-
-    if(future_segment.inputs) {
-      while(true) {
-        index = future_segment.inputs.indexOf(old_key)
-        if(index == -1) break
-        future_segment.inputs[index] = new_key
-      }
-    }
-
-    if( future_segment.value
-     && future_segment.value.name
-     && future_segment.value.name == old_key)
-        future_segment.value.name = new_key
-  }
-
-  segment.key = new_key
-  return [L.concat(segment), R]
-}
+// D.Parser.rekey = function(L, segment, R) {
+//   if(!segment) return [L, R]
+// 
+//   var old_key = segment.key
+//   var new_key = L.length
+// 
+//   // TODO: holymuckymuck, is this ever ugly and slow. clean me!
+//   for(var i=0, l=R.length; i < l; i++) {
+//     var future_segment = R[i]
+//     var index
+// 
+//     if(future_segment.inputs) {
+//       while(true) {
+//         index = future_segment.inputs.indexOf(old_key)
+//         if(index == -1) break
+//         future_segment.inputs[index] = new_key
+//       }
+//     }
+// 
+//     if( future_segment.value
+//      && future_segment.value.name
+//      && future_segment.value.name == old_key)
+//         future_segment.value.name = new_key
+//   }
+// 
+//   segment.key = new_key
+//   return [L.concat(segment), R]
+// }
 
 
 
@@ -1578,7 +1581,6 @@ D.Block = function(segments, wiring) {
   // if(!this.head && !this.body) // THINK: when does this happen? what should we return?
   //   this.body = []
 
-
   if(!Array.isArray(segments))
     segments = []
 
@@ -1587,18 +1589,99 @@ D.Block = function(segments, wiring) {
   if(!wiring || (typeof wiring != 'object'))
     wiring = {}
 
+  var pair = D.wash_keys(segments, wiring)                    // OPT: this happens for each optimizer
+  segments = pair.segments                                    // but it's only needed once at the end
+  wiring   = pair.wiring
+
   this.segments = segments
   this.wiring = wiring
 
   var json = JSON.stringify(this)
     , hash = murmurhash(json)
 
-  // THINK: take this out and put it elsewhere? or... how is block access limited? or... huh.
-  if(!D.BLOCKS[hash])
-    D.BLOCKS[hash] = this
+  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere? 
+    D.BLOCKS[hash] = this                                     // or... how is block access limited? or... huh.
 
   this.id = hash
 }
+
+D.wash_keys = function(segments, wiring) {
+  var new_wiring = {}
+  var temp_wiring = {}
+  var new_segments = []
+  var reverse_wiring = {}
+  
+  for(var key in wiring) {
+    var wire = wiring[key]
+    for(var i=0, l=wire.length; i < l; i++)
+      reverse_wiring[wire[i]] = reverse_wiring[wire[i]] 
+                              ? reverse_wiring[wire[i]].concat(key) 
+                              : [key]
+  }
+  
+  for(var j=0, k=segments.length; j < k; j++) {
+    var segment = segments[j]
+    var index = new_segments.length
+    var my_key = segment.key || j
+    var my_wires = reverse_wiring[my_key] || []
+    var input_index = -1
+    
+    if( !my_wires.length                                 // toss anything that isn't linked to the final segment
+     && j != k-1                                         // except the final segment itself, obviously
+     && segment.type != 'VariableSet'                    // 'Put' segtypes are purely side effects
+     && segment.type != 'PortSend'                       // TODO: change these to 'PutSpaceVar' and 'PutPort'
+     &&  ( segment.type != 'Command'                     
+        && segment.value.Method != 'run'                 // two commands are also side-effect based...
+        && segment.value.Method != 'sleep' ))            // FIXME: find a nice way to deal with that
+           continue
+    
+    for(var i=0, l=my_wires.length; i < l; i++) {
+      if(!temp_wiring[my_wires[i]])
+        temp_wiring[my_wires[i]] = []
+      while((input_index = wiring[my_wires[i]].indexOf(my_key, input_index+1)) != -1)
+        temp_wiring[my_wires[i]][input_index] = index
+    }
+    
+    if(temp_wiring[my_key])
+      new_wiring[index] = temp_wiring[my_key]
+    
+    // am i missing any keys?
+    if(wiring[my_key]) {
+      for(var x=0, z=wiring[my_key].length; x < z; x++) {
+        if(!new_wiring[index])
+          new_wiring[index] = []
+        if(new_wiring[index][x] === undefined)
+          new_wiring[index][x] = wiring[my_key][x]
+      }
+    }
+    
+    // put the value.name in the wiring
+    // then build an old_key_new_key map
+    // and switch this at that point
+    // but also if it's in the wiring who cares?
+    // oh but we need this for final pipevars
+    // because otherwise who's going to speak for them?
+    
+    //     if( future_segment.value
+    //      && future_segment.value.name
+    //      && future_segment.value.name == old_key)
+    //         future_segment.value.name = new_key
+    
+    
+    // 'run' is used purely for side effects sometimes like {"{2 | >$foo}" | run | $foo}
+    // so we can't get rid of it just because it's not linked to the output.
+    // also, things that are linked to >@ have the same problem.
+    // also, any command that has a downport.
+    // sucky sucky suck suck stupid stupid
+    // also 'wait'
+    
+    
+    new_segments.push(new D.Segment(segment.type, segment.value, null))
+  }
+  
+  return {segments: new_segments, wiring: new_wiring}
+}
+
 
 
 //    _______  _____  _     _ _______ __   _
@@ -1621,6 +1704,9 @@ D.Token = function(type, value) {
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
   this.value = D.make_nice(value)
+
+  if(token === null)
+    return this
 
   if(!token)
     token = {}
@@ -2140,6 +2226,8 @@ D.Space.prototype.scrub_process = function(pid) {
 
 
 D.try_optimize = function(block) {
+  if(!D.Etc.use_optimizations) return block
+
   var map = D.Etc.OptimizationMap                      // THINK: a weakmap might work well here
   var block_id = block.id
   
@@ -2149,9 +2237,16 @@ D.try_optimize = function(block) {
   for(var i=0, l=D.Optimizers.length; i < l; i++)
     block = D.Optimizers[i].fun(block)
 
+  if(block.id != block_id) {                           // Some post-op cleanup to remove unused segments
+                                                       // and subsequently rewire everything
+    
+    
+  }
+  
   map[block_id] = block
   return block
 }
+
 
 
 D.Optimizers = []
@@ -2284,20 +2379,18 @@ D.Process.prototype.run = function() {
 D.Process.prototype.next = function() {
   var segment = this.block.segments[this.current]
     , wiring = this.block.wiring
-    , state = this.state
 
-  if(!segment) {
+  if(!segment || !segment.type) {
     return "" // THINK: what?
     // return this.done()
   }
 
   var inputs = []
-    , params = segment.paramlist || []
     , type = D.SegmentTypes[segment.type]
     , key  = segment.key || this.current
 
   if(wiring[key]) {
-    inputs = D.nicify(wiring[key], state)
+    inputs = D.nicify(wiring[key], this.state)
   }
 
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)

@@ -266,6 +266,45 @@ Spacial tests and other fun stuff!
                splitter -> {__ | add 1} -> consolidator.two
                                            consolidator.out -> @out
   
+  Testing PutPort side effectfulness
+    catcher!!!
+      $count 0
+      @in
+      @out
+      catcher
+        {$count | less than 6 | not | then "{123 | >@done}" | run}
+      @in -> {__ | add $count | >$count} -> catcher
+      catcher.done -> @out
+    outer
+      @init   from-js   1
+      @out    assert    123
+      sender 
+        {__ | >@out1 | 2  | >@out2 | 3 | >@out3 | ""}
+      @init -> sender
+      sender.out1 -> catcher.in
+      sender.out2 -> catcher.in
+      sender.out3 -> catcher.in
+      catcher.out -> @out
+  
+  Same but different
+    catcher!!!
+      $count 0
+      @in
+      @out
+      catcher
+        {$count | less than 6 | not | then "{123 | >@done}" | run}
+      @in -> {__ | add $count | >$count} -> catcher
+      catcher.done -> @out
+    outer
+      @init   from-js   1
+      @out    assert    123
+      sender 
+        {__ | >@out | 2  | >@out | 3 | >@out | ""}
+      @init -> sender
+      sender.out  -> catcher.in
+      sender.out  -> catcher.in
+      sender.out  -> catcher.in
+      catcher.out -> @out
   
   
   Exec ports / virtual spaces

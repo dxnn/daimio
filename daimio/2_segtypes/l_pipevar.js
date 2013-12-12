@@ -78,11 +78,11 @@ D.SegmentTypes.PipeVar = {
         , this_key = new_key
         , key_index
 
-      // this is to handle our strangely done aliases // THINK: really only for those?
-      if(    new_key    != '__in'                              // not 'first'
-          && pipe_index != -1                                  // is piped
-          && my_key     != future_segment.inputs[pipe_index])  // and not piped to this pipevar (?)
-        this_key = future_segment.inputs[pipe_index]           // then keep on piping
+      // this is to handle our strangely done aliases           // THINK: really only for those?
+      if(    new_key    != '__in'                               // not 'first'
+          && pipe_index != -1                                   // is piped
+          && my_key     != future_segment.inputs[pipe_index])   // and not piped to this pipevar (?)
+        this_key = future_segment.inputs[pipe_index]            // then keep on piping
 
       while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = this_key

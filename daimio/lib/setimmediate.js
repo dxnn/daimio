@@ -35,4 +35,4 @@
     window.addEventListener("message", handleMessage, true)
     D.setImmediate = setImmediate
   }
-}()
+}();
