@@ -532,25 +532,29 @@ D.import_models({
         fun: function(data, by_key, by_value) {
           // THINK: maybe we should allow arbitrary key paths?
           // NOTE: for deeply nested lists in arbitrary order neither this nor filter is nice. If you have to solve that case maybe use JSON.stringify with a custom sorting replace function.
-          
-          by_value = by_value.map(JSON.stringify) // for matching nested structures
-          
+
+          by_value = by_value.map(JSON.stringify)       // for matching nested structures
+          by_key = by_key.slice()                       // keeps segment.value happy
+
+          if(Array.isArray(data))
+            data = data.slice()                         // prevent mutation // TODO: remove this after list upgrades
+          else
+            data = D.clone(data)                        // OPT: this is entirely silly
+
           if(by_value.length)
             for(var key in data) 
-              if(data.hasOwnProperty(key) && by_value.indexOf(JSON.stringify(data[key])) != -1) 
-                by_key.push(key)
-          
+              if( data.hasOwnProperty(key) 
+               && by_value.indexOf(JSON.stringify(data[key])) != -1) 
+                  by_key.push(key)
+
           if(by_key.length) {
             by_key.sort().reverse()
-            for(var i=0, l=by_key.length; i < l; i++) {
-              if(Array.isArray(data)) {
+            for(var i=0, l=by_key.length; i < l; i++)
+              if(Array.isArray(data))
                 data.splice(by_key[i], 1)
-              } else {
-                delete data[by_key[i]]
-              }
-            }
-          }
-          
+              else
+                delete data[by_key[i]] }
+
           return data
         }
       },

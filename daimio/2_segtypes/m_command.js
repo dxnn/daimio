@@ -138,56 +138,109 @@ D.SegmentTypes.Command = {
       return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
     }
     
-    var piped = false
+    var piped  = false
       , params = []
-      , errors = []
+      , paramlist = segment.paramlist
       , typefun
+
+    // if we have to rerun this, cancel the paramlist. 
+    // we'll know we have to rerun it if the 'null' input elements are different.
     
-    // build paramlist, a properly ordered list of input values
-    for(var index in method.params) {
-      var method_param = method.params[index]
-      var param_value = undefined
-      var key = method_param.key
-      var name_index = segment.value.names.indexOf(key)
+    // we need to think more about the differences between 
+    // {9 | range _asdf} and {9 | range $asdf}
+    // because if we change that then this problem goes away.
+    
+    // if(paramlist) {
+    //   if(paramlist.length != segment.nulls.length)
+    //     paramlist = false
+    //   else
+    //     for(var i=0, l=paramlist.length; i < l; i++) {
+    //       if(paramlist[i] == null != segment.nulls[i])
+    //         paramlist = false, break
+    //     }
+    // }
+    
+
+    if(!paramlist) {
+      paramlist = []
+      segment.errors = []
       
-      if(name_index != -1) {
-        param_value = inputs[name_index]
-      }
-      
-      if(!piped && !D.is_nice(param_value)) {
-        name_index = segment.value.names.indexOf('__pipe__')
-        piped = true
+      for(var index in method.params) {                                   // build paramlist from inputs and typefuns
+        var method_param = method.params[index]
+        // var param_value = undefined
+        var key = method_param.key
+        var name_index = segment.value.names.indexOf(key)
+        var paramlist_obj = {key: -1}
+
         if(name_index != -1) {
-          param_value = inputs[name_index]
+          paramlist_obj.key = name_index
+          // param_value = inputs[name_index]
         }
-      }
+
+        if( !piped 
+         && ( paramlist_obj.key === -1
+           || inputs[paramlist_obj.key] === null ) ) {                    // make map of names to inputs
+        // if(!piped && !D.is_nice(param_value)) {                           // make map of names to inputs
+          name_index = segment.value.names.indexOf('__pipe__')
+          piped = true
+          if(name_index != -1) {
+            paramlist_obj.key = name_index
+            // param_value = inputs[name_index]
+          }
+          
+          // ok, so. if the alias has a dangling param, and we snip it, then we map name to a different place.
+          // that's not good, because if we run this again we might have that value the next time, 
+          // and we'll need to remap the inputs all over again. yuck yuck stupid stupid.
+          // 
+          
+        }
+
+        if(method_param.type && D.Types[method_param.type])               // make map of names to types+wrapper
+          paramlist_obj.typefun = D.Types[method_param.type]
+        else
+          paramlist_obj.typefun = D.Types.anything
   
-      if(method_param.type && D.Types[method_param.type])
-        typefun = D.Types[method_param.type]
-      else
-        typefun = D.Types.anything
-  
-      if(param_value !== undefined) {
-        param_value = typefun(param_value)
-      }
-      else if(method_param.fallback) {
-        param_value = typefun(method_param.fallback)
-      }
-      else if(method_param.required) {
-        errors.push('Missing required parameter "' + method_param.key + '" for command "' + segment.value.handler + " " + segment.value.method + '"')
-        param_value = typefun(undefined)
-      }
-      else if(!method_param.undefined) {
-        param_value = typefun(undefined)
+        if(paramlist_obj.key == -1) {
+          // if(param_value !== undefined) {
+            // param_value = typefun(param_value)
+          // }
+          if(method_param.fallback) {
+            paramlist_obj.value = paramlist_obj.typefun(method_param.fallback)
+            // param_value = typefun(method_param.fallback)
+          }
+          else if(method_param.required) {
+            segment.errors.push( 'Missing required parameter "' + method_param.key 
+                                 + '" for command "' + segment.value.handler 
+                                 + " " + segment.value.method + '"' )
+            // param_value = typefun(undefined)
+            paramlist_obj.value = paramlist_obj.typefun(undefined)
+          }
+          else if(!method_param.undefined) {
+            // param_value = typefun(undefined)
+            paramlist_obj.value = paramlist_obj.typefun(undefined)
+          }
+        }
+
+        // params.push(param_value)
+        paramlist.push(paramlist_obj)
       }
       
+      segment.paramlist = paramlist
+    }
+    
+    for(var i=0, l=paramlist.length; i < l; i++) {
+      var pfunk = paramlist[i]
+      var param_value = pfunk.key == -1
+                      ? pfunk.value
+                      : pfunk.typefun(inputs[pfunk.key])            // we have to do this at runtime
+
       params.push(param_value)
     }
-      
-    if(!errors.length) {
+    
+    if(!segment.errors.length) {
       return method.fun.apply(handler, params.concat(prior_starter, process))
     } else {
-      errors.forEach(function(error) {
+      segment.errors.forEach(function(error) {
         D.set_error(error)
       })
       return ""

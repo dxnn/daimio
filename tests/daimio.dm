@@ -3060,11 +3060,31 @@ BASIC SYNTAX TESTS
       {123 | >foo || __foo}
 
     Pipeline vars shouldn't be mutated by mutating commands:
-      {(1 2 3) | >x | list remove by_value 2 | _x | add}
-        6
+      {(1 2) | >x | list poke value 39 | _x | add}
+        3
+
+    Unfilled vars and non-existent params are different. 
+    They should probably behave the same for pipeline vars and space vars, but don't. 
+    The reason they don't make sense if you know the underlying theory, but it's an abstraction leak...
+      {5 | >foo | (1 2 3) | map block "{__ | subtract _o}"}
+        [1,2,3]
+      {5 | >foo | (1 2 3) | map block "{__ | subtract $o}"}
+        [1,2,3]
+      {5 | >foo | (1 2 3) | map block "{__ | range $o}"}
+        [[],[],[]]
+      {5 | >foo | (1 2 3) | map block "{__ | range _o}"}
+        [[],[],[]]
+      {(1 2 3) | subtract _zxcv}  {// subtraction and division are weird for this internally //}
+        [1,2,3]
+      {(1 2 3) | subtract $jklj}
+        [1,2,3]
+      {9 | range _asdf}
+        []
+      {9 | range $asdf}
+        []
 
 
-    Weird quote results:
+    Weird quote results due to synonymization. The weirdness is beget by equivalent blocks above.
       {"{123}" | quote}
         {123}
 
