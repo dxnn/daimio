@@ -164,7 +164,7 @@ D.is_false = function(value) {
 }
 
 D.is_nice = function(value) {
-  return !!value || value == false    // not NaN, null, or undefined
+  return value || value == false                // not NaN, null, or undefined
 }
 
 D.is_segment = function(value) {
@@ -1616,8 +1616,7 @@ D.wash_keys = function(segments, wiring) {
     for(var i=0, l=wire.length; i < l; i++)
       reverse_wiring[wire[i]] = reverse_wiring[wire[i]] 
                               ? reverse_wiring[wire[i]].concat(key) 
-                              : [key]
-  }
+                              : [key] }
   
   for(var j=0, k=segments.length; j < k; j++) {
     var segment = segments[j]
@@ -1639,8 +1638,7 @@ D.wash_keys = function(segments, wiring) {
       if(!temp_wiring[my_wires[i]])
         temp_wiring[my_wires[i]] = []
       while((input_index = wiring[my_wires[i]].indexOf(my_key, input_index+1)) != -1)
-        temp_wiring[my_wires[i]][input_index] = index
-    }
+        temp_wiring[my_wires[i]][input_index] = index }
     
     if(temp_wiring[my_key])
       new_wiring[index] = temp_wiring[my_key]
@@ -2380,10 +2378,10 @@ D.Process.prototype.next = function() {
   var segment = this.block.segments[this.current]
     , wiring = this.block.wiring
 
-  if(!segment || !segment.type) {
-    return "" // THINK: what?
-    // return this.done()
-  }
+  // if(!segment || !segment.type) {
+  //   return "" // THINK: what?
+  //   // return this.done()
+  // }
 
   var inputs = []
     , type = D.SegmentTypes[segment.type]
