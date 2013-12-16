@@ -463,13 +463,11 @@ D.mungeLR = function(items, fun) {
 
 D.nicify = function(list, state) {
   var result = []
-  for(var i=0, l=list.length; i < l; i++)              // the map below is really slow, 
-    result.push( D.is_nice(state[list[i]])             // so this is an optimization
-               ? state[list[i]]
-               : null )                                // THINK: why null?
-  
+  for(var i=0, l=list.length; i < l; i++) {
+    var item = state[list[i]]    
+    result.push( D.is_nice(item) ? item : null )                    // THINK: why null?
+  }
   return result
-  // return list.map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) 
 }
 
 
@@ -2355,13 +2353,13 @@ D.Process.prototype.run = function() {
     , segs  = this.block.segments
 
   while(segs[this.current]) {
-    value = this.next() // TODO: this is not a trampoline
+    value = this.next()                                             // TODO: this is not a trampoline
     if(value !== value) {
       this.asynced = true
-      return NaN // NaN is the "I took the callback route" signal...
+      return NaN                                                    // NaN is the "I took the callback route" signal...
     }
     this.last_value = value
-    this.state[this.current] = value // TODO: fix this it isn't general
+    this.state[this.current] = value                                // TODO: fix this it isn't general
     this.current++
   }
 
@@ -2370,20 +2368,11 @@ D.Process.prototype.run = function() {
 
 D.Process.prototype.next = function() {
   var segment = this.block.segments[this.current]
-    , wiring = this.block.wiring
+  var type = D.SegmentTypes[segment.type]
+  var key  = segment.key || this.current
+  var wire = this.block.wiring[key]
 
-  // if(!segment || !segment.type) {
-  //   return "" // THINK: what?
-  //   // return this.done()
-  // }
-
-  var inputs = []
-    , type = D.SegmentTypes[segment.type]
-    , key  = segment.key || this.current
-
-  if(wiring[key]) {
-    inputs = D.nicify(wiring[key], this.state)
-  }
+  var inputs = wire ? D.nicify(wire, this.state) : []
 
   return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
 }
