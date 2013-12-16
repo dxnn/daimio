@@ -2235,12 +2235,6 @@ D.try_optimize = function(block) {
   for(var i=0, l=D.Optimizers.length; i < l; i++)
     block = D.Optimizers[i].fun(block)
 
-  if(block.id != block_id) {                           // Some post-op cleanup to remove unused segments
-                                                       // and subsequently rewire everything
-    
-    
-  }
-  
   map[block_id] = block
   return block
 }
