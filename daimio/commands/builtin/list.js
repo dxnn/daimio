@@ -381,21 +381,23 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to convert',
-            type: 'list'
+            type: 'array'
           }
         ],
         fun: function(data) {
-          var k, v, hash = {}
+          var key
+          var val
+          var hash   = Object.create(null)
+          var index  = 0
+          var length = data.length
           
-          if(data.length < 2) {            
+          if(length < 2)         
             return D.set_error('The data parameter must contain at least two elements') || {}
-          }
 
-          while(data.length > 1) 
-          {
-            k = String(data.shift())
-            v = data.shift()
-            hash[k] = v
+          while(index < length) {
+            key = data[index++]
+            val = data[index++]
+            hash[key] = val
           }
 
           return hash

@@ -1967,11 +1967,27 @@ D.Space.prototype.get_state = function(param) {
 
 D.Space.prototype.dock = function(ship, station_id) {
   var block_id = this.seed.stations[station_id - 1]
-    , block = D.BLOCKS[block_id]
-    , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
-    , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
-    , scope = {"__in": ship} // TODO: find something better...
-    , value = this.execute(block, scope, prior_starter, station_id)
+  var block    = D.BLOCKS[block_id]
+  
+  var out_port
+  var all_ports = this.ports
+  
+  for(var i=0, l=all_ports.length; i < l; i++) {
+    var port = all_ports[i]
+    if( port.station == station_id
+     && port.name == '_out' ) {
+        out_port = port
+        break;
+    }
+  }
+  
+  if(!out_port)
+    return D.set_error('That out port is unavailable')
+              
+  var prior_starter =                                               // THINK: we're jumping straight to exit here. 
+        function(value) {out_port.exit(value)}                      // also do it for implicit station output ports...
+  var scope = {"__in": ship}                                        // TODO: find something better...
+  var value = this.execute(block, scope, prior_starter, station_id)
 
   if(value === value)
     prior_starter(value)
@@ -2351,25 +2367,28 @@ D.Process.prototype.done = function() {
 D.Process.prototype.run = function() {
   var value = ""
     , segs  = this.block.segments
+    , current = this.current
+    , segment = segs[current]
 
-  while(segs[this.current]) {
-    value = this.next()                                             // TODO: this is not a trampoline
+  while(segment) {
+    value = this.next(segment, current)                             // TODO: this is not a trampoline
     if(value !== value) {
+      this.current = current
       this.asynced = true
       return NaN                                                    // NaN is the "I took the callback route" signal...
     }
     this.last_value = value
-    this.state[this.current] = value                                // TODO: fix this it isn't general
-    this.current++
+    this.state[current] = value                                     // TODO: fix this it isn't general
+    current++
+    segment = segs[current]
   }
 
   return this.done()
 }
 
-D.Process.prototype.next = function() {
-  var segment = this.block.segments[this.current]
+D.Process.prototype.next = function(segment, current) {
   var type = D.SegmentTypes[segment.type]
-  var key  = segment.key || this.current
+  var key  = segment.key || current
   var wire = this.block.wiring[key]
 
   var inputs = wire ? D.nicify(wire, this.state) : []
