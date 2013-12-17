@@ -5479,7 +5479,7 @@ D.import_models({
               all_arrays = false
           }
               
-          if(all_arrays) return Array.prototype.concat.apply(Array.prototype, (this, values))
+          if(all_arrays) return [].concat.apply(Array.prototype, values)
           
           // we have to do a fancy union that keeps nested keys intact...
           for(var i=0, l=values.length; i < l; i++) {
