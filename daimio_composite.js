@@ -1,23 +1,23 @@
-/* 
-    
-            _            _                    _         _   _          _          _       
-          /\ \         / /\                 /\ \      /\_\/\_\ _     /\ \       /\ \     
-         /  \ \____   / /  \                \ \ \    / / / / //\_\   \ \ \     /  \ \    
-        / /\ \_____\ / / /\ \               /\ \_\  /\ \/ \ \/ / /   /\ \_\   / /\ \ \   
-       / / /\/___  // / /\ \ \             / /\/_/ /  \____\__/ /   / /\/_/  / / /\ \ \  
-      / / /   / / // / /  \ \ \           / / /   / /\/________/   / / /    / / /  \ \_\ 
-     / / /   / / // / /___/ /\ \         / / /   / / /\/_// / /   / / /    / / /   / / / 
-    / / /   / / // / /_____/ /\ \       / / /   / / /    / / /   / / /    / / /   / / /  
-    \ \ \__/ / // /_________/\ \ \  ___/ / /__ / / /    / / /___/ / /__  / / /___/ / /   
-     \ \___\/ // / /_       __\ \_\/\__\/_/___\\/_/    / / //\__\/_/___\/ / /____\/ /    
-      \/_____/ \_\___\     /____/_/\/_________/        \/_/ \/_________/\/_________/     
-    
+/*
+
+            _            _                    _         _   _          _          _
+          /\ \         / /\                 /\ \      /\_\/\_\ _     /\ \       /\ \
+         /  \ \____   / /  \                \ \ \    / / / / //\_\   \ \ \     /  \ \
+        / /\ \_____\ / / /\ \               /\ \_\  /\ \/ \ \/ / /   /\ \_\   / /\ \ \
+       / / /\/___  // / /\ \ \             / /\/_/ /  \____\__/ /   / /\/_/  / / /\ \ \
+      / / /   / / // / /  \ \ \           / / /   / /\/________/   / / /    / / /  \ \_\
+     / / /   / / // / /___/ /\ \         / / /   / / /\/_// / /   / / /    / / /   / / /
+    / / /   / / // / /_____/ /\ \       / / /   / / /    / / /   / / /    / / /   / / /
+    \ \ \__/ / // /_________/\ \ \  ___/ / /__ / / /    / / /___/ / /__  / / /___/ / /
+     \ \___\/ // / /_       __\ \_\/\__\/_/___\\/_/    / / //\__\/_/___\/ / /____\/ /
+      \/_____/ \_\___\     /____/_/\/_________/        \/_/ \/_________/\/_________/
 
 
-    Hi, welcome to Daimio! 
-    
-    As you make your way through the code you'll often 
-    see comments like this one. You should read them, 
+
+    Hi, welcome to Daimio!
+
+    As you make your way through the code you'll often
+    see comments like this one. You should read them,
     because they're helpful and occasionally funny!
 
 
@@ -38,10 +38,10 @@ D.DECORATORS = []
 
 D.DecoratorIndices = {}               // technically these should be all caps,
 D.DecoratorIndices.ByType = {}        // but it's just too much yelling really
-D.DecoratorIndices.ByBlock = {}       
+D.DecoratorIndices.ByBlock = {}
 D.DecoratorIndices.ByTypeBlock = {}
 
-D.Aliases = {}                        // aliases are a grey area: 
+D.Aliases = {}                        // aliases are a grey area:
 D.AliasMap = {}                       // one day they may be able to grow at runtime
 
 D.Etc = {}
@@ -60,21 +60,23 @@ D.Constants.command_closed = '}'
 D.Constants.list_open = '('           // currently unused
 D.Constants.list_closed = ')'         // currently unused
 D.Constants.quote = '"'               // currently unused
-  
+
 D.Etc.process_counter = 1             // this is a bit silly
 D.Etc.token_counter = 100000          // FIXME: make Rekey work even with overlapping keys
 
 D.Etc.FancyRegex = ""                 // this is also pretty silly
 D.Etc.Tglyphs = ""                    // and this one too
 
+D.Etc.OptimizationMap = {}            // technically allcaps here too
+D.Etc.use_optimizations = 1           // you can change this in your app
 
 
-  /*ooo   ooooo oooooooooooo ooooo        ooooooooo.   oooooooooooo ooooooooo.    .oooooo..o 
-  `888'   `888' `888'     `8 `888'        `888   `Y88. `888'     `8 `888   `Y88. d8P'    `Y8 
-   888     888   888          888          888   .d88'  888          888   .d88' Y88bo.      
-   888ooooo888   888oooo8     888          888ooo88P'   888oooo8     888ooo88P'   `"Y8888o.  
-   888     888   888    "     888          888          888    "     888`88b.         `"Y88b 
-   888     888   888       o  888       o  888          888       o  888  `88b.  oo     .d8P 
+  /*ooo   ooooo oooooooooooo ooooo        ooooooooo.   oooooooooooo ooooooooo.    .oooooo..o
+  `888'   `888' `888'     `8 `888'        `888   `Y88. `888'     `8 `888   `Y88. d8P'    `Y8
+   888     888   888          888          888   .d88'  888          888   .d88' Y88bo.
+   888ooooo888   888oooo8     888          888ooo88P'   888oooo8     888ooo88P'   `"Y8888o.
+   888     888   888    "     888          888          888    "     888`88b.         `"Y88b
+   888     888   888       o  888       o  888          888       o  888  `88b.  oo     .d8P
   o888o   o888o o888ooooood8 o888ooooood8 o888o        o888ooooood8 o888o  o888o 8""88888*/
 
 
@@ -118,13 +120,13 @@ D.obj_to_array = function(obj) {
 D.sort_object_keys = function(obj, sorter) {
   if(typeof obj != 'object')
     return {}
-    
+
   var newobj = {}
     , keys = Object.keys(obj).sort(sorter)
-  
+
   for(var i=0, l=keys.length; i < l; i++)
     newobj[keys[i]] = obj[keys[i]]
-  
+
   return newobj
 }
 
@@ -145,31 +147,36 @@ D.execute_then_stringify = function(value, prior_starter, process) {
 }
 
 D.is_false = function(value) {
-  if(!value) 
+  if(!value)
     return true // '', 0, false, NaN, null, undefined
-  
+
   if(typeof value != 'object')
     return false // THINK: is this always right?
-  
+
   if(Array.isArray(value))
     return !value.length
 
   for(var key in value)
     if(value.hasOwnProperty(key))
       return false
-  
+
   return true
 }
 
 D.is_nice = function(value) {
-  return !!value || value == false    // not NaN, null, or undefined
+  return value || value == false                // not NaN, null, or undefined
+}
+
+D.is_segment = function(value) {
+  return value instanceof D.Segment
 }
 
 D.is_block = function(value) {
-  if(!value instanceof D.Segment)
-    return false // THINK: this prevents block hijacking (by making an object in Daimio code shaped like a block), but requires us to e.g. convert all incoming JSONified block segments to real segments.
-
-  return value && value.type == 'Block' && value.value && value.value.id // THINK: why do we need this?
+  if(!D.is_segment(value))                      // THINK: this prevents block hijacking (by making an object shaped
+    return false                                // like a block), but requires us to e.g. convert all incoming 
+                                                // JSONified block segments to real segments.
+  return value && value.type == 'Block' 
+      && value.value && value.value.id          // THINK: why do we need this?
 }
 
 D.is_numeric = function(value) {
@@ -196,10 +203,10 @@ D.regex_escape = function(str) {
 D.string_to_regex = function(string, global) {
   if(!D.is_regex(string))
     return RegExp(D.regex_escape(string), (global ? 'g' : ''))
-  
+
   var flags = string.slice(string.lastIndexOf('/') + 1)
   string = string.slice(1, string.lastIndexOf('/'))
-  
+
   return RegExp(string, flags)
 }
 
@@ -230,9 +237,9 @@ D.recursive_leaves_copy = function(values, fun, seen) {
   seen = seen || []; // only YOU can prevent infinite recursion...
   if(seen.indexOf(values) !== -1) return values;
   seen.push(values);
-  
+
   var new_values = (Array.isArray(values) ? [] : {}); // NOTE: using new_values in the parse phase (rebuilding the object each time we hit this function) causes an order-of-magnitude slowdown. zoiks, indeed.
-  
+
   for(var key in values) {
     // try { // NOTE: accessing e.g. input.selectionDirection throws an error, which is super-duper lame
       // FIXME: with 'try' this reliably crashes chrome when called in the above instance. ={
@@ -240,6 +247,8 @@ D.recursive_leaves_copy = function(values, fun, seen) {
       // this is only called from toPrimitive and deep_copy, which both want blocks
       if(D.is_block(val)) {
         new_values[key] = fun(val); // blocks are immutable
+      } else if(D.is_segment(val)) {
+        new_values[key] = new D.Segment(val.type, val.value, val)
       } else if(typeof val == 'object') {
         new_values[key] = D.recursive_leaves_copy(val, fun, seen);
       } else {
@@ -265,24 +274,24 @@ D.recursive_extend = function(base, value) {
   // NOTE: this extends by reference, but also returns the new value
   for(var key in value) {
     if(!value.hasOwnProperty(key))    continue
-    
+
     if(typeof base[key] == 'undefined') {
       base[key] = value[key]
       continue
     }
-    
+
     if(typeof base[key]  != 'object') continue  // ignore scalars in base
     if(typeof value[key] != 'object') continue  // can't recurse into scalar
-    
+
     if(Array.isArray(base) && Array.isArray(value)) {
       if(base[key] == value[key])     continue
       base.push(value[key])
       continue // THINK: this bit is pretty specialized for my use case -- can we make it more general?
     }
-    
+
     D.recursive_extend(base[key], value[key])
   }
-  
+
   return base
 }
 
@@ -306,29 +315,32 @@ D.mean_defunctionize = function(values, seen) {
 
   if(typeof values == 'function') return null;
   if(typeof values != 'object') return values;            // number, string, or boolean
-  
-  var sig = values.constructor.toString().slice(0,12)     // prevents DOM yuckyucks. details here:
-  if ( sig == "function Nod"                              // https://github.com/dxnn/daimio/issues/1
-    || sig == "function HTM"                              // THINK: can this still leak too much info?
-    || sig == "function win" 
-    || sig == "function Win" 
-    || sig == "function Mim" 
-    || sig == "function DOM" )    
-       return null
+
+  var type = values.constructor.toString().split(' ')[1]
+  if(type) {
+    var sig = type.slice(0,3)                             // prevents DOM yuckyucks. details here:
+    if ( sig == "Nod"                                     // https://github.com/dxnn/daimio/issues/1
+      || sig == "HTM"                                     // THINK: can this still leak too much info?
+      || sig == "win"
+      || sig == "Win"
+      || sig == "Mim"
+      || sig == "DOM" )
+         return null
+  }
 
   seen = seen || [];
   if(seen.indexOf(values) !== -1) return null;            // only YOU can prevent infinite recursion
   seen.push(values);
 
   var new_values = (Array.isArray(values) ? [] : {});
-  
+
   for(var key in values) {                                // list or hash: lish
     var new_value, value = values[key];
     new_value = D.mean_defunctionize(value, seen);
     if(new_value === null) continue;
     new_values[key] = new_value;
   }
-  
+
   return new_values;
 };
 
@@ -359,38 +371,38 @@ D.data_trampoline = function(data, processfun, joinerfun, prior_starter, finalfu
   , result = joinerfun()
   , asynced = false
   , value, key
-  
+
   // if(typeof finalfun != 'function') {
   //   finalfun = function(x) {return x}
   // }
-  
+
   finalfun = finalfun || D.identity
-  
+
   // THINK: can we add a simple short-circuit to this? undefined, maybe? for things like 'first' and 'every' it'll help a lot over big data
-  
+
   var inner = function() {
     while(++index < size) {
       key = keys[index]
       value = processfun(data[key], my_starter, key, result)
       if(value !== value) {
         asynced = true // we'll need to call prior_starter when we finish up
-        return NaN // send stack killer up the chain 
+        return NaN // send stack killer up the chain
         // [unleash the NaNobots|NaNites]
       }
       result = joinerfun(result, value, key)
     }
-    
+
     if(asynced)
       return prior_starter(finalfun(result))
 
     return finalfun(result)
   }
-  
+
   var my_starter = function(value) {
     result = joinerfun(result, value, key)
     inner()
   }
-    
+
   // might need a fun for sorting object properties...
 
   return inner()
@@ -411,12 +423,12 @@ D.list_push = function(total, value) {
 
 D.list_set = function(total, value, key) {
   if(typeof total != 'object') return {}
-  
+
   var keys = Object.keys(total)
   if(!key) key = keys.length
-  
+
   value = D.make_nice(value)
-  
+
   total[key] = value
   return total
 }
@@ -426,7 +438,7 @@ D.scrub_list = function(list) {
 
   if(keys.reduce(function(acc, val) {if(acc == val) return acc+1; else return -1}, 0) == -1)
     return list
-    
+
   return D.to_array(list)
 }
 
@@ -436,54 +448,71 @@ D.mungeLR = function(items, fun) {
     , R = items
     , item = {}
     , result = []
-  
+
   if(!items.length) return items
-  
+
   do {
     item = R.shift() // OPT: shift is slow
     result = fun(L, item, R)
     L = result[0]
     R = result[1]
   } while(R.length)
-  
+
   return L
 }
 
+D.nicify = function(list, state) {
+  var result = []
+  for(var i=0, l=list.length; i < l; i++) {
+    var item = state[list[i]]    
+    result.push( D.is_nice(item) ? item : null )                    // THINK: why null?
+  }
+  return result
+}
+
+D.filter_ports = function(ports, station, name) {
+  for(var i=0, l=ports.length; i < l; i++) {
+    var port = ports[i]
+    if( port.station === station                                    // triple so undefined !== 0
+     && port.name    === name ) 
+        return port
+  }
+}
 
 D.run = function(daimio, ultimate_callback, space) {
   // This is *always* async, so provide a callback.
   if(!daimio) return ""
-  
+
   daimio = "" + daimio // TODO: ensure this is a string in a nicer fashion...
-  
+
   if(typeof ultimate_callback != 'function') {
     if(!space)
       space = ultimate_callback
     ultimate_callback = null
   }
-  
+
   if(!space) {
     space = D.ExecutionSpace
   }
-  
+
   if(!ultimate_callback) {
     ultimate_callback = function(result) {
       // THINK: what should we do here?
       console.log(result)
     }
   }
-  
+
   // THINK: can we refactor this into a different type of space.execute? can we convert this whole thing into a temporary channel on the space? with a 'log' type gateway or something?
   var prior_starter = function(value) {
     var result = D.execute_then_stringify(value, ultimate_callback)
-    if(result === result) 
+    if(result === result)
       ultimate_callback(result)
   }
-    
+
   var result = space.execute(D.Parser.string_to_block_segment(daimio), null, prior_starter)
   if(result === result)
     prior_starter(result)
-  
+
   return ""
 }
 
@@ -498,12 +527,12 @@ if (typeof exports !== 'undefined') {
 
 
 
-  /*ooo ooo        ooooo ooooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o 
-  `888' `88.       .888' `888   `Y88.  d8P'  `Y8b  `888   `Y88. 8'   888   `8 d8P'    `Y8 
-   888   888b     d'888   888   .d88' 888      888  888   .d88'      888      Y88bo.      
-   888   8 Y88. .P  888   888ooo88P'  888      888  888ooo88P'       888       `"Y8888o.  
-   888   8  `888'   888   888         888      888  888`88b.         888           `"Y88b 
-   888   8    Y     888   888         `88b    d88'  888  `88b.       888      oo     .d8P 
+  /*ooo ooo        ooooo ooooooooo.     .oooooo.   ooooooooo.   ooooooooooooo  .oooooo..o
+  `888' `88.       .888' `888   `Y88.  d8P'  `Y8b  `888   `Y88. 8'   888   `8 d8P'    `Y8
+   888   888b     d'888   888   .d88' 888      888  888   .d88'      888      Y88bo.
+   888   8 Y88. .P  888   888ooo88P'  888      888  888ooo88P'       888       `"Y8888o.
+   888   8  `888'   888   888         888      888  888`88b.         888           `"Y88b
+   888   8    Y     888   888         `88b    d88'  888  `88b.       888      oo     .d8P
   o888o o8o        o888o o888o         `Y8bood8P'  o888o  o888o     o888o     8""88888*/
 
 
@@ -521,14 +550,14 @@ D.add_decorator = function(block_id, type, value, unique) {
                   , type: type
                   , value: value }
     , existing_decorators
-  
+
   if(unique) {
     existing_decorators = D.get_decorators(block_id, type)
     if(existing_decorators && existing_decorators.length) {
       return existing_decorators[0]
     }
   }
-  
+
   if(!D.DecoratorIndices.ByType[type]) {
     D.DecoratorIndices.ByType[type] = []
   }
@@ -538,18 +567,18 @@ D.add_decorator = function(block_id, type, value, unique) {
   if(!D.DecoratorIndices.ByTypeBlock[type + '-' + block_id]) {
     D.DecoratorIndices.ByTypeBlock[type + '-' + block_id] = []
   }
-  
+
   D.DECORATORS.push(decorator)
   D.DecoratorIndices.ByType[type].push(decorator)
   D.DecoratorIndices.ByBlock[block_id].push(decorator)
   D.DecoratorIndices.ByTypeBlock[type + '-' + block_id].push(decorator)
-  
+
   return decorator
 }
 
 D.get_decorators = function(by_block, by_type) {
   var decorators = D.DECORATORS
-  
+
   if(!by_block) {
     if(by_type) {
       decorators = D.DecoratorIndices.ByType[by_type]
@@ -562,7 +591,7 @@ D.get_decorators = function(by_block, by_type) {
       decorators = D.DecoratorIndices.ByBlock[by_block]
     }
   }
-  
+
   return decorators
 }
 
@@ -570,7 +599,7 @@ D.get_decorators = function(by_block, by_type) {
 //     _____   _____   ______ _______ _______
 //    |_____] |     | |_____/    |    |______
 //    |       |_____| |    \_    |    ______|
-//    
+//
 
 
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
@@ -579,22 +608,22 @@ D.get_decorators = function(by_block, by_type) {
 D.track_event = function(type, target, callback) {
   if(!D.Etc.events)
     D.Etc.events = {}
-  
+
   if(!D.Etc.events[type]) {
     D.Etc.events[type] = {by_class: {}, by_id: {}}
-    
+
     document.addEventListener(type, function(event) {
       var target = event.target
         , listener
         , parent
         , cname
-      
+
       // walk the target.parentNode chain up to null, checking each item along the way until you find one
       // OPT: make walking the parent chain optional (use a port param to ask for it)
       while(!listener && target) {
         listener = tracked.by_id[target.id]
         if(listener) break
-        
+
         cname = target.className
         if(cname) {
           cname = cname.baseVal || cname
@@ -602,16 +631,16 @@ D.track_event = function(type, target, callback) {
             listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
           })
         }
-        
+
         if(listener) break
         target = target.parentNode
       }
-      
+
       if(listener) {
         event.stopPropagation() // THINK: not sure these are always desired...
         event.preventDefault()  //        maybe use a port param to allow passthru
-        var value = 
-          ( target.attributes['data-value'] 
+        var value =
+          ( target.attributes['data-value']
             && target.attributes['data-value'].value) // THINK: no empty strings allowed...
           || ( target.value != undefined && target.value )
           || ( target.attributes.value && target.attributes.value.value )
@@ -622,9 +651,9 @@ D.track_event = function(type, target, callback) {
       }
     }, false)
   }
-  
+
   var tracked = D.Etc.events[type]
-  
+
   if(target[0] == '.') {
     tracked.by_class[target.slice(1)] = callback
   } else {
@@ -632,33 +661,33 @@ D.track_event = function(type, target, callback) {
   }
 }
 
-D.send_value_to_js_port = function(spaceseed_id, port_thing, value) {
-  // TODO: use an individual space instead of a space class
-  var eventname = spaceseed_id + '-' + port_thing
+D.send_value_to_js_port = function(space, port_name, value, port_flavour) {
+  port_flavour = port_flavour || 'from-js'
   
-  try {
-    document.dispatchEvent(new CustomEvent(eventname, { 'detail': value }))
-  } catch(e) {
-    // hack for old safari :(
-    var event = document.createEvent('Event')
-    event.initEvent(eventname, true, true)
-    event.detail = value
-    document.dispatchEvent(event)
-  }
+  for ( var i=0, l=space.ports.length; i < l; i++)
+    if( space.ports[i].name == port_name
+     && space.ports[i].flavour == port_flavour )
+      { space.ports[i].pair.enter(value)
+        return true }
+  
+  return false
 }
 
 
-D.port_standard_exit = function(ship) { 
+
+D.port_standard_exit = function(ship) {
   var self = this
-  
+    , outs = this.outs
+
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
-    setImmediate(function() { self.outs.forEach(function(port) { port.enter(ship) }) })
+    // D.setImmediate(this.outs, ship) // OPT
+    D.setImmediate(function() { outs.forEach(function(port) { port.enter(ship) }) })
   else
-    self.outside_exit(ship) // ORLY? No delay?
+    this.outside_exit(ship) // ORLY? No delay?
 }
 
-D.port_standard_pairup = function(port) { 
+D.port_standard_pairup = function(port) {
   this.pair = port
   port.pair = this
 }
@@ -668,7 +697,7 @@ D.port_standard_enter = function(ship, process) {
     process.state.secret.result = ship
     ship = D.clone(process.state.secret)
   }
-  
+
   if(this.pair)
     return this.pair.exit(ship)
 
@@ -682,33 +711,33 @@ D.port_standard_enter = function(ship, process) {
 D.import_port_flavour = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
     return D.set_error('That port flavour has already been im-port-ed')
-  
+
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
-  
+
   if(!pflav)
     return D.set_error('That flavour is not desirable')
 
   if(typeof pflav.add != 'function')
     pflav.add = D.noop // noop, so we can call w/o checking
-  
-  if(typeof pflav.exit != 'function') 
+
+  if(typeof pflav.exit != 'function')
     pflav.exit = D.port_standard_exit
-  
+
   if(typeof pflav.outside_add != 'function')
     pflav.outside_add = D.noop
-  
+
   if(typeof pflav.outside_exit != 'function')
     pflav.outside_exit = D.noop
-  
+
   if(typeof pflav.pairup != 'function')
     pflav.pairup = D.port_standard_pairup
-  
+
   if(typeof pflav.enter != 'function')
     pflav.enter = D.port_standard_enter
-  
+
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.set_error("That port flavour's properties are invalid")
-  
+
   D.PortFlavours[flavour] = pflav
   return true
 }
@@ -717,7 +746,7 @@ D.import_port_flavour = function(flavour, pflav) {
 //    _______ _______ __   _ _______ _____ _______ _______
 //    |______ |_____| | \  | |         |   |______ |______
 //    |       |     | |  \_| |_____  __|__ |______ ______|
-//    
+//
 
 
 D.import_fancy = function(ch, obj) {
@@ -729,7 +758,7 @@ D.import_fancy = function(ch, obj) {
   } else {
     D.set_error('Your fancies are more borken')
   }
-  
+
   D.Etc.FancyRegex = RegExp(Object.keys(D.Fancies)
                                  .sort(function(a, b) {return a.length - b.length})
                                  .map(function(str) {return '^' + D.regex_escape(str) + '\\w'})
@@ -746,31 +775,31 @@ D.import_fancy(':', {
 
 D.import_fancy('>@', {
   eat: function(token) {
-    
+
     // TODO: throw a runtime error if it's not a valid port
-    
+
     token.type = 'PortSend'
     token.value = {to: token.value.slice(2)}
-    
+
     return [token]
   }
 })
 
 D.import_fancy('>$', {
   eat: function(token) {
-    
+
     // TODO: change path to name, make >$foo set foo, make >$foo.baz.baa -> list poke path (:baz :baa) data $foo value __ | >$foo
-    
+
     var pieces = D.Parser.split_on(token.value, '.')
       , name = pieces.shift().slice(2)
       , poke_tokens = []
-    
+
     token.type = 'VariableSet'
     token.value = {type: 'space', name: name}
-    
+
     if(pieces.length) {
       pieces = pieces.map(function(item) {
-        return item[0] != '{' 
+        return item[0] != '{'
              ? '"' + item + '"'
              : item
       })
@@ -786,20 +815,20 @@ D.import_fancy('>$', {
 
       poke_tokens = [path, poker]
     }
-    
+
     return poke_tokens.concat(token)
   }
 })
 
 D.import_fancy('>', {
   eat: function(token) {
-        
+
     // TODO: THROW AN ERROR IF IT ALREADY EXISTS IN THE PROCESS
     // NOTE: this doesn't need {list poke} because you can only set it once
-    
+
     token.type = 'VariableSet'
     token.value = {type: 'pipeline', name: token.value.slice(1)}
-    
+
     return [token]
   }
 })
@@ -807,12 +836,12 @@ D.import_fancy('>', {
 D.import_fancy('__', {
   eat: function(token) {
     token.type = 'PipeVar'
-    
+
     // if(token.value == '__') // regular magic pipe
     //   return [token]
     // token.value = '__' // TODO: this probably isn't right
     // token.value = token.value.slice(1)
-    
+
     var pieces = D.Parser.split_on(token.value, '.')
     token.value = pieces.shift()
 
@@ -840,30 +869,30 @@ D.import_fancy('$', {
 D.eat_fancy_var = function(token, type) {
   var pieces = D.Parser.split_on(token.value, '.')
   var name = pieces.shift().slice(1)
-  
+
   token.type = 'Variable'
   token.value = {type: type, name: name}
 
   return [token].concat(D.eat_fancy_var_pieces(pieces, token))
-} 
+}
 
 D.eat_fancy_var_pieces = function(pieces, token) {
   if(!pieces.length)
     return []
-  
-  // inline peek filtering    
+
+  // inline peek filtering
   pieces = pieces.map(function(item) {
-    return item[0] != '{' 
+    return item[0] != '{'
          ? '"' + item + '"'
          : item
   })
-  
+
   var path = new D.Token('List', pieces.join(' '))
     , peeker = new D.Token('Command', 'list peek')
-    
+
   peeker.names = ['data', 'path']
   peeker.inputs = [token.key, path.key]
-  
+
   return [path, peeker]
 }
 
@@ -871,7 +900,7 @@ D.eat_fancy_var_pieces = function(pieces, token) {
 //    _______ _______  ______ _______ _____ __   _ _______ _______  _____   ______ _______
 //       |    |______ |_____/ |  |  |   |   | \  | |_____|    |    |     | |_____/ |______
 //       |    |______ |    \_ |  |  | __|__ |  \_| |     |    |    |_____| |    \_ ______|
-//    
+//
 
 D.import_terminator = function(ch, obj) {
   if(typeof ch != 'string') return D.on_error('Terminator character must be a string')
@@ -886,7 +915,7 @@ D.import_terminator = function(ch, obj) {
 D.terminate = function(ch, verb, params) {
   if(!D.Terminators[ch]) return false
   var fun, terminators = D.Terminators[ch]
-  
+
   for(var i=0, l=terminators.length; i < l; i++) {
     fun = terminators[i][verb]
     if(typeof fun != 'function') continue
@@ -924,7 +953,7 @@ D.import_terminator('/', { // comment
 //    _______        _____ _______ _______ _______ _______
 //    |_____| |        |   |_____| |______ |______ |______
 //    |     | |_____ __|__ |     | ______| |______ ______|
-//    
+//
 
 
 D.import_models = function(new_models) {
@@ -932,7 +961,7 @@ D.import_models = function(new_models) {
     var model = new_models[model_key]
     if(!D.Commands[model_key]) {
       D.Commands[model_key] = model
-    } 
+    }
     else {
       D.extend(D.Commands[model_key]['methods'], model['methods'])
     }
@@ -940,11 +969,11 @@ D.import_models = function(new_models) {
 }
 
 D.import_aliases = function(values) {
-  
+
   // TODO: move this inside Dialects
   // THINK: this only accepts fully-formed handler/method combos, with simple params (no new ablocks). is that ideal?
   D.extend(D.AliasMap, values)
-  
+
   for(var key in values) {
     var value = values[key]
     value = D.Parser.string_to_tokens('{' + value + '}')
@@ -957,7 +986,7 @@ D.import_aliases = function(values) {
 //    _______ __   __  _____  _______ _______
 //       |      \_/   |_____] |______ |______
 //       |       |    |       |______ ______|
-//    
+//
 
 
 D.import_type = function(key, fun) {
@@ -971,36 +1000,36 @@ D.import_type = function(key, fun) {
 //     _____  _______ _______ _     _ _______ _____ __   _ ______  _______  ______ _______
 //    |_____] |_____|    |    |_____| |______   |   | \  | |     \ |______ |_____/ |______
 //    |       |     |    |    |     | |       __|__ |  \_| |_____/ |______ |    \_ ______|
-//    
+//
 
 
 D.import_pathfinder = function(name, pf) {
   if(typeof pf.keymatch != 'function')
     pf.keymatch = function(key) {return false} // return false if N/A, 'one' if you're singular, otherwise 'many'
-   
+
   if(typeof pf.gather != 'function')
     pf.gather = D.identity // returns a list of all matched items
-  
+
   pf.name = name
-  
+
   D.Pathfinders.push(pf)
   // find returns a list of matching items, empty for none, null for N/A [or value/null, if amount is one]
 }
 
 D.peek = function(base, path) {
   path = D.to_array(path)
-  
+
   if(!path.length)
     return value
 
   var todo = [base]
     , many_flag = false
-  
+
   for(var i=0, l=path.length; i < l; i++) {
     var key = path[i]
       , new_todo = []
       , pf
-    
+
     // choose our pathfinder
     for(var j=0, k=D.Pathfinders.length; j < k; j++) {
       pf = D.Pathfinders[j]
@@ -1012,32 +1041,32 @@ D.peek = function(base, path) {
       if(test)
         break
     }
-    
+
     if(!pf)
       return D.set_error('No matching pathfinder was found')
-    
+
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
       new_todo = new_todo.concat(pf.gather(todo[j], key))
     }
-    
+
     // tidy up
     // NOTE: we don't short circuit here on empty todo because we want many_flag to be accurate -- itemless peek should return an empty list if any many_flag PFs are invoked, and false otherwise
     todo = new_todo
   }
-  
+
   if(many_flag)
     return todo
-  
+
   return todo.length ? todo[0] : false
 }
 
 D.poke = function(base, path, value) {
   // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
-  
+
   path = D.to_array(path)
-  
-  // THINK: no path works like push, because that's a reasonable use case for this...  
+
+  // THINK: no path works like push, because that's a reasonable use case for this...
   // if(!path.length) // no path does nothing, for consistency (can't mutate base->value in place)
   //   return base
   if(!path.length)
@@ -1045,14 +1074,14 @@ D.poke = function(base, path, value) {
 
   if(typeof base != 'object')
     base = [base]
-  
+
   var todo = [base]
-  
+
   for(var i=0, l=path.length; i < l; i++) {
     var key = path[i]
       , new_todo = []
       , pf
-    
+
     // choose our pathfinder
     for(var j=0, k=D.Pathfinders.length; j < k; j++) {
       pf = D.Pathfinders[j]
@@ -1064,10 +1093,10 @@ D.poke = function(base, path, value) {
       if(test)
         break
     }
-    
+
     if(!pf)
       return D.set_error('No matching pathfinder was found')
-    
+
     // apply chosen pf to each item in todo
     for(var j=0, k=todo.length; j < k; j++) {
       if(i < l - 1) { // normal: find or create
@@ -1077,29 +1106,29 @@ D.poke = function(base, path, value) {
         pf.set(todo[j], key, value)
       }
     }
-    
+
     todo = new_todo
   }
-  
+
   return base
 }
 
 
 
-  /*ooooooo.         .o.       ooooooooo.    .oooooo..o oooooooooooo ooooooooo.   
-  `888   `Y88.      .888.      `888   `Y88. d8P'    `Y8 `888'     `8 `888   `Y88. 
-   888   .d88'     .8"888.      888   .d88' Y88bo.       888          888   .d88' 
-   888ooo88P'     .8' `888.     888ooo88P'   `"Y8888o.   888oooo8     888ooo88P'  
-   888           .88ooo8888.    888`88b.         `"Y88b  888    "     888`88b.    
-   888          .8'     `888.   888  `88b.  oo     .d8P  888       o  888  `88b.  
+  /*ooooooo.         .o.       ooooooooo.    .oooooo..o oooooooooooo ooooooooo.
+  `888   `Y88.      .888.      `888   `Y88. d8P'    `Y8 `888'     `8 `888   `Y88.
+   888   .d88'     .8"888.      888   .d88' Y88bo.       888          888   .d88'
+   888ooo88P'     .8' `888.     888ooo88P'   `"Y8888o.   888oooo8     888ooo88P'
+   888           .88ooo8888.    888`88b.         `"Y88b  888    "     888`88b.
+   888          .8'     `888.   888  `88b.  oo     .d8P  888       o  888  `88b.
   o888o        o88o     o8888o o888o  o888o 8""88888P'  o888ooooood8 o888o  o88*/
-  
-  
+
+
 D.Parser.get_next_thing = function(string, ignore_begin) {
   var first_open, next_open, next_closed
-  
+
   first_open = next_open = next_closed = string.indexOf(D.Constants.command_open);
-  
+
   if(first_open == -1) return string  // no Daimio here
   if(first_open > 0) return string.slice(0, first_open)  // trim non-Daimio head
 
@@ -1124,67 +1153,48 @@ D.Parser.get_next_thing = function(string, ignore_begin) {
     return string
   }
   block_name = block_name[1];
-  
+
   var end_tag = D.Constants.command_open + 'end ' + block_name + D.Constants.command_closed
     , end_begin = string.indexOf(end_tag)
     , end_end = end_begin + end_tag.length;
-    
+
   if(!end_begin) {
     // FIXME: handle this situation better
     D.on_error(string, "No end tag for block '" + block_name + "'");
     return string;
   }
-  
+
   // THINK: we're going to go ahead and deal with the block right here... is this the right place for this?
   // No, no it really isn't
-  
+
   return string.slice(0, end_end);
 }
 
 
 D.Parser.string_to_block_segment = function(string) {
-  // HACK FOR SPECIAL CASE
-  if(string == '{__}')
-    string = '{__ | __}'
-  
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
-    // , decorators = D.get_decorators(block_id)
-  
-  D.add_decorator(block_id, 'OriginalString', string, true)
-  // if(!decorators) {
-  //   // TODO: check to ensure there's already an OriginalString for this
-  //   // TODO: refactor
-  //   // TODO: don't be dum
-  //   decorators = (D.DECORATORS[block_id] = [])
-  //   decorators.push({type: 'OriginalString', value: string})
-  // }
-    
-  return segment
+
+  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique? 
+                                                                      // what should we do with different
+  return segment                                                      // strings that compile to the same block?
 }
 
 D.Parser.segments_to_block_segment = function(segments) {
   var wiring = {}
-  
-  segments = D.mungeLR(segments, D.Parser.rekey)
-  
+
   // TODO: refactor this into get_wiring or something
   for(var i=0, l=segments.length; i < l; i++) {
     var segment = segments[i]
-    
+
     if(segment.inputs && segment.inputs.length) {
       wiring[segment.key] = segment.inputs
     }
-    
-    delete segment.key
-    delete segment.prevkey
-    delete segment.names
-    delete segment.inputs
   }
-  
-  var block = new D.Block(segments, wiring)
+
+  var block   = new D.Block(segments, wiring)
     , segment = new D.Segment('Block', {id: block.id})
-  
+
   return segment
 }
 
@@ -1192,10 +1202,10 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
   var tokens = []
     , P = D.Parser
     , strings = []
-  
-  if(typeof string != 'string') 
+
+  if(typeof string != 'string')
     return string || []
-  
+
   if(string.slice(0,7) == D.Constants.command_open + 'begin ') { // in a block
     var pipeline = D.Parser.get_next_thing(string, true)
       , block_name = pipeline.match(/^\{begin (\w+)/)[1] // TODO: this could fail
@@ -1206,28 +1216,28 @@ D.Parser.pipeline_string_to_tokens = function(string, quoted) {
     pipeline = '"foo" ' + pipeline.slice(7+block_name.length, -1) // trim '{begin \w+' and trailing '}'
     strings = P.split_on_terminators(pipeline)
     strings[0] = '"' + body + '"'
-  } 
+  }
   else {
     if(string[0] != '{' && string.slice(-1) != '}') {
       D.set_error('That string is not a pipeline')
       return []
     }
-  
+
     string = string.slice(1, -1)
-  
+
     strings = P.split_on_terminators(string)
   }
-  
+
   var new_tokens = P.strings_to_tokens(strings, true)
-  
+
   // for(var i=0, l=new_tokens.length; i < l; i++) {
   //   if(!new_tokens[i].position)
   //     new_tokens[i].position = i+1
   // }
-  
+
   if(quoted && new_tokens.length)
     new_tokens[0].prevkey = '__in'
-  
+
   return new_tokens
 }
 
@@ -1236,24 +1246,24 @@ D.Parser.strings_to_tokens = function(strings) {
     , extract_munger = ''
     , munge_munger = ''
     , P = D.Parser
-  
-  if(typeof strings == 'string') 
+
+  if(typeof strings == 'string')
     strings = [strings]
-  
+
   if(!strings.map)
     return []
-  
+
   tokens = strings
            .map(P.lexify)
            .reduce(D.concat, [])
-    
+
   extract_munger = function(L, token, R) { // TODO: refactor this
     var type = D.SegmentTypes[token.type]
     if(!type) return [L, R] // no know type
     if(!type.extract_tokens) return [L.concat(token), R]
     return type.extract_tokens(L, token, R) // for terminators etc
   }
-  
+
   tokens = D.mungeLR(tokens, extract_munger)
 
   // for(var key in D.SegmentTypes) {
@@ -1263,16 +1273,16 @@ D.Parser.strings_to_tokens = function(strings) {
       // TODO: this needs to run over each SegmentType for each item... like, if something shoves new stuff on the list, we need to scan all of that R stuff with each item before we move on, rather than scanning each item...
       // TODO: so have mungeLR invoke a FAMILY of functions.
       // USECASE: list inside command inside list inside command... likely borks.
-      
+
   munge_munger = function(L, token, R) {
     var type = D.SegmentTypes[token.type]
     if(!type) return [L, R] // no know type
     if(!type.munge_tokens) return [L.concat(token), R]
     return type.munge_tokens(L, token, R)
   }
-  
+
   tokens = D.mungeLR(tokens, munge_munger)
-        
+
   return tokens
 }
 
@@ -1281,11 +1291,11 @@ D.Parser.string_to_tokens = function(string) {
     , result = false
     , block_inputs = []
     , chunk = D.Parser.get_next_thing(string)
-  
+
   if(chunk.length == string.length && chunk[0] == D.Constants.command_open) {
     // only one chunk, so make regular pipeline
     return D.Parser.pipeline_string_to_tokens(chunk)
-  } 
+  }
   else {
     // make blockjoin
     do {
@@ -1298,18 +1308,18 @@ D.Parser.string_to_tokens = function(string) {
         result = [new D.Token('String', chunk)]
         // output.push(D.Parser.strings_to_tokens(chunk))
       }
-      
+
       if(result.length) {
         output = output.concat(result)
         block_inputs.push(result[result.length - 1].key)
       }
     } while(chunk = D.Parser.get_next_thing(string))
-    
+
     var joiner = new D.Token('Blockjoin', '')
     joiner.inputs = block_inputs
     output.push(joiner)
   }
-  
+
   return output
   // return output.reduce(D.concat, [])
 }
@@ -1318,34 +1328,34 @@ D.Parser.tokens_to_segments = function(tokens) {
   var segments = []
     , munger = ''
     , P = D.Parser
-  
+
   segments = tokens.map(function(token) {return D.SegmentTypes[token.type].token_to_segments(token)})
                    .reduce(D.concat, [])
-    
+
   // for(var key in D.SegmentTypes) {
   //   var type = D.SegmentTypes[key]
-  //   
+  //
   //   if(!type.munge_segments)
   //     continue
-  //   
+  //
   //   munger = function(L, segment, R) {
-  // 
+  //
   //     if(segment.type != key) return [L.concat(segment), R]
   //     return type.munge_segments(L, segment, R)
   //   }
-  // 
+  //
   //   segments = D.mungeLR(segments, munger)
   // }
-  
+
   munger = function(L, segment, R) {
     var type = D.SegmentTypes[segment.type]
     if(!type) return [L, R] // no know type
     if(!type.munge_segments) return [L.concat(segment), R]
     return type.munge_segments(L, segment, R)
   }
-  
+
   segments = D.mungeLR(segments, munger)
-  
+
   return segments
 }
 
@@ -1363,11 +1373,11 @@ D.Parser.lexify = function(string) {
 
   if(string.trim)
     string = string.trim() // THINK: is there a better place for this?
-               
+
   for(var i=0, l=lexers.length; i < l; i++) {
     if(typeof string != 'string')
       return Array.isArray(string) ? string : [string]
-    
+
     string = lexers[i](string)
   }
 
@@ -1375,100 +1385,100 @@ D.Parser.lexify = function(string) {
 }
 
 D.Parser.split_on = function(string, regex, label) {
-  if(typeof string != 'string') 
+  if(typeof string != 'string')
     return string
-  
+
   if(!(regex instanceof RegExp))
     regex = RegExp('[' + D.regex_escape(regex) + ']')
-  
+
   var output = []
     , inside = []
     , special = /["{()}]/
     , match_break = 0
     , char_matches = false
     , we_are_matching = false
-    
+
   for(var index=0, l=string.length; index < l; index++) {
-    
+
     /*
       we need to not match when
       - inside quotes
       - unmatched parens
       - unmatched braces
     */
-    
+
     var this_char = string[index]
       , am_inside = inside.length
-    
+
     if(this_char == '"' && inside.length == 1 && inside[0] == '"')
       inside = []
-    
+
     if(this_char == '"' && !am_inside)
       inside = ['"']
-    
-    if(this_char == '{') 
+
+    if(this_char == '{')
       inside.push('{')
-    
+
     if(this_char == '(')
       inside.push('(')
-    
+
     if(this_char == '}' || this_char == ')')
-      inside.pop() // NOTE: this means unpaired braces or parens in quotes are explicitly not allowed... 
-    
+      inside.pop() // NOTE: this means unpaired braces or parens in quotes are explicitly not allowed...
+
     char_matches = regex.test(this_char)
-    
+
     // if(!!am_inside == !!inside.length) // not transitioning
     //   continue
     //   output.push(string.slice(match_break, index + 1))
     //   match_break = index + 1
     // }
-    // 
+    //
     // if(!am_inside && inside.length) {
     //   output.push(string.slice(match_break, index))
     //   match_break = index
     // }
-    // 
+    //
     // if(special.test(this_char))
     //   continue
-    // 
+    //
 
     if(am_inside && inside.length)
       continue
-    
-    if(we_are_matching === char_matches) 
+
+    if(we_are_matching === char_matches)
       continue
 
     if(we_are_matching) { // stop matching
       if(label)
         output.push(new D.Token(label, string.slice(match_break, index)))
-      
+
       match_break = index
       we_are_matching = false
     }
-    
+
     else { // start matching
       if(index)
         output.push(string.slice(match_break, index))
 
       match_break = index
-      we_are_matching = true      
+      we_are_matching = true
     }
   }
-  
+
   // if(match_break < index) {
   //   var lastbit = string.slice(match_break, index)
   //   if(lastbit.length) {
-  //     output.push(lastbit)      
+  //     output.push(lastbit)
   //   }
   // }
-  
+
   if(match_break < index) {
     var lastbit = string.slice(match_break, index)
     if(regex.test(lastbit[0])) { // at this point lastbit is homogenous
       if(label)
         output.push(new D.Token(label, string.slice(match_break, index)))
     } else {
-      output.push(lastbit)      
+      output.push(lastbit)
     }
   }
   return output
@@ -1484,48 +1494,55 @@ D.Parser.split_on_space = function(string) {
 }
 
 
-D.Parser.rekey = function(L, segment, R) {
-  var old_key = segment.key
-    , new_key = L.length
-    
-  // TODO: holymuckymuck, is this ever ugly and slow. clean me!
-  for(var i=0, l=R.length; i < l; i++) {
-    var future_segment = R[i]
-      , index
-      
-    if(future_segment.inputs) {
-      while(true) {
-        index = future_segment.inputs.indexOf(old_key)
-        if(index == -1) break
-        future_segment.inputs[index] = new_key
-      }
-    }
-  }
+// D.Parser.rekey = function(L, segment, R) {
+//   if(!segment) return [L, R]
+// 
+//   var old_key = segment.key
+//   var new_key = L.length
+// 
+//   // TODO: holymuckymuck, is this ever ugly and slow. clean me!
+//   for(var i=0, l=R.length; i < l; i++) {
+//     var future_segment = R[i]
+//     var index
+// 
+//     if(future_segment.inputs) {
+//       while(true) {
+//         index = future_segment.inputs.indexOf(old_key)
+//         if(index == -1) break
+//         future_segment.inputs[index] = new_key
+//       }
+//     }
+// 
+//     if( future_segment.value
+//      && future_segment.value.name
+//      && future_segment.value.name == old_key)
+//         future_segment.value.name = new_key
+//   }
+// 
+//   segment.key = new_key
+//   return [L.concat(segment), R]
+// }
 
-  segment.key = new_key
-  return [L.concat(segment), R]
-}
 
 
 
-
-    /*ooooo.   oooooooooo.     oooo oooooooooooo   .oooooo.   ooooooooooooo  .oooooo..o 
-   d8P'  `Y8b  `888'   `Y8b    `888 `888'     `8  d8P'  `Y8b  8'   888   `8 d8P'    `Y8 
-  888      888  888     888     888  888         888               888      Y88bo.      
-  888      888  888oooo888'     888  888oooo8    888               888       `"Y8888o.  
-  888      888  888    `88b     888  888    "    888               888           `"Y88b 
-  `88b    d88'  888    .88P     888  888       o `88b    ooo       888      oo     .d8P 
-   `Y8bood8P'  o888bood8P'  .o. 88P o888ooooood8  `Y8bood8P'      o888o     8""88888P'  
+    /*ooooo.   oooooooooo.     oooo oooooooooooo   .oooooo.   ooooooooooooo  .oooooo..o
+   d8P'  `Y8b  `888'   `Y8b    `888 `888'     `8  d8P'  `Y8b  8'   888   `8 d8P'    `Y8
+  888      888  888     888     888  888         888               888      Y88bo.
+  888      888  888oooo888'     888  888oooo8    888               888       `"Y8888o.
+  888      888  888    `88b     888  888    "    888               888           `"Y88b
+  `88b    d88'  888    .88P     888  888       o `88b    ooo       888      oo     .d8P
+   `Y8bood8P'  o888bood8P'  .o. 88P o888ooooood8  `Y8bood8P'      o888o     8""88888P'
                             `Y88*/
 
 
 //     ______          _____  _______ _     _
-//     |_____] |      |     | |       |____/ 
+//     |_____] |      |     | |       |____/
 //     |_____] |_____ |_____| |_____  |    \_
-//     
+//
 
 D.Block = function(segments, wiring) {
-  
+
   /*
     head is an array of Segment objects, which look like {
       type: ""
@@ -1535,7 +1552,7 @@ D.Block = function(segments, wiring) {
       outs: []
     }
     required:
-    type is Number, String, List, Command, Alias, Block 
+    type is Number, String, List, Command, Alias, Block
       --> during processing, various transformer types are available (currently Terminator and Fancy)
     value is {Handler: "", Method: ""} for Command, raw value otherwise
     optional:
@@ -1550,15 +1567,15 @@ D.Block = function(segments, wiring) {
 
 
   // // soooooo... this assumes head is a bunch of segments OR body is a bunch of strings or ABlocks. right. gotcha.
-  // 
+  //
   // if(head) {
   //   // ensure it's an array of Segments, I suppose...
   //   this.head = head
   // }
-  // 
+  //
   // if(body) {
   //   // TODO: filter out extracted blocks
-  //   
+  //
   //   // ensure it's an array of strings and ABlocks, then take the string or block's id
   //   if(body.some && !body.some(function(item) {return (typeof item != 'string') && !item.id}).length) {
   //     this.body = body.filter(function(item) { return !item.adjunct })
@@ -1566,37 +1583,115 @@ D.Block = function(segments, wiring) {
   //      // THINK: this 'block' bit is a bod block ref. should we use segments here instead?
   //   }
   // }
-  // 
+  //
   // if(!this.head && !this.body) // THINK: when does this happen? what should we return?
-  //   this.body = [] 
-  
-  
+  //   this.body = []
+
   if(!Array.isArray(segments))
     segments = []
-  
+
   // TODO: ensure all segments are segments
 
   if(!wiring || (typeof wiring != 'object'))
     wiring = {}
-  
+
+  var pair = D.wash_keys(segments, wiring)                    // OPT: this happens for each optimizer
+  segments = pair.segments                                    // but it's only needed once at the end
+  wiring   = pair.wiring
+
   this.segments = segments
   this.wiring = wiring
-  
+
   var json = JSON.stringify(this)
     , hash = murmurhash(json)
-    
-  // THINK: take this out and put it elsewhere? or... how is block access limited? or... huh.
-  if(!D.BLOCKS[hash])
-    D.BLOCKS[hash] = this
-  
+
+  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere? 
+    D.BLOCKS[hash] = this                                     // or... how is block access limited? or... huh.
+
   this.id = hash
 }
+
+D.wash_keys = function(segments, wiring) {
+  var new_wiring = {}
+  var temp_wiring = {}
+  var new_segments = []
+  var reverse_wiring = {}
+  
+  for(var key in wiring) {
+    var wire = wiring[key]
+    for(var i=0, l=wire.length; i < l; i++)
+      reverse_wiring[wire[i]] = reverse_wiring[wire[i]] 
+                              ? reverse_wiring[wire[i]].concat(key) 
+                              : [key] }
+  
+  for(var j=0, k=segments.length; j < k; j++) {
+    var segment = segments[j]
+    var index = new_segments.length
+    var my_key = segment.key || j
+    var my_wires = reverse_wiring[my_key] || []
+    var input_index = -1
+    
+    if( !my_wires.length                                 // toss anything that isn't linked to the final segment
+     && j != k-1                                         // except the final segment itself, obviously
+     && segment.type != 'VariableSet'                    // 'Put' segtypes are purely side effects
+     && segment.type != 'PortSend'                       // TODO: change these to 'PutSpaceVar' and 'PutPort'
+     &&  ( segment.type != 'Command'                     
+        && segment.value.method != 'run'                 // two commands are also side-effect based...
+        && segment.value.method != 'sleep' ))            // FIXME: find a nice way to deal with that
+           continue
+    
+    for(var i=0, l=my_wires.length; i < l; i++) {
+      if(!temp_wiring[my_wires[i]])
+        temp_wiring[my_wires[i]] = []
+      while((input_index = wiring[my_wires[i]].indexOf(my_key, input_index+1)) != -1)
+        temp_wiring[my_wires[i]][input_index] = index }
+    
+    if(temp_wiring[my_key])
+      new_wiring[index] = temp_wiring[my_key]
+    
+    // am i missing any keys?
+    if(wiring[my_key]) {
+      for(var x=0, z=wiring[my_key].length; x < z; x++) {
+        if(!new_wiring[index])
+          new_wiring[index] = []
+        if(new_wiring[index][x] === undefined)
+          new_wiring[index][x] = wiring[my_key][x]
+      }
+    }
+    
+    // put the value.name in the wiring
+    // then build an old_key_new_key map
+    // and switch this at that point
+    // but also if it's in the wiring who cares?
+    // oh but we need this for final pipevars
+    // because otherwise who's going to speak for them?
+    
+    //     if( future_segment.value
+    //      && future_segment.value.name
+    //      && future_segment.value.name == old_key)
+    //         future_segment.value.name = new_key
+    
+    
+    // 'run' is used purely for side effects sometimes like {"{2 | >$foo}" | run | $foo}
+    // so we can't get rid of it just because it's not linked to the output.
+    // also, things that are linked to >@ have the same problem.
+    // also, any command that has a downport.
+    // sucky sucky suck suck stupid stupid
+    // also 'wait'
+    
+    
+    new_segments.push(new D.Segment(segment.type, segment.value, null))
+  }
+  
+  return {segments: new_segments, wiring: new_wiring}
+}
+
 
 
 //    _______  _____  _     _ _______ __   _
 //       |    |     | |____/  |______ | \  |
 //       |    |_____| |    \_ |______ |  \_|
-//    
+//
 
 D.Token = function(type, value) {
   this.key = D.Etc.token_counter++
@@ -1606,46 +1701,49 @@ D.Token = function(type, value) {
 
 
 //    _______ _______  ______ _______ _______ __   _ _______
-//    |______ |______ |  ____ |  |  | |______ | \  |    |   
-//    ______| |______ |_____| |  |  | |______ |  \_|    |   
-//    
+//    |______ |______ |  ____ |  |  | |______ | \  |    |
+//    ______| |______ |_____| |  |  | |______ |  \_|    |
+//
 
 D.Segment = function(type, value, token) {
   this.type = type || 'String'
   this.value = D.make_nice(value)
-  
-  if(!token) 
+
+  if(token === null)
+    return this
+
+  if(!token)
     token = {}
-  
+
   this.prevkey = token.prevkey || false
   this.names = token.names || []
   this.inputs = token.inputs || []
   this.key = token.key || false
 
-  // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time? 
+  // THINK: how do we allow storage / performance optimizations in the segment structure -- like, how do we fill in the params ahead of time?
 
   // TODO: refactor the above... oy. pseudosegments vs real segments, default values, etc...
-    
+
   /*
     Segments also have
     params -- commands have these (it's a hash of segments)
     paramlist -- params post-dialecticalization
     method -- post-d, for Command segments
-    
-    Segment types: 
-      paramable: String, Number, Block, Input, Null (for alias dangling params) 
+
+    Segment types:
+      paramable: String, Number, Block, Input, Null (for alias dangling params)
       paramfree: List, Command, Alias
       temporary: Fing, Begin, Fancy, Pipeline
-      
+
     ABlock segments (and beyond) have their keys changed to pipeline position and Input segments remapped
   */
 }
 
 D.Segment.prototype.toJSON = function() {
   var type = D.SegmentTypes[this.type]
-  
+
   // THINK: unfortunately this is triggered by ABlock() before murmurhashing, which probably will screw something up someday.
-  
+
   if(type && type.toJSON) {
     return type.toJSON(this)
   } else {
@@ -1655,12 +1753,12 @@ D.Segment.prototype.toJSON = function() {
 
 
 //    ______  _____ _______        _______ _______ _______
-//    |     \   |   |_____| |      |______ |          |   
-//    |_____/ __|__ |     | |_____ |______ |_____     |   
-//    
+//    |     \   |   |_____| |      |______ |          |
+//    |_____/ __|__ |     | |_____ |______ |_____     |
+//
 
 D.Dialect = function(commands, aliases) {
-  
+
   /*
     A Space is an execution context for Blocks.
     Each Space has a fixed Block that handles incoming messages by
@@ -1669,29 +1767,29 @@ D.Dialect = function(commands, aliases) {
     - feeding the message through the fixed Block as data
     Spaces may send messages to each other through channels via the space gateway.
     Each Space has a private variable context for mutable space variables.
-    Each Space is responsible for its own Processes, but we're using a setTimeout to queue messages 
+    Each Space is responsible for its own Processes, but we're using a setTimeout to queue messages
       (to avoid blowing the stack and to keep things ordered correctly)
 
 
 
-    Frozen space data: 
+    Frozen space data:
       state: {}
-      dialect: 
+      dialect:
         commands: {}
         aliases: {}
-      ports: 
+      ports:
         name:
         flavour: name [contains: dir, add, dock]
         settings: flavour data
         outs: [port_index]
-        typehint: 
+        typehint:
         space: id
         station: index?
-      stations: 
+      stations:
         block: id
         name: ?
 
-    Instances of ports have the flavour in prototype, and have more outs added by parent space. 
+    Instances of ports have the flavour in prototype, and have more outs added by parent space.
 
     D.SPACESEEDS is for abstract spaces, ie the spacial data that is imported/exported.
     D.OuterSpace refers to the outermost space [but we should make this an array to allow multiple independent "bubbles" to operate... maybe].
@@ -1704,7 +1802,7 @@ D.Dialect = function(commands, aliases) {
 }
 
 D.Dialect.prototype.get_handler = function(handler) {
-  if(  handler 
+  if(  handler
     && this.commands
     && this.commands[handler]
     && this.commands[handler]
@@ -1716,7 +1814,7 @@ D.Dialect.prototype.get_handler = function(handler) {
 }
 
 D.Dialect.prototype.get_method = function(handler, method) {
-  if(  handler 
+  if(  handler
     && method
     && this.commands
     && this.commands[handler]
@@ -1731,9 +1829,9 @@ D.Dialect.prototype.get_method = function(handler, method) {
 
 
 //     _____   _____   ______ _______
-//    |_____] |     | |_____/    |   
-//    |       |_____| |    \_    |   
-//    
+//    |_____] |     | |_____/    |
+//    |       |_____| |    \_    |
+//
 
 D.Port = function(port_template, space) {
   var flavour = port_template.flavour
@@ -1741,94 +1839,94 @@ D.Port = function(port_template, space) {
     , station = port_template.station
     , name = port_template.name
     , typehint = port_template.typehint
-    
+
   var pflav = D.PortFlavours[flavour]
-  
+
   if(!pflav)
     return D.set_error('Port flavour "' + flavour + '" could not be identified')
-  
+
   // if(D.PORTS[name])
   //   return D.set_error('That port has already been added')
-    
+
   if(!name)
     name = 'port-' + Math.random()
-    
+
   // if(!space)
   //   return D.set_error('Every port must have a space')
-  
+
   var port = Object.create(pflav)
-  
+
   port.outs = []
   port.name = name
-  port.space = space 
+  port.space = space
   port.flavour = flavour
   port.station = station || undefined
   port.typehint = typehint
   port.settings = D.make_nice(settings, {})
-  
+
   port.pair = false
-  
+
   if(port.space)
     port.add()
   else
     port.outside_add()
-  
+
   if(port.space && !port.space.parent && !port.station && !port.subspace) {
     var outside_template = D.clone(port_template)
     delete outside_template['space']
     var outside_port = new D.Port(outside_template)
     outside_port.pairup(port)
   }
-  
+
   return port
 }
 
 
 
-   /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo 
-  d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8 
-  Y88bo.       888   .d88'     .8"888.     888           888         
-   `"Y8888o.   888ooo88P'     .8' `888.    888           888oooo8    
-       `"Y88b  888           .88ooo8888.   888           888    "    
-  oo     .d8P  888          .8'     `888.  `88b    ooo   888       o 
-  8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888oooooo*/ 
+   /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo
+  d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8
+  Y88bo.       888   .d88'     .8"888.     888           888
+   `"Y8888o.   888ooo88P'     .8' `888.    888           888oooo8
+       `"Y88b  888           .88ooo8888.   888           888    "
+  oo     .d8P  888          .8'     `888.  `88b    ooo   888       o
+  8""88888P'  o888o        o88o     o8888o  `Y8bood8P'  o888oooooo*/
 
 
 D.Space = function(seed_id, parent) {
   // D.SPACESEEDS[seed_id] contains id, dialect, state, ports, stations, subspaces, routes
   // TODO: validate parent
   // THINK: validate seed_id?
-  
+
   var seed = D.SPACESEEDS[seed_id]
     , self = this
-  
+
   if(!seed)
     return D.set_error('Invalid spaceseed')
-  
+
   this.seed = seed
   this.state = {}
-  this.parent = parent || false // false is outer 
-  
+  this.parent = parent || false // false is outer
+
   // add all the ports at once
   this.ports = seed.ports.map(function(port, index) {return new D.Port(port, self)})
-  
+
   // add outs to ports
   seed.routes.forEach(function(route) {self.ports[route[0]-1].outs.push(self.ports[route[1]-1])})
-  
+
   // add all my children
   this.subspaces = seed.subspaces.map(function(seed_id) {return new D.Space(seed_id, self)})
-  
-  // pair my subspace ports 
+
+  // pair my subspace ports
   this.subspaces.forEach(function(subspace, subspace_index) {
     var port_name_to_port = {}
-    
+
     for(var key in seed.ports) {
       var port = seed.ports[key]
       if(port.space != subspace_index+1) // 1-indexed
         continue
       port_name_to_port[port.name] = self.ports[key]
     }
-    
+
     subspace.ports
       .filter(function(port) {return port.space === subspace         // THINK: when is it not?
                                   && !port.station                   // keep out stations
@@ -1836,10 +1934,10 @@ D.Space = function(seed_id, parent) {
                                   && port_name_to_port[port.name]})  // just in case we've missed something
       .forEach(function(port) {port_name_to_port[port.name].pairup(port)})
   })
-  
+
   // revise dialect
   this.dialect = D.DIALECTS.top // TODO: this probably isn't right, but the timing gets weird otherwise
-  
+
 // NOTE: DON'T DELETE THIS YET -- decide what you're doing with dialects first.
 //  if(this.parent) {
 //    var parent_dialect = this.parent.dialect ? this.parent.dialect : D.DIALECTS.top
@@ -1868,7 +1966,6 @@ D.Space = function(seed_id, parent) {
   // yoiks
   this.only_one_process = true
   this.processes = []
-  this.listeners = []
   this.queue = []
 }
 
@@ -1877,18 +1974,21 @@ D.Space.prototype.get_state = function(param) {
 }
 
 D.Space.prototype.dock = function(ship, station_id) {
-  this.station_id = station_id
-  
   var block_id = this.seed.stations[station_id - 1]
-    , block = D.BLOCKS[block_id]
-    , output_port = this.ports.filter(function(port) {return port.station == station_id && port.name == '_out'})[0]
-    , prior_starter = function(value) {output_port.exit(value)} // THINK: we're jumping straight to exit here. need to do the same for any implicit station output ports...
-    , scope = {"__in": ship} // TODO: find something better...
-    , value = this.execute(block, scope, prior_starter)
-    
+  var block    = D.BLOCKS[block_id]
+  var out_port = D.filter_ports(this.ports, station_id, '_out')
+  
+  if(!out_port)
+    return D.set_error('That out port is unavailable')
+              
+  var prior_starter =                                               // THINK: we're jumping straight to exit here. 
+        function(value) {out_port.exit(value)}                      // also do it for implicit station output ports...
+  var scope = {"__in": ship}                                        // TODO: find something better...
+  var value = this.execute(block, scope, prior_starter, station_id)
+
   if(value === value)
     prior_starter(value)
-  
+
   // this.station_id = false // THINK: if we go async in here it toasts the station_id...
   // THINK: do we need to send back NaN? there's probably no callstack here to speak of...
 }
@@ -1896,18 +1996,18 @@ D.Space.prototype.dock = function(ship, station_id) {
 D.Space.prototype.please_change_your_seed_to = function(seed_id) {
   var old_seed = this.seed
     , new_seed = D.SPACESEEDS[seed_id]
-    
+
   if(!new_seed)
     return D.set_error('You done messed up')
-  
+
   if(JSON.stringify(old_seed) == JSON.stringify(new_seed))
     console.log('Identical seeds')
 
   // we're going to assume that if a subspace has changed, we'll receive a tell_my_parent request instead of a please_change_your_seed_to request. so if we're here and subspaces are different its because we need to add/remove subspaces.
-  
+
   if(JSON.stringify(old_seed.subspaces) != JSON.stringify(new_seed.subspaces))
     console.log('subspaces differ')
-  
+
   if(JSON.stringify(old_seed.stations) != JSON.stringify(new_seed.stations))
     console.log('stations differ')
   // station mod -> no change, but add/remove needs change... how do we tell?
@@ -1925,17 +2025,17 @@ D.Space.prototype.please_change_your_seed_to = function(seed_id) {
   // - re-pair my ports.
   // uh but timers... and unfinished processes... and state...
   // let's assume we're making the smallest change we can, in a single space.
-  // we can copy the state of the old space... 
+  // we can copy the state of the old space...
   // but can we copy over the processes?
   // this is a bad way of doing it.
 
   if(JSON.stringify(old_seed.dialect) != JSON.stringify(new_seed.dialect))  // dialect don't exist yet
     console.log('dialects differ')
-  
+
   if(JSON.stringify(old_seed.state) != JSON.stringify(new_seed.state))      // seed state is just a fallthrough
     console.log('state differs')
-  
-  
+
+
   this.seed = new_seed
   this.tell_my_parent(new_seed)
 }
@@ -1944,27 +2044,27 @@ D.Space.prototype.change_seed = function(seed_id) {
   // this points the space to a new seed, while maintain as much of its live state as it can
   // [usually used when modifying just one thing about the space -- don't try to do more than one]
   // space properties: state, ports, subspaces. everything else is in the seed.
-  
+
   // did a subspace change? pass the word along.
-  
-  // did a port change? 
+
+  // did a port change?
     // new port: add it
     // missing port: remove it
     // one port different: transform it (somehow...) <- this is the only tricky bit, maybe
 
   // did my routes change? do nothing. ----> or maybe have the ports update their routes?
-  
+
   // did some state change? do nothing. [live state overrides old state, and falls through otherwise]
-  
+
   // did a station change? do nothing. // TODO: once you start caching processed stations by dialect, clear that cache
-  
+
   // did the dialect change? do nothing. // TODO: once you start caching processed stations by dialect, clear that cache
 }
 
 
 // D.Space.prototype.hi_i_have_a_new_template_please_update_yourself = function(child, old_template) {
-//   // this tells the parent that i have a new template so it needs to update itself and its own template 
-//   
+//   // this tells the parent that i have a new template so it needs to update itself and its own template
+//
 //   // switch all my ports from old space id to new space id
 //   // make a new template based on the port mods
 //   // tell my parent
@@ -1975,152 +2075,150 @@ D.Space.prototype.change_seed = function(seed_id) {
 // D.Space.prototype.add_port = function(port) {
 //   var port = new D.Port(this, port.flavour, port.settings, this.stations[port.station], port.name, port.typehint)
 //   this.ports.push(port)
-//   
+//
 //   return this.export_and_update()
 // }
 
 // D.Space.prototype.remove_port = function(port) {
-//   
+//
 //   // TODO: remove the port's routes
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.add_route = function(from_port, to_port) {
 //   // TODO: check ports
 //   from_port.outs.slice
-//   
+//
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.remove_route = function(from_port, to_port) {
-// 
+//
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.add_station = function(block) {
 //   // TODO: check block for blockiness or get from ABLOCKS
 //   // TODO: add standard station ports (in / out / error)
-//   
+//
 //   this.stations.push(block)
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.remove_station = function(station) {
 //   var index = this.stations.indexOf(station)
-//   
+//
 //   if(index == -1)
 //     return D.set_error('No such station found')
-//   
+//
 //   // TODO: remove the station's ports
-//   
+//
 //   this.stations.splice(index, 1) // THINK: this won't work concurrently -- is that ok?
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.add_space = function(space) {
-//   
+//
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.remove_space = function(index) {
-//   
+//
 //   return this.export_and_update()
 // }
-// 
+//
 // D.Space.prototype.export_and_update = function(index) {
 //   // yurm
-//   if(this.loading) 
+//   if(this.loading)
 //     return false // we're loading, no need to change
-//   
-//   
+//
+//
 // }
 
 
-D.Space.prototype.deliver = function(message, prior_starter) {
-  // execute the block, with the message loaded in as __
-  var scope = {"__in": message} // TODO: find something better...
-  this.execute(this.block, scope, prior_starter)
-}
+// D.Space.prototype.deliver = function(message, prior_starter) {
+//   // execute the block, with the message loaded in as __
+//   var scope = {"__in": message} // TODO: find something better...
+//   this.execute(this.block, scope, prior_starter)
+// }
 
 // TODO: move this all into a Process, instead of doing it here.
 // THINK: there's no protection in here again executing multiple processes concurrently in the same space -- which is bad. find a way to bake that in. [except for those cases of desired in-pipeline parallelism, of course]
-D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, listeners) {
+D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, station_id) {
   var self = this
     , block = D.get_block(ablock_or_segment)
-  
+
   // if(!when_done) {
   //   when_done = function(result) {
   //     // THINK: what should we do here?
   //     D.set_error("No when_done callback sent to space.execute for result: " + D.stringify(result))
   //   }
   // }
-  
+
   if(this.processes.length && this.only_one_process) {
     // NOTE: we kind of need this -- it keeps all the process requests in order (using JS's event loop) and clears our closet of skeletal callstacks
     var thunk = function() {
-      var result = self.real_execute(block, scope, prior_starter, listeners)
+      var result = self.real_execute(block, scope, prior_starter, station_id)
       if(result === result)
         prior_starter(result) // we're asynced, but the process didn't know it
     }
-    
-    setImmediate(thunk)
+
+    D.setImmediate(thunk)
     // setTimeout(thunk, 0)
-    
+
     // this.queue.push(function() {
     //   self.real_execute(block, scope, prior_starter, when_done)
     // })
     return NaN
   }
 
-  return self.real_execute(block, scope, prior_starter, listeners)
+  return self.real_execute(block, scope, prior_starter, station_id)
 }
 
-D.Space.prototype.real_execute = function(block, scope, prior_starter, listeners) {
+D.Space.prototype.real_execute = function(block, scope, prior_starter, station_id) {
   var self = this
     , process
-    , result
-  
-  result = this.try_optimize(block, scope)
-  if(result)
-    return result.value
-  
+    , block = D.try_optimize(block)
+
   // var new_when_done = function(value) {
   //   self.cleanup(self.pid, self.last_value)
   //   if(when_done)
   //     when_done(value)
   // }
-  
+
   if(!prior_starter) {
     prior_starter = function() {}
   }
-  
-  // override the prior_starter here -- THIS function is the prior starter now. (basically, remember to cleanup after and fire the listeners.)
+
+  // override the prior_starter here -- THIS function is the prior starter now. (basically, remember to cleanup after yourself.)
 
   var my_starter = function(value) {
-    self.cleanup(process, listeners)
+    self.cleanup(process)
     prior_starter(value)
   }
-    
-  process = new D.Process(this, block, scope, my_starter)
+
+  process = new D.Process(this, block, scope, my_starter, station_id)
   this.processes.push(process)
-  
-  try {
-    result = process.run()
-    self.cleanup(process, listeners)
-  } catch(e) {
-    D.set_error(e.message)
-    self.cleanup(process, listeners)
-  }
-  
+
+  var result = this.try_execute(process)
+  this.cleanup(process)
   return result
 }
 
-D.Space.prototype.cleanup = function(process, listeners) {
+D.Space.prototype.try_execute = function(process) {
+  try {
+    return process.run()
+  } catch(e) {
+    D.set_error(e.message)
+  }
+}
+
+D.Space.prototype.cleanup = function(process) {
   if(!process.asynced) {
     this.scrub_process(process.pid)
     // this.run_listeners(process.last_value, listeners) // THINK: is process.last_value right?
   }
-    
+
   // this.run_queue()
 }
 
@@ -2137,76 +2235,50 @@ D.Space.prototype.scrub_process = function(pid) {
 
 
 
-D.Space.prototype.try_optimize = function(block, scope) {
-  // this returns an object containing a 'value' property if it succeeds. optimizers are probably imported like everything else and run in a pipeline. how does this play with downports? other station output ports?
+D.try_optimize = function(block) {
+  if(!D.Etc.use_optimizations) return block
 
-  for(var i=0, l=D.Optimizers.length; i < l; i++) {
-    var result = D.Optimizers[i].fun(block, scope)
-    
-    if(result)
-      return result
-  }
+  var map = D.Etc.OptimizationMap                      // THINK: a weakmap might work well here
+  var block_id = block.id
   
-  // okay, but how do you chain multiple optimizations together? you want the later ones to accept the earlier ones as input, or something...
+  if(map[block_id])
+    return map[block_id]
   
-  return undefined
-  // return {value: 'foo'}
+  for(var i=0, l=D.Optimizers.length; i < l; i++)
+    block = D.Optimizers[i].fun(block)
+
+  map[block_id] = block
+  return block
 }
+
 
 
 D.Optimizers = []
-D.import_optimizer = function(name, fun) {
-  var opt = {
-    name: name,
-    fun: fun
-  }
+D.import_optimizer = function(name, priority, fun) {
+  if( priority <= 0                                    // priority is between 0 and 1 *exclusive*
+   || priority >= 1 )                                  // this means you can always fit something
+      priority  = 0.5                                  // at start or end, up to float precision.
   
-  D.Optimizers.push(opt)
-  // fun returns {value: xyyzy} if it finds something, false otherwise
-  
-  
-  // figure out how to make this work -- you need to examine the station's routes for multiple outs, and capture the value from the process cleanup phase. if it goes async you should probably not capture, because it might be sleeping. so commands have a 'nomemo' tag?
+  var opt = { fun: fun                                 // fun takes a block as an argument and 
+            , name: name                               // returns a block (same or different)
+            , priority: priority }
 
-  //D.Etc.opt_memos = {}
-  //D.import_optimizer('memoize', function(block, scope) {
-  //  var memos = D.Etc.opt_memos
-  //  if(!memos[block.id])
-  //    memos[block.id] = {}
-  //
-  //  var block_memos = memos[block.id]
-  //    , scope_id = murmurhash(JSON.stringify(scope))
-  //    
-  //  if(typeof block_memos[scope_id] == 'undefined') { // first time through primes it
-  //    block_memos[scope_id] = true
-  //    return false
-  //  }
-  //  
-  //  if(!block_memos[scope_id])
-  //    return false
-  //  
-  //  if(block_memos[scope_id] == true) { // second time runs it
-  //    var result = 
-  //    block_memos[scope_id] = {value: result}
-  //  }
-  //    
-  //  return block_memos[scope_id] 
-  //})
-  
-  
+  D.Optimizers.push(opt)
+  D.Optimizers.sort(function(a, b) { return a.priority - b.priority })
 }
 
 
 
-  /*ooooooo.   ooooooooo.     .oooooo.     .oooooo.   oooooooooooo  .oooooo..o  .oooooo..o 
-  `888   `Y88. `888   `Y88.  d8P'  `Y8b   d8P'  `Y8b  `888'     `8 d8P'    `Y8 d8P'    `Y8 
-   888   .d88'  888   .d88' 888      888 888           888         Y88bo.      Y88bo.      
-   888ooo88P'   888ooo88P'  888      888 888           888oooo8     `"Y8888o.   `"Y8888o.  
-   888          888`88b.    888      888 888           888    "         `"Y88b      `"Y88b 
-   888          888  `88b.  `88b    d88' `88b    ooo   888       o oo     .d8P oo     .d8P 
+  /*ooooooo.   ooooooooo.     .oooooo.     .oooooo.   oooooooooooo  .oooooo..o  .oooooo..o
+  `888   `Y88. `888   `Y88.  d8P'  `Y8b   d8P'  `Y8b  `888'     `8 d8P'    `Y8 d8P'    `Y8
+   888   .d88'  888   .d88' 888      888 888           888         Y88bo.      Y88bo.
+   888ooo88P'   888ooo88P'  888      888 888           888oooo8     `"Y8888o.   `"Y8888o.
+   888          888`88b.    888      888 888           888    "         `"Y88b      `"Y88b
+   888          888  `88b.  `88b    d88' `88b    ooo   888       o oo     .d8P oo     .d8P
   o888o        o888o  o888o  `Y8bood8P'   `Y8bood8P'  o888ooooood8 8""88888P'  8""88888*/
 
 
-D.Process = function(space, block, scope, prior_starter) {
+D.Process = function(space, block, scope, prior_starter, station_id) {
 
   /*
       A Process executes a single Block from start to finish, executing each segment in turn and handling the wiring.
@@ -2223,122 +2295,94 @@ D.Process = function(space, block, scope, prior_starter) {
   // this.when_done = when_done
   this.prior_starter = prior_starter
   this.asynced = false
-  
+  this.station_id = station_id
+
   var self = this
   this.my_starter = function(value) {
     self.last_value = value
-    self.state[self.current] = value // TODO: fix this it isn't general
+    self.state[self.current] = value                            // TODO: fix this it isn't general
     self.current++
     self.run()
   }
-  
-  // if(scope) {
-  //   scope.forEach(function(item, key) {
-  //     self.state[key] = item
-  //   })
-  // }
-  
-  // this.state = space.state // for overriding?
-  this.state = scope || {} // process-level vars, like wiring, should be local to the process
 
-
-
-  // HACKHACKHACK
-  // if(space.secret && !scope.secret) {
-  //   this.state.secret = space.secret
-  // }
-  
-
+  this.state = scope || {}                                      // process-level vars, like wiring,
+                                                                // should be local to the process
   if(this.state['__in'] === undefined)
-    this.state['__in'] = "" // ha ha jk oh wait we need this
+    this.state['__in'] = ""                                     // ha ha jk oh wait we need this
 }
 
 D.Process.prototype.done = function() {
-  // console.log(this)
-  // console.trace()
-  // console.log(this.block.segments)
-  // console.log(this.block.wiring)
-  
-  // if(this.when_done)
-  //   this.when_done(this.last_value)
-  
-  var output = this.last_value // default output
-  
-  if(this.block.wiring['*out']) {
+  var output = this.last_value                                  // default output
+                                                                    
+  if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
       output = this.state[outs[0]]
-    } 
+    }
     else {
       output = []
       for(var i=0, l=outs.length; i < l; i++) {
-        output.push(this.state[outs[i]]) // THINK: sometimes array sometimes not is always weird
+        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird
       }
     }
-  } 
-  
-  output = D.make_nice(output)   // THINK: should probably do this for each possible output in the array form
+  }
 
+  output = D.make_nice(output)                                  // THINK: should probably do this for each 
+                                                                // possible output in the array form
   if(this.asynced) {
-    this.asynced = false // ORLY??
+    this.asynced = false                                        // ORLY??
     if(this.prior_starter)
       this.prior_starter(output)
     return undefined
-  } 
-  
+  }
+
   return output
 }
 
 D.Process.prototype.run = function() {
-  var self = this
-    , value = ""
+  var value = ""
+    , segs  = this.block.segments
+    , wires = this.block.wiring
+    , dialect = this.space.dialect
+    , current = this.current
+    , segment = segs[current]
 
-  while(this.block.segments[this.current]) {
-    value = this.next() // TODO: this is not a trampoline
-    if(value !== value) {  
-      this.asynced = true    
-      return NaN // NaN is the "I took the callback route" signal...
+  while(segment) {
+    value = this.next(segment, current, wires, dialect)             // TODO: this is not a trampoline
+    if(value !== value) {
+      this.current = current
+      this.asynced = true
+      return NaN                                                    // NaN is the "I took the callback route" signal...
     }
-    self.last_value = value
-    self.state[self.current] = value // TODO: fix this it isn't general
-    self.current++
+    this.last_value = value
+    this.state[current] = value                                     // TODO: fix this it isn't general
+    current++
+    segment = segs[current]
   }
-  
+
   return this.done()
 }
 
-D.Process.prototype.next = function() {
-  var self = this
-    , segment = this.block.segments[this.current]
-    , wiring = this.block.wiring
-    , state = this.state
+D.Process.prototype.next = function(segment, current, wires, dialect) {
+  var type = D.SegmentTypes[segment.type]
+  var key  = segment.key || current
+  var wire = wires[key]
 
-  if(!segment) {
-    return "" // THINK: what?
-    // return this.done()
-  }
-  
-  var params = segment.paramlist || []
-    , type = D.SegmentTypes[segment.type]
-    , inputs = []
-    , key = segment.key || this.current
+  var inputs = wire ? D.nicify(wire, this.state) : []
 
-  if(wiring[key]) {
-    inputs = wiring[key].map(function(index) {return D.is_nice(state[index]) ? state[index] : null}) // THINK: why null?
-  }
-  
-  return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
+  return type.execute(segment, inputs, dialect, this.my_starter, this)
 }
 
 
-   /*ooooo..o                                                                             .o8           
-  d8P'    `Y8                                                                            "888           
-  Y88bo.      oo.ooooo.   .oooo.    .ooooo.   .ooooo.   .oooo.o  .ooooo.   .ooooo.   .oooo888   .oooo.o 
-   `"Y8888o.   888' `88b `P  )88b  d88' `"Y8 d88' `88b d88(  "8 d88' `88b d88' `88b d88' `888  d88(  "8 
-       `"Y88b  888   888  .oP"888  888       888ooo888 `"Y88b.  888ooo888 888ooo888 888   888  `"Y88b.  
-  oo     .d8P  888   888 d8(  888  888   .o8 888    .o o.  )88b 888    .o 888    .o 888   888  o.  )88b 
-  8""88888P'   888bod8P' `Y888""8o `Y8bod8P' `Y8bod8P' 8""888P' `Y8bod8P' `Y8bod8P' `Y8bod88P" 8""888P' 
-               888                                                                                      
+
+   /*ooooo..o                                                                             .o8
+  d8P'    `Y8                                                                            "888
+  Y88bo.      oo.ooooo.   .oooo.    .ooooo.   .ooooo.   .oooo.o  .ooooo.   .ooooo.   .oooo888   .oooo.o
+   `"Y8888o.   888' `88b `P  )88b  d88' `"Y8 d88' `88b d88(  "8 d88' `88b d88' `88b d88' `888  d88(  "8
+       `"Y88b  888   888  .oP"888  888       888ooo888 `"Y88b.  888ooo888 888ooo888 888   888  `"Y88b.
+  oo     .d8P  888   888 d8(  888  888   .o8 888    .o o.  )88b 888    .o 888    .o 888   888  o.  )88b
+  8""88888P'   888bod8P' `Y888""8o `Y8bod8P' `Y8bod8P' 8""888P' `Y8bod8P' `Y8bod8P' `Y8bod88P" 8""888P'
+               888
               o88*/
 
 
@@ -2353,7 +2397,7 @@ D.Process.prototype.next = function() {
   Adding a new SPACESEED is complicated.
   - does it have an id?
     - remove if != hash(json)
-  - do the parts check out? 
+  - do the parts check out?
     - if dialect, stations, subspaces, ports, routes or state are invalid, err
   - order all the parts
   - hash, add, and return id
@@ -2362,18 +2406,18 @@ D.Process.prototype.next = function() {
 D.spaceseed_add = function(seed) {
   var good_props = {dialect: 1, stations: 1, subspaces: 1, ports: 1, routes: 1, state: 1}
     , item
-  
-  for(var key in seed) 
+
+  for(var key in seed)
     if(!good_props[key])
       delete seed[key] // ensure no errant properties, including id
-  
+
   // TODO: check dialect [id -> D.DIALECTS]
   // TODO: check stations [array of id -> D.BLOCKS]
   // TODO: check subspaces [array of id -> D.SPACESEEDS]
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
   // TODO: check state [a jsonifiable object] [badseeds]
-  
+
   seed = D.clone(seed) // keep the ref popo off our tails
   seed = D.sort_object_keys(seed)
   seed.state = D.sort_object_keys(seed.state)
@@ -2383,27 +2427,27 @@ D.spaceseed_add = function(seed) {
     , station_index_to_ports = {}
     , new_stations = []
     , last_offset = {}
-  
+
   if(JSON.stringify(seed.stations) != JSON.stringify(sorted_stations)) {
-    
+
     seed.ports.forEach(function(port) {
       var item = station_index_to_ports[port.station]
       item ? item.push(port) : station_index_to_ports[port.station] = [port]
     })
-    
+
     seed.stations.forEach(function(station, index) {
       var old_index = index + 1
         , new_index = sorted_stations.indexOf(station, last_offset[station]) + 1
-      
+
       if(station_index_to_ports[old_index]) {
         station_index_to_ports[old_index].forEach(function(port) {
           port.station = new_index
         })
       }
-        
+
       last_offset[station] = new_index
     })
-    
+
     seed.stations = sorted_stations
   }
 
@@ -2412,31 +2456,31 @@ D.spaceseed_add = function(seed) {
     , space_index_to_ports = {}
     , new_subspaces = []
     , last_offset = {}
-  
+
   if(JSON.stringify(seed.subspaces) != JSON.stringify(sorted_subspaces)) {
-    
+
     seed.ports.forEach(function(port) {
       var item = space_index_to_ports[port.space]
       item ? item.push(port) : space_index_to_ports[port.space] = [port]
     })
-    
+
     seed.subspaces.forEach(function(subspace, index) {
       var old_index = index + 1
         , new_index = sorted_subspaces.indexOf(subspace, last_offset[subspace]) + 1
-      
+
       if(space_index_to_ports[old_index]) {
         space_index_to_ports[old_index].forEach(function(port) {
           port.space = new_index
         })
       }
-        
+
       last_offset[subspace] = new_index
     })
-    
+
     seed.subspaces = sorted_subspaces
   }
-  
-  
+
+
   // oh dear
 
 
@@ -2449,16 +2493,16 @@ D.spaceseed_add = function(seed) {
 
     if(portA.subspace && portA.subspace != portB.subspace)
       return portA.subspace > portB.subspace
-      
+
     return portA.name > portB.name
   }
-  
+
   // ensure the right properties, in sort order
   var good_port_props = ['space', 'station', 'name', 'flavour', 'typehint', 'settings']
   var ports = seed.ports.map(function(port) {
     var newport = {}
-    for(var key in good_port_props) 
-      newport[good_port_props[key]] = port[good_port_props[key]] 
+    for(var key in good_port_props)
+      newport[good_port_props[key]] = port[good_port_props[key]]
     return newport
   })
   var sorted_string_ports = ports.map(JSON.stringify).sort()
@@ -2466,26 +2510,26 @@ D.spaceseed_add = function(seed) {
 
   if(JSON.stringify(seed.ports) != JSON.stringify(sorted_string_ports)) {
     // go through each item, find its match and modify all containing routes
-    
+
     var port_index_to_routes = {}
-      
+
     route_clone.forEach(function(route, index) {
       route.index = index
-      
+
       item = port_index_to_routes[route[0]]
       item ? item.push(route) : port_index_to_routes[route[0]] = [route]
 
       item = port_index_to_routes[route[1]]
       item ? item.push(route) : port_index_to_routes[route[1]] = [route]
     })
-    
+
     ports.forEach(function(port, index) {
       var port = ports[index]
         , old_index = index + 1 // +1 for offset array indices
         , new_index = sorted_string_ports.indexOf(JSON.stringify(port)) + 1
-      
+
       if(port_index_to_routes[old_index]) {
-        port_index_to_routes[old_index].forEach(function(route) { 
+        port_index_to_routes[old_index].forEach(function(route) {
           if(route[0] == old_index)
             seed.routes[route.index][0] = new_index
           if(route[1] == old_index)
@@ -2496,18 +2540,18 @@ D.spaceseed_add = function(seed) {
 
   }
   seed.ports = sorted_string_ports.map(JSON.parse)
-  
+
   // these we can just sort. phew!
   seed.routes.sort(function(routeA, routeB) {
     if(routeA[0] != routeB[0])
       return routeA[0] > routeB[0]
-      
+
     return routeA[1] > routeB[1]
   })
-  
+
   seed.id = D.spaceseed_hash(seed)
-  D.SPACESEEDS[seed.id] = seed // THINK: collision resolution? 
-  
+  D.SPACESEEDS[seed.id] = seed // THINK: collision resolution?
+
   return seed.id
 }
 
@@ -2519,7 +2563,7 @@ D.spaceseed_hash = function(seed) {
 D.make_some_space = function(stringlike, templates) {
   try {
     return D.make_spaceseeds(D.seedlikes_from_string(stringlike, templates))
-  } 
+  }
   catch (e) {
     D.set_error("Sorry, but that space has some problems: " + e.message)
     return {}
@@ -2536,67 +2580,67 @@ D.seedlikes_from_string = function(stringlike, templates) {
     , action = ''
     , action_name = ''
     , templates = templates || {}
-  
-  // THINK: if we use parser combinators, can we uncombinate in reverse to get back our string? 
+
+  // THINK: if we use parser combinators, can we uncombinate in reverse to get back our string?
   // first break it apart by lines and organize into seedlikes
-  
+
   stringlike+="\n" // catches unfinished continuations
-  
+
   // prescan to fix split lines
   // "aaaaaaandy\naaaaasdf\n\aaakj32".replace(RegExp('\na{' + n + ',}', 'gm'), ' ')
   // THINK: the above would work instead of relying on the ordering complexity below... but we'd need to get prop_offset *before* starting the forEach, so multiple passes. which might not be that bad. though we'd also miss out on saving the multiline blocks, but maybe that doesn't matter?
-  
+
   stringlike.split("\n").forEach(function(line) {
-    var this_offset = line.length - line.replace(/^\s+/,'').length 
+    var this_offset = line.length - line.replace(/^\s+/,'').length
       , name='', value=''
-      
+
     line = line.replace(/^\s+|\s+$/g, '')
     if(!line)
       return
-    
+
     if(line[0] == '/')
       return
-      
-    if(seed_offset < 0) 
+
+    if(seed_offset < 0)
       seed_offset = this_offset
-    
+
     if(this_offset != seed_offset) {
       if(prop_offset < 0) {
         prop_offset = this_offset
       }
-    
+
       if(this_offset > prop_offset && line.indexOf('->') == -1) {
         continuation += " " +line
         return
       }
     }
-    
+
     if(action) {
       continuation = continuation.replace(/^\s+|\s+$/g, '')
-      
+
       if(action == 'dialect') {
         try {this_seed.dialect = JSON.parse(continuation)} catch(e) {}
       }
-      
+
       if(action == 'port') {
         value = continuation ? continuation.split(/\s+/) : [action_name]
         this_seed.ports[action_name] = value //.map(function(item) {return item.replace(/^\s+|\s+$/g, '')})
       }
-      
+
       if(action == 'state') {
         try {this_seed.state[action_name] = JSON.parse(continuation)} catch(e) {}
       }
-      
+
       if(action == 'station') {
         if(!continuation && templates[action_name])
           continuation = templates[action_name]
         this_seed.stations[action_name] = {value: continuation}
       }
-      
+
       continuation = ''
       action = ''
     }
-    
+
     if(this_offset == seed_offset) {
       if(seed_name) {
         if(seedlikes[seed_name]) {
@@ -2605,20 +2649,20 @@ D.seedlikes_from_string = function(stringlike, templates) {
           seedlikes[seed_name] = this_seed
         }
       }
-        
+
       seed_name = line
       this_seed = {ports:{}, state:{}, routes:[], dialect:{}, stations:{}, subspaces:{}}
-      
+
       return
     }
-    
+
     continuation = line
 
     if(line[0] == '{') {
       action = 'dialect'
       return
     }
-    
+
     name = line.split(' ', 1)[0]
     continuation = line.slice(name.length).replace(/^\s+|\s+$/g, '')
 
@@ -2627,35 +2671,35 @@ D.seedlikes_from_string = function(stringlike, templates) {
       action = 'port'
       return
     }
-    
+
     if(name[0] == '$') {
       action_name = name.slice(1)
       action = 'state'
       return
     }
-    
+
     if(continuation[0] == '{' || line.indexOf('->') == -1) {
       action_name = name
       action = 'station'
       return
     }
-    
+
     continuation = ''
     action = ''
 
-    if(/->/.test(line)) { 
-      // THINK: should this use continuations also? 
-      
+    if(/->/.test(line)) {
+      // THINK: should this use continuations also?
+
       var route = []
       line.split('->').forEach(function(part, index) {
         part = part.replace(/^\s+|\s+$/g, '')
-        
+
         if(part[0] == '{') {
           var fakename = 'station-' + Math.random().toString().slice(2)
           this_seed.stations[fakename] = {value: part}
           part = fakename
         }
-        
+
         if(part[0] == '@') {
           route.push(part.slice(1)) // direction doesn't matter for ports
         }
@@ -2663,7 +2707,7 @@ D.seedlikes_from_string = function(stringlike, templates) {
           var split = part.split('.', 2)
             , name = split[0]
             , port = split[1]
-          
+
           // THINK: this implies you can't have like-named stations and spaces
           if(this_seed.stations[name]) {
             this_seed.stations[name].extraports = this_seed.stations[name].extraports
@@ -2673,7 +2717,7 @@ D.seedlikes_from_string = function(stringlike, templates) {
             this_seed.subspaces[name] = name // TODO: foo.in, foo-1.in, foo-2.in, etc
           }
           route.push(part) // THINK: for a station port this is always 'out' (or down)
-        } 
+        }
         else { // station dir matters
           if(!route.length)
             route.push(part + '.out')
@@ -2690,24 +2734,24 @@ D.seedlikes_from_string = function(stringlike, templates) {
             }
           }
         }
-        
+
         // TODO: lists should create complete N-partite graphs: (@in1 @in2) -> (s1 s2) -> (@out1 @out2)
-        
+
         if(route.length == 2) {
           // TODO: ensure pushed route isn't null,null
           if(!route[0] || !route[1])
             D.set_error('Port not found in line: ' + line)
-          else 
+          else
             this_seed.routes.push(route)
-          
+
           route = []
         }
       })
-      
+
       return
-    }    
+    }
   })
-  
+
   if(JSON.stringify(this_seed) != JSON.stringify({ports:{}, state:{}, routes:[], dialect:{}, stations:{}, subspaces:{}})) {
     if(seedlikes[seed_name]) {
       D.recursive_extend(seedlikes[seed_name], this_seed)
@@ -2716,14 +2760,14 @@ D.seedlikes_from_string = function(stringlike, templates) {
     }
   }
     // seedlikes[seed_name] = this_seed
-  
+
   return seedlikes
 }
 
 D.make_spaceseeds = function(seedlikes) {
   var seedmap = {}
     , newseeds = {}
-  
+
   for(var seedkey in seedlikes) {
     var seed = seedlikes[seedkey]
       , ports = seed.ports || {}
@@ -2733,7 +2777,7 @@ D.make_spaceseeds = function(seedlikes) {
       , stations = seed.stations || {}
       , subspaces = seed.subspaces || {}
       , newseed = {}
-    
+
     newseed.state = state // TODO: check state
     newseed.dialect = dialect // TODO: check dialect
 
@@ -2762,16 +2806,16 @@ D.make_spaceseeds = function(seedlikes) {
         }
       }
     }
-    
+
     var subspace_key_to_index = {}
     newseed.subspaces = []
     for(var key in subspaces) {
       var spacekey = subspaces[key]
       newseed.subspaces.push(seedmap[spacekey]) // space id // TODO: error if not in seedmap
-      
+
       var index = newseed.subspaces.length // note 1-indexed
       subspace_key_to_index[key] = index
-      
+
       // add subspace ports
       for(var portkey in seedlikes[spacekey].ports) {
         var subport = newseeds[spacekey].ports.filter(function(port) {return port.name == portkey})[0]
@@ -2779,35 +2823,35 @@ D.make_spaceseeds = function(seedlikes) {
         port_key_to_index[key + '.' + portkey] = newseed.ports.length // note 1-indexed
       }
     }
-    
-    newseed.routes = 
+
+    newseed.routes =
       routes.map(function(route) {
         var one = port_key_to_index[route[0]]
           , two = port_key_to_index[route[1]]
-          
+
         if(!one)
           D.set_error('Invalid route: ' + route[0])
         if(!two)
           D.set_error('Invalid route: ' + route[1])
-        
+
         if(!one || !two)
           return []
-        
+
         return [one, two]
         // newseed.routes.push([port_key_to_index[route[0]], port_key_to_index[route[1]]])
       })
-      
+
     newseed.routes = newseed.routes
                             .filter(function(route) {
                               return route.length
                             })
-    
+
     newseeds[seedkey] = newseed
     seedmap[seedkey] = D.spaceseed_add(newseed)
   }
-  
+
   // console.log(seedmap)
-  
+
   return seedmap['outer'] || seedmap[seedkey]
 }
 
@@ -2822,7 +2866,7 @@ D.make_spaceseeds = function(seedlikes) {
 
 D.DIALECTS.top = new D.Dialect() // no params means "use whatever i've imported"
 
-D.ExecutionSpace = 
+D.ExecutionSpace =
   new D.Space(
     D.spaceseed_add(
       {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
@@ -3149,38 +3193,45 @@ D.SegmentTypes.VariableSet = {
     var type = segment.value.type
       , name = segment.value.name
       , my_key = segment.key
-      , new_key = segment.inputs[0]  //segment.prevkey
+      , new_key = segment.inputs[0]
       , key_index
-  
-    if(type == 'space') // space vars have to be set at runtime
+
+    if(type == 'space')                                 // space vars have to be set at runtime
       return [L.concat(segment), R]
-  
-    // but pipeline vars can be converted into wiring
-    R.filter(function(future_segment) { return future_segment.type == 'Variable' 
-                                            && future_segment.value.name == name })
-     .forEach(function(future_segment) { 
+
+    if(!R.length && !L.length) {                        // final pipeline var sets [e.g. {__ | >foo} ] become __
+      segment.type = 'PipeVar'
+      segment.prevkey = false
+      return [L, [segment].concat(R)]
+    }
+
+    R.filter(function(future_segment) {                 // other pipeline vars can be converted into wiring
+        return future_segment.type == 'Variable'
+            && future_segment.value.name == name })
+     .forEach(function(future_segment) {                // TODO: this doesn't catch {2 | >foo | >foo}
        if(future_segment.value.prevkey)
          return D.set_error('Pipeline variables may be set at most once per pipeline')
        future_segment.value.prevkey = new_key
      })
-  
-    // and likewise for anything referencing this segment 
-    R.forEach(function(future_segment) { // but others can be converted into wiring
+
+    R.forEach(function(future_segment) {                // future inputs convert to wiring also
       while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = new_key
+      if(future_segment.prevkey == my_key)              // and prevkey, which keeps __ happy
+        future_segment.prevkey = new_key
     })
-    
+
     return [L, R]
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var state = process.space.state
       , name  = segment.value.name
-      
+
     // state[name] = inputs[0] // OPT: only copy if you have to
 
-    state[name] = D.clone(inputs[0]) 
+    state[name] = D.clone(inputs[0])
     // state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
-    
+
     return inputs[0]
   }
 }
@@ -3199,24 +3250,22 @@ D.SegmentTypes.PortSend = {
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var to  = segment.value.to
-      , my_station = process.space.station_id
-      , port = process.space.ports.filter(function(port) {
-                 return (port.name == to && port.station === my_station) // triple so undefined != 0
-               })[0] 
-    
+    var my_station = process.station_id
+    var port = D.filter_ports(process.space.ports, my_station, to)
+
     // TODO: check not only this station but outer stations as well, so we can send to ports from within inner blocks. but first think about how this affects safety and whatnot
-    
+
     if(port) {
       if(my_station === undefined) { // HACK
         port.enter(inputs[0], process) // weird hack for exec spaces
       } else {
-        port.exit(inputs[0], process) 
+        port.exit(inputs[0], process)
       }
     }
     else {
-      D.set_error('Invalid port " + to + " detected')
+      D.set_error('Invalid port "' + to + '" detected')
     }
-    
+
     return inputs[0]
   }
 }
@@ -3228,42 +3277,47 @@ D.SegmentTypes.Variable = {
     return [new D.Segment(token.type, token.value, token)]
   }
 , munge_segments: function(L, segment, R) {
-    if(segment.value.type == 'space') // space vars have to be collected at runtime
-      return [L.concat(segment), R]
-  
-    var my_key = segment.key
-      , new_key = segment.value.prevkey
-      , key_index
-
-    // TODO: if !R.length, wire __out to the value [otherwise {2 | >foo | "" | _foo} doesn't work]
-  
-    if(!new_key && !R.length) // some pipeline vars have to be collected then too
-      return [L.concat(segment), R]
+    if(segment.value.type == 'space')             // space vars have to be collected at runtime
+      return [L.concat(segment), R]               
+                                                  
+    var my_key = segment.key                      
+      , new_key = segment.value.prevkey           
+      , key_index                                 
+                                                  
+    if(!new_key && !R.length)                     // some pipeline vars have to be collected then too
+      return [L.concat(segment), R]               //   -> this handles {_value | add 1}
+                                                  
+    if(!R.length) {                               //   -> this handles {2 | >foo | "" | _foo}
+      segment.inputs = [new_key]                  
+      return [L.concat(segment), R]               
+    }                                             
 
     if(!new_key)
       new_key = segment.value.name
-    
-    R.forEach(function(future_segment) { // but others can be converted into wiring
+
+    R.forEach(function(future_segment) {          // but others can be converted into wiring
       while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = new_key
     })
-  
+
     return [L, R]
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var type = segment.value.type
       , name = segment.value.name
       , value = ''
-      , clone = true // OPT: figure when this can be false and make it that way
-      
+      , clone = true                // OPT: figure when this can be false and make it that way
+
     if(type == 'space')
       value = process.space.get_state(name)
+    else if(inputs && inputs.length)
+      value = inputs[0]
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
       value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
-      
+
     if(!D.is_nice(value))
       return false
-    
+
     // return value // OPT: cloning each time is terrible
     return D.clone(value)
     // return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
@@ -3279,34 +3333,34 @@ D.SegmentTypes.PipeVar = {
     // if(token.value == '__') {
       // return [L.concat(token), R]
       // if(L.length || R.length)
-      
+
       // __ is the last token in the pipeline
       // token.type = 'Command'
       // token.value = 'variable get name "__in" type :pipeline' // THINK: this is pretty weird
       // return [L, [token].concat(R)]
     // }
-    
+
     // ceci n'est pas une pipe magique
-    
+
     /*
-    
+
       We have to munge this here instead of during Fancyization because we need L and R to distinguish the following cases (which we aren't doing yet but should).
-     
+
       CASE 1: {(1 2 3) | >_a | (_a _a _a)}
         --> TODO: compile _a into the wiring
-          
+
       CASE 2: {* (:a 1 :b 2) | merge block "{_a} x {_b}"}
-        --> have to use {var get} to collect the values at runtime instead of compiling them into the wiring, 
+        --> have to use {var get} to collect the values at runtime instead of compiling them into the wiring,
             because this use reflects the shape of the data rather than an arbitrary intermediate label
 
-    
+
     ACTUALLY...
-      { 111 | *>a | (*a *a *a)}
+      { 111 | *>a | (*a *a *a) }
 
-      { 111 | __pipe }                         | > these both are shortened to __
-      { (1 1 1) | each block "{__in}"}         | > but they mean different things
+      { 111 | __pipe }                          | > these both are shortened to __
+      { (1 1 1) | each block "{__in}" }         | > but they mean different things
 
-      so what IS a pipeline var? 
+      so what IS a pipeline var?
       --> the above becomes [{N: 111}, {LIST}], {1: [0,0,0]} for segments,wiring
       - what about the "{__}" case?   does [{PLACEHOLDER}], {0: [__in]} make sense? is this crazy?
         or [{scope: __in}] or something? we can wire it from the scope, but... oh, yeah. placeholder. oy.
@@ -3314,18 +3368,18 @@ D.SegmentTypes.PipeVar = {
       - but how do we keep them from being mutated?
         ... maybe stringify, then compare the var to the cached stringified version each time... still painful, but slightly less allocating? yuck yuck yuck. if we knew *which* commands mutated this wouldn't be an issue -- can we do that? it's only an issue if the command mutates AND the value is piped to multiple places (and if only one mutates you could in theory do that last). maybe we can do that. put a 'mutates' flag on the param...
       - this is going to be REALLY painful...
-  
+
     */
-    
-    
-    
+
+
+
 //    var name = token.value.slice(1)
 //
 //    token.type = 'Variable'
 //    token.value = {type: 'pipeline', name: name}
 //    // token.type = 'Command'
 //    // token.value = 'variable get name "' + name + '" type :pipeline'
-//    
+//
 //    return [L.concat(token), R]
 //    // return [L, [token].concat(R)]
   // }
@@ -3335,72 +3389,74 @@ D.SegmentTypes.PipeVar = {
 , munge_segments: function(L, segment, R) {
     var my_key = segment.key
       , new_key = segment.prevkey || '__in'
-    
+
     // handles cases like "{__}"
-    if(segment.value == '__in' || (!R.length && segment.prevkey == '__in')) {
-      segment.type = 'Variable'
-      segment.value = {type: 'pipeline', name: '__in'}
-      return [L.concat(segment), R]
-    }
-    
+    if(  segment.value == '__in'
+      || (!R.length && segment.prevkey == '__in')
+      || (!R.length && !segment.prevkey))
+        { segment.type = 'Variable'
+          segment.value = {type: 'pipeline', name: '__in'}
+          return [L.concat(segment), R] }
+
     R.forEach(function(future_segment) {
       var pipe_index = future_segment.names.indexOf('__pipe__')
         , this_key = new_key
         , key_index
 
-      // this is to handle our strangely done aliases // THINK: really only for those?
+      // this is to handle our strangely done aliases           // THINK: really only for those?
       if(    new_key    != '__in'                               // not 'first'
-          && pipe_index != -1                                  // is piped
-          && my_key     != future_segment.inputs[pipe_index])  // and not piped to pipevar?
-        this_key = future_segment.inputs[pipe_index]           // then keep on piping 
+          && pipe_index != -1                                   // is piped
+          && my_key     != future_segment.inputs[pipe_index])   // and not piped to this pipevar (?)
+        this_key = future_segment.inputs[pipe_index]            // then keep on piping
 
       while((key_index = future_segment.inputs.indexOf(my_key)) != -1)
         future_segment.inputs[key_index] = this_key
+
+      // handles the weird case of {(1 2 3) | map block "{__ | __}"}
+      // and the case of {( 0 1 ) | map block "{__ | then 1 else 0}"}
+      if(future_segment.type == 'PipeVar' && future_segment.prevkey == my_key)
+        future_segment.prevkey = new_key
     })
-    
-    // handles the weird case of {(1 2 3) | map block "{__ | __}"}
-    if(R.length && R[0].type == 'PipeVar')
-      R[0].prevkey = new_key
-    
+
     return [L, R]
-    
-    
+
+
     // D.replumb(R, new_key, function(future_segment, input) {
     // })
 
-    
+
     //   , outputs = R.filter(function(segment) {
     //                         return segment.inputs.indexOf(my_key) != -1
     //                       })
-    // 
+    //
     // if(!segment.prevkey) { // first in our class
     //   // console.log(segment, 'yo!!!')
     //   new_key = '__in'
     // }
 
     // this is a magic pipe
-    
+
     /*
       CASES:
         1: {__ | ...}
-    
+
         2: {2 | __}
-    
+
         3: {3 | __ | ...}
-        
+
         4: {__}
-    
+
         5: {(__)}
-        
-        NOPE: 1, 4 and 5 are all the same case -- they access the process input. 2 and 3 are the normal case of passing along the previous segment value. 
-        
+
+        NOPE: 1, 4 and 5 are all the same case -- they access the process input. 2 and 3 are the normal case of passing along the previous segment value.
+
         NEW RULES!
         2, 3 and 5 always grab the previous segment value
         1 and 4 are process input IF they're in quotes, otherwise psv
-        
+
     */
-    
-    
+
+
     // if(!outputs.length) { // nothing to do
     //   return [L, R]
     // }
@@ -3413,220 +3469,283 @@ D.SegmentTypes.PipeVar = {
     //       break
     //     }
     //   }
-    // 
+    //
     //   if(new_key === segment.value) {
     //     if(L.length) {
     //       new_key = L[L.length-1].key // THINK: first segment doesn't get marked as top, so we grab it here anyway
     //     } else {
     //       new_key = '__in' // nothing prior to __ so we give it __in for Process operating context
     //     }
-    //   }      
+    //   }
     // }
-    
+
     // then replace our key with the previous key
 //    outputs.forEach(function(future_segment) {
 //      var pipe_index = future_segment.names.indexOf('__pipe__')
 //        , this_key = new_key
 //        , key_index
-//      
+//
 //      if(    new_key    != '__in'    // not 'first'
 //          && pipe_index != -1       // is piped
 //          && my_key     != future_segment.inputs[pipe_index])  // not piped to pipevar
 //      {
 //        this_key = future_segment.inputs[pipe_index]            // then keep on piping (mostly for aliases)
 //      }
-//      
+//
 //      while((key_index = future_segment.inputs.indexOf(my_key)) != -1) {
 //        future_segment.inputs[key_index] = this_key
 //        // segment.inputs[key_index] =  new_key
 //      }
-//      
+//
 //      // TODO: make this work for multiple connections (can those exist? [yes they can])
 //    })
-        
+
     // OPT: do this in a single pass, dude
-  } 
-, execute: function(segment) {
-    // nor this
   }
+, execute: function(segment) {}
 }
-D.SegmentTypes.Command = {
-  try_lex: function(string) {
-    if(!/[a-z]/.test(string[0])) // TODO: move all regexs into a single constants farm
-      return string
+~function() {
+  
+  // HELPER FUNS
 
-    return new D.Token('Command', string)
-  }
-, munge_tokens: function(L, token, R) {
-    if(token.done)
-      return [L.concat(token), R]
+  function build_paramlist(segment, method, inputs) {
+    var piped  = false
+    var typefun
+    var paramlist = []
       
-    var items = D.Parser.split_on_space(token.value)
-      , new_tokens = []
-      
-    token.names = token.names || []
-    token.inputs = token.inputs || []
-    
-    if(items.length == 1) {  // {math}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items = []
-    }
-
-    else if(items.length == 2) {
-      if(/^[a-z]/.test(items[1])) {  // {math add}
-        token.type = 'Command'
-        token.value = {Handler: items[0], Method: items[1]}
-      }
-      else {  // {add 1}
-        token.type = 'Alias'
-        token.value = {word: items[0]}
-        token.names.push('__alias__')
-        
-        var value = items[1]
-          , some_tokens = D.Parser.strings_to_tokens(value)
-          , some_token = some_tokens[some_tokens.length - 1] || {}
-        
-        token.inputs.push(some_token.key || null)
-        new_tokens = new_tokens.concat(some_tokens)
-        // new_tokens = new_tokens.concat(D.Parser.strings_to_tokens(items[1]))
-      }
-
-      items = []
-    }
-
-    else if(!/^[a-z]/.test(items[1])) {  // {add 1 to 3}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items[0] = '__alias__'
-    }
-    else if(!/^[a-z]/.test(items[2])) {  // {add to 1}
-      token.type = 'Alias'
-      token.value = {word: items[0]}
-      items.shift() // OPT: these shifts are probably slow...
-    }
-    else {  // {math add value 1}
-      // collect H & M
-      token.type = 'Command'
-      token.value = { Handler: items.shift()
-                    , Method: items.shift()}
-    }
-
-    // collect params
-    while(items.length) {
-      var word = items.shift()
-
-      if(!/^[a-z]/.test(word) && word != '__alias__') { // ugh derp
-        D.set_error('Invalid parameter name "' + word + '" for "' + JSON.stringify(token.value) + '"')
-        if(items.length)
-          items.shift()
-        continue
-      }
-
-      if(!items.length) { // THINK: ???
-        // params[word] = null
-        token.names.push(word)
-        token.inputs.push(null)
-        continue
-      }
-
-      var value = items.shift()
-        , some_tokens = D.Parser.strings_to_tokens(value)
-        , some_token = some_tokens[some_tokens.length - 1] || {}
-        
-      token.names.push(word)
-      token.inputs.push(some_token.key || null)
-      new_tokens = new_tokens.concat(some_tokens)
-      
-      // params[word] = D.Parser.strings_to_tokens(value)[0] // THINK: is taking the first one always right?
-    }
-    
-    for(var i=0, l=new_tokens.length; i < l; i++) {
-      if(!new_tokens[i].prevkey)
-        new_tokens[i].prevkey = token.prevkey
-    }
-    
-    // if(!new_tokens.length)
-    //   return [L.concat(token), R]
-      
-    token.done = true
-
-    // for(var i=0, l=new_tokens.length; i < l; i++)
-    //   token.inputs.push(new_tokens[i].key)
-
-    return [L, new_tokens.concat(token, R)] // aliases need to be reconverted even if there's no new tokens
-  }
-, token_to_segments: function(token) {
-    token.value.names = token.names
-    // TODO: suck out any remaining null params here
-    return [new D.Segment(token.type, token.value, token)]
-  }
-, execute: function(segment, inputs, dialect, prior_starter, process) {
-    var handler = dialect.get_handler(segment.value.Handler)
-      , method = dialect.get_method(segment.value.Handler, segment.value.Method)
-
-    if(!method) {
-      // THINK: error?
-      D.set_error('You have failed to provide an adequate method: ' + segment.value.Handler + ' ' + segment.value.Method)
-      return "" // THINK: maybe {} or {noop: true} or something, so that false flows through instead of previous value
-    }
-    
-    var piped = false
-      , params = []
-      , errors = []
-      , typefun
-    
-    // build paramlist, a properly ordered list of input values
-    for(var index in method.params) {
+    for(var index in method.params) {                                   // build paramlist from inputs and typefuns
       var method_param = method.params[index]
-      var param_value = undefined
+      // var param_value = undefined
       var key = method_param.key
       var name_index = segment.value.names.indexOf(key)
-      
+      var paramlist_obj = {key: -1}
+
       if(name_index != -1) {
-        param_value = inputs[name_index]
+        paramlist_obj.key = name_index
+        // param_value = inputs[name_index]
       }
-      
-      if(!piped && !D.is_nice(param_value)) {
+
+      if( !piped 
+       && ( paramlist_obj.key === -1
+         || inputs[paramlist_obj.key] === null ) ) {                    // make map of names to inputs
         name_index = segment.value.names.indexOf('__pipe__')
         piped = true
         if(name_index != -1) {
-          param_value = inputs[name_index]
+          paramlist_obj.key = name_index
+          // param_value = inputs[name_index]
+        }
+      
+        // ok, so. if the alias has a dangling param, and we snip it, then we map name to a different place.
+        // that's not good, because if we run this again we might have that value the next time, 
+        // and we'll need to remap the inputs all over again. yuck yuck stupid stupid.
+        // 
+      
+      }
+
+      if(method_param.type && D.Types[method_param.type])               // make map of names to types+wrapper
+        paramlist_obj.typefun = D.Types[method_param.type]
+      else
+        paramlist_obj.typefun = D.Types.anything
+
+      if(paramlist_obj.key == -1) {
+        // if(param_value !== undefined) {
+          // param_value = typefun(param_value)
+        // }
+        if(method_param.fallback) {
+          paramlist_obj.value = paramlist_obj.typefun(method_param.fallback)
+          // param_value = typefun(method_param.fallback)
+        }
+        else if(method_param.required) {
+          if(!segment.errors)
+            segment.errors = []
+          var error = 'Missing required parameter "' + method_param.key 
+                    + '" for command "' + segment.value.handler 
+                    + " " + segment.value.method + '"'
+          segment.errors.push(error)
+          // param_value = typefun(undefined)
+          paramlist_obj.value = paramlist_obj.typefun(undefined)
+        }
+        else if(!method_param.undefined) {
+          // param_value = typefun(undefined)
+          paramlist_obj.value = paramlist_obj.typefun(undefined)
         }
       }
-  
-      if(method_param.type && D.Types[method_param.type])
-        typefun = D.Types[method_param.type]
-      else
-        typefun = D.Types.anything
-  
-      if(param_value !== undefined) {
-        param_value = typefun(param_value)
-      }
-      else if(method_param.fallback) {
-        param_value = typefun(method_param.fallback)
-      }
-      else if(method_param.required) {
-        errors.push('Missing required parameter "' + method_param.key + '" for command "' + segment.value.Handler + " " + segment.value.Method + '"')
-        param_value = typefun(undefined)
-      }
-      else if(!method_param.undefined) {
-        param_value = typefun(undefined)
-      }
-      
-      params.push(param_value)
+
+      // params.push(param_value)
+      paramlist.push(paramlist_obj)
     }
+    
+    return paramlist
+  }
+  
+  function prep_params(paramlist, inputs) {
+    var params = []
+    for(var i=0, l=paramlist.length; i < l; i++) {
+      var pfunk = paramlist[i]
+      var pval  = pfunk.key == -1
+                ? pfunk.value
+                : pfunk.typefun(inputs[pfunk.key])                  // we have to do this part at runtime
+
+      params.push(pval)
+    }
+    return params
+  }
+  
+  function run_fun(segment, inputs, prior_starter, process) {
+    if(segment.errors) {
+      segment.errors.forEach(function(error) {D.set_error(error)})
+      return ""                                                     // THINK: maybe {} or {noop: true} or something
+    }                                                               // so false flows through instead of previous value
+    
+    var params = prep_params(segment.paramlist, inputs)
+    params.push(prior_starter)
+    params.push(process)
+    return segment.method.fun.apply(
+             segment.handler, 
+             params)
+  }
+
+  // MAIN STUFF
+
+  D.SegmentTypes.Command = {
+    try_lex: function(string) {
+      if(!/[a-z]/.test(string[0]))                                  // TODO: move all regexs into D.Constants
+        return string
+
+      return new D.Token('Command', string)
+    }
+  , munge_tokens: function(L, token, R) {
+      if(token.done)
+        return [L.concat(token), R]
       
-    if(!errors.length) {
-      return method.fun.apply(handler, params.concat(prior_starter, process))
-    } else {
-      errors.forEach(function(error) {
+      var items = D.Parser.split_on_space(token.value)
+        , new_tokens = []
+      
+      token.names = token.names || []
+      token.inputs = token.inputs || []
+    
+      if(items.length == 1) {                                       // {math}
+        token.type = 'Alias'
+        token.value = {word: items[0]}
+        items = []
+      }
+
+      else if(items.length == 2) {
+        if(/^[a-z]/.test(items[1])) {                               // {math add}
+          token.type = 'Command'
+          token.value = {handler: items[0], method: items[1]}
+        }
+        else {                                                      // {add 1}
+          token.type = 'Alias'
+          token.value = {word: items[0]}
+          token.names.push('__alias__')
+        
+          var value = items[1]
+            , some_tokens = D.Parser.strings_to_tokens(value)
+            , some_token = some_tokens[some_tokens.length - 1] || {}
+        
+          token.inputs.push(some_token.key || null)
+          new_tokens = new_tokens.concat(some_tokens)
+        }
+
+        items = []
+      }
+
+      else if(!/^[a-z]/.test(items[1])) {                           // {add 1 to 3}
+        token.type = 'Alias'
+        token.value = {word: items[0]}
+        items[0] = '__alias__'
+      }
+      else if(!/^[a-z]/.test(items[2])) {                           // {add to 1}
+        token.type = 'Alias'
+        token.value = {word: items[0]}
+        items.shift()                                               // OPT: these shifts are probably slow...
+      }
+      else {                                                        // {math add value 1}
+        token.type = 'Command'
+        token.value = { handler: items.shift()
+                      , method: items.shift()}                      // collect H & M
+      }
+
+      while(items.length) {                                         // collect params
+        var word = items.shift()
+
+        if(!/^[a-z]/.test(word) && word != '__alias__') {           // ugh derp
+          D.set_error('Invalid parameter name "' + word 
+                    + '" for "' + JSON.stringify(token.value) 
+                    + '"')
+          if(items.length)
+            items.shift()
+          continue
+        }
+
+        if(!items.length) {                                         // THINK: ???
+          token.names.push(word)
+          token.inputs.push(null)
+          continue
+        }
+
+        var value = items.shift()
+          , some_tokens = D.Parser.strings_to_tokens(value)
+          , some_token = some_tokens[some_tokens.length - 1] || {}
+        
+        token.names.push(word)
+        token.inputs.push(some_token.key || null)
+        new_tokens = new_tokens.concat(some_tokens)
+      }
+    
+      for(var i=0, l=new_tokens.length; i < l; i++) {
+        if(!new_tokens[i].prevkey)
+          new_tokens[i].prevkey = token.prevkey
+      }
+      
+      token.done = true
+
+      return [L, new_tokens.concat(token, R)]                       // aliases need to be reconverted even 
+    }                                                               // if there's no new tokens
+  , token_to_segments: function(token) {
+      token.value.names = token.names
+      return [new D.Segment(token.type, token.value, token)]        // TODO: suck out any remaining null params here
+    }
+  , execute: function(segment, inputs, dialect, prior_starter, process) {  
+      if(segment.paramlist)
+        return run_fun(segment, inputs, prior_starter, process)
+    
+      segment.handler = dialect.get_handler(segment.value.handler)
+      segment.method  = dialect.get_method( segment.value.handler   // THINK: caching the method assumes this segment
+                                          , segment.value.method )  // will always be invoked within the same dialect
+
+      if(!segment.method) {
+        error = 'You have failed to provide an adequate method: ' 
+              + segment.value.handler + ' ' + segment.value.method
         D.set_error(error)
-      })
-      return ""
+        segment.errors = [error]
+        return ""                                                   // THINK: maybe {} or {noop: true} or something
+      }                                                             // so false flows through instead of previous value
+
+      // if we have to rerun this, cancel the paramlist. 
+      // we'll know we have to rerun it if the 'null' input elements are different.
+    
+      // we need to think more about the differences between 
+      // {9 | range _asdf} and {9 | range $asdf}
+      // because if we change that then this problem goes away.
+    
+      // if(paramlist) {
+      //   if(paramlist.length != segment.nulls.length)
+      //     paramlist = false
+      //   else
+      //     for(var i=0, l=paramlist.length; i < l; i++) {
+      //       if(paramlist[i] == null != segment.nulls[i])
+      //         paramlist = false, break
+      //     }
+      // }
+    
+      segment.paramlist = build_paramlist(segment, segment.method, inputs)
+      
+      return run_fun(segment, inputs, prior_starter, process)
     }
   }
-}
+}();
 D.SegmentTypes.Alias = {
   try_lex: function(string) {
     return new D.Token('Command', string) // THINK: this is weird...
@@ -3634,50 +3753,68 @@ D.SegmentTypes.Alias = {
   }
 , munge_tokens: function(L, token, R) {
     var new_tokens = D.Aliases[token.value.word]
-    
+
     if(!new_tokens) {
       D.set_error("The alias '" + token.value.word + "' stares at you blankly")
       return [L, R]
     }
-    
+
     new_tokens =  D.clone(new_tokens)
-    
+
     // ensure we don't eat pipe in {0 | else "{9}" | add 1} --> 1
     var alias_eats_pipe = D.AliasMap[token.value.word].indexOf('__') != -1
 
+    if(alias_eats_pipe) {
+      // get clean keys for pipevars, otherwise multiple 'then' statements bork: {({1 | then :yay} {0 | then :boo})}
+      var keymap = {}
+      for(var i=0, l=new_tokens.length; i < l; i++) {
+        var a_token = new_tokens[i]
+          , new_key = D.Etc.token_counter++
+          , old_key = a_token.key
+
+        keymap[old_key] = new_key
+        a_token.key = new_key
+
+        if(a_token.inputs) {
+          for(var i=0, l=a_token.inputs.length; i < l; i++) {
+            a_token.inputs[i] = keymap[a_token.inputs[i]] || a_token.inputs[i]
+          }
+        }
+      }
+    }
+
     // fiddle with wiring
-    
     var last_replacement = new_tokens[new_tokens.length - 1]
-    
+
     if(!last_replacement) {
       // first in line, so no previous wiring... curiously, this works in {(1 2 3) | map block "{add __ to 3}"}
       return [L, R]
     }
-    
+
     last_replacement.key = token.key
     last_replacement.prevkey = token.prevkey
-    
+
     for(var i=0, l=new_tokens.length; i < l; i++) {
       if(!new_tokens[i].prevkey || new_tokens[i].prevkey == '__in') // for __ in aliases like 'else'
         new_tokens[i].prevkey = token.prevkey
     }
-    
+
     if(token.names) {
       // last_replacement.params = last_replacement.params || {}
-    
+
       for(var i=0, l=token.names.length; i < l; i++) {
         var key = token.names[i]
           , value = token.inputs[i]
           , lr_index = last_replacement.names.indexOf(key)
           , lr_position = lr_index == -1 ? last_replacement.names.length : lr_index
           , lr_null_index = last_replacement.inputs.indexOf(null)
-        
+
         if(key == '__pipe__' && alias_eats_pipe)
           continue
-        
+
         if(key == '__pipe__') { // always add the __pipe__
           last_replacement.names[lr_position] = '__pipe__'
-          last_replacement.inputs[lr_position] = value 
+          last_replacement.inputs[lr_position] = value
         }
         else if(key == '__alias__') { // find last_replacement's dangling param
           if(lr_null_index != -1) {
@@ -3689,10 +3826,10 @@ D.SegmentTypes.Alias = {
           last_replacement.inputs.push(value)
         }
       }
-      
+
     }
 
-    return [L.concat(new_tokens), R] // NOTE: the new tokens are *pre* munged, and shouldn't contain fancy segments 
+    return [L.concat(new_tokens), R] // NOTE: the new tokens are *pre* munged, and shouldn't contain fancy segments
   }
 , token_to_segments: function(token) {
     // token.value.names = token.names
@@ -3705,11 +3842,12 @@ D.SegmentTypes.Alias = {
 D.import_aliases({
   'do':     'list each block',
   'wait':   'process sleep for 0',
+  'sleep':  'process sleep for',
 
   'grep':   'string grep on',
   'join':   'string join value',
   'split':  'string split value',
-  
+
   '*':      'list pair data',
   'merge':  'list merge',
   'each':   'list each',
@@ -3727,7 +3865,7 @@ D.import_aliases({
   'zip':    'list zip data',
   'peek':   'list peek path',
   'poke':   'list poke value',
-  
+
   'eq':     'logic is like',
   'is':     'logic is', // for 'is in'
   'if':     'logic if value',
@@ -3738,10 +3876,11 @@ D.import_aliases({
   'not':    'logic not value',
   'cond':   'logic cond value',
   'switch': 'logic switch value',
-  
+
   'add':      'math add value',
-  'minus':    'math subtract value', 
-  'subtract': 'math subtract value', 
+  'plus':     'math add value',
+  'minus':    'math subtract value',
+  'subtract': 'math subtract value',
   'multiply': 'math multiply value',
   'times':    'math multiply value',
   'divide':   'math divide', // careful, this one is different
@@ -3750,12 +3889,11 @@ D.import_aliases({
   'less':     'math less',
   'min':      'math min value',
   'max':      'math max value',
-  
+
   'run':      'process run block',
   'quote':    'process quote',
   'unquote':  'process unquote',
-  'log':      'process log value',
-  'tap':      'process log passthru 1 value',
+  'tap':      'process tap send',
 })
 
 // The daggr interface model
@@ -5021,6 +5159,9 @@ D.import_models({
         },
       },
       
+      // THINK: can we do a 'take' type of thing given a lambda?
+      // { "{__ | times 2 | plus 1 | is a :square}" | take 5 over :nats}
+      
       'from-json': {
         desc: "Convert from a JSON string to a list",
         params: [
@@ -5121,21 +5262,24 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to convert',
-            type: 'list'
+            type: 'array'
           }
         ],
         fun: function(data) {
-          var k, v, hash = {}
+          var key
+          var val
+          // var hash   = Object.create(null)                       // destroys hasOwnProperty, and the need for it...
+          var hash   = {}
+          var index  = 0
+          var length = data.length
           
-          if(data.length < 2) {            
+          if(length < 2)         
             return D.set_error('The data parameter must contain at least two elements') || {}
-          }
 
-          while(data.length > 1) 
-          {
-            k = String(data.shift())
-            v = data.shift()
-            hash[k] = v
+          while(index < length) {
+            key = data[index++]
+            val = data[index++]
+            hash[key] = val
           }
 
           return hash
@@ -5272,25 +5416,29 @@ D.import_models({
         fun: function(data, by_key, by_value) {
           // THINK: maybe we should allow arbitrary key paths?
           // NOTE: for deeply nested lists in arbitrary order neither this nor filter is nice. If you have to solve that case maybe use JSON.stringify with a custom sorting replace function.
-          
-          by_value = by_value.map(JSON.stringify) // for matching nested structures
-          
+
+          by_value = by_value.map(JSON.stringify)       // for matching nested structures
+          by_key = by_key.slice()                       // keeps segment.value happy
+
+          if(Array.isArray(data))
+            data = data.slice()                         // prevent mutation // TODO: remove this after list upgrades
+          else
+            data = D.clone(data)                        // OPT: this is entirely silly
+
           if(by_value.length)
             for(var key in data) 
-              if(data.hasOwnProperty(key) && by_value.indexOf(JSON.stringify(data[key])) != -1) 
-                by_key.push(key)
-          
+              if( data.hasOwnProperty(key) 
+               && by_value.indexOf(JSON.stringify(data[key])) != -1) 
+                  by_key.push(key)
+
           if(by_key.length) {
             by_key.sort().reverse()
-            for(var i=0, l=by_key.length; i < l; i++) {
-              if(Array.isArray(data)) {
+            for(var i=0, l=by_key.length; i < l; i++)
+              if(Array.isArray(data))
                 data.splice(by_key[i], 1)
-              } else {
-                delete data[by_key[i]]
-              }
-            }
-          }
-          
+              else
+                delete data[by_key[i]] }
+
           return data
         }
       },
@@ -5908,33 +6056,11 @@ D.import_models({
             key: 'else',
             desc: 'Returned if value is false'
           },
-          {
-            key: 'with',
-            desc: 'If provided the selection will be executed. Values are imported into the block scope.',
-            help: 'The magic key __in becomes the process input. If scalar the value is taken to be __in.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(value, then, _else, _with, prior_starter, process) {
-          var branch = D.is_false(value) ? _else : then
+        fun: function(value, then, _else, prior_starter, process) {
+          return D.is_false(value) ? _else : then
           
-          if(!_with)
-            return branch
-          
-          if(branch.constructor == D.Segment) // TODO: remove me when "block|anything" is supported
-            branch = D.blockify(branch)
-          
-          if(typeof branch != 'function')
-            return branch
-          
-          if(Array.isArray(_with))
-            _with = {'__in': _with[0]}
-          
-          return branch(function(value) {
-            prior_starter(value)
-          }, _with, process)
-          
-          // THINK: consider an 'invert' param so you can alias something like 'unless'
+          // THINK: consider an 'invert' param so you can alias something like 'unless'. [or stronger aliases?]
           
           // if(!value) return _else;
           // // if(!D.is_nice(value)) return _else;
@@ -5979,6 +6105,8 @@ D.import_models({
             return true;
           }
           
+          // THINK: {5 | is a :number}
+          
           // TODO: make a new 'logic equal' command, that takes a list or two args. then make 'is like' only for regex?
           
           var is_obj = (typeof value == 'object') + (typeof like == 'object') // XOR
@@ -5999,8 +6127,7 @@ D.import_models({
       
 
       'cond': {
-        desc: 'Takes a list with odd elements providing conditions and even elements providing actions. Finds the first true test, runs its action and stops',
-        // desc: 'Given a list of lists, test the first element and run the remainder if true, stopping after the first',
+        desc: 'Takes a list with odd elements providing conditions and even elements providing actions. Finds the first true test and returns its action',
         params: [
           {
             key: 'value',
@@ -6008,88 +6135,13 @@ D.import_models({
             type: 'list',
             required: true
           },
-          {
-            key: 'with',
-            desc: 'Given a hash, values are imported into the block scope.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(value, _with, prior_starter) {
-          var found = false
-           , count = -1
-           , scope = _with || {}
-
-          if(Array.isArray(_with))
-            scope = {'__in': _with[0]}
-           
-          var my_tramp_prior_starter = function(bool) {
-            if(bool) 
-              found = count+1
-            tramp_prior_starter(null)
-          }
-        
-          var processfun = function(item, tramp_prior_starter) {
-            count++
-            
-            if(found === count) {
-              if(item instanceof D.Segment)
-                return D.blockify(item)(my_tramp_prior_starter, scope)
-              else
-                return item
-            }
-            
-            if(found)
-              return null
-            
-            if(count % 2)
-              return null
-
-            if(item instanceof D.Segment)
-              bool = D.blockify(item)(my_tramp_prior_starter, scope)
-            else
-              bool = item
-              
-            if(bool !== bool) 
-              return NaN
-            
-            if(!D.is_false(bool)) // because bool isn't really a bool, ya know?
-              found = count+1
-            
-            return null
-          }
+        fun: function(value, prior_starter) {
+          for(var i=0, l=value.length; i < l; i = i + 2)
+            if(!D.is_false(value[i]))
+              return value[i+1]
           
-          var joinerfun = function(total, value) {
-            if(D.is_nice(total)) return total
-            if(D.is_nice(value)) return value
-            return null
-          }
-          
-          return D.data_trampoline(value, processfun, joinerfun, prior_starter)
-          
-          
-          // var unwrapped = _.find(value, function(item) {
-          //   return (typeof item != 'object' || D.is_block(item))
-          // })
-          // 
-          // if(unwrapped) {
-          //   var new_value = []
-          //   for(var i=0, l=value.length; i < l; i += 2) {
-          //     new_value.push([value[i], value[i+1]])
-          //   }
-          //   value = new_value
-          // }
-          // 
-          // for(var i=0, l=value.length; i < l; i++) {
-          //   var test = D.run(value[i][0])
-          //   if(test) {
-          //     for(var j=1, l=value[i].length; j < l; j++) {
-          //       test = D.run(value[i][j])
-          //     }
-          //     return test
-          //   }
-          // }
-          // 
-          // return false
+          return false
         },
       },
       
@@ -6108,22 +6160,14 @@ D.import_models({
             type: 'list',
             required: true
           },
-          {
-            key: 'with',
-            desc: 'Given a hash, values are imported into the block scope.',
-            type: 'maybe-list'
-          },
         ],
-        fun: function(on, value, _with, prior_starter, process) {
+        fun: function(on, value, prior_starter, process) {
           for(var i=0, l=value.length; i < l; i = i + 2) {
             var test = value[i]
 
             if(test == on) {
               var result = value[i+1]
-              if(_with && (result instanceof D.Segment))
-                return D.blockify(result)(prior_starter, _with, process)
-              else
-                return result
+              return result
             }
           }
           
@@ -6700,7 +6744,7 @@ D.import_models({
         ],
         fun: function(_for, then, prior_starter) {
           if(!_for) {
-            setImmediate(function() {
+            D.setImmediate(function() {
               prior_starter(then)
             })
           }
@@ -6714,31 +6758,55 @@ D.import_models({
         },
       },
       
-      // THINK: a command that lets you pass a handler, method, and hash o' params, for those fancy occasions. 
+      // THINK: a command that lets you pass a handler, method, and hash o' params, for those fancy occasions.
       
-      log: {
-        desc: "Push something into the log",
+      tap: {
+        desc: "Send a message to the _tap port",
         params: [
           {
             key: 'value',
-            desc: 'A string or object to log',
+            desc: 'This is returned from the command, and is the default message value',
             type: 'anything',
             required: true
           },
           {
-            key: 'passthru',
-            desc: 'If true, return the value'
+            key: 'send',
+            desc: 'The message to send; defaults to value param'
           },
         ],
-        fun: function(value, passthru) {
-          // TODO: make this work server-side also (maybe a call to Daimio, with split client/server libs)
-          
+        fun: function(value, send) {          
+          /*
+            {$foo | log}            // for when you want to return nothing after
+            {$foo | tap}            // for when you want to pass that thing along
+            {$foo | log (__ :here)} // pass $foo along, but send (__ :here) to the log
+
+            so... the first case should also return $foo, right? so log and tap are synonyms? 
+            or tap is hardcoded, and you can't give it the second param. 
+            and then log and tap are still different, because the first case does what it says.
+            ok, do that.
+            
+            no no no. you don't need two commands. just this:
+            
+            {123 | tap | add 1}
+            {123 | tap (__ :asdf) | add 1}
+            
+            that's it.
+            
+            longform:
+            
+            {process tap value 123 | add 1}
+            {process tap value 123 send (__ :asdf) | add 1}
+            
+          */
+
           // THINK: we should defunc things, or something, probably... maybe like this?
+          // actually, we should probably use D.scrub_var or the ilk. we want blocks to stringify, but not lists.
           value = (typeof value === 'function') ? value() : value
           
-          console.log(value)
-          
-          if(passthru) return value
+          // TODO: send a message to a _tap port instead of calling console.log
+          console.log(send ? send : value) // THINK: 'send' is "" when unset (why?), so we can't send falsy messages... 
+
+          return value
         },
       },
       
@@ -6760,7 +6828,7 @@ D.import_models({
           // find the correct port, using port.name [this is a runtime value, which is stinky -- it can change]
           // TODO: lock the command-port relationship in at spaceseed creation time
           var port = process.space.ports.filter(function(port) {
-                       return (port.name == name && port.station == process.space.station_id) 
+                       return (port.name == name && port.station == process.station_id) 
                      })[0] 
 
           if(!port)
@@ -6821,16 +6889,29 @@ D.import_models({
             key: 'with',
             desc: 'If provided values are imported into the block scope.',
             help: 'The magic key __in becomes the process input. If scalar the value is taken to be __in.',
-            type: 'maybe-list'
+            type: 'anything'
           },
         ],
         fun: function(block, _with, prior_starter, process) {
-          if(Array.isArray(_with))
-            _with = {'__in': _with[0]}
+          var scope = {}
+          
+          if(Array.isArray(_with)) {                    // unkeyed list? pass it as process input
+            scope = {'__in': _with}
+          } else 
+          if(typeof _with == 'object') {                //   keyed list? use it as the scope
+            scope = _with
+          } else
+          if(_with === "" || !D.is_nice(_with)) {       // default to current process scope (__in plus injected vars)
+            scope = Object.keys(process.state)
+                          .filter(function(key) {return +key != +key})
+                          .reduce(function(acc, key) {acc[key] = process.state[key]; return acc}, {})
+          } else {
+            scope = {'__in': _with}                     // scalar value? pass it as process input
+          }
           
           return block(function(value) {
             prior_starter(value)
-          }, (_with || {}), process)
+          }, scope, process)
           
           // return NaN
           
@@ -7056,7 +7137,7 @@ D.import_models({
             // string_count = result.length
             
             for(var i=0, l=processed_matches.length; i < l; i++) {
-              result += processed_matches[i]
+              result += D.stringify(processed_matches[i])
               index += matches[i].length
               next_index = value.indexOf(matches[i+1], index)
 
@@ -7229,22 +7310,20 @@ D.import_type('block', function(value) {
     return function(prior_starter, scope, process) {
       // TODO: check value.value.id first, because it might not be in ABLOCKS
       // TODO: how does this fit with parent processes and parallelization? 
-      space = process ? process.space : D.ExecutionSpace
+      var space = process ? process.space : D.ExecutionSpace
+        , station_id = process ? process.station_id : false
       if(process && process.state && process.state.secret) { // FIXME: this seems really quite silly
         scope.parent_process = process
         scope.secret = process.state.secret
       }
-      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter) 
+      return space.real_execute(D.BLOCKS[value.value.id], scope, prior_starter, station_id) 
     }
   }
   else {
     return function() {
-      return D.stringify(value) // strings just fire away
+      return value
+      // return D.stringify(value) // strings just fire away // THINK: why were we stringifying here?
     }
-    // value = D.stringify(value)
-    // return function(prior_starter) {
-    //   return prior_starter(value) // strings just fire away
-    // }
   }
 })
 
@@ -7624,35 +7703,244 @@ mixkey(math.random(), pool);
   256,  // width: each RC4 output is 0 <= x < 256
   6,    // chunks: at least six RC4 outputs for each double
   52    // significance: there are 52 significant digits in a double
-);
-~function() {
-  var timeouts = [];
-  var messageName = 12345;
+);// inspired by http://dbaron.org/log/20100309-faster-timeouts
 
-  // Like setTimeout, but only takes a function argument.  There's
-  // no time argument (always zero) and no arguments (you have to
-  // use a closure).
+~function() {
+  var later = []
+  var messageName = 12345
+  var gimme_a_tick = true
+
   function setImmediate(fn) {
-    timeouts.push(fn);
-    window.postMessage(messageName, "*");
+    later.push(fn)
+    
+    if(gimme_a_tick) {
+      gimme_a_tick = false
+      window.postMessage(messageName, "*")
+    }
   }
 
   function handleMessage(event) {
-    if(event.data == messageName) {
-      event.stopPropagation();
-      if(timeouts.length > 0) {
-        timeouts.shift()()
-      }
-    }
+    if(event.data != messageName) return false
+
+    event.stopPropagation()
+    gimme_a_tick = true
+
+    var now = later
+    later = []
+
+    for(var i=0, l=now.length; i < l; i++)
+      now[i]()
+    
+    // OPT: put a special branch here for array messages, and then handle them like this:
+    // timeouts[i][0].forEach(function(port) { port.enter(timeouts[i][1]) })  // aka ports and ship
+    
   }
   
   if(typeof window != 'undefined') {
-    window.addEventListener("message", handleMessage, true);
-
-    // Add the one thing we want added to the window object.
-    window.setImmediate = setImmediate;
+    window.addEventListener("message", handleMessage, true)
+    D.setImmediate = setImmediate
   }
 }();
+D.import_optimizer('constant_list', 0.5, function(block) {
+  var changed  = false
+  var segments = block.segments
+  var wiring   = block.wiring
+  var new_segments = []
+  var new_wiring   = {}
+  
+  for(var i=0, l=segments.length; i < l; i++) {
+    var temp = []
+    var places = []
+    var this_segment = segments[i]
+    
+    new_segments.push(this_segment)
+
+    if(!wiring[i]) continue    
+
+    if(this_segment.type != 'List') {                   // capture the wiring 
+      new_wiring[i] = wiring[i]
+      continue
+    }
+    
+    new_wiring[i] = D.clone(wiring[i])                  // or clone it if necessary
+    
+    for(var j=0, k=wiring[i].length; j < k; j++) {
+      var wire = wiring[i][j]
+      var wireseg = segments[wire]
+      if(!wireseg                                       // note that && binds tighter than ||
+       || wireseg.type != 'Number'                      // (but don't try this at home, kids)
+       && wireseg.type != 'String' ) {
+          temp.push(null)
+          places.push(j)
+          continue }
+
+      new_wiring[i][j] = undefined
+      // new_segments[wire] = null
+      temp.push(wireseg.value)
+    }
+    
+    changed  = true
+    
+    new_wiring[i] = new_wiring[i].filter(function (x) { return x !== undefined })
+    if(!new_wiring[i].length) delete new_wiring[i]
+
+    var value = { list: temp, places: places.length ? places : false }
+    new_segments[i] = new D.Segment('OPT_constant_list', value, this_segment)
+  }
+  
+  return changed ? new D.Block(new_segments, new_wiring) : block
+})
+
+
+
+D.SegmentTypes.OPT_constant_list = {
+  execute: function(segment, inputs) {
+    var val = segment.value.list.slice()        // TODO: fix this when the new datastructure becomes
+    var places = segment.value.places
+    
+    for(var i=0, l=places.length; i < l; i++)
+      val[places[i]] = inputs[i]
+
+    return val
+    
+    // TODO: blend null vals with inputs or have a flag in value to indicate we need to do that
+  }
+}
+D.import_optimizer('simple_math', 0.5, function(block) {
+  var changed  = false
+  var segments = block.segments
+  var wiring   = block.wiring
+  var new_segments = []
+  var new_wiring   = {}
+  
+  for(var i=0, l=segments.length; i < l; i++) {
+    var temp = []
+    var places = []
+    var this_segment = segments[i]
+    
+    new_segments.push(this_segment)
+
+    if(!wiring[i]) continue
+    new_wiring[i] = wiring[i]
+
+    if( this_segment.type != 'Command'
+     || this_segment.value.handler  != 'math'
+     || this_segment.value.method   != 'multiply'       // && binds tighter than ||
+     && this_segment.value.method   != 'add' )          
+        continue
+    
+    if(wiring[i].length != 2)                           // THINK: we could still opt in this case...
+      continue
+    
+    var wire = wiring[i][0]
+    var wireseg = segments[wire]
+
+    if(!wireseg                                         // && binds tighter than ||
+     || wireseg.type != 'Number' )                      // THINK: we could still opt in this case...
+        continue
+
+    changed = true
+    new_wiring[i] = [wiring[i][1]]
+
+    value = {value: wireseg.value, op: this_segment.value.method}
+    new_segments[i] = new D.Segment('OPT_simple_math', value, this_segment)
+  }
+
+  return changed ? new D.Block(new_segments, new_wiring) : block
+})
+
+D.SegmentTypes.OPT_simple_math = {
+  execute: function(segment, inputs) {
+    var val  = inputs[0]
+    var sval = segment.value.value
+    var svop = segment.value.op
+    
+    if(typeof val == 'number')
+      return svop == 'add'
+           ? sval + val
+           : sval * val
+
+    val = D.Types.anything(val)
+
+    if(svop == 'add')
+      return D.Commands.math.methods.add.fun(sval, val)
+
+    return D.Commands.math.methods.multiply.fun(sval, val)
+  }
+}
+D.import_optimizer('simple_peek', 0.4, function(block) {
+  if(!D.Etc.OPT_simple_peek)                            // oh hai have some fun
+    D.Etc.OPT_simple_peek = 
+      { pos : D.Pathfinders.filter(function(pf) {return pf.name == "position"})[0].gather
+      , key : D.Pathfinders.filter(function(pf) {return pf.name == "key"})[0].gather }
+  
+  var changed  = false
+  var segments = block.segments
+  var wiring   = block.wiring
+  var new_segments = []
+  var new_wiring   = {}
+  
+  for(var i=0, l=segments.length; i < l; i++) {
+    var temp = []
+    var places = []
+    var this_segment = segments[i]
+    
+    new_segments.push(this_segment)
+
+    if(!wiring[i]) continue
+    new_wiring[i] = wiring[i]
+
+    if( this_segment.type != 'Command'
+     || this_segment.value.handler  != 'list'
+     || this_segment.value.method   != 'peek'
+     || this_segment.value.names[1] != 'path' )         // THINK: we could still opt in this case...
+        continue
+    
+    var pathwire = wiring[i][1]
+    var listseg = segments[pathwire]
+    
+    if( !wiring[pathwire]                               // only one item
+     ||  wiring[pathwire].length != 1 )
+         continue
+    
+    var wire = wiring[pathwire][0]
+    var wireseg = segments[wire]
+
+    if(!wireseg                                         // && binds tighter than ||
+     || wireseg.value == '*'
+     || wireseg.type  != 'Number'
+     && wireseg.type  != 'String' )
+        continue
+
+    changed = true
+    delete new_wiring[pathwire]
+    new_wiring[i] = [wiring[i][0]]
+
+    new_segments[i] = new D.Segment('OPT_simple_peek', wireseg.value, this_segment)
+  }
+
+  return changed ? new D.Block(new_segments, new_wiring) : block
+})
+
+D.SegmentTypes.OPT_simple_peek = {
+  execute: function(segment, inputs) {
+    var key  = segment.value
+    var data = inputs[0]
+
+    if(key[0] == '#') {
+      var position = +key.slice(1)
+      if(Array.isArray(data))
+        if(position < 0)
+          return data[data.length + position]
+        else
+          return data[position - 1]
+      
+      return D.Etc.OPT_simple_peek.pos(inputs[0], segment.value)[0]
+    }
+
+    return D.Etc.OPT_simple_peek.key(inputs[0], segment.value)[0]
+  }
+}
 
 D.import_pathfinder('list', {
   keymatch: function(key) {
@@ -7875,8 +8163,8 @@ D.import_port_flavour('dom-do-submit', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.set_error('That dom thing has no innerText')
+    if(!this.element.hasOwnProperty('submit'))
+      return D.set_error('That dom thing has no submit')
   }
 })
 D.import_port_flavour('dom-on-blur', {
@@ -7962,8 +8250,9 @@ D.import_port_flavour('dom-set-text', {
   dir: 'out',
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
-    if(this.element) 
-      this.element.innerText = D.stringify(ship)
+    // if(!(ship % 1000))
+      if(this.element)
+        this.element.textContent = D.stringify(ship)
   },
   outside_add: function() {
     this.element = document.getElementById(this.settings.thing)
@@ -7971,8 +8260,8 @@ D.import_port_flavour('dom-set-text', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
-    if(!this.element.hasOwnProperty('innerText'))
-      return D.set_error('That dom thing has no innerText')
+    if(this.element.textContent == undefined)
+      return D.set_error('That dom thing has no text')
   }
 })
 // TODO: convert these 'set' style ports to use track_event
@@ -7997,27 +8286,20 @@ D.import_port_flavour('dom-set-value', {
 
 D.import_port_flavour('from-js', {
   dir: 'in',
-  // TODO: this currently works with a space seed instead of an individual space -- should be per-space instead
   pairup: function(port) {
     var self = this
-      , eventname = port.space.seed.id + '-' + this.name
     
-    var callback = function(ship) {
-      var value = 1
-      
-      if(self.settings.all.length > 2)
-        value = self.settings.thing
-      
-      if(ship.detail !== undefined)
-        value = ship.detail
+    this.default_value = 1
 
-      self.enter(value)
-    }
-
-    document.addEventListener(eventname, callback)
+    if(this.settings.all.length > 2)
+      this.default_value = this.settings.thing
 
     this.pair = port
     port.pair = this
+  },
+  enter: function(ship, process) {
+    var value = ship !== undefined ? ship : this.default_value
+    D.port_standard_enter.call(this, value, process)
   }
 })
 
@@ -8047,7 +8329,7 @@ D.import_port_flavour('down', {
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
     
     var self = this
-    setImmediate(function() { 
+    D.setImmediate(function() { 
       // THINK: ideally there's only ONE route from a downport. can we formalize that?
       // self.outs.forEach(function(port) { 
       //   port.enter(ship) 
