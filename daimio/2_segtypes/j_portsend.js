@@ -13,10 +13,8 @@ D.SegmentTypes.PortSend = {
   }
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var to  = segment.value.to
-      , my_station = process.station_id
-      , port = process.space.ports.filter(function(port) {
-                 return (port.name == to && port.station === my_station) // triple so undefined != 0
-               })[0]
+    var my_station = process.station_id
+    var port = D.filter_ports(process.space.ports, my_station, to)
 
     // TODO: check not only this station but outer stations as well, so we can send to ports from within inner blocks. but first think about how this affects safety and whatnot
 

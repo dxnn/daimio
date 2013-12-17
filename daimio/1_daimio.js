@@ -470,6 +470,14 @@ D.nicify = function(list, state) {
   return result
 }
 
+D.filter_ports = function(ports, station, name) {
+  for(var i=0, l=ports.length; i < l; i++) {
+    var port = ports[i]
+    if( port.station === station                                    // triple so undefined !== 0
+     && port.name    === name ) 
+        return port
+  }
+}
 
 D.run = function(daimio, ultimate_callback, space) {
   // This is *always* async, so provide a callback.
@@ -1968,18 +1976,7 @@ D.Space.prototype.get_state = function(param) {
 D.Space.prototype.dock = function(ship, station_id) {
   var block_id = this.seed.stations[station_id - 1]
   var block    = D.BLOCKS[block_id]
-  
-  var out_port
-  var all_ports = this.ports
-  
-  for(var i=0, l=all_ports.length; i < l; i++) {
-    var port = all_ports[i]
-    if( port.station == station_id
-     && port.name == '_out' ) {
-        out_port = port
-        break;
-    }
-  }
+  var out_port = D.filter_ports(this.ports, station_id, '_out')
   
   if(!out_port)
     return D.set_error('That out port is unavailable')
@@ -2181,7 +2178,6 @@ D.Space.prototype.execute = function(ablock_or_segment, scope, prior_starter, st
 D.Space.prototype.real_execute = function(block, scope, prior_starter, station_id) {
   var self = this
     , process
-    , result
     , block = D.try_optimize(block)
 
   // var new_when_done = function(value) {
@@ -2204,15 +2200,17 @@ D.Space.prototype.real_execute = function(block, scope, prior_starter, station_i
   process = new D.Process(this, block, scope, my_starter, station_id)
   this.processes.push(process)
 
+  var result = this.try_execute(process)
+  this.cleanup(process)
+  return result
+}
+
+D.Space.prototype.try_execute = function(process) {
   try {
-    result = process.run()
-    self.cleanup(process)
+    return process.run()
   } catch(e) {
     D.set_error(e.message)
-    self.cleanup(process)
   }
-
-  return result
 }
 
 D.Space.prototype.cleanup = function(process) {
@@ -2266,7 +2264,7 @@ D.import_optimizer = function(name, priority, fun) {
             , priority: priority }
 
   D.Optimizers.push(opt)
-  D.Optimizers.sort(function(a, b) { return a.priority > b.priority })
+  D.Optimizers.sort(function(a, b) { return a.priority - b.priority })
 }
 
 
@@ -2302,44 +2300,21 @@ D.Process = function(space, block, scope, prior_starter, station_id) {
   var self = this
   this.my_starter = function(value) {
     self.last_value = value
-    self.state[self.current] = value // TODO: fix this it isn't general
+    self.state[self.current] = value                            // TODO: fix this it isn't general
     self.current++
     self.run()
   }
 
-  // if(scope) {
-  //   scope.forEach(function(item, key) {
-  //     self.state[key] = item
-  //   })
-  // }
-
-  // this.state = space.state // for overriding?
-  this.state = scope || {} // process-level vars, like wiring, should be local to the process
-
-
-
-  // HACKHACKHACK
-  // if(space.secret && !scope.secret) {
-  //   this.state.secret = space.secret
-  // }
-
-
+  this.state = scope || {}                                      // process-level vars, like wiring,
+                                                                // should be local to the process
   if(this.state['__in'] === undefined)
-    this.state['__in'] = "" // ha ha jk oh wait we need this
+    this.state['__in'] = ""                                     // ha ha jk oh wait we need this
 }
 
 D.Process.prototype.done = function() {
-  // console.log(this)
-  // console.trace()
-  // console.log(this.block.segments)
-  // console.log(this.block.wiring)
-
-  // if(this.when_done)
-  //   this.when_done(this.last_value)
-
-  var output = this.last_value // default output
-
-  if(this.block.wiring['*out']) {
+  var output = this.last_value                                  // default output
+                                                                    
+  if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
       output = this.state[outs[0]]
@@ -2347,15 +2322,15 @@ D.Process.prototype.done = function() {
     else {
       output = []
       for(var i=0, l=outs.length; i < l; i++) {
-        output.push(this.state[outs[i]]) // THINK: sometimes array sometimes not is always weird
+        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird
       }
     }
   }
 
-  output = D.make_nice(output)   // THINK: should probably do this for each possible output in the array form
-
+  output = D.make_nice(output)                                  // THINK: should probably do this for each 
+                                                                // possible output in the array form
   if(this.asynced) {
-    this.asynced = false // ORLY??
+    this.asynced = false                                        // ORLY??
     if(this.prior_starter)
       this.prior_starter(output)
     return undefined
@@ -2367,11 +2342,13 @@ D.Process.prototype.done = function() {
 D.Process.prototype.run = function() {
   var value = ""
     , segs  = this.block.segments
+    , wires = this.block.wiring
+    , dialect = this.space.dialect
     , current = this.current
     , segment = segs[current]
 
   while(segment) {
-    value = this.next(segment, current)                             // TODO: this is not a trampoline
+    value = this.next(segment, current, wires, dialect)             // TODO: this is not a trampoline
     if(value !== value) {
       this.current = current
       this.asynced = true
@@ -2386,14 +2363,14 @@ D.Process.prototype.run = function() {
   return this.done()
 }
 
-D.Process.prototype.next = function(segment, current) {
+D.Process.prototype.next = function(segment, current, wires, dialect) {
   var type = D.SegmentTypes[segment.type]
   var key  = segment.key || current
-  var wire = this.block.wiring[key]
+  var wire = wires[key]
 
   var inputs = wire ? D.nicify(wire, this.state) : []
 
-  return type.execute(segment, inputs, this.space.dialect, this.my_starter, this)
+  return type.execute(segment, inputs, dialect, this.my_starter, this)
 }
 
 

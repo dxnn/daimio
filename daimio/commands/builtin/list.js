@@ -387,7 +387,8 @@ D.import_models({
         fun: function(data) {
           var key
           var val
-          var hash   = Object.create(null)
+          // var hash   = Object.create(null)                       // destroys hasOwnProperty, and the need for it...
+          var hash   = {}
           var index  = 0
           var length = data.length
           
