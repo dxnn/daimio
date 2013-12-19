@@ -682,7 +682,12 @@ D.port_standard_exit = function(ship) {
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
     // D.setImmediate(this.outs, ship) // OPT
-    D.setImmediate(function() { outs.forEach(function(port) { port.enter(ship) }) })
+    D.setImmediate(function() { 
+      for(var i=0, l=outs.length; i < l; i++) {
+        outs[i].enter(ship)
+      }
+      // outs.forEach(function(port) { port.enter(ship) }) 
+    })
   else
     this.outside_exit(ship) // ORLY? No delay?
 }
@@ -2341,11 +2346,11 @@ D.Process.prototype.done = function() {
 
 D.Process.prototype.run = function() {
   var value = ""
-    , segs  = this.block.segments
-    , wires = this.block.wiring
-    , dialect = this.space.dialect
-    , current = this.current
-    , segment = segs[current]
+  var segs  = this.block.segments
+  var wires = this.block.wiring
+  var dialect = this.space.dialect
+  var current = this.current
+  var segment = segs[current]
 
   while(segment) {
     value = this.next(segment, current, wires, dialect)             // TODO: this is not a trampoline
