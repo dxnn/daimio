@@ -16,44 +16,29 @@
   </p>
   
 
-  <canvas id="display" width="1000px" height="400px"></canvas>
+  <canvas id="display" width="600px" height="480px"></canvas>
   
   <script type="text/daimio" class="spaceseeds">
     outer
       $solved []
       
-      // z => a + bi
-      // c => x + yi
-      // z^2+c => a*a + bi*bi + x + i*(2*a*b + y)
-      // ship  => (a b x y t)
+      // OUTPUT
+      @display canvas-draw-rect
 
       // SOLVER
       solver
-        { __ | >ship
-        | _ship.#1 | times _ship.#1  | >asqr
-        | _ship.#2 | times _ship.#2  | times -1 | >bsqr
-       || add (_asqr _bsqr _ship.#3) | >newx
-        | _ship.#1 | times _ship.#2  | times 2 | add _ship.#4 | >newy 
-        | times _newy | add {_newx | times _newx}
-        | less than 7
-        | and {_ship.#5 | less than 13}
+        { __ | mandelbrot iterate | >ship
+        | _ship.#6
         | then "{__ | >@again}"
           else "{__ | >@done }"
-        | run with (_newx _newy _ship.#3 _ship.#4 {_ship.#5 | add 1}) }
+        | run with _ship }
 
       solver.again -> solver
-      solver.again -> update-display -> @display
+      solver.done -> @display
 
       // INIT
       @init from-js
-      @init -> {(0 0 __.#1 __.#2 0)} -> solver
-
-      // OUTPUT
-      @display canvas-draw-rect
-      update-display
-        {* (:x {__.#3 | add 2 | times 333} :y {__.#4 | add -1 | times -200} :width 10 :height 10 :color "rgba(0,0,0,0.1)")}
-
-      solver.done -> update-display
+      @init -> solver
 
   </script>
 
@@ -62,25 +47,32 @@
       dir: 'out',
       outside_add: function() {
         debug_count = 0
+        debug_last_color = false
         this.element = document.getElementById(this.settings.thing)
         this.ctx = this.element && this.element.getContext && this.element.getContext('2d')
       },
       outside_exit: function(ship) {
         debug_count++
-        
+                
         if(!this.ctx)
           return D.set_error('No canvas found')                   // THINK: this requires a constant canvas --
                                                                   // consider changing it to work dynamically
-        var x = ship.x || 0                                       // by looking for a new copy if it can't find it.
-        var y = ship.y || 0
-        var width  = ship.width  || 1
-        var height = ship.height || 1
-        var color  = ship.color  || "rgb(0,0,0)"
+        var x = ship[2] || 0                                      // by looking for a new copy if it can't find it.
+        var y = ship[3] || 0
+        var width  = 3
+        var height = 3
+        var color  = "hsl(0,0%," + (100-(ship[4]*10)) + "%)"
         
-        this.ctx.fillStyle = color                                     // TODO: does this throw on failure?
+        x = (x + 2) * 240
+        y = (y - 1) * -240
+        
+        if(color != debug_last_color) {
+          this.ctx.fillStyle = color
+          debug_last_color = color
+        }
         this.ctx.fillRect(x, y, width, height)
         
-        if(debug_count == 30700)
+        if(debug_count == 32361)
           document.getElementById('foo').innerHTML = Date.now() - debug_startdate
       }
     })
@@ -91,7 +83,7 @@
       document.getElementById('foo').addEventListener('click', supersend)
     })
     
-    
+        
     function send() {
       [].slice.call(arguments).forEach(function(arg) {
         D.send_value_to_js_port(OuterSpace, 'init', arg) }) }
@@ -99,9 +91,50 @@
     function supersend() {
       debug_count = 0
       debug_startdate = new Date()
-      for(x=-2;x<1;x+=0.03) {for(y=-1;y<1;y+=0.05) {send([x,y])}}
+      for(x=-2;x<0.5;x+=0.0125) {for(y=-1;y<1;y+=0.0125) {send([0,0,x,y,0,1])}}
     }
     
+    
+    D.import_models({
+      mandelbrot: {
+        desc: 'Fake commands for making fractals',
+        methods: {
+
+          iterate: {
+            desc: 'Run Daimio for each item, returning a list',
+            injects: ['value', 'key'],
+            params: [
+              {
+                key: 'data',
+                desc: 'An array of data: zx, zy, cx, cy, iterations, valid',
+                type: 'list',
+                required: true
+              },
+            ],
+            fun: function(data) {
+              // z => a + bi
+              // c => x + yi
+              // z^2+c => a*a + bi*bi + x + i*(2*a*b + y)
+              // ship  => (a b x y t)
+              
+              var a = data[0]
+              var b = data[1]
+              var x = data[2]
+              var y = data[3]
+              
+              var newa = data[0] = a*a + -1*b*b + x
+              var newb = data[1] = 2*a*b + y
+              data[4]++
+              
+              data[5] = (newa*newa + newb*newb) < 7 && data[4] <= 13
+              
+              return data
+            }
+          }
+          
+        }
+      }
+    }) 
   </script>
 
 </body>
