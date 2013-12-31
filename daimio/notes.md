@@ -659,3 +659,64 @@ aaaand moving the function into the page instead of doing it through the console
 10,000,000 ~=  12s  (split into 10 groups on the way in)
 
 woooo!
+
+
+More optimization notes. Streamlining command execution pathways, ports, helper functions; adding orthogonal optimizations (new segment types that compile down common operations like rolling up fixed lists). 
+'tests' are tests, 'send' and 'after' are the parallel mandelbrot generator.
+
+  chrome:
+    tests: 840 tests in 0.929
+           840 tests in 0.837
+    after: 840 tests in 0.942
+           840 tests in 0.981
+    after: 840 tests in 0.703
+           840 tests in 0.813
+
+    send:  15049, 15825, 15311
+    after: 15327, 15146, 15174
+    after: 14440, 14539, 14724
+    after: 9043... 8468... 5767... 4665... 4474... 2771 [wow concat is SLOW!]
+    after: 2465, 2328, 2198
+
+  safari:
+    tests: 840 tests in 0.504
+           840 tests in 0.476
+    after: 840 tests in 0.562
+           840 tests in 0.582 
+
+    send:  16767, 17021, 17655
+    after: 19586, 19435, 19486
+    after: [18075] 16999, 17922, 17751, [18001]
+    after: 14265... 9111
+    after: 4241 [it was the optimizer sort function!]
+
+  firefox: 
+    tests: 840 tests in 0.583
+           840 tests in 0.626
+    after: 840 tests in 0.645
+           840 tests in 0.631
+
+    send:  21000, 29011
+    after: 21278, 20877
+    after: 6592, 7410, 6957, 6250   [much more reliable!]
+    after: 4152... 3302... 
+
+
+New thoughts on things.
+
+{  (1 2 3 4) 
+| >(a b c d)
+| m"a + b * c / d" 
+| eq 2.5 }
+
+{  (1 (2 3) 4) 
+| >(a (_ b) c)
+| mmm"ab + abc / bc"
+| eq {_a | times _b | plus _a} }
+
+{... | >(a b) ...} is compiled to {... | >list | _list.#1 | >a | _list.#2 | >b | ...}
+or something similar. likewise for nested sections. can we do some primitive pattern matching also, like
+>(123 a (_ :foo b) c) or something? how do we deal with named branches that might come in any order?
+
+
+

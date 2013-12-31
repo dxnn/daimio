@@ -2422,6 +2422,8 @@ D.spaceseed_add = function(seed) {
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
   // TODO: check state [a jsonifiable object] [badseeds]
+  
+  // TODO: tab detection and elimination
 
   seed = D.clone(seed) // keep the ref popo off our tails
   seed = D.sort_object_keys(seed)
@@ -2861,8 +2863,37 @@ D.make_spaceseeds = function(seedlikes) {
 }
 
 
-// TODO: tab detection
 
+// SPACE ELVES
+
+D.get_templates = function(template_name) {
+  template_name    = template_name || 'data-daimio-template'
+  var template_els = document.querySelectorAll('[' + template_name + ']')
+
+  return [].reduce.call(template_els, function(acc, template) {
+           var name  = template.attributes.getNamedItem(template_name).value
+           acc[name] = template.innerHTML .replace(/ \| &gt;/g, ' | >') // FIXME: this is super dumb
+           template.innerHTML = ""
+           return acc
+         }, {})
+}
+
+D.get_seedlikes = function(seedlike_name) {
+  seedlike_name    = seedlike_name || 'spaceseeds'
+  var seedlike_els = document.getElementsByClassName(seedlike_name)
+  
+  return [].map.call(seedlike_els, function(node) {
+            return node.text
+         }).join("\n")
+}
+
+D.make_me_a_space_as_fast_as_you_can = function() {
+  var templates = D.get_templates()
+  var seedlikes = D.get_seedlikes()
+  var outerseed = D.make_some_space(seedlikes, templates)
+  document.getElementsByTagName('body')[0].style.display = ''
+  return new D.Space(outerseed)
+}
 
 
 
