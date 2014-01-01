@@ -682,7 +682,12 @@ D.port_standard_exit = function(ship) {
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
     // D.setImmediate(this.outs, ship) // OPT
-    D.setImmediate(function() { outs.forEach(function(port) { port.enter(ship) }) })
+    D.setImmediate(function() { 
+      for(var i=0, l=outs.length; i < l; i++) {
+        outs[i].enter(ship)
+      }
+      // outs.forEach(function(port) { port.enter(ship) }) 
+    })
   else
     this.outside_exit(ship) // ORLY? No delay?
 }
@@ -2341,11 +2346,11 @@ D.Process.prototype.done = function() {
 
 D.Process.prototype.run = function() {
   var value = ""
-    , segs  = this.block.segments
-    , wires = this.block.wiring
-    , dialect = this.space.dialect
-    , current = this.current
-    , segment = segs[current]
+  var segs  = this.block.segments
+  var wires = this.block.wiring
+  var dialect = this.space.dialect
+  var current = this.current
+  var segment = segs[current]
 
   while(segment) {
     value = this.next(segment, current, wires, dialect)             // TODO: this is not a trampoline
@@ -2417,6 +2422,8 @@ D.spaceseed_add = function(seed) {
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
   // TODO: check state [a jsonifiable object] [badseeds]
+  
+  // TODO: tab detection and elimination
 
   seed = D.clone(seed) // keep the ref popo off our tails
   seed = D.sort_object_keys(seed)
@@ -2856,8 +2863,37 @@ D.make_spaceseeds = function(seedlikes) {
 }
 
 
-// TODO: tab detection
 
+// SPACE ELVES
+
+D.get_templates = function(template_attr) {
+  template_attr    = template_attr || 'data-daimio-template'
+  var template_els = document.querySelectorAll('[' + template_attr + ']')
+
+  return [].reduce.call(template_els, function(acc, template) {
+           var name  = template.attributes.getNamedItem(template_attr).value
+           acc[name] = template.innerHTML .replace(/ \| &gt;/g, ' | >') // FIXME: this is super dumb
+           template.innerHTML = ""
+           return acc
+         }, {})
+}
+
+D.get_seedlikes = function(seedlike_class) {
+  seedlike_class   = seedlike_class || 'spaceseeds'
+  var seedlike_els = document.getElementsByClassName(seedlike_class)
+  
+  return [].map.call(seedlike_els, function(node) {
+            return node.text
+         }).join("\n")
+}
+
+D.make_me_a_space_as_fast_as_you_can = function(seedlike_class, template_attr) {
+  var templates = D.get_templates(seedlike_class)
+  var seedlikes = D.get_seedlikes(template_attr)
+  var outerseed = D.make_some_space(seedlikes, templates)
+  document.getElementsByTagName('body')[0].style.display = ''
+  return new D.Space(outerseed)
+}
 
 
 
