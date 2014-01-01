@@ -191,7 +191,6 @@
       show -> show-clear-button -> @button-wrapper-ugh
       show -> show-count -> @todo-count
       
-      
   </script>
    
   
@@ -205,20 +204,15 @@
     }
     
     document.addEventListener('DOMContentLoaded', function() {
-      var seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
-                              .map(function(node) {return node.text})
-                             .join("\n")
-      
-      var outerseed = D.make_some_space(seedlikes)
-      OuterSpace = new D.Space(outerseed) // published for debug
-    
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
+
       // get ideas
       ideas = JSON.parse(localStorage.getItem('ideas')) || [] // TODO: var me
 
       // activate ideas-in port
       D.send_value_to_js_port(OuterSpace, 'ideas-in', ideas)
     })
-        
+
   </script>
   
 </body>

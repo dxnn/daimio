@@ -2866,30 +2866,30 @@ D.make_spaceseeds = function(seedlikes) {
 
 // SPACE ELVES
 
-D.get_templates = function(template_name) {
-  template_name    = template_name || 'data-daimio-template'
-  var template_els = document.querySelectorAll('[' + template_name + ']')
+D.get_templates = function(template_attr) {
+  template_attr    = template_attr || 'data-daimio-template'
+  var template_els = document.querySelectorAll('[' + template_attr + ']')
 
   return [].reduce.call(template_els, function(acc, template) {
-           var name  = template.attributes.getNamedItem(template_name).value
+           var name  = template.attributes.getNamedItem(template_attr).value
            acc[name] = template.innerHTML .replace(/ \| &gt;/g, ' | >') // FIXME: this is super dumb
            template.innerHTML = ""
            return acc
          }, {})
 }
 
-D.get_seedlikes = function(seedlike_name) {
-  seedlike_name    = seedlike_name || 'spaceseeds'
-  var seedlike_els = document.getElementsByClassName(seedlike_name)
+D.get_seedlikes = function(seedlike_class) {
+  seedlike_class   = seedlike_class || 'spaceseeds'
+  var seedlike_els = document.getElementsByClassName(seedlike_class)
   
   return [].map.call(seedlike_els, function(node) {
             return node.text
          }).join("\n")
 }
 
-D.make_me_a_space_as_fast_as_you_can = function() {
-  var templates = D.get_templates()
-  var seedlikes = D.get_seedlikes()
+D.make_me_a_space_as_fast_as_you_can = function(seedlike_class, template_attr) {
+  var templates = D.get_templates(seedlike_class)
+  var seedlikes = D.get_seedlikes(template_attr)
   var outerseed = D.make_some_space(seedlikes, templates)
   document.getElementsByTagName('body')[0].style.display = ''
   return new D.Space(outerseed)

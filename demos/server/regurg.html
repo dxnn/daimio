@@ -16,7 +16,7 @@
 -->
   </form>
 
-  <script type="text/daimio" id="spaceseeds">
+  <script type="text/daimio" class="spaceseeds">
     outer
       $solved []
 
@@ -65,9 +65,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       D.Etc.socket = io.connect('/')
 
-      var seedlikes = document.getElementById('spaceseeds').text
-      var outerseed = D.make_some_space(seedlikes)    // published for debug
-      OuterSpace = new D.Space(outerseed)         // published for debug
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
 
       D.send_value_to_js_port(OuterSpace, 'init', 5)
     })

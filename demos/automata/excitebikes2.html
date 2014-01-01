@@ -88,14 +88,11 @@
 
   <script type="text/javascript">        
     document.addEventListener('DOMContentLoaded', function() {
-          seedlikes = [].slice.call(document.getElementsByClassName('spaceseeds'))
-                              .map(function(node) {return node.text})
-                              .join("\n")  // published for editor
-      
+      seedlikes = D.get_seedlikes()                   // published for editor
       var outerseed = D.make_some_space(seedlikes)
-      OuterSpace = new D.Space(outerseed) // published for debug
+      OuterSpace = new D.Space(outerseed)             // published for debug
     
-      D.send_value_to_js_port(OuterSpace, 'init', 1) // activate init
+      D.send_value_to_js_port(OuterSpace, 'init', 1)  // activate init
     })
   </script>
   

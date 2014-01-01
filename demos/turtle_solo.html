@@ -94,7 +94,7 @@ Clickable examples:</pre>
     <div><input type="submit" name="send" value="send" id="send" /></div>
   </form>
   
-  <script type="text/daimio" id="spaceseeds">
+  <script type="text/daimio" class="spaceseeds">
     execspace
       {"minus": {}}
       @execport exec
@@ -212,9 +212,7 @@ Clickable examples:</pre>
       //  'forward': 'port send name :forward value',
       //  'turn': 'port send name :turn value',
       
-      var seedlikes = document.getElementById('spaceseeds').text
-      var outerseed = D.make_some_space(seedlikes)
-      OuterSpace = new D.Space(outerseed) // published for debug
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
       
       D.send_value_to_js_port(OuterSpace, 'init', 1) // activate init
       

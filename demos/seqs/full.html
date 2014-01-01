@@ -16,28 +16,28 @@
   
   <form id="addn">
     <p>
-      <input type="text" name="val" value="" id="val" size="3">
+      <input type="text" name="val" value="2" id="val" size="3">
       <input type="submit" value="add">
     </p>
   </form>
   
   <form id="whatever">
     <p>
-      <input type="text" name="code" value="" id="code" size="133">
+      <input type="text" name="code" value="{_seq.#-1 | add _seq.#-2 | max 1}" id="code" size="133">
       <input type="submit" value="do whatever">
     </p>
   </form>
   
   <form id="safeway">
     <p>
-      <input type="text" name="safecode" value="" id="safecode" size="133">
+      <input type="text" name="safecode" value="{_seq | count | >n | add 1 | times _n | divide by 2}" id="safecode" size="133">
       <input type="submit" value="safer twever">
     </p>
   </form>
   
   <form id="everything">
     <p>
-      <input type="text" name="everycode" value="" id="everycode" size="133">
+      <input type="text" name="everycode" value="{__ | add 1}" id="everycode" size="133">
       <input type="submit" value="everything">
     </p>
   </form>
@@ -46,7 +46,7 @@
   <pre>
 {_seq.#-1 | add _seq.#-2 | max 1}
 {_seq | count | >n | add 1 | times _n | divide by 2}
-{_seq.#-1 | >n | mod 2 | then "{__ | times 3 | add 1}" else "{__ | divide by 2}" with _n}
+{_seq.#-1 | >n | mod 2 | then "{__ | times 3 | add 1}" else "{__ | divide by 2}" | run with _n}
   </pre>
 
   <div id="sparkline"></div>
@@ -55,7 +55,7 @@
     <p>The sequence to date: <span id="seq"></span></p>
   </div>
   
-  <script type="text/daimio" id="spaceseeds">
+  <script type="text/daimio" class="spaceseeds">
     safespace
       @in
       @out
@@ -101,9 +101,7 @@
   
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var seedlikes = document.getElementById('spaceseeds').text
-      var outerseed = D.make_some_space(seedlikes)
-      OuterSpace = new D.Space(outerseed) // published for debug
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
   

@@ -15,21 +15,21 @@
   
   <form id="addn">
     <p>
-      <input type="text" name="val" value="" id="val" size="3">
+      <input type="text" name="val" value="2" id="val" size="3">
       <input type="submit" value="add">
     </p>
   </form>
 
   <form id="whatever">
     <p>
-      <input type="text" name="code" value="" id="code" size="80">
+      <input type="text" name="code" value="{_seq.#-1 | add _seq.#-2 | max 1}" id="code" size="80">
       <input type="submit" value="do whatever">
     </p>
   </form>
   
   <form id="safeway">
     <p>
-      <input type="text" name="safecode" value="" id="safecode" size="80">
+      <input type="text" name="safecode" value="{_seq | count | >n | add 1 | times _n | divide by 2}" id="safecode" size="80">
       <input type="submit" value="safer twever">
     </p>
   </form>
@@ -61,7 +61,7 @@ outer
   
   
 
-  <script type="text/daimio" id="spaceseeds">
+  <script type="text/daimio" class="spaceseeds">
     safespace
       @in
       @out
@@ -102,9 +102,7 @@ outer
   
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var seedlikes = document.getElementById('spaceseeds').text
-      var outerseed = D.make_some_space(seedlikes)
-      OuterSpace = new D.Space(outerseed) // published for debug
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
   

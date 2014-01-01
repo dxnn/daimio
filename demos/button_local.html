@@ -40,7 +40,7 @@
   |_______________________________________|  
   </code></pre>
   
-  <script type="text/daimio" id="spaceseeds">
+  <script type="text/daimio" class="spaceseeds">
 
     outer
       @counter dom-set-text
@@ -52,12 +52,8 @@
    
   <script type="text/javascript">    
     document.addEventListener('DOMContentLoaded', function() {
-      var stringlike = document.getElementById('spaceseeds').text
-        , seedlikes = D.seedlikes_from_string(stringlike)
-        , outerseed = D.make_spaceseeds(seedlikes)
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
       
-      OuterSpace = new D.Space(outerseed) // published for debug
-
       // var code = document.getElementById('hello_daimio')
       // D.run(code.text, function() {})
       
