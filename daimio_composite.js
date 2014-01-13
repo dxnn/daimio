@@ -2891,7 +2891,7 @@ D.make_me_a_space_as_fast_as_you_can = function(seedlike_class, template_attr) {
   var templates = D.get_templates(seedlike_class)
   var seedlikes = D.get_seedlikes(template_attr)
   var outerseed = D.make_some_space(seedlikes, templates)
-  document.getElementsByTagName('body')[0].style.display = ''
+  document.getElementsByTagName('body')[0].style.display = ''         // invisible body prevents fouc
   return new D.Space(outerseed)
 }
 
@@ -5866,9 +5866,17 @@ D.import_models({
             type: 'block',
             required: true,
           },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(data, block, prior_starter, process) {
-          var scope = {}
+        fun: function(data, block, _with, prior_starter, process) {
+          var scope = _with || {}
+          
+          if(Array.isArray(_with))
+            scope = {'__in': _with[0]}
           
           // THINK: this should probably use 'by' instead of 'block', and filter on truthiness of a path
           
@@ -5924,11 +5932,19 @@ D.import_models({
             type: 'block',
             required: true,
           },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(data, block, prior_starter, process) {
-          var scope = {}
-            , found = false
-            , the_item = false
+        fun: function(data, block, _with, prior_starter, process) {
+          var found = false
+          var the_item = false
+          var scope = _with || {}
+          
+          if(Array.isArray(_with))
+            scope = {'__in': _with[0]}
           
           var processfun = function(item, tramp_prior_starter) {
             if(found)
@@ -7079,6 +7095,21 @@ D.import_models({
         },
       },
       
+      trim: {
+        desc: "Whitespace begone",
+        params: [
+          {
+            key: 'value',
+            desc: 'A string to trim',
+            type: 'string',
+            required: true
+          }
+        ],
+        fun: function(value) {
+          return value.trim()
+        },
+      },
+      
       uppercase: {
         desc: "MAKE IT LOUD",
         params: [
@@ -7293,6 +7324,9 @@ D.import_models({
   time: {
     desc: "Commands for exploding temporal quonsets",
     methods: {
+      
+      // TODO: add a {time now} command that returns the current timestamp and uses a downport to find it
+      // TODO: then remove the default 'now' from stampwrap
       
       stampwrap: {
         desc: "",
@@ -8243,16 +8277,25 @@ D.import_port_flavour('dom-on-submit', {
   outside_add: function() {
     var self = this
     
-    var callback = function(value, event) {
-      var ship = {}
-        , element = event.target
+    var callback = function(value, event) {                     // TODO: buckle down and have this suck out 
+      var ship = {}                                             //       all form values, not just the easy ones. 
+      var element = event.target                                //       yes, it's ugly. but do it for the kittens.
         
-      // TODO: buckle down and have this suck out all form values, not just the easy ones. yes, it's ugly. but do it for the kittens.
       for(var i=0, l=element.length; i < l; i++) {
-        if(element[i].type == 'checkbox')
-          ship[element[i].name] = element[i].checked ? element[i].value : false
-        else
+        if(element[i].type == 'checkbox') {
+          var name = element[i].name
+          if(name.slice(-2) == '[]') {                          // yes, this is totally gross, but we need a way
+            name = name.slice(0,-2)                             // to distinguish between single checkboxes and
+            ship[name] = ship[name] ? ship[name] : []           // lists of checkboxes, and this is a well-known
+            if(element[i].checked)                              // strategy. please someone solve this betterly!
+              ship[name].push(element[i].value)
+          } else {
+            ship[name] = element[i].checked ? element[i].value : false
+          }
+        }
+        else {
           ship[element[i].name] = element[i].value
+        }
       }
       self.enter(ship) 
     }
@@ -8322,16 +8365,10 @@ D.import_port_flavour('dom-set-value', {
 
 D.import_port_flavour('from-js', {
   dir: 'in',
-  pairup: function(port) {
-    var self = this
-    
-    this.default_value = 1
-
-    if(this.settings.all.length > 2)
-      this.default_value = this.settings.thing
-
-    this.pair = port
-    port.pair = this
+  outside_add: function(port) {
+    this.default_value = this.settings.all.length > 2
+                       ? this.settings.thing
+                       : 1
   },
   enter: function(ship, process) {
     var value = ship !== undefined ? ship : this.default_value
