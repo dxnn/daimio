@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<script id="workerscript">
+  if(!self) self = {}
+  
+  function collatz(number) {
+    if(number == 1) return 1
+    
+    if(number % 2) return 1 + collatz(number * 3 + 1)                 // blows stack for large numbers
+                                                                      // (sure wish we had PTC)
+    return 1 + collatz(number / 2)
+  }
+  
+  self.onmessage = function(event) {
+    postMessage(collatz(event.data.value))
+  }
+</script>
+
+
+<script>
+  function buildWorker(code) {
+    return new Worker
+             (window.URL.createObjectURL
+               (new Blob
+                 ([code])))}
+  
+  code    = document.getElementById('workerscript').textContent
+  worker  = buildWorker(code)
+  queue   = [] 
+  working = false
+  
+  function enqueue(iterations) {
+    queue.push(iterations)
+    if(!working)
+      dequeue()
+  }
+  
+  function actualRunWorker(iterations) {
+    worker.onmessage = function(event) {
+      if(event.data == 1) {
+        display('worker', iterations, start)
+        dequeue()}}
+
+    var start = new Date().getTime()
+    for(var i = iterations; i; i--)
+      worker.postMessage({ value: i })
+  }
+  
+  function dequeue() {
+    if(queue.length) {
+      actualRunWorker(queue.shift())
+      working = true
+    }
+  }
+      
+  function runWorker(iterations) {
+    enqueue(iterations)
+  }
+  
+  
+  function runNormal(iterations) {
+    var start = new Date().getTime()
+    for(var i = iterations; i; i--)
+      collatz(i)
+    display('normal', iterations, start)
+  }
+  
+  
+  function display(el, iter, time) {
+    document.getElementById(el + '-' + iter).textContent = new Date().getTime() - time}
+
+  document.addEventListener('DOMContentLoaded', function() {
+    runNormal(1000)
+    runNormal(10000)
+    runNormal(100000)
+  
+    runWorker(1000)
+    runWorker(10000)
+    runWorker(100000)
+  })
+</script>
+
+
+<p>A simple performance test for calling a web worker from inside a hot loop.</p>
+
+<p>Normal for 1000:   <span id="normal-1000"></span></p>
+<p>Normal for 10000:  <span id="normal-10000"></span></p>
+<p>Normal for 100000: <span id="normal-100000"></span></p>
+
+<p>Worker for 1000:   <span id="worker-1000"></span></p>
+<p>Worker for 10000:  <span id="worker-10000"></span></p>
+<p>Worker for 100000: <span id="worker-100000"></span></p>
+
+
+</body>
+</html>
