@@ -720,3 +720,5 @@ or something similar. likewise for nested sections. can we do some primitive pat
 
 
 
+Put a star after a station's name to indicate that white space doesn't matter and should be ignored.
+

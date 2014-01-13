@@ -2891,7 +2891,7 @@ D.make_me_a_space_as_fast_as_you_can = function(seedlike_class, template_attr) {
   var templates = D.get_templates(seedlike_class)
   var seedlikes = D.get_seedlikes(template_attr)
   var outerseed = D.make_some_space(seedlikes, templates)
-  document.getElementsByTagName('body')[0].style.display = ''
+  document.getElementsByTagName('body')[0].style.display = ''         // invisible body prevents fouc
   return new D.Space(outerseed)
 }
 

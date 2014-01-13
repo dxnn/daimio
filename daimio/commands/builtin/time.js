@@ -5,6 +5,9 @@ D.import_models({
     desc: "Commands for exploding temporal quonsets",
     methods: {
       
+      // TODO: add a {time now} command that returns the current timestamp and uses a downport to find it
+      // TODO: then remove the default 'now' from stampwrap
+      
       stampwrap: {
         desc: "",
         params: [
