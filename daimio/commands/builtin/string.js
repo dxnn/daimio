@@ -116,6 +116,21 @@ D.import_models({
         },
       },
       
+      trim: {
+        desc: "Whitespace begone",
+        params: [
+          {
+            key: 'value',
+            desc: 'A string to trim',
+            type: 'string',
+            required: true
+          }
+        ],
+        fun: function(value) {
+          return value.trim()
+        },
+      },
+      
       uppercase: {
         desc: "MAKE IT LOUD",
         params: [
