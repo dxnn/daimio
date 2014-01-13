@@ -1874,6 +1874,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {({* (:one (2 3 5) :two (1 3 4))} {* (:one (3 4 5) :two (1 3 4))}) | __.*.*.* | filter block "{__ | less than 4}"}
       [2,3,1,3,3,1,3]
 
+    {123 | >x | (1001 202 100 333 77) | filter block "{__ | less than _x}" with {* (:x _x)}}
+      [100,77]
+          
 
   <h3>FIRST</h3>
 
@@ -1890,6 +1893,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {( {* (:x 1 :y 2)} {* (:x 11 :y 3)} {* (:x 1 :y 4)} ) | first block "{__.x | eq 1}"}
       {"x":1,"y":2}
 
+    {123 | >x | (1001 202 100 333) | first block "{__ | less than _x}" with {* (:x _x)}}
+      100
 
   <h3>GROUP</h3>
 
