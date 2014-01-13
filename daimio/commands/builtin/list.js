@@ -949,9 +949,17 @@ D.import_models({
             type: 'block',
             required: true,
           },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(data, block, prior_starter, process) {
-          var scope = {}
+        fun: function(data, block, _with, prior_starter, process) {
+          var scope = _with || {}
+          
+          if(Array.isArray(_with))
+            scope = {'__in': _with[0]}
           
           // THINK: this should probably use 'by' instead of 'block', and filter on truthiness of a path
           
@@ -1007,11 +1015,19 @@ D.import_models({
             type: 'block',
             required: true,
           },
+          {
+            key: 'with',
+            desc: 'Given a hash, values are imported into the block scope.',
+            type: 'maybe-list'
+          },
         ],
-        fun: function(data, block, prior_starter, process) {
-          var scope = {}
-            , found = false
-            , the_item = false
+        fun: function(data, block, _with, prior_starter, process) {
+          var found = false
+          var the_item = false
+          var scope = _with || {}
+          
+          if(Array.isArray(_with))
+            scope = {'__in': _with[0]}
           
           var processfun = function(item, tramp_prior_starter) {
             if(found)
