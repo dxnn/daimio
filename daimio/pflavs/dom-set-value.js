@@ -12,9 +12,6 @@ D.import_port_flavour('dom-set-value', {
 
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
-
-    if(!this.element.hasOwnProperty('innerHTML'))
-      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
