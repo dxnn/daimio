@@ -200,13 +200,13 @@ D.import_models({
           if(!is_global)
             matches = [matches[0]]
           
-          processfun = function(item, prior_starter) {
+          var processfun = function(item, prior_starter) {
             var scope = {}
             scope["__in"] = item
             return to(function(value) {prior_starter(value)}, scope)
           }
         
-          finalfun = function(processed_matches) {
+          var finalfun = function(processed_matches) {
             var result = ''
               // , string_count
               , index = 0

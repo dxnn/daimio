@@ -668,7 +668,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
@@ -712,7 +714,8 @@ D.import_models({
         ],
         fun: function(data, by, _with, prior_starter, process) { 
           var keys = Object.keys(data) 
-            , scope = _with || {}
+          var scope = _with || {}
+          var processfun, finalfun
           
           if(Array.isArray(_with))
             scope = {'__in': _with[0]}
@@ -732,7 +735,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
@@ -793,7 +798,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
