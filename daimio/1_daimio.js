@@ -424,9 +424,8 @@ D.list_push = function(total, value) {
 D.list_set = function(total, value, key) {
   if(typeof total != 'object') return {}
 
-  var keys = Object.keys(total)
-  if(!key) key = keys.length
-
+  if(!key) key = Object.keys(total).length
+  
   value = D.make_nice(value)
 
   total[key] = value
