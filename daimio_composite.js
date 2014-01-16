@@ -424,9 +424,8 @@ D.list_push = function(total, value) {
 D.list_set = function(total, value, key) {
   if(typeof total != 'object') return {}
 
-  var keys = Object.keys(total)
-  if(!key) key = keys.length
-
+  if(!key) key = Object.keys(total).length
+  
   value = D.make_nice(value)
 
   total[key] = value
@@ -5585,7 +5584,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
@@ -5629,7 +5630,8 @@ D.import_models({
         ],
         fun: function(data, by, _with, prior_starter, process) { 
           var keys = Object.keys(data) 
-            , scope = _with || {}
+          var scope = _with || {}
+          var processfun, finalfun
           
           if(Array.isArray(_with))
             scope = {'__in': _with[0]}
@@ -5649,7 +5651,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
@@ -5710,7 +5714,9 @@ D.import_models({
           }
           else if(by) {
             processfun = function(item, prior_starter) {
-              return D.peek(item, by.split('.'))
+              var bysplits = by.split('.')
+              if(bysplits.length == 1) return item[bysplits[0]]
+              return D.peek(item, bysplits)
             }
           } 
           else {
@@ -7179,13 +7185,13 @@ D.import_models({
           if(!is_global)
             matches = [matches[0]]
           
-          processfun = function(item, prior_starter) {
+          var processfun = function(item, prior_starter) {
             var scope = {}
             scope["__in"] = item
             return to(function(value) {prior_starter(value)}, scope)
           }
         
-          finalfun = function(processed_matches) {
+          var finalfun = function(processed_matches) {
             var result = ''
               // , string_count
               , index = 0
@@ -8233,7 +8239,7 @@ D.import_port_flavour('dom-do-submit', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
     
-    if(!this.element.hasOwnProperty('submit'))
+    if(!('submit' in this.element))
       return D.set_error('That dom thing has no submit')
   }
 })
@@ -8318,7 +8324,7 @@ D.import_port_flavour('dom-set-html', {
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
 
-    if(!this.element.hasOwnProperty('innerHTML'))
+    if(!('innerHTML' in this.element))
       return D.set_error('That dom thing has no innerHTML')
   }
 })
@@ -8357,9 +8363,6 @@ D.import_port_flavour('dom-set-value', {
 
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
-
-    if(!this.element.hasOwnProperty('innerHTML'))
-      return D.set_error('That dom thing has no innerHTML')
   }
 })
 
