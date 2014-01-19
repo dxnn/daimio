@@ -8104,7 +8104,7 @@ D.import_pathfinder('position', {
       var this_key
         , excess = abs_first_position - vkeys.length
 
-      for(var i=0; i < excess; i++) {
+      for(var i=0; i < excess; i++) {        
         if(!Array.isArray(value)) { // object
           // this_key = Math.random() // herp derp merp berp
           this_key = i + 1000000
@@ -8255,6 +8255,14 @@ D.import_port_flavour('dom-on-change', {
   outside_add: function() {
     var self = this
     D.track_event('change', this.settings.thing, function(value) {self.enter(value)})
+  }
+})
+D.import_port_flavour('dom-on-keypress', {
+  dir: 'in',
+  outside_add: function() {
+    // THINK: this requires binding to a particular DOM element -- is there a way to default to 'document'?
+    var self = this
+    D.track_event('keypress', this.settings.thing, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-click', {
