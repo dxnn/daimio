@@ -156,6 +156,13 @@ D.is_false = function(value) {
   if(Array.isArray(value))
     return !value.length
 
+  if(!D.is_empty(value))
+    return false
+
+  return true
+}
+
+D.is_empty = function(value) {
   for(var key in value)
     if(value.hasOwnProperty(key))
       return false
