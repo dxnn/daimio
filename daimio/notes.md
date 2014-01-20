@@ -722,3 +722,22 @@ or something similar. likewise for nested sections. can we do some primitive pat
 
 Put a star after a station's name to indicate that white space doesn't matter and should be ignored.
 
+
+
+
+POKING ISSUE
+
+when you poke an integer *keyed* item into a list, it will either:
+A. make a new key for that item
+B. fill the array with items up to that index
+
+because we don't know whether it's an *index* or a *key*. having both means ambiguity. 
+
+we should probably have a distinct "fill" command for filling lists with "" values (or some other value) [maybe even based on a block]
+
+and then ALWAYS have {:x | >$foo.100} mean "set key 100 to x". 
+
+ok but {:x | >$foo.#100} means "set _position_ 100 to x".
+
+oh this is just a bug.
+

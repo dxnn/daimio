@@ -1988,6 +1988,8 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
       {5 | >foo | (1 2 3) | map block "{__ | add _foo}"}
         [1,2,3]
+        
+    UGH (BUG) 
       {5 | >foo | (1 2 3) | map block "{__ | add _foo}" with {* (:foo _foo)}}
         [6,7,8]
 
@@ -3070,7 +3072,7 @@ BASIC SYNTAX TESTS
 
     Unfilled vars and non-existent params are different. 
     They should probably behave the same for pipeline vars and space vars, but don't. 
-    The reason they don't make sense if you know the underlying theory, but it's an abstraction leak...
+    The reason they don't makes sense if you know the underlying theory, but it's an abstraction leak...
       {5 | >foo | (1 2 3) | map block "{__ | subtract _o}"}
         [1,2,3]
       {5 | >foo | (1 2 3) | map block "{__ | subtract $o}"}
@@ -3098,6 +3100,10 @@ BASIC SYNTAX TESTS
 
       {"{xxx}" | quote}
         {xxx}
+        
+    This should set by key, not position
+      {5 | >$pqpq.3}
+        {"3":5}
 
     // {"{_x | run with {* (:x _x)} }" | >x | run with {* (:x _x)} }
     // (leads to immediate stack overflow... maybe that's an ok solution for infinite recursion? just let it blow up?)

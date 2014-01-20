@@ -15,7 +15,7 @@ D.import_pathfinder('key', {
     if(value.hasOwnProperty(key) && (typeof value[key] == 'object') )
       return [value[key]]
       
-    value[key] = {}
+    value[key] = {}   // THINK: this line creates a swack of undefineds...
     return [value[key]]
   },
   set: function(value, key, new_val, parent) {
