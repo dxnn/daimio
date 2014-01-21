@@ -26,7 +26,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'An array of data',
-            type: 'list',
+            type: 'mutable-list',
             required: true
           },
           {
@@ -336,7 +336,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list of lists to zip',
-            type: 'array'
+            type: 'mutable-array'
           },
           {
             key: 'also',
@@ -505,8 +505,8 @@ D.import_models({
         fun: function(data, value, path) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
-          D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
-          return data
+          return D.poke(D.clone(data), path, value) // mutates in place and returns the mutated portions, not data itself
+          // return data
          
           // return D.poke(path, data, function(x) {return value})
         },
@@ -518,7 +518,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to edit',
-            type: 'list',
+            type: 'mutable-list',
             required: true
           },
           {
@@ -538,11 +538,6 @@ D.import_models({
 
           by_value = by_value.map(JSON.stringify)       // for matching nested structures
           by_key = by_key.slice()                       // keeps segment.value happy
-
-          if(Array.isArray(data))
-            data = data.slice()                         // prevent mutation // TODO: remove this after list upgrades
-          else
-            data = D.clone(data)                        // OPT: this is entirely silly
 
           if(by_value.length)
             for(var key in data) 
@@ -638,7 +633,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'A list to rekey',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -697,7 +692,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to reverse',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -766,7 +761,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to sort',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -947,7 +942,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'List to extract from',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
