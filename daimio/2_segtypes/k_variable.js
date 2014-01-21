@@ -40,15 +40,15 @@ D.SegmentTypes.Variable = {
     if(type == 'space')
       value = process.space.get_state(name)
     else if(inputs && inputs.length)
-      value = inputs[0]
+      value = inputs[0] // DATA
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
-      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
+      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out] // DATA
 
     if(!D.is_nice(value))
       return false
 
-    // return value // OPT: cloning each time is terrible
-    return D.clone(value)
+    return value // OPT: cloning each time is terrible
+    // return D.clone(value) // DATA
     // return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
   }
 }

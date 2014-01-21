@@ -1154,7 +1154,7 @@
   three ways to push a new value on a list
     {(1 2 3 4) | >$ints}
       [1,2,3,4]
-    {5 | >$ints.{$ints | count}}  {// (BUG) //}
+    {5 | >$ints.{$ints | count}}  {// (DATA BUG) //}
       5
     {$ints | poke 6}
       [1,2,3,4,5,6]
@@ -1175,15 +1175,15 @@
     {* (:a (2 1) :b (3 4) :c (4 5)) | list poke path (:b 1 :d :e) value 999}
       {"a":[2,1],"b":[3,{"d":{"e":999}}],"c":[4,5]}
 
-    when you poke by key to a non-existent key in an unkeyed list, it converts it to a keyed list. (BUG)
+    when you poke by key to a non-existent key in an unkeyed list, it converts it to a keyed list. (DATA BUG)
       {(1 2 3) | list poke path (:a) value 999}
         {"0":1,"1":2,"2":3,"a":999}
 
-    when you poke by key to a non-existent var, it borks completely. (BUG)
+    when you poke by key to a non-existent var, it borks completely. (DATA BUG)
       {1234 | >$qwe.rty}
         {"rty":1234}
 
-    the second set should override the first one (BUG)
+    the second set should override the first one (DATA BUG)
       {"{:foo}x" | >$xxx || 123 | >$xxx.y | $xxx}
         {y:123}
     it works this way
@@ -1218,7 +1218,7 @@
         {"a":{"aa":1,"ab":2},"b":{"ba":1,"bb":999},"c":{"ca":1,"cb":2}}
 
     but if there are gaps in your keyed list the results might be unexpected -- the generated keys are consecutive integers (offset by one million to avoid common collisions).
-    this behavior is likely to change; please don't rely on generated keys. also, the ordering is off in chrome. (BUG)
+    this behavior is likely to change; please don't rely on generated keys. also, the ordering is off in chrome. (DATA BUG)
       {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999}
         {"a":1,"b":2,"c":3,"1000000":[],"1000001":999}
       {* (:a 1 :b 2 :c 3) | list poke path ("#5") value 999 | sort}
@@ -1244,7 +1244,7 @@
     {((2 1) (3 4) (4 5)) | list poke path ("*" "*") value 999}
       [[999,999],[999,999],[999,999]]
 
-    stars generate a new empty list for each missing (or scalar) level. (BUG)
+    stars generate a new empty list for each missing (or scalar) level. (DATA BUG)
       {() | list poke path ("*") value 999}
         []
       {() | list poke path ("*" "*") value 999}
@@ -1272,15 +1272,15 @@
       {* (:a 1 :b 2 :c 3) | list poke path ( "#2" ("#2" "#6" "#4") ) value 999}
         {"a":1,"b":[[],999,[],999,[],999],"c":3}
 
-    generating a new list (BUG)
+    generating a new list (DATA BUG)
       {* (:a 1 :b 2 :c 3) | list poke path ( :b ("#2" "#6" "#4") ) value 999}
         {"a":1,"b":[[],999,[],999,[],999],"c":3}
 
-    generating a new keyed list (BUG)
+    generating a new keyed list (DATA BUG)
       {* (:a 1 :b 2 :c 3) | list poke path ( "#2" (:d :e) ) value 999}
         {"a":1,"b":{"d":999,"e":999},"c":3}
 
-    double list all the way (BUG)
+    double list all the way (DATA BUG)
       {((2 1) (3 4) (4 5)) | list poke path ( ("#1" "#3") ("#2" "#4") ) value 999}
         [[2,999,[],999],[3,4],[4,999,[],999]]
 
@@ -1898,7 +1898,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
 
   <h3>GROUP</h3>
 
-    THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly. (BUG)
+    THINK: these values are all correct, but they're keyed instead of simple arrays. and, hence, sorted poorly. (DATA BUG)
 
     {(1 2 3 4 5 6) | list group by "{__ | mod 2}"}
       [[1,3,5],[2,4,6]]
@@ -2006,6 +2006,17 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {(12 34) | map block "{__ | add 1 | >foo}"}
         [13,35]
 
+    Ensure blocks inside lists don't become unintentionally quoted
+      {("foo" "{2 | add 7}") | map block "{__ | run}"}
+        ["foo",9]
+      {("foo" "{2 | add 7}") | >$foo | map block "{__ | run}"}
+        ["foo",9]
+      {("foo" "{2 | add 7}") | >$foo || $foo | map block "{__ | run}"}
+        ["foo",9]
+      {( "{__ | add 1}" "{__ | times 7}" ) | each block "{(1 2 3) | map block __in}"}
+        [2,3,4][7,14,21]
+
+
 
   <h3>MERGE</h3>
 
@@ -2095,7 +2106,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       //   {$data | list remove path "*.two"}
       //     {"1":{"one":"first","three":"even"},"3":{"one":"third","three":"even"}}
 
-    ensure removing doesn't change vars (BUG)
+    ensure removing doesn't change vars
       {(1 2 3) | >x | list remove by_value 2 | _x | add}
         6
       {(1 2 3) | >$x | list remove by_value 2 | $x | add}
@@ -2127,9 +2138,9 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {(3 2 4 1) | list reverse}
       [1,4,2,3]
 
-    TODO: This smashes keys currently (BUG)
-    {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
-      {"q":1,"z":4,"y":2,"x":3}
+    This smashes keys currently (DATA BUG)
+      {* (:x 3 :y 2 :z 4 :q 1) | list reverse}
+        {"q":1,"z":4,"y":2,"x":3}
 
 
   <h3>SORTING</h3>
@@ -2147,7 +2158,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
     {$data | list sort by :one}
       [{"one":"first","two":["hi","hello","hijinx","goodbye"],"three":"even"},{"one":"second","two":["hinterlands","yellow","mishmash"],"three":"odd"},{"one":"third","two":["hinterlands","yellow","mishmash"],"three":"even"}]
 
-    TODO: multiple keys (these don't work currently) (BUG)
+    multiple keys (these don't work currently) (BUG)
       {$data | list sort by {* (:three :desc :one :asc)} | __.*.one}
         ["second","first","third"]
       {$data | list sort by {* (:three :desc :one :desc)} | __.*.one}
@@ -2167,7 +2178,7 @@ This section is no longer applicable: alias creation doesn't work yet, and varia
       {* (:c 3 :b 2 :a 4) | >l | list keys | sort | map block "{_l.{_value}}" with {* (:l _l)}}
         {"a":4,"b":2,"c":3}
 
-    sort should preserve keys (BUG)
+    sort should preserve keys (DATA BUG)
       {* (:c 3 :b 2 :a 1) | list sort}
         {"a":1,"b":2,"c":3}
 
@@ -2411,7 +2422,7 @@ Tests for pass-by-value. Changing a Daimio variable shouldn't change other varia
     [1,2,3,4,5] x [1,2,3,4]
 
 Tests for self-reference. PBV cures these ills.
-Poke should be returning the poked value, not the whole tree. (BUG)
+Poke should be returning the poked value, not the whole tree. (DATA BUG)
   {* (:a 1 :b 2) | >$x | >$x.c}
     {"a":1,"b":2}
   {$x | >$x.d}
@@ -2933,17 +2944,20 @@ BASIC SYNTAX TESTS
     {"{"ok {"{$x.one} {$x.two} {$x.bogus.foo}"}"} {$x.one}"} y
       ok local surprise local!  local y
 
-  The value in $x is "flat" -- it doesn't contain a pointer to itself. It does contain a block that points to $x, though, and you can explicitly unquote that block and reach inside it.
+  The value $x doesn't contain a reference to itself, but it does contain a block that refers to $x. 
+  
     {$x.yum}
       {"bar":"{$x}"}
     {$x.yum.bar}
-      {$x}
-    {$x.yum.bar | unquote}
       {"one":"local","two":"surprise local!","foo":"bar","yum":{"bar":"{$x}"}}
-    {$x.yum.bar | unquote | run | __.yum.bar}
+    {$x.yum.bar | quote}
       {$x}
-    {$x.yum.bar | unquote | run | __.yum.bar | unquote}
+    {$x.yum.bar | quote | unquote}
       {"one":"local","two":"surprise local!","foo":"bar","yum":{"bar":"{$x}"}}
+
+  We can take advantage of data structures containing blocks:
+    {( "{__ | add 1}" "{__ | times 7}" ) | >x | each block "{(1 2 3) | map block __in}"}
+      [2,3,4][7,14,21]
 
   quote, unquote, and run:
     {"{__ | add 1}" | map data (1 2)}
@@ -3027,19 +3041,11 @@ BASIC SYNTAX TESTS
   <h2>Known Bugs</h2>
 </div>
 
-    Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser.
+    Keyed lists with positive integer keys are not ordered correctly. All keyed lists should be ordered by insertion order by default, and retain their sort order if sorted. Even once this is fixed imports from JSON will still have this problem (for the initial import, not once sorted) unless we write our own JSON parser. (DATA BUG)
       {* (:xyz :z 10 :z 3 :z 1 :z :a :z)}
         {"xyz":"z","10":"z","3":"z","1":"z","a":"z"}
       {* (:xyz :9z 10 :8z 3 :6z 1 :4z :a :2z) | sort}
         {"a":"2z","x1":"4z","x3":"6z","x10":"8z","xyz":"9z"}
-
-    Blocks inside lists that get cloned become quoted. This might be considered a *feature* in some circles, but it makes a fairly valid use case (sticking blocks inside a keyed list as quasi-object methods) more difficult.
-      {("foo" "{2 | add 7}") | map block "{__ | run}"}
-        ["foo",9]
-      {("foo" "{2 | add 7}") | >$foo | map block "{__ | run}"}
-        ["foo",9]
-      {("foo" "{2 | add 7}") | >$foo || $foo | map block "{__ | run}"}
-        ["foo",9]
 
     Most list commands eat keys:
       sort, reverse, etc
@@ -3049,8 +3055,8 @@ BASIC SYNTAX TESTS
         true
 
     Two problems here with peek/poke
-    1. you shouldn't have to preload with x:1 (BUG)
-    2. setting a subitem returns the full spacevar, not just the subitem value (BUG)
+    1. you shouldn't have to preload with x:1 (DATA BUG)
+    2. setting a subitem returns the full spacevar, not just the subitem value (DATA BUG)
       {* (:x 1) | >$hash}
         {"x":1}
 

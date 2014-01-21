@@ -31,6 +31,7 @@ D.import_pathfinder('position', {
         , excess = abs_first_position - vkeys.length
 
       for(var i=0; i < excess; i++) {
+        
         if(!Array.isArray(value)) { // object
           // this_key = Math.random() // herp derp merp berp
           this_key = i + 1000000
@@ -76,13 +77,20 @@ D.import_pathfinder('position', {
     var vkeys = Object.keys(value)
       , position = +key.slice(1)
       , index = (position < 0) ? (vkeys.length + position) : position - 1
+      , weird = false
 
     if(value[ vkeys[ index ] ]) {
       value[ vkeys[ index ] ] = new_val
       return
     }
     
+    if(typeof value == 'object')
+      if(D.is_empty(value))
+        weird=value,value=[]
+    
+    
     var selected = this.create(value, key)[0]
+    
     // at this point we've created all the dummy values, so we just need to figure out where 'selected' is...
     for(var k in value) {
       if(value[k] == selected) {
@@ -90,5 +98,8 @@ D.import_pathfinder('position', {
         continue
       }
     }
+    
+    if(weird)
+      D.extend(weird, value)                        // TODO: come up with a better way to merge {} and []
   }
 })
