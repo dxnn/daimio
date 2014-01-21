@@ -721,4 +721,22 @@ or something similar. likewise for nested sections. can we do some primitive pat
 
 
 Put a star after a station's name to indicate that white space doesn't matter and should be ignored.
+Put a +foo after a station's name to indicate it's a copy of the pre-+ station.
+
+
+So we have some issues:
+- some commands mutate [so make them stop]
+- peek&poke mutate []
+- array vs object
+
+-> we can hide all data structures behind an abstraction barrier
+-> we could pass raw data structures to commands that promise to behave
+
+abstraction barrier lets us change more later, but is fussy to work with.
+
+
+so: pass raw to anything that can take it. shallow copy for mutating commands. deep clone for poking (for now).
+
+
+
 

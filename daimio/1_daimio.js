@@ -100,7 +100,7 @@ D.make_nice = function(value, otherwise) {
   return D.is_nice(value) ? value : (otherwise || '')
 }
 
-D.to_array = function(value) {
+D.to_array = function(value) { // DATA
   // this converts non-iterable items into a single-element array
   if(D.is_block(value))         return []
   if(Array.isArray(value))      return value
@@ -108,16 +108,23 @@ D.to_array = function(value) {
   if(value === false)           return []                     // hmmm...
   if(!D.is_nice(value))         return []                     // double hmmm.
                                 return [value]
+  
+  // if(D.is_block(value))         return new D.Data([])
+  // if(Array.isArray(value))      return new D.Data(value)
+  // if(typeof value == 'object')  return new D.Data(D.obj_to_array(value))
+  // if(value === false)           return new D.Data([])                     // hmmm...
+  // if(!D.is_nice(value))         return new D.Data([])                     // double hmmm.
+  //                               return new D.Data([value])
 }
 
-D.obj_to_array = function(obj) {
+D.obj_to_array = function(obj) { // DATA
   var arr = []
   for(key in obj)
     arr.push(obj[key])
   return arr
 }
 
-D.sort_object_keys = function(obj, sorter) {
+D.sort_object_keys = function(obj, sorter) { // DATA
   if(typeof obj != 'object')
     return {}
 
@@ -299,7 +306,7 @@ D.recursive_extend = function(base, value) {
 D.scrub_var = function(value) {
   // copy and scrub a variable from the outside world
   try {
-    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
+    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).  // DATA
   } catch (e) {
     // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
     value = D.mean_defunctionize(value);
@@ -414,14 +421,14 @@ D.string_concat = function(total, value) {
   return D.stringify(total) + D.stringify(value)
 }
 
-D.list_push = function(total, value) {
+D.list_push = function(total, value) { // DATA
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
   value = D.make_nice(value)
   total.push(value)
   return total
 }
 
-D.list_set = function(total, value, key) {
+D.list_set = function(total, value, key) { // DATA
   if(typeof total != 'object') return {}
 
   if(!key) key = Object.keys(total).length
@@ -640,8 +647,8 @@ D.track_event = function(type, target, callback) {
         event.preventDefault()  //        maybe use a port param to allow passthru
         var value =
           ( target.attributes['data-value']
-            && target.attributes['data-value'].value) // THINK: no empty strings allowed...
-          || ( target.value != undefined && target.value )
+            && target.attributes['data-value'].value)       // THINK: no empty strings allowed...
+          || ( target.value != undefined && target.value )  // TODO:  catch ""
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
           || D.scrub_var(event)
@@ -1887,6 +1894,29 @@ D.Port = function(port_template, space) {
 
 
 
+//    ______  _______ _______ _______
+//    |     \ |_____|    |    |_____|
+//    |_____/ |     |    |    |     |
+//
+
+D.DataObj = 
+{  _data : []
+,  get val()     {return this._data}
+,  set val(to)   {this._data = to}
+,  get keys()    {return Object.keys(this._data)}
+,  set keys(x)   {}
+,  get length()  {return this._data.length}
+,  set length(x) {}
+}
+
+D.Data = function(init) {
+  var self = Object.create(D.DataObj)
+  self.val = init
+  return self
+}
+
+
+
    /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo
   d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8
   Y88bo.       888   .d88'     .8"888.     888           888
@@ -1971,6 +2001,10 @@ D.Space = function(seed_id, parent) {
   this.only_one_process = true
   this.processes = []
   this.queue = []
+}
+
+D.Space.prototype.set_state = function(param, value) {
+  return this.state[param] = value
 }
 
 D.Space.prototype.get_state = function(param) {
@@ -2304,7 +2338,7 @@ D.Process = function(space, block, scope, prior_starter, station_id) {
   var self = this
   this.my_starter = function(value) {
     self.last_value = value
-    self.state[self.current] = value                            // TODO: fix this it isn't general
+    self.state[self.current] = value                            // TODO: fix this it isn't general // DATA
     self.current++
     self.run()
   }
@@ -2321,12 +2355,12 @@ D.Process.prototype.done = function() {
   if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
-      output = this.state[outs[0]]
+      output = this.state[outs[0]] // DATA
     }
     else {
       output = []
       for(var i=0, l=outs.length; i < l; i++) {
-        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird
+        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird // DATA
       }
     }
   }
@@ -2359,7 +2393,7 @@ D.Process.prototype.run = function() {
       return NaN                                                    // NaN is the "I took the callback route" signal...
     }
     this.last_value = value
-    this.state[current] = value                                     // TODO: fix this it isn't general
+    this.state[current] = value                                     // TODO: fix this it isn't general // DATA
     current++
     segment = segs[current]
   }
@@ -2372,7 +2406,7 @@ D.Process.prototype.next = function(segment, current, wires, dialect) {
   var key  = segment.key || current
   var wire = wires[key]
 
-  var inputs = wire ? D.nicify(wire, this.state) : []
+  var inputs = wire ? D.nicify(wire, this.state) : [] // DATA
 
   return type.execute(segment, inputs, dialect, this.my_starter, this)
 }
