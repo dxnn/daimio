@@ -155,14 +155,21 @@ D.execute_then_stringify = function(value, prior_starter, process) {
 
 D.is_false = function(value) {
   if(!value)
-    return true // '', 0, false, NaN, null, undefined
+    return true                                 // '', 0, false, NaN, null, undefined
 
   if(typeof value != 'object')
-    return false // THINK: is this always right?
+    return false                                // THINK: is this always right?
 
   if(Array.isArray(value))
     return !value.length
 
+  if(!D.is_empty(value))
+    return false
+
+  return true
+}
+
+D.is_empty = function(value) {
   for(var key in value)
     if(value.hasOwnProperty(key))
       return false
@@ -217,9 +224,14 @@ D.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
+D.shallow_copy = function(value) {
+  if(Array.isArray(value))
+    return value.slice()
+  return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
+}
 
 D.clone = function(value) {
-  if(value && value.toJSON)
+  if(value && value.toJSON)                    // THINK: for blocks?
     return D.deep_copy(value)
 
   try {
