@@ -48,9 +48,9 @@ D.SegmentTypes.VariableSet = {
     var state = process.space.state
       , name  = segment.value.name
 
-    // state[name] = inputs[0] // OPT: only copy if you have to
+    state[name] = inputs[0] // OPT: only copy if you have to
 
-    state[name] = D.clone(inputs[0])
+    // state[name] = D.clone(inputs[0]) // DATA
     // state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
 
     return inputs[0]
