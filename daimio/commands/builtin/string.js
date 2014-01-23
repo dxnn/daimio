@@ -160,6 +160,20 @@ D.import_models({
           return value.toLowerCase()
         },
       },
+
+      "uri-decode": {
+	  desc: "Decode a string containing URI escape sequences to one without them",
+	  params: [
+	      { 
+		  key: 'value', 
+		  desc: 'A URI encoded string', 
+		  type: 'string'
+	      }
+	  ],
+	  fun: function (value) {
+	      return decodeURIComponent(value)
+	  }
+      },
       
       transform: {
         desc: "Convert a string to something new",
