@@ -100,7 +100,7 @@ D.make_nice = function(value, otherwise) {
   return D.is_nice(value) ? value : (otherwise || '')
 }
 
-D.to_array = function(value) {
+D.to_array = function(value) { // DATA
   // this converts non-iterable items into a single-element array
   if(D.is_block(value))         return []
   if(Array.isArray(value))      return value
@@ -108,16 +108,23 @@ D.to_array = function(value) {
   if(value === false)           return []                     // hmmm...
   if(!D.is_nice(value))         return []                     // double hmmm.
                                 return [value]
+  
+  // if(D.is_block(value))         return new D.Data([])
+  // if(Array.isArray(value))      return new D.Data(value)
+  // if(typeof value == 'object')  return new D.Data(D.obj_to_array(value))
+  // if(value === false)           return new D.Data([])                     // hmmm...
+  // if(!D.is_nice(value))         return new D.Data([])                     // double hmmm.
+  //                               return new D.Data([value])
 }
 
-D.obj_to_array = function(obj) {
+D.obj_to_array = function(obj) { // DATA
   var arr = []
   for(key in obj)
     arr.push(obj[key])
   return arr
 }
 
-D.sort_object_keys = function(obj, sorter) {
+D.sort_object_keys = function(obj, sorter) { // DATA
   if(typeof obj != 'object')
     return {}
 
@@ -148,14 +155,21 @@ D.execute_then_stringify = function(value, prior_starter, process) {
 
 D.is_false = function(value) {
   if(!value)
-    return true // '', 0, false, NaN, null, undefined
+    return true                                 // '', 0, false, NaN, null, undefined
 
   if(typeof value != 'object')
-    return false // THINK: is this always right?
+    return false                                // THINK: is this always right?
 
   if(Array.isArray(value))
     return !value.length
 
+  if(!D.is_empty(value))
+    return false
+
+  return true
+}
+
+D.is_empty = function(value) {
   for(var key in value)
     if(value.hasOwnProperty(key))
       return false
@@ -210,9 +224,14 @@ D.string_to_regex = function(string, global) {
   return RegExp(string, flags)
 }
 
+D.shallow_copy = function(value) {
+  if(Array.isArray(value))
+    return value.slice()
+  return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
+}
 
 D.clone = function(value) {
-  if(value && value.toJSON)
+  if(value && value.toJSON)                    // THINK: for blocks?
     return D.deep_copy(value)
 
   try {
@@ -299,7 +318,7 @@ D.recursive_extend = function(base, value) {
 D.scrub_var = function(value) {
   // copy and scrub a variable from the outside world
   try {
-    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).
+    return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).  // DATA
   } catch (e) {
     // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
     value = D.mean_defunctionize(value);
@@ -414,14 +433,14 @@ D.string_concat = function(total, value) {
   return D.stringify(total) + D.stringify(value)
 }
 
-D.list_push = function(total, value) {
+D.list_push = function(total, value) { // DATA
   if(!Array.isArray(total)) return [] // THINK: is this always ok?
   value = D.make_nice(value)
   total.push(value)
   return total
 }
 
-D.list_set = function(total, value, key) {
+D.list_set = function(total, value, key) { // DATA
   if(typeof total != 'object') return {}
 
   if(!key) key = Object.keys(total).length
@@ -640,8 +659,8 @@ D.track_event = function(type, target, callback) {
         event.preventDefault()  //        maybe use a port param to allow passthru
         var value =
           ( target.attributes['data-value']
-            && target.attributes['data-value'].value) // THINK: no empty strings allowed...
-          || ( target.value != undefined && target.value )
+            && target.attributes['data-value'].value)       // THINK: no empty strings allowed...
+          || ( target.value != undefined && target.value )  // TODO:  catch ""
           || ( target.attributes.value && target.attributes.value.value )
           || target.text
           || D.scrub_var(event)
@@ -1067,6 +1086,8 @@ D.peek = function(base, path) {
 
 D.poke = function(base, path, value) {
   // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
+
+  base = D.shallow_copy(base)
 
   path = D.to_array(path)
 
@@ -1887,6 +1908,29 @@ D.Port = function(port_template, space) {
 
 
 
+//    ______  _______ _______ _______
+//    |     \ |_____|    |    |_____|
+//    |_____/ |     |    |    |     |
+//
+
+D.DataObj = 
+{  _data : []
+,  get val()     {return this._data}
+,  set val(to)   {this._data = to}
+,  get keys()    {return Object.keys(this._data)}
+,  set keys(x)   {}
+,  get length()  {return this._data.length}
+,  set length(x) {}
+}
+
+D.Data = function(init) {
+  var self = Object.create(D.DataObj)
+  self.val = init
+  return self
+}
+
+
+
    /*ooooo..o ooooooooo.         .o.         .oooooo.   oooooooooooo
   d8P'    `Y8 `888   `Y88.      .888.       d8P'  `Y8b  `888'     `8
   Y88bo.       888   .d88'     .8"888.     888           888
@@ -1971,6 +2015,10 @@ D.Space = function(seed_id, parent) {
   this.only_one_process = true
   this.processes = []
   this.queue = []
+}
+
+D.Space.prototype.set_state = function(param, value) {
+  return this.state[param] = value
 }
 
 D.Space.prototype.get_state = function(param) {
@@ -2304,7 +2352,7 @@ D.Process = function(space, block, scope, prior_starter, station_id) {
   var self = this
   this.my_starter = function(value) {
     self.last_value = value
-    self.state[self.current] = value                            // TODO: fix this it isn't general
+    self.state[self.current] = value                            // TODO: fix this it isn't general // DATA
     self.current++
     self.run()
   }
@@ -2321,12 +2369,12 @@ D.Process.prototype.done = function() {
   if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
-      output = this.state[outs[0]]
+      output = this.state[outs[0]] // DATA
     }
     else {
       output = []
       for(var i=0, l=outs.length; i < l; i++) {
-        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird
+        output.push(this.state[outs[i]])                        // THINK: sometimes array sometimes not is always weird // DATA
       }
     }
   }
@@ -2359,7 +2407,7 @@ D.Process.prototype.run = function() {
       return NaN                                                    // NaN is the "I took the callback route" signal...
     }
     this.last_value = value
-    this.state[current] = value                                     // TODO: fix this it isn't general
+    this.state[current] = value                                     // TODO: fix this it isn't general // DATA
     current++
     segment = segs[current]
   }
@@ -2372,7 +2420,7 @@ D.Process.prototype.next = function(segment, current, wires, dialect) {
   var key  = segment.key || current
   var wire = wires[key]
 
-  var inputs = wire ? D.nicify(wire, this.state) : []
+  var inputs = wire ? D.nicify(wire, this.state) : [] // DATA
 
   return type.execute(segment, inputs, dialect, this.my_starter, this)
 }
@@ -3262,9 +3310,9 @@ D.SegmentTypes.VariableSet = {
     var state = process.space.state
       , name  = segment.value.name
 
-    // state[name] = inputs[0] // OPT: only copy if you have to
+    state[name] = inputs[0] // OPT: only copy if you have to
 
-    state[name] = D.clone(inputs[0])
+    // state[name] = D.clone(inputs[0]) // DATA
     // state[name] = D.deep_copy(inputs[0]) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
 
     return inputs[0]
@@ -3346,15 +3394,15 @@ D.SegmentTypes.Variable = {
     if(type == 'space')
       value = process.space.get_state(name)
     else if(inputs && inputs.length)
-      value = inputs[0]
+      value = inputs[0] // DATA
     else if(type == 'pipeline')     // in cases like "{__}" or "{_foo}" pipeline vars serve as placeholders,
-      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out]
+      value = process.state[name]   // because we can't push those down to bare wiring. [actually, use __out] // DATA
 
     if(!D.is_nice(value))
       return false
 
-    // return value // OPT: cloning each time is terrible
-    return D.clone(value)
+    return value // OPT: cloning each time is terrible
+    // return D.clone(value) // DATA
     // return D.deep_copy(value) // NOTE: we have to deep copy here because cloning (via JSON) destroys blocks...
   }
 }
@@ -4942,7 +4990,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'An array of data',
-            type: 'list',
+            type: 'mutable-list',
             required: true
           },
           {
@@ -5252,7 +5300,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list of lists to zip',
-            type: 'array'
+            type: 'mutable-array'
           },
           {
             key: 'also',
@@ -5421,8 +5469,8 @@ D.import_models({
         fun: function(data, value, path) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
-          D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
-          return data
+          return D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
+          // return data
          
           // return D.poke(path, data, function(x) {return value})
         },
@@ -5434,7 +5482,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to edit',
-            type: 'list',
+            type: 'mutable-list',
             required: true
           },
           {
@@ -5454,11 +5502,6 @@ D.import_models({
 
           by_value = by_value.map(JSON.stringify)       // for matching nested structures
           by_key = by_key.slice()                       // keeps segment.value happy
-
-          if(Array.isArray(data))
-            data = data.slice()                         // prevent mutation // TODO: remove this after list upgrades
-          else
-            data = D.clone(data)                        // OPT: this is entirely silly
 
           if(by_value.length)
             for(var key in data) 
@@ -5554,7 +5597,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'A list to rekey',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -5613,7 +5656,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to reverse',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -5682,7 +5725,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'The list to sort',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -5863,7 +5906,7 @@ D.import_models({
           {
             key: 'data',
             desc: 'List to extract from',
-            type: 'list',
+            type: 'mutable-list',
             required: true,
           },
           {
@@ -7145,6 +7188,20 @@ D.import_models({
           return value.toLowerCase()
         },
       },
+
+      "uri-decode": {
+	  desc: "Decode a string containing URI escape sequences to one without them",
+	  params: [
+	      { 
+		  key: 'value', 
+		  desc: 'A URI encoded string', 
+		  type: 'string'
+	      }
+	  ],
+	  fun: function (value) {
+	      return decodeURIComponent(value)
+	  }
+      },
       
       transform: {
         desc: "Convert a string to something new",
@@ -7422,6 +7479,15 @@ D.import_type('maybe-list', function(value) {
     return D.Types['list'](value)
 })
 
+D.import_type('mutable-array', function(value) { // ugh...
+  return D.shallow_copy(D.to_array(value))
+})
+
+D.import_type('mutable-list', function(value) {
+  if(value && typeof value === 'object') 
+    return D.shallow_copy(value.type == 'Block' ? [value] : value)
+  return D.shallow_copy(D.to_array(value))
+})
 D.import_type('number', function(value) {
   if(typeof value == 'number') value = value
   else if(typeof value == 'string') value = +value
@@ -8104,7 +8170,8 @@ D.import_pathfinder('position', {
       var this_key
         , excess = abs_first_position - vkeys.length
 
-      for(var i=0; i < excess; i++) {        
+      for(var i=0; i < excess; i++) {
+        
         if(!Array.isArray(value)) { // object
           // this_key = Math.random() // herp derp merp berp
           this_key = i + 1000000
@@ -8150,13 +8217,20 @@ D.import_pathfinder('position', {
     var vkeys = Object.keys(value)
       , position = +key.slice(1)
       , index = (position < 0) ? (vkeys.length + position) : position - 1
+      , weird = false
 
     if(value[ vkeys[ index ] ]) {
       value[ vkeys[ index ] ] = new_val
       return
     }
     
+    if(typeof value == 'object')
+      if(D.is_empty(value))
+        weird=value,value=[]
+    
+    
     var selected = this.create(value, key)[0]
+    
     // at this point we've created all the dummy values, so we just need to figure out where 'selected' is...
     for(var k in value) {
       if(value[k] == selected) {
@@ -8164,6 +8238,9 @@ D.import_pathfinder('position', {
         continue
       }
     }
+    
+    if(weird)
+      D.extend(weird, value)                        // TODO: come up with a better way to merge {} and []
   }
 })
 
@@ -8210,7 +8287,7 @@ D.import_pathfinder('key', {
     if(value.hasOwnProperty(key) && (typeof value[key] == 'object') )
       return [value[key]]
       
-    value[key] = {}
+    value[key] = {}   // THINK: this line creates a swack of undefineds...
     return [value[key]]
   },
   set: function(value, key, new_val, parent) {
@@ -8224,6 +8301,10 @@ D.import_pathfinder('key', {
     // }
 
     // TODO: array + numeric key -> sparse array. fill in the blanks with "" (all Daimio lists are dense)
+
+    // if(!value.length && Array.isArray(value))
+    //   value = // oh crap we can't convert [] to {} w/o hosing the pointer
+    
     value[key] = new_val
   }
 })
@@ -8257,19 +8338,20 @@ D.import_port_flavour('dom-on-change', {
     D.track_event('change', this.settings.thing, function(value) {self.enter(value)})
   }
 })
-D.import_port_flavour('dom-on-keypress', {
-  dir: 'in',
-  outside_add: function() {
-    // THINK: this requires binding to a particular DOM element -- is there a way to default to 'document'?
-    var self = this
-    D.track_event('keypress', this.settings.thing, function(value) {self.enter(value)})
-  }
-})
 D.import_port_flavour('dom-on-click', {
   dir: 'in',
   outside_add: function() {
     var self = this
     D.track_event('click', this.settings.thing, function(value) {self.enter(value)})
+  }
+})
+D.import_port_flavour('dom-on-keypress', {
+  dir: 'in',
+  outside_add: function() {
+    // THINK: this requires binding to a particular DOM element -- is there a way to default to 'document'?
+    // TODO: fix this in FFX
+    var self = this
+    D.track_event('keypress', this.settings.thing, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-mouseout', {
@@ -8504,6 +8586,16 @@ D.import_port_flavour('socket-remove-user', {
     
   }
 })
+D.import_port_flavour('sse-receive', {
+    dir: 'in',
+    outside_add: function () {
+	var channel = new EventSource(this.settings.thing)
+	var self = this;
+	channel.onmessage = function (e) { 
+	    self.enter(e.data)
+	}
+    }
+})
 D.import_port_flavour('svg-add-line', {
   dir: 'out',
   outside_exit: function(ship) {
@@ -8628,4 +8720,12 @@ D.import_port_flavour('to-js', {
     
     fun(ship)
   }
+})
+// Seems like a better name for this flavour might be `http-get`, but I'll keep it `xhr-send` in
+// deference to the current naming convention of the ajax sending functions.
+D.import_port_flavour('xhr-send', {
+    dir: 'out',
+    outside_exit: function (ship) {
+	xhr_get(ship, D.noop)
+    }
 })
