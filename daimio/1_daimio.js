@@ -736,6 +736,23 @@ D.port_standard_enter = function(ship, process) {
   this.space.dock(ship, this.station) // THINK: always async...?
 }
 
+D.port_standard_sync = function(ship, callback) {
+  var out  = this.outs[0]
+    , pair = this.pair
+
+  D.setImmediate(function() {
+    if(!pair)                                               // station port
+      return out ? out.sync(ship, callback) : ''    
+  
+    if(!pair.space)                                         // outside port
+      return pair.outside_exit(ship, callback)
+    
+    return pair.sync(ship, callback)                        // space port
+  })
+  
+  return NaN
+}
+
 
 D.import_port_flavour = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
@@ -763,6 +780,9 @@ D.import_port_flavour = function(flavour, pflav) {
 
   if(typeof pflav.enter != 'function')
     pflav.enter = D.port_standard_enter
+
+  if(typeof pflav.sync != 'function' && pflav.dir == 'down')
+    pflav.sync = D.port_standard_sync
 
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.set_error("That port flavour's properties are invalid")
@@ -2888,8 +2908,8 @@ D.make_spaceseeds = function(seedlikes) {
 
     newseed.routes =
       routes.map(function(route) {
-        var one = port_key_to_index[route[0]]
-          , two = port_key_to_index[route[1]]
+        var one = port_key_to_index[route[0].replace(/\*$/, '')]
+          , two = port_key_to_index[route[1].replace(/\*$/, '')]
 
         if(!one)
           D.set_error('Invalid route: ' + route[0])

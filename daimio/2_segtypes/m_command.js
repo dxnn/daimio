@@ -92,6 +92,7 @@
     }                                                               // so false flows through instead of previous value
     
     var params = prep_params(segment.paramlist, inputs)
+    if(segment.port) params.push(segment.port)
     params.push(prior_starter)
     params.push(process)
     return segment.method.fun.apply(
@@ -233,6 +234,10 @@
       //         paramlist = false, break
       //     }
       // }
+    
+    
+      if(segment.method.port)                                       // does this command have a port? take action!
+        segment.port = D.filter_ports(process.space.ports, process.station_id, segment.method.port)
     
       segment.paramlist = build_paramlist(segment, segment.method, inputs)
       
