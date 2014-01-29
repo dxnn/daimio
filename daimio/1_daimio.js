@@ -230,6 +230,12 @@ D.shallow_copy = function(value) {
   return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
 }
 
+D.get_unique_symbol = function() {
+  return D.Etc.unique_counter = ++D.Etc.unique_counter || 0
+}
+
+
+
 D.clone = function(value) {
   if(value && value.toJSON)                    // THINK: for blocks?
     return D.deep_copy(value)
@@ -1086,6 +1092,8 @@ D.peek = function(base, path) {
 
 D.poke = function(base, path, value) {
   // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
+
+  // base = D.shallow_copy(base)
 
   path = D.to_array(path)
 
@@ -2739,8 +2747,7 @@ D.seedlikes_from_string = function(stringlike, templates) {
     continuation = ''
     action = ''
 
-    if(/->/.test(line)) {
-      // THINK: should this use continuations also?
+    if(/->/.test(line)) {                          // THINK: should this use continuations also?
 
       var route = []
       line.split('->').forEach(function(part, index) {
@@ -2753,9 +2760,9 @@ D.seedlikes_from_string = function(stringlike, templates) {
         }
 
         if(part[0] == '@') {
-          route.push(part.slice(1)) // direction doesn't matter for ports
+          route.push(part.slice(1))                // direction doesn't matter for ports
         }
-        else if(part.indexOf('.') >= 0) { // subspace, or station?
+        else if(part.indexOf('.') >= 0) {          // subspace, or station?
           var split = part.split('.', 2)
             , name = split[0]
             , port = split[1]
@@ -2766,16 +2773,15 @@ D.seedlikes_from_string = function(stringlike, templates) {
                                                 ? this_seed.stations[name].extraports.concat([port])
                                                 : [port]
           } else {
-            this_seed.subspaces[name] = name // TODO: foo.in, foo-1.in, foo-2.in, etc
+            this_seed.subspaces[name] = name       // TODO: foo.in, foo-1.in, foo-2.in, etc
           }
-          route.push(part) // THINK: for a station port this is always 'out' (or down)
+          route.push(part)                         // THINK: for a station port this is always 'out' (or down)
         }
-        else { // station dir matters
+        else {                                     // station dir matters
           if(!route.length)
             route.push(part + '.out')
           else {
-            route.push(part + '.in')
-            // TODO: ensure pushed route isn't null,null
+            route.push(part + '.in')               // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
               D.set_error('Port not found in line: ' + line)
               route = []
@@ -2854,7 +2860,11 @@ D.make_spaceseeds = function(seedlikes) {
       if(stations[key].extraports) {
         var extras = stations[key].extraports
         for(var i=0, l=extras.length; i < l; i++) {
-          port_key_to_index[key + '.' + extras[i]] = newseed.ports.push({flavour: 'out', name: extras[i], station: index})
+          var extra    = extras[i]
+          var downport = extra.slice(-1) == '*'
+          var exname   = downport ? extra.slice(0, -1) : extra
+          var exflav   = downport ? 'down' : 'out'
+          port_key_to_index[key + '.' + exname] = newseed.ports.push({flavour: exflav, name: exname, station: index})
         }
       }
     }
