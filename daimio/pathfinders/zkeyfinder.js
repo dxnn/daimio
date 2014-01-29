@@ -29,6 +29,10 @@ D.import_pathfinder('key', {
     // }
 
     // TODO: array + numeric key -> sparse array. fill in the blanks with "" (all Daimio lists are dense)
+
+    // if(!value.length && Array.isArray(value))
+    //   value = // oh crap we can't convert [] to {} w/o hosing the pointer
+    
     value[key] = new_val
   }
 })

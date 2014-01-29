@@ -34,8 +34,7 @@
   function enqueue(iterations) {
     queue.push(iterations)
     if(!working)
-      dequeue()
-  }
+      dequeue() }
   
   function actualRunWorker(iterations) {
     worker.onmessage = function(event) {
@@ -51,25 +50,21 @@
   function dequeue() {
     if(queue.length) {
       actualRunWorker(queue.shift())
-      working = true
-    }
-  }
+      working = true } }
       
   function runWorker(iterations) {
-    enqueue(iterations)
-  }
+    enqueue(iterations) }
   
   
   function runNormal(iterations) {
     var start = new Date().getTime()
     for(var i = iterations; i; i--)
       collatz(i)
-    display('normal', iterations, start)
-  }
+    display('normal', iterations, start) }
   
   
   function display(el, iter, time) {
-    document.getElementById(el + '-' + iter).textContent = new Date().getTime() - time}
+    document.getElementById(el + '-' + iter).textContent = new Date().getTime() - time }
 
   document.addEventListener('DOMContentLoaded', function() {
     runNormal(1000)
