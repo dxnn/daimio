@@ -1,0 +1,96 @@
+<!doctype html> 
+<html> 
+<head> 
+  <meta charset="utf-8">
+  <title>Station Break</title>
+    <script type="text/javascript" src="../get.php?file=daimio"></script>
+  <!--
+    <script type="text/javascript" src="../daimio_composite.js"></script>
+  -->
+</head>
+
+<body>
+
+  <div>
+    <p>Count: <button type="submit" id="inc-button">0</button></p>
+  </div>
+  
+  <script type="text/daimio" class="spaceseeds">
+
+    outer
+      $count 1234
+      
+      @inc-button  dom-on-click
+      @button-text dom-set-text inc-button
+      @local-write
+      
+      counter {$count | add 1 | >$count}
+      
+      @inc-button -> counter -> @button-text
+                     counter -> {* (:key :count :value __)} -> @local-write
+
+      reader {external read-local-storage key :count}
+
+      @init from-js
+      @init -> reader -> {__ | >$count} -> @button-text 
+
+      @local-read 
+      reader.local-read* -> @local-read
+      
+
+      // - connect using <-> to signify bidirectional route
+      // - pass the wrapped reader.*local-read port in to {external read-local-storage}
+      // - create reader.*local-read port from at Dailang parsetime
+      //   - so... wait. we can create this port during spaceparse, because we see it there.
+      //     [for now the * means down] 
+
+  </script>
+   
+  
+  <script type="text/javascript">
+    D.import_models({
+      external: {
+        desc: 'Commands that reach outside our universe',
+        methods: {
+          "read-local-storage": {
+            desc: 'Read a value from local storage',
+            port: 'local-read',
+            params: [
+              {
+                key: 'key',
+                desc: 'A local storage string key',
+                type: 'key',
+                required: true
+              },
+            ],
+            fun: function(key, port, prior_starter) {
+              port.sync(key, prior_starter)
+              return NaN
+            } 
+          } 
+        } 
+      } 
+    })
+  
+    D.import_port_flavour('local-read', {
+      dir: 'down',
+      outside_exit: function(ship, callback) {
+        callback(JSON.parse(localStorage.getItem(ship)) || [])
+      }
+    })
+
+    D.import_port_flavour('local-write', {
+      dir: 'out',
+      outside_exit: function(ship) {
+        localStorage.setItem(ship.key, JSON.stringify(ship.value))
+      }
+    })
+  
+    document.addEventListener('DOMContentLoaded', function() {
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
+      D.send_value_to_js_port(OuterSpace, 'init', 1)
+    })
+  </script>
+  
+</body>
+</html>
