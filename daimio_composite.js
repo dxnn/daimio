@@ -230,6 +230,12 @@ D.shallow_copy = function(value) {
   return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
 }
 
+D.get_unique_symbol = function() {
+  return D.Etc.unique_counter = ++D.Etc.unique_counter || 0
+}
+
+
+
 D.clone = function(value) {
   if(value && value.toJSON)                    // THINK: for blocks?
     return D.deep_copy(value)
@@ -730,6 +736,23 @@ D.port_standard_enter = function(ship, process) {
   this.space.dock(ship, this.station) // THINK: always async...?
 }
 
+D.port_standard_sync = function(ship, callback) {
+  var out  = this.outs[0]
+    , pair = this.pair
+
+  D.setImmediate(function() {
+    if(!pair)                                               // station port
+      return out ? out.sync(ship, callback) : ''    
+  
+    if(!pair.space)                                         // outside port
+      return pair.outside_exit(ship, callback)
+    
+    return pair.sync(ship, callback)                        // space port
+  })
+  
+  return NaN
+}
+
 
 D.import_port_flavour = function(flavour, pflav) {
   if(D.PortFlavours[flavour])
@@ -757,6 +780,9 @@ D.import_port_flavour = function(flavour, pflav) {
 
   if(typeof pflav.enter != 'function')
     pflav.enter = D.port_standard_enter
+
+  if(typeof pflav.sync != 'function' && pflav.dir == 'down')
+    pflav.sync = D.port_standard_sync
 
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.set_error("That port flavour's properties are invalid")
@@ -1087,7 +1113,7 @@ D.peek = function(base, path) {
 D.poke = function(base, path, value) {
   // NOTE: this mutates *in place* and returns the mutated portion (mostly to make our 'list' pathfinder simpler)
 
-  base = D.shallow_copy(base)
+  // base = D.shallow_copy(base)
 
   path = D.to_array(path)
 
@@ -2741,8 +2767,7 @@ D.seedlikes_from_string = function(stringlike, templates) {
     continuation = ''
     action = ''
 
-    if(/->/.test(line)) {
-      // THINK: should this use continuations also?
+    if(/->/.test(line)) {                          // THINK: should this use continuations also?
 
       var route = []
       line.split('->').forEach(function(part, index) {
@@ -2755,9 +2780,9 @@ D.seedlikes_from_string = function(stringlike, templates) {
         }
 
         if(part[0] == '@') {
-          route.push(part.slice(1)) // direction doesn't matter for ports
+          route.push(part.slice(1))                // direction doesn't matter for ports
         }
-        else if(part.indexOf('.') >= 0) { // subspace, or station?
+        else if(part.indexOf('.') >= 0) {          // subspace, or station?
           var split = part.split('.', 2)
             , name = split[0]
             , port = split[1]
@@ -2768,16 +2793,15 @@ D.seedlikes_from_string = function(stringlike, templates) {
                                                 ? this_seed.stations[name].extraports.concat([port])
                                                 : [port]
           } else {
-            this_seed.subspaces[name] = name // TODO: foo.in, foo-1.in, foo-2.in, etc
+            this_seed.subspaces[name] = name       // TODO: foo.in, foo-1.in, foo-2.in, etc
           }
-          route.push(part) // THINK: for a station port this is always 'out' (or down)
+          route.push(part)                         // THINK: for a station port this is always 'out' (or down)
         }
-        else { // station dir matters
+        else {                                     // station dir matters
           if(!route.length)
             route.push(part + '.out')
           else {
-            route.push(part + '.in')
-            // TODO: ensure pushed route isn't null,null
+            route.push(part + '.in')               // TODO: ensure pushed route isn't null,null
             if(!route[0] || !route[1]) {
               D.set_error('Port not found in line: ' + line)
               route = []
@@ -2856,7 +2880,11 @@ D.make_spaceseeds = function(seedlikes) {
       if(stations[key].extraports) {
         var extras = stations[key].extraports
         for(var i=0, l=extras.length; i < l; i++) {
-          port_key_to_index[key + '.' + extras[i]] = newseed.ports.push({flavour: 'out', name: extras[i], station: index})
+          var extra    = extras[i]
+          var downport = extra.slice(-1) == '*'
+          var exname   = downport ? extra.slice(0, -1) : extra
+          var exflav   = downport ? 'down' : 'out'
+          port_key_to_index[key + '.' + exname] = newseed.ports.push({flavour: exflav, name: exname, station: index})
         }
       }
     }
@@ -2880,8 +2908,8 @@ D.make_spaceseeds = function(seedlikes) {
 
     newseed.routes =
       routes.map(function(route) {
-        var one = port_key_to_index[route[0]]
-          , two = port_key_to_index[route[1]]
+        var one = port_key_to_index[route[0].replace(/\*$/, '')]
+          , two = port_key_to_index[route[1].replace(/\*$/, '')]
 
         if(!one)
           D.set_error('Invalid route: ' + route[0])
@@ -3681,6 +3709,7 @@ D.SegmentTypes.PipeVar = {
     }                                                               // so false flows through instead of previous value
     
     var params = prep_params(segment.paramlist, inputs)
+    if(segment.port) params.push(segment.port)
     params.push(prior_starter)
     params.push(process)
     return segment.method.fun.apply(
@@ -3822,6 +3851,10 @@ D.SegmentTypes.PipeVar = {
       //         paramlist = false, break
       //     }
       // }
+    
+    
+      if(segment.method.port)                                       // does this command have a port? take action!
+        segment.port = D.filter_ports(process.space.ports, process.station_id, segment.method.port)
     
       segment.paramlist = build_paramlist(segment, segment.method, inputs)
       
@@ -5469,7 +5502,7 @@ D.import_models({
         fun: function(data, value, path) {
           
           // THINK: maybe make this 'walk' instead, which with no 'filter' param would just return a list of everything it finds...
-          return D.poke(data, path, value) // mutates in place and returns the mutated portions, not data itself
+          return D.poke(D.clone(data), path, value) // mutates in place and returns the mutated portions, not data itself
           // return data
          
           // return D.poke(path, data, function(x) {return value})
@@ -8490,16 +8523,19 @@ D.import_port_flavour('up', {
 
 D.import_port_flavour('down', {
   dir: 'down',
-  exit: function(ship, process, callback) {
+  exit: function(ship, process) {
     // go down, then return back up...
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
     
     var self = this
     D.setImmediate(function() { 
-      // THINK: ideally there's only ONE route from a downport. can we formalize that?
       // self.outs.forEach(function(port) { 
       //   port.enter(ship) 
       // }) 
+      
+      // THINK: whether we can pass multiple ships or have to queue them depends on our routes: if they're all bidirectional we can chain the callbacks, otherwise we have to send them one at a time.
+
+      // THINK: ideally there's only ONE route from a downport. can we formalize that?
       port = self.outs[0]
       if(port) {
         port.enter(ship, process, callback) // wat
