@@ -37,6 +37,15 @@
       @local-read 
       reader.local-read* -> @local-read
       
+      
+      
+      // ok. so. simple downports are done!
+      // we need unsimple downports to handle nasty cases.
+      // but first, PUCKs! once we have those we can party like it's 1999.
+      // then an editor. then come back and fix all the crickeys.
+      
+      
+      
 
       // - connect using <-> to signify bidirectional route
       // - pass the wrapped reader.*local-read port in to {external read-local-storage}
@@ -59,7 +68,7 @@
               {
                 key: 'key',
                 desc: 'A local storage string key',
-                type: 'key',
+                type: 'string',
                 required: true
               },
             ],
