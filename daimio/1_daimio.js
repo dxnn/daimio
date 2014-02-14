@@ -503,7 +503,7 @@ D.filter_ports = function(ports, station, name) {
   }
 }
 
-D.run = function(daimio, ultimate_callback, space) {
+D.run = function(daimio, space, scope, ultimate_callback) {
   // This is *always* async, so provide a callback.
   if(!daimio) return ""
 
@@ -533,7 +533,7 @@ D.run = function(daimio, ultimate_callback, space) {
       ultimate_callback(result)
   }
 
-  var result = space.execute(D.Parser.string_to_block_segment(daimio), null, prior_starter)
+  var result = space.execute(D.Parser.string_to_block_segment(daimio), scope, prior_starter)
   if(result === result)
     prior_starter(result)
 
@@ -629,60 +629,105 @@ D.get_decorators = function(by_block, by_type) {
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
 
 
-D.track_event = function(type, target, callback) {
-  if(!D.Etc.events)
-    D.Etc.events = {}
+D.track_event = function(type, selector, parent, callback, options) {
+  // options contains:
+  // 'scrub'    -- a callback to be used instead of the standard value detector
+  // 'nochain'  -- a boolean flag that prevents walking the parent chain [YAGNI]
+  // 'passthru' -- a boolean flag which causes events to keep their default behavior
+
+/*
+
+  changes:
+  - allow 'document' itself as a valid selector
+  - allow a 'parent' element (and set the listener on the parent instead of on document)
+  - a passthru param that pushes the event back in to the stream and marks it so it isn't caught again
+  - a 'scrub' callback to be used instead of the standard value detector
+  
+  
+  TODO:
+  - test value selector and scrubber
+  - test parent setting
+  - test passthru
+
+*/
+
+  options = options || {}
+  D.Etc.events = D.Etc.events || {}
 
   if(!D.Etc.events[type]) {
     D.Etc.events[type] = {by_class: {}, by_id: {}}
-
-    document.addEventListener(type, function(event) {
+    
+    parent = parent ? document.getElementById(parent) : document
+    
+    parent.addEventListener(type, function(event) {
       var target = event.target
-        , listener
-        , parent
-        , cname
+      var particulars
+      var cname
+
+      if(event.passthru) return true
 
       // walk the target.parentNode chain up to null, checking each item along the way until you find one
       // OPT: make walking the parent chain optional (use a port param to ask for it)
-      while(!listener && target) {
-        listener = tracked.by_id[target.id]
-        if(listener) break
+      while(!particulars && target) {
+        particulars = tracked.by_id[target.id]
+        if(particulars) break
 
         cname = target.className
         if(cname) {
           cname = cname.baseVal || cname
           cname.split(/\s+/).forEach(function(name) {
-            listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
+            particulars = particulars || tracked.by_class[name] // TODO: take all matches instead of just first
           })
         }
 
-        if(listener) break
+        if(particulars) break
         target = target.parentNode
       }
 
-      if(listener) {
-        event.stopPropagation() // THINK: not sure these are always desired...
-        event.preventDefault()  //        maybe use a port param to allow passthru
+      if(particulars) {
+        if(!particulars.passthru) {
+          event.stopPropagation()
+          event.preventDefault() 
+          event.passthru = true
+        }
         var value =
-          ( target.attributes['data-value']
-            && target.attributes['data-value'].value)       // THINK: no empty strings allowed...
-          || ( target.value != undefined && target.value )  // TODO:  catch ""
-          || ( target.attributes.value && target.attributes.value.value )
+             particulars.scrub 
+           ? particulars.scrub(event)
+           : target.attributes['data-value']
+           ? target.attributes['data-value'].value
+           : target.value != undefined 
+           ? target.value
+           : target.attributes.value 
+          && target.attributes.value.value
           || target.text
           || D.scrub_var(event)
           || true
-        listener(value, event)
+        particulars.callback(value, event)
       }
     }, false)
   }
 
   var tracked = D.Etc.events[type]
+  var particulars = {callback: callback, scrub: options.scrub, passthru: options.passthru}
 
-  if(target[0] == '.') {
-    tracked.by_class[target.slice(1)] = callback
+  if(selector[0] == '.') {
+    tracked.by_class[selector.slice(1)] = particulars
   } else {
-    tracked.by_id[target] = callback
+    tracked.by_id[selector] = particulars
   }
+}
+
+D.untrack_event = function(type, target, parent, callback) {
+  if(!D.Etc.events)        return false
+  if(!D.Etc.events[type])  return false
+  
+  var tracked = D.Etc.events[type]
+  var obj = target[0] == '.' ? tracked.by_class : tracked.by_id
+  
+  if(!obj || !obj[target]) return false
+  if(callback && obj[target] != callback) return false
+  
+  delete obj[target]
 }
 
 D.send_value_to_js_port = function(space, port_name, value, port_flavour) {
@@ -754,8 +799,8 @@ D.port_standard_sync = function(ship, callback) {
 }
 
 
-D.import_port_flavour = function(flavour, pflav) {
-  if(D.PortFlavours[flavour])
+D.import_port_flavour = function(flavourname, pflav) {
+  if(D.PortFlavours[flavourname])
     return D.set_error('That port flavour has already been im-port-ed')
 
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
@@ -763,8 +808,11 @@ D.import_port_flavour = function(flavour, pflav) {
   if(!pflav)
     return D.set_error('That flavour is not desirable')
 
+  if(!pflav.settings)                             // settings are params for port construction
+    pflav.settings = []                           // THINK: error if no settings?
+
   if(typeof pflav.add != 'function')
-    pflav.add = D.noop // noop, so we can call w/o checking
+    pflav.add = D.noop                            // noop, so we can call w/o checking
 
   if(typeof pflav.exit != 'function')
     pflav.exit = D.port_standard_exit
@@ -787,7 +835,7 @@ D.import_port_flavour = function(flavour, pflav) {
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.set_error("That port flavour's properties are invalid")
 
-  D.PortFlavours[flavour] = pflav
+  D.PortFlavours[flavourname] = pflav
   return true
 }
 
