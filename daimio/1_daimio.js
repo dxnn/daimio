@@ -323,7 +323,16 @@ D.recursive_extend = function(base, value) {
 
 D.scrub_var = function(value) {
   // copy and scrub a variable from the outside world
+  
   try {
+    // FIREFOX DOESN'T THROW ON DOM OBJECTS
+    // THINK: this is getting really sloppy. how can we simplify?
+    if(value instanceof Event || value instanceof Node || value instanceof HTMLElement) {
+      value = D.mean_defunctionize(value);
+      if(value === null) value = false;
+      return value;
+    }
+    
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).  // DATA
   } catch (e) {
     // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
@@ -683,27 +692,31 @@ D.track_event = function(type, selector, parent, callback, options) {
         if(particulars) break
         target = target.parentNode
       }
+      
+      if(!particulars) return true
 
-      if(particulars) {
-        if(!particulars.passthru) {
-          event.stopPropagation()
-          event.preventDefault() 
-          event.passthru = true
-        }
-        var value =
-             particulars.scrub 
-           ? particulars.scrub(event)
-           : target.attributes['data-value']
-           ? target.attributes['data-value'].value
-           : target.value != undefined 
-           ? target.value
-           : target.attributes.value 
-          && target.attributes.value.value
-          || target.text
-          || D.scrub_var(event)
-          || true
-        particulars.callback(value, event)
+      if(particulars.passthru) {
+        event.passthru = true
+      } else {
+        event.stopPropagation()
+        event.preventDefault() 
       }
+
+      var value =
+          particulars.scrub 
+        ? particulars.scrub(event)
+        : target.attributes['data-value']
+        ? target.attributes['data-value'].value
+        : target.value != undefined 
+        ? target.value
+        : target.attributes.value 
+       && target.attributes.value.value
+       || target.text
+       || D.scrub_var(event)
+       || true
+        
+      particulars.callback(value, event)
+      
     }, false)
   }
 
