@@ -20,6 +20,18 @@ D.import_port_flavour('up', {
 
 D.import_port_flavour('down', {
   dir: 'down',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   exit: function(ship, process) {
     // go down, then return back up...
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...

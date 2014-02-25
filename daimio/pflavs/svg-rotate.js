@@ -1,5 +1,17 @@
 D.import_port_flavour('svg-rotate', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)
     
