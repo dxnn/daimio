@@ -108,7 +108,7 @@ D.to_array = function(value) { // DATA
   if(value === false)           return []                     // hmmm...
   if(!D.is_nice(value))         return []                     // double hmmm.
                                 return [value]
-  
+
   // if(D.is_block(value))         return new D.Data([])
   // if(Array.isArray(value))      return new D.Data(value)
   // if(typeof value == 'object')  return new D.Data(D.obj_to_array(value))
@@ -119,7 +119,7 @@ D.to_array = function(value) { // DATA
 
 D.obj_to_array = function(obj) { // DATA
   var arr = []
-  for(key in obj)
+  for(var key in obj)
     arr.push(obj[key])
   return arr
 }
@@ -187,9 +187,9 @@ D.is_segment = function(value) {
 
 D.is_block = function(value) {
   if(!D.is_segment(value))                      // THINK: this prevents block hijacking (by making an object shaped
-    return false                                // like a block), but requires us to e.g. convert all incoming 
+    return false                                // like a block), but requires us to e.g. convert all incoming
                                                 // JSONified block segments to real segments.
-  return value && value.type == 'Block' 
+  return value && value.type == 'Block'
       && value.value && value.value.id          // THINK: why do we need this?
 }
 
@@ -210,7 +210,7 @@ D.is_regex = function(str) {
 }
 
 D.regex_escape = function(str) {
-  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
+  var specials = /[.*+?|()\[\]{}\\$^]/g         // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
 
@@ -227,7 +227,7 @@ D.string_to_regex = function(string, global) {
 D.shallow_copy = function(value) {
   if(Array.isArray(value))
     return value.slice()
-  return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
+  return JSON.parse(JSON.stringify(value))      // NOTE: only for scrubbed values!
 }
 
 D.get_unique_symbol = function() {
@@ -237,7 +237,7 @@ D.get_unique_symbol = function() {
 
 
 D.clone = function(value) {
-  if(value && value.toJSON)                    // THINK: for blocks?
+  if(value && value.toJSON)                     // THINK: for blocks?
     return D.deep_copy(value)
 
   try {
@@ -249,8 +249,8 @@ D.clone = function(value) {
 
 D.deep_copy = function(value) {
   // deep copy an internal variable (primitives and blocks only)
-  if(!value || typeof value != 'object')  return value // number, string, or boolean
-  if(D.is_block(value))                   return value // blocks are immutable, so pass-by-ref is ok.
+  if(!value || typeof value != 'object')  return value  // number, string, or boolean
+  if(D.is_block(value))                   return value  // blocks are immutable, so pass-by-ref is ok.
                                           return D.recursive_leaves_copy(value, D.deep_copy)
 }
 
@@ -323,7 +323,7 @@ D.recursive_extend = function(base, value) {
 
 D.scrub_var = function(value) {
   // copy and scrub a variable from the outside world
-  
+
   try {
     // FIREFOX DOESN'T THROW ON DOM OBJECTS
     // THINK: this is getting really sloppy. how can we simplify?
@@ -332,7 +332,7 @@ D.scrub_var = function(value) {
       if(value === null) value = false;
       return value;
     }
-    
+
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).  // DATA
   } catch (e) {
     // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
@@ -368,7 +368,7 @@ D.mean_defunctionize = function(values, seen) {
 
   var new_values = (Array.isArray(values) ? [] : {});
 
-  for(var key in values) {                                // list or hash: lish
+  for(var key in values) {                                // list or hash: lish. lash. hist? hast? grumble.
     var new_value, value = values[key];
     new_value = D.mean_defunctionize(value, seen);
     if(new_value === null) continue;
@@ -459,7 +459,7 @@ D.list_set = function(total, value, key) { // DATA
   if(typeof total != 'object') return {}
 
   if(!key) key = Object.keys(total).length
-  
+
   value = D.make_nice(value)
 
   total[key] = value
@@ -497,7 +497,7 @@ D.mungeLR = function(items, fun) {
 D.nicify = function(list, state) {
   var result = []
   for(var i=0, l=list.length; i < l; i++) {
-    var item = state[list[i]]    
+    var item = state[list[i]]
     result.push( D.is_nice(item) ? item : null )                    // THINK: why null?
   }
   return result
@@ -507,7 +507,7 @@ D.filter_ports = function(ports, station, name) {
   for(var i=0, l=ports.length; i < l; i++) {
     var port = ports[i]
     if( port.station === station                                    // triple so undefined !== 0
-     && port.name    === name ) 
+     && port.name    === name )
         return port
   }
 }
@@ -651,8 +651,8 @@ D.track_event = function(type, selector, parent, callback, options) {
   - allow a 'parent' element (and set the listener on the parent instead of on document)
   - a passthru param that pushes the event back in to the stream and marks it so it isn't caught again
   - a 'scrub' callback to be used instead of the standard value detector
-  
-  
+
+
   TODO:
   - test value selector and scrubber
   - test parent setting
@@ -665,9 +665,9 @@ D.track_event = function(type, selector, parent, callback, options) {
 
   if(!D.Etc.events[type]) {
     D.Etc.events[type] = {by_class: {}, by_id: {}}
-    
+
     parent = parent ? document.getElementById(parent) : document
-    
+
     parent.addEventListener(type, function(event) {
       var target = event.target
       var particulars
@@ -683,7 +683,7 @@ D.track_event = function(type, selector, parent, callback, options) {
 
         cname = target.className
         if(cname) {
-          cname = cname.baseVal || cname
+          cname = cname.hasOwnProperty('baseVal') ? cname.baseVal : cname
           cname.split(/\s+/).forEach(function(name) {
             particulars = particulars || tracked.by_class[name] // TODO: take all matches instead of just first
           })
@@ -692,31 +692,23 @@ D.track_event = function(type, selector, parent, callback, options) {
         if(particulars) break
         target = target.parentNode
       }
-      
+
       if(!particulars) return true
 
       if(particulars.passthru) {
         event.passthru = true
       } else {
         event.stopPropagation()
-        event.preventDefault() 
+        event.preventDefault()
       }
 
       var value =
-          particulars.scrub 
-        ? particulars.scrub(event)
-        : target.attributes['data-value']
-        ? target.attributes['data-value'].value
-        : target.value != undefined 
-        ? target.value
-        : target.attributes.value 
-       && target.attributes.value.value
-       || target.text
-       || D.scrub_var(event)
-       || true
-        
+          particulars.scrub
+        ? particulars.scrub(event, target)
+        : D.default_scrub(event, target)
+
       particulars.callback(value, event)
-      
+
     }, false)
   }
 
@@ -733,25 +725,40 @@ D.track_event = function(type, selector, parent, callback, options) {
 D.untrack_event = function(type, target, parent, callback) {
   if(!D.Etc.events)        return false
   if(!D.Etc.events[type])  return false
-  
+
   var tracked = D.Etc.events[type]
   var obj = target[0] == '.' ? tracked.by_class : tracked.by_id
-  
+
   if(!obj || !obj[target]) return false
   if(callback && obj[target] != callback) return false
-  
+
   delete obj[target]
+}
+
+D.default_scrub = function(event, target) {
+  return target.attributes['data-value']                          // it's easy to read if you think of
+       ? target.attributes['data-value'].value                    // this like a quasi-cond statement.
+
+       : target.value != undefined
+       ? target.value
+
+       : target.attributes.value
+      && target.attributes.value.value
+
+      || target.text
+      || D.scrub_var(event)
+      || true
 }
 
 D.send_value_to_js_port = function(space, port_name, value, port_flavour) {
   port_flavour = port_flavour || 'from-js'
-  
+
   for ( var i=0, l=space.ports.length; i < l; i++)
     if( space.ports[i].name == port_name
      && space.ports[i].flavour == port_flavour )
       { space.ports[i].pair.enter(value)
         return true }
-  
+
   return false
 }
 
@@ -764,11 +771,11 @@ D.port_standard_exit = function(ship) {
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
     // D.setImmediate(this.outs, ship) // OPT
-    D.setImmediate(function() { 
+    D.setImmediate(function() {
       for(var i=0, l=outs.length; i < l; i++) {
         outs[i].enter(ship)
       }
-      // outs.forEach(function(port) { port.enter(ship) }) 
+      // outs.forEach(function(port) { port.enter(ship) })
     })
   else
     this.outside_exit(ship) // ORLY? No delay?
@@ -800,14 +807,14 @@ D.port_standard_sync = function(ship, callback) {
 
   D.setImmediate(function() {
     if(!pair)                                               // station port
-      return out ? out.sync(ship, callback) : ''    
-  
+      return out ? out.sync(ship, callback) : ''
+
     if(!pair.space)                                         // outside port
       return pair.outside_exit(ship, callback)
-    
+
     return pair.sync(ship, callback)                        // space port
   })
-  
+
   return NaN
 }
 
@@ -1287,7 +1294,7 @@ D.Parser.string_to_block_segment = function(string) {
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
 
-  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique? 
+  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique?
                                                                       // what should we do with different
   return segment                                                      // strings that compile to the same block?
 }
@@ -1608,15 +1615,15 @@ D.Parser.split_on_space = function(string) {
 
 // D.Parser.rekey = function(L, segment, R) {
 //   if(!segment) return [L, R]
-// 
+//
 //   var old_key = segment.key
 //   var new_key = L.length
-// 
+//
 //   // TODO: holymuckymuck, is this ever ugly and slow. clean me!
 //   for(var i=0, l=R.length; i < l; i++) {
 //     var future_segment = R[i]
 //     var index
-// 
+//
 //     if(future_segment.inputs) {
 //       while(true) {
 //         index = future_segment.inputs.indexOf(old_key)
@@ -1624,13 +1631,13 @@ D.Parser.split_on_space = function(string) {
 //         future_segment.inputs[index] = new_key
 //       }
 //     }
-// 
+//
 //     if( future_segment.value
 //      && future_segment.value.name
 //      && future_segment.value.name == old_key)
 //         future_segment.value.name = new_key
 //   }
-// 
+//
 //   segment.key = new_key
 //   return [L.concat(segment), R]
 // }
@@ -1717,7 +1724,7 @@ D.Block = function(segments, wiring) {
   var json = JSON.stringify(this)
     , hash = murmurhash(json)
 
-  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere? 
+  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere?
     D.BLOCKS[hash] = this                                     // or... how is block access limited? or... huh.
 
   this.id = hash
@@ -1728,39 +1735,39 @@ D.wash_keys = function(segments, wiring) {
   var temp_wiring = {}
   var new_segments = []
   var reverse_wiring = {}
-  
+
   for(var key in wiring) {
     var wire = wiring[key]
     for(var i=0, l=wire.length; i < l; i++)
-      reverse_wiring[wire[i]] = reverse_wiring[wire[i]] 
-                              ? reverse_wiring[wire[i]].concat(key) 
+      reverse_wiring[wire[i]] = reverse_wiring[wire[i]]
+                              ? reverse_wiring[wire[i]].concat(key)
                               : [key] }
-  
+
   for(var j=0, k=segments.length; j < k; j++) {
     var segment = segments[j]
     var index = new_segments.length
     var my_key = segment.key || j
     var my_wires = reverse_wiring[my_key] || []
     var input_index = -1
-    
+
     if( !my_wires.length                                 // toss anything that isn't linked to the final segment
      && j != k-1                                         // except the final segment itself, obviously
      && segment.type != 'VariableSet'                    // 'Put' segtypes are purely side effects
      && segment.type != 'PortSend'                       // TODO: change these to 'PutSpaceVar' and 'PutPort'
-     &&  ( segment.type != 'Command'                     
+     &&  ( segment.type != 'Command'
         && segment.value.method != 'run'                 // two commands are also side-effect based...
         && segment.value.method != 'sleep' ))            // FIXME: find a nice way to deal with that
            continue
-    
+
     for(var i=0, l=my_wires.length; i < l; i++) {
       if(!temp_wiring[my_wires[i]])
         temp_wiring[my_wires[i]] = []
       while((input_index = wiring[my_wires[i]].indexOf(my_key, input_index+1)) != -1)
         temp_wiring[my_wires[i]][input_index] = index }
-    
+
     if(temp_wiring[my_key])
       new_wiring[index] = temp_wiring[my_key]
-    
+
     // am i missing any keys?
     if(wiring[my_key]) {
       for(var x=0, z=wiring[my_key].length; x < z; x++) {
@@ -1770,31 +1777,31 @@ D.wash_keys = function(segments, wiring) {
           new_wiring[index][x] = wiring[my_key][x]
       }
     }
-    
+
     // put the value.name in the wiring
     // then build an old_key_new_key map
     // and switch this at that point
     // but also if it's in the wiring who cares?
     // oh but we need this for final pipevars
     // because otherwise who's going to speak for them?
-    
+
     //     if( future_segment.value
     //      && future_segment.value.name
     //      && future_segment.value.name == old_key)
     //         future_segment.value.name = new_key
-    
-    
+
+
     // 'run' is used purely for side effects sometimes like {"{2 | >$foo}" | run | $foo}
     // so we can't get rid of it just because it's not linked to the output.
     // also, things that are linked to >@ have the same problem.
     // also, any command that has a downport.
     // sucky sucky suck suck stupid stupid
     // also 'wait'
-    
-    
+
+
     new_segments.push(new D.Segment(segment.type, segment.value, null))
   }
-  
+
   return {segments: new_segments, wiring: new_wiring}
 }
 
@@ -2000,7 +2007,7 @@ D.Port = function(port_template, space) {
 //    |_____/ |     |    |    |     |
 //
 
-D.DataObj = 
+D.DataObj =
 {  _data : []
 ,  get val()     {return this._data}
 ,  set val(to)   {this._data = to}
@@ -2116,11 +2123,11 @@ D.Space.prototype.dock = function(ship, station_id) {
   var block_id = this.seed.stations[station_id - 1]
   var block    = D.BLOCKS[block_id]
   var out_port = D.filter_ports(this.ports, station_id, '_out')
-  
+
   if(!out_port)
     return D.set_error('That out port is unavailable')
-              
-  var prior_starter =                                               // THINK: we're jumping straight to exit here. 
+
+  var prior_starter =                                               // THINK: we're jumping straight to exit here.
         function(value) {out_port.exit(value)}                      // also do it for implicit station output ports...
   var scope = {"__in": ship}                                        // TODO: find something better...
   var value = this.execute(block, scope, prior_starter, station_id)
@@ -2379,10 +2386,10 @@ D.try_optimize = function(block) {
 
   var map = D.Etc.OptimizationMap                      // THINK: a weakmap might work well here
   var block_id = block.id
-  
+
   if(map[block_id])
     return map[block_id]
-  
+
   for(var i=0, l=D.Optimizers.length; i < l; i++)
     block = D.Optimizers[i].fun(block)
 
@@ -2397,8 +2404,8 @@ D.import_optimizer = function(name, priority, fun) {
   if( priority <= 0                                    // priority is between 0 and 1 *exclusive*
    || priority >= 1 )                                  // this means you can always fit something
       priority  = 0.5                                  // at start or end, up to float precision.
-  
-  var opt = { fun: fun                                 // fun takes a block as an argument and 
+
+  var opt = { fun: fun                                 // fun takes a block as an argument and
             , name: name                               // returns a block (same or different)
             , priority: priority }
 
@@ -2452,7 +2459,7 @@ D.Process = function(space, block, scope, prior_starter, station_id) {
 
 D.Process.prototype.done = function() {
   var output = this.last_value                                  // default output
-                                                                    
+
   if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
@@ -2466,7 +2473,7 @@ D.Process.prototype.done = function() {
     }
   }
 
-  output = D.make_nice(output)                                  // THINK: should probably do this for each 
+  output = D.make_nice(output)                                  // THINK: should probably do this for each
                                                                 // possible output in the array form
   if(this.asynced) {
     this.asynced = false                                        // ORLY??
@@ -2556,7 +2563,7 @@ D.spaceseed_add = function(seed) {
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
   // TODO: check state [a jsonifiable object] [badseeds]
-  
+
   // TODO: tab detection and elimination
 
   seed = D.clone(seed) // keep the ref popo off our tails
@@ -3017,7 +3024,7 @@ D.get_templates = function(template_attr) {
 D.get_seedlikes = function(seedlike_class) {
   seedlike_class   = seedlike_class || 'spaceseeds'
   var seedlike_els = document.getElementsByClassName(seedlike_class)
-  
+
   return [].map.call(seedlike_els, function(node) {
             return node.text
          }).join("\n")
@@ -3042,4 +3049,3 @@ D.ExecutionSpace =
   new D.Space(
     D.spaceseed_add(
       {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
-
