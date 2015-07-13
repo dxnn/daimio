@@ -108,7 +108,7 @@ D.to_array = function(value) { // DATA
   if(value === false)           return []                     // hmmm...
   if(!D.is_nice(value))         return []                     // double hmmm.
                                 return [value]
-  
+
   // if(D.is_block(value))         return new D.Data([])
   // if(Array.isArray(value))      return new D.Data(value)
   // if(typeof value == 'object')  return new D.Data(D.obj_to_array(value))
@@ -119,7 +119,7 @@ D.to_array = function(value) { // DATA
 
 D.obj_to_array = function(obj) { // DATA
   var arr = []
-  for(key in obj)
+  for(var key in obj)
     arr.push(obj[key])
   return arr
 }
@@ -187,9 +187,9 @@ D.is_segment = function(value) {
 
 D.is_block = function(value) {
   if(!D.is_segment(value))                      // THINK: this prevents block hijacking (by making an object shaped
-    return false                                // like a block), but requires us to e.g. convert all incoming 
+    return false                                // like a block), but requires us to e.g. convert all incoming
                                                 // JSONified block segments to real segments.
-  return value && value.type == 'Block' 
+  return value && value.type == 'Block'
       && value.value && value.value.id          // THINK: why do we need this?
 }
 
@@ -210,7 +210,7 @@ D.is_regex = function(str) {
 }
 
 D.regex_escape = function(str) {
-  var specials = /[.*+?|()\[\]{}\\$^]/g // .*+?|()[]{}\$^
+  var specials = /[.*+?|()\[\]{}\\$^]/g         // .*+?|()[]{}\$^
   return str.replace(specials, "\\$&")
 }
 
@@ -227,7 +227,7 @@ D.string_to_regex = function(string, global) {
 D.shallow_copy = function(value) {
   if(Array.isArray(value))
     return value.slice()
-  return JSON.parse(JSON.stringify(value))     // NOTE: only for scrubbed values!
+  return JSON.parse(JSON.stringify(value))      // NOTE: only for scrubbed values!
 }
 
 D.get_unique_symbol = function() {
@@ -237,7 +237,7 @@ D.get_unique_symbol = function() {
 
 
 D.clone = function(value) {
-  if(value && value.toJSON)                    // THINK: for blocks?
+  if(value && value.toJSON)                     // THINK: for blocks?
     return D.deep_copy(value)
 
   try {
@@ -249,8 +249,8 @@ D.clone = function(value) {
 
 D.deep_copy = function(value) {
   // deep copy an internal variable (primitives and blocks only)
-  if(!value || typeof value != 'object')  return value // number, string, or boolean
-  if(D.is_block(value))                   return value // blocks are immutable, so pass-by-ref is ok.
+  if(!value || typeof value != 'object')  return value  // number, string, or boolean
+  if(D.is_block(value))                   return value  // blocks are immutable, so pass-by-ref is ok.
                                           return D.recursive_leaves_copy(value, D.deep_copy)
 }
 
@@ -323,7 +323,16 @@ D.recursive_extend = function(base, value) {
 
 D.scrub_var = function(value) {
   // copy and scrub a variable from the outside world
+
   try {
+    // FIREFOX DOESN'T THROW ON DOM OBJECTS
+    // THINK: this is getting really sloppy. how can we simplify?
+    if(value instanceof Event || value instanceof Node || value instanceof HTMLElement) {
+      value = D.mean_defunctionize(value);
+      if(value === null) value = false;
+      return value;
+    }
+
     return JSON.parse(JSON.stringify(value)); // this style of copying is A) the fastest deep copy on most platforms and B) gets rid of functions, which in this case is good (because we're importing from the outside world) and C) ignores prototypes (also good).  // DATA
   } catch (e) {
     // D.on_error('Your object has circular references'); // this might get thrown a lot... need lower priority warnings
@@ -359,7 +368,7 @@ D.mean_defunctionize = function(values, seen) {
 
   var new_values = (Array.isArray(values) ? [] : {});
 
-  for(var key in values) {                                // list or hash: lish
+  for(var key in values) {                                // list or hash: lish. lash. hist? hast? grumble.
     var new_value, value = values[key];
     new_value = D.mean_defunctionize(value, seen);
     if(new_value === null) continue;
@@ -450,7 +459,7 @@ D.list_set = function(total, value, key) { // DATA
   if(typeof total != 'object') return {}
 
   if(!key) key = Object.keys(total).length
-  
+
   value = D.make_nice(value)
 
   total[key] = value
@@ -488,7 +497,7 @@ D.mungeLR = function(items, fun) {
 D.nicify = function(list, state) {
   var result = []
   for(var i=0, l=list.length; i < l; i++) {
-    var item = state[list[i]]    
+    var item = state[list[i]]
     result.push( D.is_nice(item) ? item : null )                    // THINK: why null?
   }
   return result
@@ -498,12 +507,12 @@ D.filter_ports = function(ports, station, name) {
   for(var i=0, l=ports.length; i < l; i++) {
     var port = ports[i]
     if( port.station === station                                    // triple so undefined !== 0
-     && port.name    === name ) 
+     && port.name    === name )
         return port
   }
 }
 
-D.run = function(daimio, ultimate_callback, space) {
+D.run = function(daimio, space, scope, ultimate_callback) {
   // This is *always* async, so provide a callback.
   if(!daimio) return ""
 
@@ -533,7 +542,7 @@ D.run = function(daimio, ultimate_callback, space) {
       ultimate_callback(result)
   }
 
-  var result = space.execute(D.Parser.string_to_block_segment(daimio), null, prior_starter)
+  var result = space.execute(D.Parser.string_to_block_segment(daimio), scope, prior_starter)
   if(result === result)
     prior_starter(result)
 
@@ -629,71 +638,127 @@ D.get_decorators = function(by_block, by_type) {
 // A port flavour has a dir [in, out, out/in, in/out (inback outback? up down?)], and dock and add functions
 
 
-D.track_event = function(type, target, callback) {
-  if(!D.Etc.events)
-    D.Etc.events = {}
+D.track_event = function(type, selector, parent, callback, options) {
+  // options contains:
+  // 'scrub'    -- a callback to be used instead of the standard value detector
+  // 'nochain'  -- a boolean flag that prevents walking the parent chain [YAGNI]
+  // 'passthru' -- a boolean flag which causes events to keep their default behavior
+
+/*
+
+  changes:
+  - allow 'document' itself as a valid selector
+  - allow a 'parent' element (and set the listener on the parent instead of on document)
+  - a passthru param that pushes the event back in to the stream and marks it so it isn't caught again
+  - a 'scrub' callback to be used instead of the standard value detector
+
+
+  TODO:
+  - test value selector and scrubber
+  - test parent setting
+  - test passthru
+
+*/
+
+  options = options || {}
+  D.Etc.events = D.Etc.events || {}
 
   if(!D.Etc.events[type]) {
     D.Etc.events[type] = {by_class: {}, by_id: {}}
 
-    document.addEventListener(type, function(event) {
+    parent = parent ? document.getElementById(parent) : document
+
+    parent.addEventListener(type, function(event) {
       var target = event.target
-        , listener
-        , parent
-        , cname
+      var particulars
+      var cname
+
+      if(event.passthru) return true
 
       // walk the target.parentNode chain up to null, checking each item along the way until you find one
       // OPT: make walking the parent chain optional (use a port param to ask for it)
-      while(!listener && target) {
-        listener = tracked.by_id[target.id]
-        if(listener) break
+      while(!particulars && target) {
+        particulars = tracked.by_id[target.id]
+        if(particulars) break
 
         cname = target.className
         if(cname) {
-          cname = cname.baseVal || cname
+          cname = cname.hasOwnProperty('baseVal') ? cname.baseVal : cname
           cname.split(/\s+/).forEach(function(name) {
-            listener = listener || tracked.by_class[name] // TODO: take all matches instead of just first
+            particulars = particulars || tracked.by_class[name] // TODO: take all matches instead of just first
           })
         }
 
-        if(listener) break
+        if(particulars) break
         target = target.parentNode
       }
 
-      if(listener) {
-        event.stopPropagation() // THINK: not sure these are always desired...
-        event.preventDefault()  //        maybe use a port param to allow passthru
-        var value =
-          ( target.attributes['data-value']
-            && target.attributes['data-value'].value)       // THINK: no empty strings allowed...
-          || ( target.value != undefined && target.value )  // TODO:  catch ""
-          || ( target.attributes.value && target.attributes.value.value )
-          || target.text
-          || D.scrub_var(event)
-          || true
-        listener(value, event)
+      if(!particulars) return true
+
+      if(particulars.passthru) {
+        event.passthru = true
+      } else {
+        event.stopPropagation()
+        event.preventDefault()
       }
+
+      var value =
+          particulars.scrub
+        ? particulars.scrub(event, target)
+        : D.default_scrub(event, target)
+
+      particulars.callback(value, event)
+
     }, false)
   }
 
   var tracked = D.Etc.events[type]
+  var particulars = {callback: callback, scrub: options.scrub, passthru: options.passthru}
 
-  if(target[0] == '.') {
-    tracked.by_class[target.slice(1)] = callback
+  if(selector[0] == '.') {
+    tracked.by_class[selector.slice(1)] = particulars
   } else {
-    tracked.by_id[target] = callback
+    tracked.by_id[selector] = particulars
   }
+}
+
+D.untrack_event = function(type, target, parent, callback) {
+  if(!D.Etc.events)        return false
+  if(!D.Etc.events[type])  return false
+
+  var tracked = D.Etc.events[type]
+  var obj = target[0] == '.' ? tracked.by_class : tracked.by_id
+
+  if(!obj || !obj[target]) return false
+  if(callback && obj[target] != callback) return false
+
+  delete obj[target]
+}
+
+D.default_scrub = function(event, target) {
+  return target.attributes['data-value']                          // it's easy to read if you think of
+       ? target.attributes['data-value'].value                    // this like a quasi-cond statement.
+
+       : target.value != undefined
+       ? target.value
+
+       : target.attributes.value
+      && target.attributes.value.value
+
+      || target.text
+      || D.scrub_var(event)
+      || true
 }
 
 D.send_value_to_js_port = function(space, port_name, value, port_flavour) {
   port_flavour = port_flavour || 'from-js'
-  
+
   for ( var i=0, l=space.ports.length; i < l; i++)
     if( space.ports[i].name == port_name
      && space.ports[i].flavour == port_flavour )
       { space.ports[i].pair.enter(value)
         return true }
-  
+
   return false
 }
 
@@ -706,11 +771,11 @@ D.port_standard_exit = function(ship) {
   // THINK: this makes the interface feel more responsive on big pages, but is it the right thing to do?
   if(this.space)
     // D.setImmediate(this.outs, ship) // OPT
-    D.setImmediate(function() { 
+    D.setImmediate(function() {
       for(var i=0, l=outs.length; i < l; i++) {
         outs[i].enter(ship)
       }
-      // outs.forEach(function(port) { port.enter(ship) }) 
+      // outs.forEach(function(port) { port.enter(ship) })
     })
   else
     this.outside_exit(ship) // ORLY? No delay?
@@ -742,20 +807,20 @@ D.port_standard_sync = function(ship, callback) {
 
   D.setImmediate(function() {
     if(!pair)                                               // station port
-      return out ? out.sync(ship, callback) : ''    
-  
+      return out ? out.sync(ship, callback) : ''
+
     if(!pair.space)                                         // outside port
       return pair.outside_exit(ship, callback)
-    
+
     return pair.sync(ship, callback)                        // space port
   })
-  
+
   return NaN
 }
 
 
-D.import_port_flavour = function(flavour, pflav) {
-  if(D.PortFlavours[flavour])
+D.import_port_flavour = function(flavourname, pflav) {
+  if(D.PortFlavours[flavourname])
     return D.set_error('That port flavour has already been im-port-ed')
 
   // TODO: just use Port or something as a proto for pflav, then the fall-through is automatic
@@ -763,8 +828,11 @@ D.import_port_flavour = function(flavour, pflav) {
   if(!pflav)
     return D.set_error('That flavour is not desirable')
 
+  if(!pflav.settings)                             // settings are params for port construction
+    pflav.settings = []                           // THINK: error if no settings?
+
   if(typeof pflav.add != 'function')
-    pflav.add = D.noop // noop, so we can call w/o checking
+    pflav.add = D.noop                            // noop, so we can call w/o checking
 
   if(typeof pflav.exit != 'function')
     pflav.exit = D.port_standard_exit
@@ -787,7 +855,7 @@ D.import_port_flavour = function(flavour, pflav) {
   // if([pflav.enter, pflav.add].every(function(v) {return typeof v == 'function'}))
   //   return D.set_error("That port flavour's properties are invalid")
 
-  D.PortFlavours[flavour] = pflav
+  D.PortFlavours[flavourname] = pflav
   return true
 }
 
@@ -1226,7 +1294,7 @@ D.Parser.string_to_block_segment = function(string) {
   var segment = D.Parser.segments_to_block_segment(D.Parser.string_to_segments(string))
     , block_id = segment.value.id
 
-  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique? 
+  D.add_decorator(block_id, 'OriginalString', string, true)           // THINK: why is this unique?
                                                                       // what should we do with different
   return segment                                                      // strings that compile to the same block?
 }
@@ -1547,15 +1615,15 @@ D.Parser.split_on_space = function(string) {
 
 // D.Parser.rekey = function(L, segment, R) {
 //   if(!segment) return [L, R]
-// 
+//
 //   var old_key = segment.key
 //   var new_key = L.length
-// 
+//
 //   // TODO: holymuckymuck, is this ever ugly and slow. clean me!
 //   for(var i=0, l=R.length; i < l; i++) {
 //     var future_segment = R[i]
 //     var index
-// 
+//
 //     if(future_segment.inputs) {
 //       while(true) {
 //         index = future_segment.inputs.indexOf(old_key)
@@ -1563,13 +1631,13 @@ D.Parser.split_on_space = function(string) {
 //         future_segment.inputs[index] = new_key
 //       }
 //     }
-// 
+//
 //     if( future_segment.value
 //      && future_segment.value.name
 //      && future_segment.value.name == old_key)
 //         future_segment.value.name = new_key
 //   }
-// 
+//
 //   segment.key = new_key
 //   return [L.concat(segment), R]
 // }
@@ -1656,7 +1724,7 @@ D.Block = function(segments, wiring) {
   var json = JSON.stringify(this)
     , hash = murmurhash(json)
 
-  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere? 
+  if(!D.BLOCKS[hash])                                         // THINK: take this out and put it elsewhere?
     D.BLOCKS[hash] = this                                     // or... how is block access limited? or... huh.
 
   this.id = hash
@@ -1667,39 +1735,39 @@ D.wash_keys = function(segments, wiring) {
   var temp_wiring = {}
   var new_segments = []
   var reverse_wiring = {}
-  
+
   for(var key in wiring) {
     var wire = wiring[key]
     for(var i=0, l=wire.length; i < l; i++)
-      reverse_wiring[wire[i]] = reverse_wiring[wire[i]] 
-                              ? reverse_wiring[wire[i]].concat(key) 
+      reverse_wiring[wire[i]] = reverse_wiring[wire[i]]
+                              ? reverse_wiring[wire[i]].concat(key)
                               : [key] }
-  
+
   for(var j=0, k=segments.length; j < k; j++) {
     var segment = segments[j]
     var index = new_segments.length
     var my_key = segment.key || j
     var my_wires = reverse_wiring[my_key] || []
     var input_index = -1
-    
+
     if( !my_wires.length                                 // toss anything that isn't linked to the final segment
      && j != k-1                                         // except the final segment itself, obviously
      && segment.type != 'VariableSet'                    // 'Put' segtypes are purely side effects
      && segment.type != 'PortSend'                       // TODO: change these to 'PutSpaceVar' and 'PutPort'
-     &&  ( segment.type != 'Command'                     
+     &&  ( segment.type != 'Command'
         && segment.value.method != 'run'                 // two commands are also side-effect based...
         && segment.value.method != 'sleep' ))            // FIXME: find a nice way to deal with that
            continue
-    
+
     for(var i=0, l=my_wires.length; i < l; i++) {
       if(!temp_wiring[my_wires[i]])
         temp_wiring[my_wires[i]] = []
       while((input_index = wiring[my_wires[i]].indexOf(my_key, input_index+1)) != -1)
         temp_wiring[my_wires[i]][input_index] = index }
-    
+
     if(temp_wiring[my_key])
       new_wiring[index] = temp_wiring[my_key]
-    
+
     // am i missing any keys?
     if(wiring[my_key]) {
       for(var x=0, z=wiring[my_key].length; x < z; x++) {
@@ -1709,31 +1777,31 @@ D.wash_keys = function(segments, wiring) {
           new_wiring[index][x] = wiring[my_key][x]
       }
     }
-    
+
     // put the value.name in the wiring
     // then build an old_key_new_key map
     // and switch this at that point
     // but also if it's in the wiring who cares?
     // oh but we need this for final pipevars
     // because otherwise who's going to speak for them?
-    
+
     //     if( future_segment.value
     //      && future_segment.value.name
     //      && future_segment.value.name == old_key)
     //         future_segment.value.name = new_key
-    
-    
+
+
     // 'run' is used purely for side effects sometimes like {"{2 | >$foo}" | run | $foo}
     // so we can't get rid of it just because it's not linked to the output.
     // also, things that are linked to >@ have the same problem.
     // also, any command that has a downport.
     // sucky sucky suck suck stupid stupid
     // also 'wait'
-    
-    
+
+
     new_segments.push(new D.Segment(segment.type, segment.value, null))
   }
-  
+
   return {segments: new_segments, wiring: new_wiring}
 }
 
@@ -1939,7 +2007,7 @@ D.Port = function(port_template, space) {
 //    |_____/ |     |    |    |     |
 //
 
-D.DataObj = 
+D.DataObj =
 {  _data : []
 ,  get val()     {return this._data}
 ,  set val(to)   {this._data = to}
@@ -2055,11 +2123,11 @@ D.Space.prototype.dock = function(ship, station_id) {
   var block_id = this.seed.stations[station_id - 1]
   var block    = D.BLOCKS[block_id]
   var out_port = D.filter_ports(this.ports, station_id, '_out')
-  
+
   if(!out_port)
     return D.set_error('That out port is unavailable')
-              
-  var prior_starter =                                               // THINK: we're jumping straight to exit here. 
+
+  var prior_starter =                                               // THINK: we're jumping straight to exit here.
         function(value) {out_port.exit(value)}                      // also do it for implicit station output ports...
   var scope = {"__in": ship}                                        // TODO: find something better...
   var value = this.execute(block, scope, prior_starter, station_id)
@@ -2318,10 +2386,10 @@ D.try_optimize = function(block) {
 
   var map = D.Etc.OptimizationMap                      // THINK: a weakmap might work well here
   var block_id = block.id
-  
+
   if(map[block_id])
     return map[block_id]
-  
+
   for(var i=0, l=D.Optimizers.length; i < l; i++)
     block = D.Optimizers[i].fun(block)
 
@@ -2336,8 +2404,8 @@ D.import_optimizer = function(name, priority, fun) {
   if( priority <= 0                                    // priority is between 0 and 1 *exclusive*
    || priority >= 1 )                                  // this means you can always fit something
       priority  = 0.5                                  // at start or end, up to float precision.
-  
-  var opt = { fun: fun                                 // fun takes a block as an argument and 
+
+  var opt = { fun: fun                                 // fun takes a block as an argument and
             , name: name                               // returns a block (same or different)
             , priority: priority }
 
@@ -2391,7 +2459,7 @@ D.Process = function(space, block, scope, prior_starter, station_id) {
 
 D.Process.prototype.done = function() {
   var output = this.last_value                                  // default output
-                                                                    
+
   if(this.block.wiring['*out']) {                               // THINK: this isn't currently used anywhere...
     var outs = this.block.wiring['*out']
     if(outs.length == 1) {
@@ -2405,7 +2473,7 @@ D.Process.prototype.done = function() {
     }
   }
 
-  output = D.make_nice(output)                                  // THINK: should probably do this for each 
+  output = D.make_nice(output)                                  // THINK: should probably do this for each
                                                                 // possible output in the array form
   if(this.asynced) {
     this.asynced = false                                        // ORLY??
@@ -2495,7 +2563,7 @@ D.spaceseed_add = function(seed) {
   // TODO: check ports [array of port things]
   // TODO: check routes [array of port indices]
   // TODO: check state [a jsonifiable object] [badseeds]
-  
+
   // TODO: tab detection and elimination
 
   seed = D.clone(seed) // keep the ref popo off our tails
@@ -2956,7 +3024,7 @@ D.get_templates = function(template_attr) {
 D.get_seedlikes = function(seedlike_class) {
   seedlike_class   = seedlike_class || 'spaceseeds'
   var seedlike_els = document.getElementsByClassName(seedlike_class)
-  
+
   return [].map.call(seedlike_els, function(node) {
             return node.text
          }).join("\n")
@@ -2981,7 +3049,6 @@ D.ExecutionSpace =
   new D.Space(
     D.spaceseed_add(
       {dialect: {commands:{}, aliases:{}}, stations: [], subspaces: [], ports: [], routes: [], state: {}}))
-
 D.SegmentTypes.Terminator = {
   try_lex: function(string) {
     return string // THINK: hmmmm.... these are made elsewhere. what are we doing??
@@ -3892,7 +3959,7 @@ D.SegmentTypes.Alias = {
         a_token.key = new_key
 
         if(a_token.inputs) {
-          for(var i=0, l=a_token.inputs.length; i < l; i++) {
+          for(var i=0, l=a_token.inputs.length; i < l; i++) {   // FIXME: BUG??? WHAT??? IN MY CODE??? SQUISH!!!!!!
             a_token.inputs[i] = keymap[a_token.inputs[i]] || a_token.inputs[i]
           }
         }
@@ -4012,989 +4079,6 @@ D.import_aliases({
   'tap':      'process tap send',
 })
 
-// The daggr interface model
-
-D.import_models({
-  daggr: {
-    desc: "Slices graphs into graphics (simple vector ones, at that)",
-    help: "Daggr is a push-only interface: you can't use it as a data-store. You tell it what to render, set_data on items when things change, and move, re-render and remove as needed. Fancy rendering requires building a new type in JS.",
-    vars: {},
-    methods: {
-
-      ////// ADDING & REMOVING //////
-
-      add_sheet: {
-        desc: "Create a new SVG sheet",
-        params: [
-          {
-            key: 'id',
-            desc: "The sheet id",
-            type: 'string',
-            required: true
-          },
-          {
-            key: 'el',
-            desc: "Container element's id",
-            type: 'string',
-            required: true
-          },
-        ],
-        fun: function(id, el) {
-          var sheet = Daggr.new_sheet(id, el);
-          return sheet.id;
-        },
-      },
-
-      add: {
-        desc: "Add a thing to a sheet",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'type',
-            desc: "A type, like node or port or edge",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'id',
-            desc: "The node id",
-            type: 'string',
-          },
-          {
-            key: 'data',
-            desc: "Additional node data",
-            type: 'list',
-          },
-        ],
-        fun: function(sheet, type, id, data) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          data = data || {};
-          data.id = id;
-          
-          var thing = sheet.add_thing(type, data);
-          return thing ? thing.id : false;
-        },
-      },
-      
-      remove: {
-        desc: "Remove a thing from its sheet",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-        ],
-        fun: function(sheet, thing) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          if(thing.remove()) return sheet.id;
-        },
-      },
-
-      
-      ////// SETTING STUFF //////
-          
-      find_traits: {
-        desc: "Find all the traits",
-        params: [
-        ],
-        fun: function() {
-          return Object.keys(Daggr.Traits);
-        },
-      },
-      
-      add_type: {
-        desc: "Build a new type",
-        help: "A type pairs a default template with some composable traits that respond to particular data points (like the 'movable' trait listens for x and y).",
-        params: [
-          {
-            key: 'key',
-            desc: 'A unique single-word string identifying this thing type',
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'block',
-            desc: 'A Daimio template',
-            type: 'block',
-            required: true,
-          },
-          {
-            key: 'traits',
-            desc: 'A set of trait keys',
-            type: 'list',
-          },
-          {
-            key: 'data',
-            desc: 'A hash of data to feed the traits',
-            type: 'list',
-          },
-        ],
-        fun: function(key, template, traits, data) {
-          // ok, fun.
-        },
-      },
-      
-      append: {
-        desc: "Put a thing into some other thing",
-        help: "Note that only the first element matching the jquery filter is moved.",
-        params: [
-          {
-            key: 'thing',
-            desc: 'A thing id',
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'filter',
-            desc: 'A jquery filter',
-            type: 'string',
-            required: true,
-          },
-        ],
-        fun: function(thing, filter) {
-          // ok, fun.
-        },
-      },
-      
-      
-      set_template: {
-        desc: "Set a template for a type",
-        help: "Types are built-in things for doing stuff",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'type',
-            desc: "A type, like node or port or edge",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'daimio',
-            desc: "A new daimio template for the template",
-            type: 'block',
-            required: true,
-          },
-        ],
-        fun: function(sheet, type, daimio) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          if(sheet.set_template(type, daimio)) return sheet.id;
-        },
-      },
-      
-      set_data: {
-        desc: "Set some data for a thing",
-        help: "Things are instantiated types in a sheet with data and stuff",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'key',
-            desc: "Some new data key",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'value',
-            desc: "Some new data value",
-            required: true,
-          },
-        ],
-        fun: function(sheet, thing, key, value) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
-          
-          // {value | > :@Daggr.{sheet}.{thing}.key}
-          // D.recursive_insert(D.Vglobals, ['@Daggr', sheet.id, thing.id, key.split('.')], value);
-          
-          return thing.set_data(key, value);
-        },
-      },
-      
-      ////// FINDING STUFF //////
-      
-      // THINK: we don't have find sheet or find things in here, because Daggr isn't really meant for storing things. Instead, you should reference things in Daggr by id, and store them somewhere else (like DAGoba). And, honestly, how hard is it to keep track of your sheets? Not very. 
-      
-      find_types: {
-        desc: "Find all the types",
-        params: [
-        ],
-        fun: function() {
-          return Object.keys(Daggr.Types);
-        },
-      },
-
-      ////// DOING STUFF //////
-      
-      // THINK: all coords and scales are within the internal coordinate space... is that ok? Maybe we need a convert command, that goes from coord_space x/y to pixel_space x/y. (and vice versa)
-      
-      pan: {
-        desc: "Move around in the sheet",
-        help: "Panning can find you gold. Also: dx and dy are additive shifts to the current positioning: dx of 100 will shift the viewbox 100 screen units (*not* svg coord units) to the right.",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'dx',
-            desc: "Difference in x",
-            type: 'number',
-            required: true,
-          },
-          {
-            key: 'dy',
-            desc: "Difference in y",
-            type: 'number',
-            required: true,
-          },
-        ],
-        fun: function(sheet, dx, dy) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          sheet.pan(dx, dy);
-          return sheet.id;
-        },
-      },
-      
-      scale: {
-        desc: "Zoomin or out",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'ratio',
-            desc: "How low can you go?",
-            type: 'number',
-            required: true,
-          },
-        ],
-        fun: function(sheet, ratio) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          sheet.scale(ratio);
-          return sheet.id;
-        },
-      },
-      
-      //////// DOING THINGS /////////
-      
-      move: {
-        desc: "Move a thing within a sheet",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'x',
-            desc: "Absolute client coordinate (pageX)",
-            type: 'number',
-          },
-          {
-            key: 'y',
-            desc: "Absolute client coordinate (pageY)",
-            type: 'number',
-          },
-          {
-            key: 'dx',
-            desc: "Relative client coordinate",
-            type: 'number',
-          },
-          {
-            key: 'dy',
-            desc: "Relative client coordinate",
-            type: 'number',
-          },
-        ],
-        fun: function(sheet, thing, x, y, dx, dy) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          // NOTE: thing's x/y are in the svg coord space (so we don't have to change them all with each zoom/pan), so we need to translate the incoming page-based x/y.
-          if(x || x === 0) {
-            var v = sheet.screen_to_svg_coords(x, y);
-            thing.x = v.x;
-            thing.y = v.y;            
-          } else {
-            var v = sheet.screen_to_svg_vector({x: dx, y: dy});
-            thing.x += v.x;
-            thing.y += v.y;            
-          }
-          
-          if(thing.move()) return thing.id;
-        },
-      },
-      
-      render: {
-        desc: "Redraw some thing",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-        ],
-        fun: function(sheet, thing) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          if(thing.render()) return thing.id;
-        },
-      },
-      
-      to_back: {
-        desc: "Send it to the back",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-        ],
-        fun: function(sheet, thing) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          sheet.to_back(thing.el);
-          
-          return thing.id;
-        },
-      },
-            
-      to_front: {
-        desc: "Send it to the front",
-        params: [
-          {
-            key: 'sheet',
-            desc: "The sheet id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'thing',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-        ],
-        fun: function(sheet, thing) {
-          sheet = Daggr.sheets[sheet];
-          if(!sheet) return D.on_error('Invalid sheet id');
-          
-          thing = sheet.things[thing];
-          if(!thing) return D.on_error('Invalid thing id');
-          
-          sheet.to_front(thing.el);
-          
-          return thing.id;
-        },
-      },
-      
-      spewtime: {
-        desc: "log time since last call",
-        params: [
-          
-        ],
-        fun: function() {
-          if(typeof oldtime == 'undefined') oldtime = 0; 
-          newtime = new Date().getTime();    
-          console.log(newtime - oldtime);
-          oldtime = newtime;
-        },
-      },
-      
-      
-    }
-  }
-});
-
-if((typeof window !== 'undefined') && window.Daggr) {
-  Daggr.onerror = D.on_error;
-}
-// The dagoba interface model
-
-D.import_models({
-  dagoba: {
-    desc: "Some dagobay commands",
-    vars: {},
-    methods: {
-
-      // ADDING THINGS
-
-      add_graph: {
-        desc: "Create a new graph",
-        params: [
-          {
-            key: 'id',
-            desc: "The graph id",
-            type: 'string',
-          },
-        ],
-        fun: function(id) {
-          var graph = Dagoba.new_graph(id);
-          
-          // add graph action bindings
-          topics = ['node/add','node/remove','port/add','port/remove','edge/add','edge/remove'];
-          for(var i=0, l=topics.length; i < l; i++) {
-            D.Etc.dagoba.set_actions(graph, topics[i]);
-          }
-          
-          return graph.id;
-        },
-      },
-
-      // TODO: allow adding conditions to a graph through this handler (since they're not synced via var bindings like actions are)
-
-      add_node: {
-        desc: "Add a node to a graph",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'id',
-            desc: "The node id",
-            type: 'string',
-          },
-          {
-            key: 'data',
-            desc: "Additional node data",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, id, data) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          data = data || {};
-          data.id = id;
-          
-          var node = graph.add_node(data);
-          return node ? node.id : false;
-        },
-      },
-
-      add_port: {
-        desc: "Add a port to a node",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'node',
-            desc: "The node id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'id',
-            desc: "The port id",
-            type: 'string',
-          },
-          {
-            key: 'data',
-            desc: "Additional port data",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, node, id, data) {
-          // THINK: is there a way to not have to require both graph and node?
-          
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          node = graph.nodes[node];
-          if(!node) return D.on_error('Invalid node id');
-          
-          data = data || {};
-          data.id = id;
-          
-          var port = graph.add_port(node, data);
-          return port ? port.id : false;
-        },
-      },
-
-      add_edge: {
-        desc: "Add an edge between two ports",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'startport',
-            desc: "The starting port id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'endport',
-            desc: "The ending port id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'id',
-            desc: "The port id",
-            type: 'string',
-          },
-          {
-            key: 'data',
-            desc: "Additional port data",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, startport, endport, id, data) {
-          // THINK: is there a way to not have to require both graph and ports?
-          
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          startport = graph.ports[startport];
-          if(!startport) return D.on_error('Invalid startport id');
-          
-          endport = graph.ports[endport];
-          if(!endport) return D.on_error('Invalid endport id');
-          
-          data = data || {};
-          data.id = id;
-          
-          var edge = graph.add_edge(startport, endport, data);
-          return edge ? edge.id : false;
-        },
-      },
-
-      // FINDING THINGS
-
-      find_nodes: {
-        desc: "Find a set of nodes",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'by_ids',
-            desc: "Some node ids",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, by_ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var node, nodes = {};
-          
-          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.nodes);
-          
-          for(var i=0, l=by_ids.length; i < l; i++) {
-            node = graph.nodes[by_ids[i]];
-            if(node) nodes[node.id] = node;
-          }
-
-          return D.Etc.dagoba.scrubber(nodes);
-        },
-      },
-
-      find_ports: {
-        desc: "Find a set of ports",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'by_ids',
-            desc: "Some port ids",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, by_ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var port, ports = {};
-          
-          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.ports);
-          
-          for(var i=0, l=by_ids.length; i < l; i++) {
-            port = graph.ports[by_ids[i]];
-            if(port) ports[port.id] = port;
-          }
-
-          return D.Etc.dagoba.scrubber(ports);
-        },
-      },
-
-      find_edges: {
-        desc: "Find a set of edges",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'by_ids',
-            desc: "Some edge ids",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, by_ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var edge, edges = {};
-          
-          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.edges);
-          
-          for(var i=0, l=by_ids.length; i < l; i++) {
-            edge = graph.edges[by_ids[i]];
-            if(edge) edges[edge.id] = edge;
-          }
-
-          return D.Etc.dagoba.scrubber(edges);
-        },
-      },
-
-      // SORTER
-
-      sort_nodes: {
-        desc: "Get a sorted set of nodes",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'by',
-            desc: "A sort function id",
-            type: 'string',
-            fallback: 'natural',
-          },
-          {
-            key: 'options',
-            desc: "Some options for the sort function",
-            type: 'list',
-          },
-        ],
-        fun: function(graph, by, options) {
-          // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
-          
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var sorter = Dagoba.sort[by];
-          if(!sorter) {
-            D.on_error('Invalid sort function id, falling back to natural');
-            sorter = Dagoba.sort['natural'];
-          }
-          
-          return D.Etc.dagoba.scrubber(sorter(graph, options));
-        },
-      },
-
-      // REMOVING THINGS
-      
-      remove_nodes: {
-        desc: "Remove some nodes",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'ids',
-            desc: "Node ids",
-            type: 'list',
-            required: true,
-          },
-        ],
-        fun: function(graph, ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var node;
-          
-          for(var i=0, l=ids.length; i < l; i++) {
-            node = graph.nodes[ids[i]];
-            if(node) node.remove();
-          }
-
-          return graph.id;
-        },
-      },
-      
-      remove_ports: {
-        desc: "Remove some ports",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'ids',
-            desc: "Port ids",
-            type: 'list',
-            required: true,
-          },
-        ],
-        fun: function(graph, ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var port;
-          
-          for(var i=0, l=ids.length; i < l; i++) {
-            port = graph.ports[ids[i]];
-            if(port) port.remove();
-          }
-
-          return graph.id;
-        },
-      },
-      
-      remove_edges: {
-        desc: "Remove some edges",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'ids',
-            desc: "Edge ids",
-            type: 'list',
-            required: true,
-          },
-        ],
-        fun: function(graph, ids) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          var edge;
-          
-          for(var i=0, l=ids.length; i < l; i++) {
-            edge = graph.edges[ids[i]];
-            if(edge) edge.remove();
-          }
-
-          return graph.id;
-        },
-      },
-      
-      // METADATA
-      
-      set_data: {
-        desc: "Set a piece of data in the thing",
-        help: "The path can't start with a restricted key value. Existing references in Daimio variables are unaffected, so you'll need to e.g. {dagoba find_nodes} again.",
-        params: [
-          {
-            key: 'graph',
-            desc: "The graph id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'id',
-            desc: "A thing id",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'type',
-            desc: "Accepts: nodes, paths, or edges",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'path',
-            desc: "A dot-delimited variable path",
-            type: 'string',
-            required: true,
-          },
-          {
-            key: 'value',
-            desc: "Some kind of value",
-            type: 'anything'
-          },
-        ],
-        fun: function(graph, id, type, path, value) {
-          graph = Dagoba.graphs[graph];
-          if(!graph) return D.on_error('Invalid graph id');
-          
-          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
-          
-          var thing = graph[type][id];
-          if(!thing) D.on_error('Invalid id');
-          
-          // TODO: scrub bad paths, like 'startport'
-          
-          // maybe instead D.recursive_extend(thing, path.split('.'), value);
-          // D.recursive_insert(thing, path.split('.'), value);
-          
-          return graph.id;
-        },
-      },
-      
-
-    }
-  }
-});
-
-D.Etc.dagoba = {};
-D.Etc.dagoba.scrubber = function(things) {
-  var ports = {}, edges = {}, clean_things = [], 
-      id_keys = ['ports', 'edges', 'startnodes', 'endnodes', 'startnode', 'endnode', 'startports', 'endports', 'startport', 'endport', 'startedges', 'endedges', 'node'],
-      bad_keys = ['graph', 'init', 'remove'];
-      
-  for(var thing_key in things) {
-    var clean_thing = {}, thing = things[thing_key];
-    
-    for(var key in thing) {
-      if(id_keys.indexOf(key) != -1) {
-        clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
-      } 
-      else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
-        if(D.is_block(thing[key])) {
-          clean_thing[key] = thing[key];
-        } else {
-          clean_thing[key] = D.scrub_var(thing[key]);
-        }
-      }
-    }
-    
-    clean_things.push(clean_thing);
-  }
-  
-  return clean_things;
-};
-
-D.Etc.dagoba.extract_ids = function(things) {
-  var ids = [];
-  if(things.id) return [things.id];
-  
-  for(var key in things) {
-    ids.push(things[key].id);
-  }
-  
-  return ids;
-}
-
-D.Etc.dagoba.set_actions = function(graph, topic) {
-  graph.add_action(topic, function(topic) {
-    return function(thing) {
-      // D.execute('variable', 'set', [topic, thing]);
-    };
-  }('DAGOBA' + topic.replace('/', '_')));
-}
-
-// TODO: this won't work on the server
-if((typeof window !== 'undefined') && window.Dagoba) {
-  Dagoba.onerror = D.on_error;
-}
 // A list in Daimio is an ordered sequence of items that are optionally keyed.
 
 // concat, each, every, filter, forEach, indexOf,
@@ -7454,7 +6538,990 @@ D.import_models({
       
     }
   }
+});// The daggr interface model
+
+D.import_models({
+  daggr: {
+    desc: "Slices graphs into graphics (simple vector ones, at that)",
+    help: "Daggr is a push-only interface: you can't use it as a data-store. You tell it what to render, set_data on items when things change, and move, re-render and remove as needed. Fancy rendering requires building a new type in JS.",
+    vars: {},
+    methods: {
+
+      ////// ADDING & REMOVING //////
+
+      add_sheet: {
+        desc: "Create a new SVG sheet",
+        params: [
+          {
+            key: 'id',
+            desc: "The sheet id",
+            type: 'string',
+            required: true
+          },
+          {
+            key: 'el',
+            desc: "Container element's id",
+            type: 'string',
+            required: true
+          },
+        ],
+        fun: function(id, el) {
+          var sheet = Daggr.new_sheet(id, el);
+          return sheet.id;
+        },
+      },
+
+      add: {
+        desc: "Add a thing to a sheet",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'type',
+            desc: "A type, like node or port or edge",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'id',
+            desc: "The node id",
+            type: 'string',
+          },
+          {
+            key: 'data',
+            desc: "Additional node data",
+            type: 'list',
+          },
+        ],
+        fun: function(sheet, type, id, data) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          data = data || {};
+          data.id = id;
+          
+          var thing = sheet.add_thing(type, data);
+          return thing ? thing.id : false;
+        },
+      },
+      
+      remove: {
+        desc: "Remove a thing from its sheet",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+        ],
+        fun: function(sheet, thing) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          if(thing.remove()) return sheet.id;
+        },
+      },
+
+      
+      ////// SETTING STUFF //////
+          
+      find_traits: {
+        desc: "Find all the traits",
+        params: [
+        ],
+        fun: function() {
+          return Object.keys(Daggr.Traits);
+        },
+      },
+      
+      add_type: {
+        desc: "Build a new type",
+        help: "A type pairs a default template with some composable traits that respond to particular data points (like the 'movable' trait listens for x and y).",
+        params: [
+          {
+            key: 'key',
+            desc: 'A unique single-word string identifying this thing type',
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'block',
+            desc: 'A Daimio template',
+            type: 'block',
+            required: true,
+          },
+          {
+            key: 'traits',
+            desc: 'A set of trait keys',
+            type: 'list',
+          },
+          {
+            key: 'data',
+            desc: 'A hash of data to feed the traits',
+            type: 'list',
+          },
+        ],
+        fun: function(key, template, traits, data) {
+          // ok, fun.
+        },
+      },
+      
+      append: {
+        desc: "Put a thing into some other thing",
+        help: "Note that only the first element matching the jquery filter is moved.",
+        params: [
+          {
+            key: 'thing',
+            desc: 'A thing id',
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'filter',
+            desc: 'A jquery filter',
+            type: 'string',
+            required: true,
+          },
+        ],
+        fun: function(thing, filter) {
+          // ok, fun.
+        },
+      },
+      
+      
+      set_template: {
+        desc: "Set a template for a type",
+        help: "Types are built-in things for doing stuff",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'type',
+            desc: "A type, like node or port or edge",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'daimio',
+            desc: "A new daimio template for the template",
+            type: 'block',
+            required: true,
+          },
+        ],
+        fun: function(sheet, type, daimio) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          if(sheet.set_template(type, daimio)) return sheet.id;
+        },
+      },
+      
+      set_data: {
+        desc: "Set some data for a thing",
+        help: "Things are instantiated types in a sheet with data and stuff",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'key',
+            desc: "Some new data key",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'value',
+            desc: "Some new data value",
+            required: true,
+          },
+        ],
+        fun: function(sheet, thing, key, value) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          // THINK: mirror objects are pretty weird... we either go whole hog and make them part of Daggr, or fiddle around out here in the handler somehow. Could attach a callback to setting things... but really, when will Daggr ever *set* values directly? but it does set them indirectly through moving sub-items. Could have a 'data' object in Daggr items that store x, y, and whatever else you put there through Daimio. That's probably the cleanest way to get the values in and out. Then it's just a matter of triggering calls on Daggr when values change, and triggering calls in Daimio when Daggr changes things... [but how do you differentiate?]
+          
+          // {value | > :@Daggr.{sheet}.{thing}.key}
+          // D.recursive_insert(D.Vglobals, ['@Daggr', sheet.id, thing.id, key.split('.')], value);
+          
+          return thing.set_data(key, value);
+        },
+      },
+      
+      ////// FINDING STUFF //////
+      
+      // THINK: we don't have find sheet or find things in here, because Daggr isn't really meant for storing things. Instead, you should reference things in Daggr by id, and store them somewhere else (like DAGoba). And, honestly, how hard is it to keep track of your sheets? Not very. 
+      
+      find_types: {
+        desc: "Find all the types",
+        params: [
+        ],
+        fun: function() {
+          return Object.keys(Daggr.Types);
+        },
+      },
+
+      ////// DOING STUFF //////
+      
+      // THINK: all coords and scales are within the internal coordinate space... is that ok? Maybe we need a convert command, that goes from coord_space x/y to pixel_space x/y. (and vice versa)
+      
+      pan: {
+        desc: "Move around in the sheet",
+        help: "Panning can find you gold. Also: dx and dy are additive shifts to the current positioning: dx of 100 will shift the viewbox 100 screen units (*not* svg coord units) to the right.",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'dx',
+            desc: "Difference in x",
+            type: 'number',
+            required: true,
+          },
+          {
+            key: 'dy',
+            desc: "Difference in y",
+            type: 'number',
+            required: true,
+          },
+        ],
+        fun: function(sheet, dx, dy) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          sheet.pan(dx, dy);
+          return sheet.id;
+        },
+      },
+      
+      scale: {
+        desc: "Zoomin or out",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'ratio',
+            desc: "How low can you go?",
+            type: 'number',
+            required: true,
+          },
+        ],
+        fun: function(sheet, ratio) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          sheet.scale(ratio);
+          return sheet.id;
+        },
+      },
+      
+      //////// DOING THINGS /////////
+      
+      move: {
+        desc: "Move a thing within a sheet",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'x',
+            desc: "Absolute client coordinate (pageX)",
+            type: 'number',
+          },
+          {
+            key: 'y',
+            desc: "Absolute client coordinate (pageY)",
+            type: 'number',
+          },
+          {
+            key: 'dx',
+            desc: "Relative client coordinate",
+            type: 'number',
+          },
+          {
+            key: 'dy',
+            desc: "Relative client coordinate",
+            type: 'number',
+          },
+        ],
+        fun: function(sheet, thing, x, y, dx, dy) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          // NOTE: thing's x/y are in the svg coord space (so we don't have to change them all with each zoom/pan), so we need to translate the incoming page-based x/y.
+          if(x || x === 0) {
+            var v = sheet.screen_to_svg_coords(x, y);
+            thing.x = v.x;
+            thing.y = v.y;            
+          } else {
+            var v = sheet.screen_to_svg_vector({x: dx, y: dy});
+            thing.x += v.x;
+            thing.y += v.y;            
+          }
+          
+          if(thing.move()) return thing.id;
+        },
+      },
+      
+      render: {
+        desc: "Redraw some thing",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+        ],
+        fun: function(sheet, thing) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          if(thing.render()) return thing.id;
+        },
+      },
+      
+      to_back: {
+        desc: "Send it to the back",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+        ],
+        fun: function(sheet, thing) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          sheet.to_back(thing.el);
+          
+          return thing.id;
+        },
+      },
+            
+      to_front: {
+        desc: "Send it to the front",
+        params: [
+          {
+            key: 'sheet',
+            desc: "The sheet id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'thing',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+        ],
+        fun: function(sheet, thing) {
+          sheet = Daggr.sheets[sheet];
+          if(!sheet) return D.on_error('Invalid sheet id');
+          
+          thing = sheet.things[thing];
+          if(!thing) return D.on_error('Invalid thing id');
+          
+          sheet.to_front(thing.el);
+          
+          return thing.id;
+        },
+      },
+      
+      spewtime: {
+        desc: "log time since last call",
+        params: [
+          
+        ],
+        fun: function() {
+          if(typeof oldtime == 'undefined') oldtime = 0; 
+          newtime = new Date().getTime();    
+          console.log(newtime - oldtime);
+          oldtime = newtime;
+        },
+      },
+      
+      
+    }
+  }
 });
+
+if((typeof window !== 'undefined') && window.Daggr) {
+  Daggr.onerror = D.on_error;
+}
+// The dagoba interface model
+
+D.import_models({
+  dagoba: {
+    desc: "Some dagobay commands",
+    vars: {},
+    methods: {
+
+      // ADDING THINGS
+
+      add_graph: {
+        desc: "Create a new graph",
+        params: [
+          {
+            key: 'id',
+            desc: "The graph id",
+            type: 'string',
+          },
+        ],
+        fun: function(id) {
+          var graph = Dagoba.new_graph(id);
+          
+          // add graph action bindings
+          topics = ['node/add','node/remove','port/add','port/remove','edge/add','edge/remove'];
+          for(var i=0, l=topics.length; i < l; i++) {
+            D.Etc.dagoba.set_actions(graph, topics[i]);
+          }
+          
+          return graph.id;
+        },
+      },
+
+      // TODO: allow adding conditions to a graph through this handler (since they're not synced via var bindings like actions are)
+
+      add_node: {
+        desc: "Add a node to a graph",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'id',
+            desc: "The node id",
+            type: 'string',
+          },
+          {
+            key: 'data',
+            desc: "Additional node data",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, id, data) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          data = data || {};
+          data.id = id;
+          
+          var node = graph.add_node(data);
+          return node ? node.id : false;
+        },
+      },
+
+      add_port: {
+        desc: "Add a port to a node",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'node',
+            desc: "The node id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'id',
+            desc: "The port id",
+            type: 'string',
+          },
+          {
+            key: 'data',
+            desc: "Additional port data",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, node, id, data) {
+          // THINK: is there a way to not have to require both graph and node?
+          
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          node = graph.nodes[node];
+          if(!node) return D.on_error('Invalid node id');
+          
+          data = data || {};
+          data.id = id;
+          
+          var port = graph.add_port(node, data);
+          return port ? port.id : false;
+        },
+      },
+
+      add_edge: {
+        desc: "Add an edge between two ports",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'startport',
+            desc: "The starting port id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'endport',
+            desc: "The ending port id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'id',
+            desc: "The port id",
+            type: 'string',
+          },
+          {
+            key: 'data',
+            desc: "Additional port data",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, startport, endport, id, data) {
+          // THINK: is there a way to not have to require both graph and ports?
+          
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          startport = graph.ports[startport];
+          if(!startport) return D.on_error('Invalid startport id');
+          
+          endport = graph.ports[endport];
+          if(!endport) return D.on_error('Invalid endport id');
+          
+          data = data || {};
+          data.id = id;
+          
+          var edge = graph.add_edge(startport, endport, data);
+          return edge ? edge.id : false;
+        },
+      },
+
+      // FINDING THINGS
+
+      find_nodes: {
+        desc: "Find a set of nodes",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'by_ids',
+            desc: "Some node ids",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, by_ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var node, nodes = {};
+          
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.nodes);
+          
+          for(var i=0, l=by_ids.length; i < l; i++) {
+            node = graph.nodes[by_ids[i]];
+            if(node) nodes[node.id] = node;
+          }
+
+          return D.Etc.dagoba.scrubber(nodes);
+        },
+      },
+
+      find_ports: {
+        desc: "Find a set of ports",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'by_ids',
+            desc: "Some port ids",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, by_ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var port, ports = {};
+          
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.ports);
+          
+          for(var i=0, l=by_ids.length; i < l; i++) {
+            port = graph.ports[by_ids[i]];
+            if(port) ports[port.id] = port;
+          }
+
+          return D.Etc.dagoba.scrubber(ports);
+        },
+      },
+
+      find_edges: {
+        desc: "Find a set of edges",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'by_ids',
+            desc: "Some edge ids",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, by_ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var edge, edges = {};
+          
+          if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.edges);
+          
+          for(var i=0, l=by_ids.length; i < l; i++) {
+            edge = graph.edges[by_ids[i]];
+            if(edge) edges[edge.id] = edge;
+          }
+
+          return D.Etc.dagoba.scrubber(edges);
+        },
+      },
+
+      // SORTER
+
+      sort_nodes: {
+        desc: "Get a sorted set of nodes",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'by',
+            desc: "A sort function id",
+            type: 'string',
+            fallback: 'natural',
+          },
+          {
+            key: 'options',
+            desc: "Some options for the sort function",
+            type: 'list',
+          },
+        ],
+        fun: function(graph, by, options) {
+          // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
+          
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var sorter = Dagoba.sort[by];
+          if(!sorter) {
+            D.on_error('Invalid sort function id, falling back to natural');
+            sorter = Dagoba.sort['natural'];
+          }
+          
+          return D.Etc.dagoba.scrubber(sorter(graph, options));
+        },
+      },
+
+      // REMOVING THINGS
+      
+      remove_nodes: {
+        desc: "Remove some nodes",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'ids',
+            desc: "Node ids",
+            type: 'list',
+            required: true,
+          },
+        ],
+        fun: function(graph, ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var node;
+          
+          for(var i=0, l=ids.length; i < l; i++) {
+            node = graph.nodes[ids[i]];
+            if(node) node.remove();
+          }
+
+          return graph.id;
+        },
+      },
+      
+      remove_ports: {
+        desc: "Remove some ports",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'ids',
+            desc: "Port ids",
+            type: 'list',
+            required: true,
+          },
+        ],
+        fun: function(graph, ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var port;
+          
+          for(var i=0, l=ids.length; i < l; i++) {
+            port = graph.ports[ids[i]];
+            if(port) port.remove();
+          }
+
+          return graph.id;
+        },
+      },
+      
+      remove_edges: {
+        desc: "Remove some edges",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'ids',
+            desc: "Edge ids",
+            type: 'list',
+            required: true,
+          },
+        ],
+        fun: function(graph, ids) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          var edge;
+          
+          for(var i=0, l=ids.length; i < l; i++) {
+            edge = graph.edges[ids[i]];
+            if(edge) edge.remove();
+          }
+
+          return graph.id;
+        },
+      },
+      
+      // METADATA
+      
+      set_data: {
+        desc: "Set a piece of data in the thing",
+        help: "The path can't start with a restricted key value. Existing references in Daimio variables are unaffected, so you'll need to e.g. {dagoba find_nodes} again.",
+        params: [
+          {
+            key: 'graph',
+            desc: "The graph id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'id',
+            desc: "A thing id",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'type',
+            desc: "Accepts: nodes, paths, or edges",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'path',
+            desc: "A dot-delimited variable path",
+            type: 'string',
+            required: true,
+          },
+          {
+            key: 'value',
+            desc: "Some kind of value",
+            type: 'anything'
+          },
+        ],
+        fun: function(graph, id, type, path, value) {
+          graph = Dagoba.graphs[graph];
+          if(!graph) return D.on_error('Invalid graph id');
+          
+          if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
+          
+          var thing = graph[type][id];
+          if(!thing) D.on_error('Invalid id');
+          
+          // TODO: scrub bad paths, like 'startport'
+          
+          // maybe instead D.recursive_extend(thing, path.split('.'), value);
+          // D.recursive_insert(thing, path.split('.'), value);
+          
+          return graph.id;
+        },
+      },
+      
+
+    }
+  }
+});
+
+D.Etc.dagoba = {};
+D.Etc.dagoba.scrubber = function(things) {
+  var ports = {}, edges = {}, clean_things = [], 
+      id_keys = ['ports', 'edges', 'startnodes', 'endnodes', 'startnode', 'endnode', 'startports', 'endports', 'startport', 'endport', 'startedges', 'endedges', 'node'],
+      bad_keys = ['graph', 'init', 'remove'];
+      
+  for(var thing_key in things) {
+    var clean_thing = {}, thing = things[thing_key];
+    
+    for(var key in thing) {
+      if(id_keys.indexOf(key) != -1) {
+        clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
+      } 
+      else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
+        if(D.is_block(thing[key])) {
+          clean_thing[key] = thing[key];
+        } else {
+          clean_thing[key] = D.scrub_var(thing[key]);
+        }
+      }
+    }
+    
+    clean_things.push(clean_thing);
+  }
+  
+  return clean_things;
+};
+
+D.Etc.dagoba.extract_ids = function(things) {
+  var ids = [];
+  if(things.id) return [things.id];
+  
+  for(var key in things) {
+    ids.push(things[key].id);
+  }
+  
+  return ids;
+}
+
+D.Etc.dagoba.set_actions = function(graph, topic) {
+  graph.add_action(topic, function(topic) {
+    return function(thing) {
+      // D.execute('variable', 'set', [topic, thing]);
+    };
+  }('DAGOBA' + topic.replace('/', '_')));
+}
+
+// TODO: this won't work on the server
+if((typeof window !== 'undefined') && window.Dagoba) {
+  Dagoba.onerror = D.on_error;
+}
+
 D.import_type('anything', function(value) {
   return D.make_nice(value) // THINK: what about blocks? 
 })
@@ -8343,9 +8410,22 @@ D.import_pathfinder('key', {
 })
 D.import_port_flavour('dom-do-submit', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'The form element id to submit',
+      type: 'id'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     if(this.element)
       this.element.submit()
+    // TODO: fallthrough to dynamic instead of a fixed element
   },
   outside_add: function() {
     this.element = document.getElementById(this.settings.thing)
@@ -8357,52 +8437,204 @@ D.import_port_flavour('dom-do-submit', {
       return D.set_error('That dom thing has no submit')
   }
 })
-D.import_port_flavour('dom-on-blur', {
+D.import_port_flavour('dom-on-arrow', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
-    D.track_event('blur', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('keydown', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
+  }
+})
+
+
+// sort out port creation params [formalize param naming and desugar into it]
+// allow 'document' as a binding point (passed as string, sort it out in D.track_event)
+// allow a 'punch through' param to D.track_event that puts the event back into the stream instead of catching it (and labels it so it doesn't get caught by others)
+// send just keycode and name -- do this in general, by maybe giving a 'scrub' function to D.track_event
+// port creation params... we need a way to:
+/*
+
+- set the port name
+- set the port flac
+- name params for port creation
+- set values for port creation
+
+so it's like a command, kind of
+
+like: 
+        @arrows is a dom-on-arrow port with target "document" ignore (:form :myfield :myslider)
+
+
+are all of these valid:
+
+@dom-on-arrow
+@arrows dom-on-arrow
+@arrows dom-on-arrow :document
+@arrows dom-on-arrow target :document
+@arrows dom-on-arrow target :document ignore (:form :myfield :myslider)
+
+???
+
+also, why is default state input in json? just do it in daimio code dude
+
+it's probaly a good idea to have that kind of syntax, even if we don't go any further. it's really confusing to read currently because we don't know what the params ARE, and we have to read the code to figure it out. this is bad currently but it's going to get a lot worse as pflavs get more compiclated.
+
+the same thing goes for the port input packets... sometimes sending a ship through to a port with the fields filed in is the right thing to do , but othertimes you really want to [when do they resample after you put it on? ] 
+
+write out longhand the param names and their values like a regular command, with autocomplete and everything. 
+
+we talked about 
+
+>@arrows target :document ignore (:myform :myfield)
+
+and that's cool but it would be even cooler to have "machine learning" involved, because that's really cool stuff.
+
+what's the downside? having two ways to send information to a port is kind of awkward. we have to redefine all the ports. and all the port segtypes etc which is harder. [@@@] <***> ($$$) |+++| /===/
+
+
+
+
+*/D.import_port_flavour('dom-on-blur', {
+  dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
+  outside_add: function() {
+    var self = this
+    D.track_event('blur', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-change', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
-    D.track_event('change', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('change', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-click', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
-    D.track_event('click', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('click', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-keypress', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     // THINK: this requires binding to a particular DOM element -- is there a way to default to 'document'?
     // TODO: fix this in FFX
     var self = this
-    D.track_event('keypress', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('keypress', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-mouseout', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
-    D.track_event('mouseout', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('mouseout', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-mouseover', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
-    D.track_event('mouseover', this.settings.thing, function(value) {self.enter(value)})
+    D.track_event('mouseover', this.settings.thing, this.settings.parent, function(value) {self.enter(value)})
   }
 })
 D.import_port_flavour('dom-on-submit', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
     
@@ -8429,13 +8661,25 @@ D.import_port_flavour('dom-on-submit', {
       self.enter(ship) 
     }
         
-    D.track_event('submit', this.settings.thing, callback)
+    D.track_event('submit', this.settings.thing, this.settings.parent, callback)
   }
 })
 // TODO: convert these 'set' style ports to use track_event
 
 D.import_port_flavour('dom-set-html', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
     if(this.element) 
@@ -8456,6 +8700,18 @@ D.import_port_flavour('dom-set-html', {
 // THINK: can we genericize this to handle both set-text & set-value?
 D.import_port_flavour('dom-set-text', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
     // if(!(ship % 1000))
@@ -8476,6 +8732,18 @@ D.import_port_flavour('dom-set-text', {
 
 D.import_port_flavour('dom-set-value', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     // OPT: we could save some time by tying this directly to paint events: use requestAnimationFrame and feed it the current ship. that way we skip the layout cost between screen paints for fast moving events.
     if(this.element) 
@@ -8491,7 +8759,19 @@ D.import_port_flavour('dom-set-value', {
 
 D.import_port_flavour('from-js', {
   dir: 'in',
-  outside_add: function(port) {
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
+  outside_add: function() {
     this.default_value = this.settings.all.length > 2
                        ? this.settings.thing
                        : 1
@@ -8523,6 +8803,18 @@ D.import_port_flavour('up', {
 
 D.import_port_flavour('down', {
   dir: 'down',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   exit: function(ship, process) {
     // go down, then return back up...
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
@@ -8561,6 +8853,13 @@ D.import_port_flavour('exec', {
 
 D.import_port_flavour('socket-add-user', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+  ],
   outside_add: function() {
     var self = this
       , callback = function (ship) {
@@ -8577,6 +8876,18 @@ D.import_port_flavour('socket-add-user', {
 })
 D.import_port_flavour('socket-in', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_add: function() {
     var self = this
       , channel = 'bounced'
@@ -8595,6 +8906,18 @@ D.import_port_flavour('socket-in', {
 })
 D.import_port_flavour('socket-out', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     var channel = 'bounce'
     
@@ -8609,6 +8932,13 @@ D.import_port_flavour('socket-out', {
 })
 D.import_port_flavour('socket-remove-user', {
   dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+  ],
   outside_add: function() {
     var self = this
     
@@ -8623,17 +8953,36 @@ D.import_port_flavour('socket-remove-user', {
   }
 })
 D.import_port_flavour('sse-receive', {
-    dir: 'in',
-    outside_add: function () {
-	var channel = new EventSource(this.settings.thing)
-	var self = this;
-	channel.onmessage = function (e) { 
-	    self.enter(e.data)
-	}
+  dir: 'in',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+  ],
+  outside_add: function () {
+    var channel = new EventSource(this.settings.thing)
+    var self = this;
+    channel.onmessage = function (e) { 
+      self.enter(e.data)
     }
+  }
 })
 D.import_port_flavour('svg-add-line', {
   dir: 'out',
+  settings: [
+    {
+      key: 'defaults',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)
     
@@ -8681,6 +9030,18 @@ D.string_to_svg_frag = function(string) {
 
 D.import_port_flavour('svg-move', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)
     
@@ -8723,6 +9084,18 @@ D.import_port_flavour('svg-move', {
 })
 D.import_port_flavour('svg-rotate', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     var element = document.getElementById(ship.thing)
     
@@ -8747,6 +9120,18 @@ D.import_port_flavour('svg-rotate', {
 })
 D.import_port_flavour('to-js', {
   dir: 'out',
+  settings: [
+    {
+      key: 'thing',
+      desc: 'A dom selector for binding',
+      type: 'selector'
+    },
+    {
+      key: 'parent',
+      desc: 'A dom element contain thing. Defaults to document.',
+      type: 'id'
+    },
+  ],
   outside_exit: function(ship) {
     // this is very very stupid
     
@@ -8761,7 +9146,19 @@ D.import_port_flavour('to-js', {
 // deference to the current naming convention of the ajax sending functions.
 D.import_port_flavour('xhr-send', {
     dir: 'out',
+    settings: [
+      {
+        key: 'thing',
+        desc: 'A dom selector for binding',
+        type: 'selector'
+      },
+      {
+        key: 'parent',
+        desc: 'A dom element contain thing. Defaults to document.',
+        type: 'id'
+      },
+    ],
     outside_exit: function (ship) {
-	xhr_get(ship, D.noop)
+	    xhr_get(ship, D.noop)
     }
 })
