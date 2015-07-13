@@ -1,6 +1,6 @@
-<!DOCTYPE html> 
-<html> 
-<head> 
+<!DOCTYPE html>
+<html>
+<head>
   <title>Daimio Tests</title>
   <!--
   <script type="text/javascript" src="../daimio_composite.js"></script>
@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="../css/styles.css" type="text/css" media="screen">
   <link rel="stylesheet" href="../codemirror/lib/codemirror.css">
   <link rel="stylesheet" href="../codemirror/addon/hint/show-hint.css">
-  
+
   <script type="text/javascript" charset="utf-8">
     // load daimio file
     function xhr_get(target, callback) {
@@ -23,7 +23,7 @@
       xhr.open('GET', target, true)
       xhr.send(null)
     }
-    
+
     xhr_get('daimio.dm', function(data) {
       // these globals are kind of a hack...
       lines = data.split(/\n/).reverse()
@@ -35,14 +35,14 @@
       block_name=''
       code_value=''
       code_string=''
-      
+
       D.data_trampoline(lines, eat_line, D.string_concat, function() {}, done)
     })
 
     function eat_line(value, prior_starter) {
       var whitespace='', wscount=0
         , line = lines.pop()
-        
+
       /*
         There's four modes:
         - text, which just displays regular text based on whitespace and other factors
@@ -50,26 +50,26 @@
         - block, which is a big block of code
         - assert, the value the code should process to
       */
-      
+
       // mode switcher
       if(mode != 'block') {
         if(/^\s*\{begin /.test(line)) {
           code_string = ''
           block_name = line.match(/^\s*\{begin (\w+)/)[1]
           mode = 'block' // begin a block
-        } 
+        }
         else if(mode == 'code') {
           mode = 'assert' // switch to assert
         }
         else if(/^\s*\{/.test(line)) {
           code_string = line
           mode = 'code' // begin a line of code
-        } 
+        }
         else if(mode == 'assert') {
           mode = 'text' // switch back to text
         }
       }
-      
+
       // continue the block
       if(mode == 'block') {
         code_string += "\n" + line
@@ -79,7 +79,7 @@
           mode = 'code'
         }
       }
-      
+
       // sort out whitespace
       whitespace = ''
       wscount = line.search(/\S/)
@@ -87,35 +87,35 @@
         whitespace = new Array( wscount + 1 ).join( '&nbsp;' )
         // whitespace = line.slice(0, wscount !== -1).replace(/\s/, '&nbsp;&nbsp;')
       }
-      
+
       // handle text
       if(mode == 'text') {
         html += '<p class="ws' + wscount + '">' + line + '</p>'
       }
-      
+
       // handle code
       if(mode == 'code') {
         html += '<div class="panel panel-default">' // note: this gets closed later
         html += '<div class="panel-body"><code><pre><span class="glyphicon glyphicon-arrow-left"></span>' + code_string.replace(/^\s+|\s+$/g, '') + '</pre></code></div>'
-        
+
         code_string = code_string.replace(/^\s+|\s+$/g, '')
-        
+
         code_value = D.execute_then_stringify(
                        D.ExecutionSpace.execute(
                          D.Parser.string_to_block_segment(code_string), null, prior_starter))
         return code_value
       }
-      
+
       // handle asserts
       if(mode == 'assert') {
         if(code_value === false) {
           code_value = ''
         }
-        
+
         if(typeof(code_value) != 'string') {
           code_value = JSON.stringify(code_value) ? JSON.stringify(code_value) : ''
         }
-        
+
         if(code_value.trim() === line.trim()) {
           result = 'success'
           win++
@@ -123,9 +123,9 @@
           result = 'danger'
           lose++
         }
-        
+
         // TODO: convert line and code_value to escaped html
-        
+
         html += '<div class="assert panel-footer">'
         if(result == 'success') {
           html += '<small class="text-' + result + '">' + line + '</small>'
@@ -135,29 +135,29 @@
         }
         html += '</div></div>' // note: closing div from above
       }
-      
+
       return true
     }
-    
+
     function done() {
       var endtime = new Date().getTime()
 
       stats = "<p>Completed " + (win + lose) + " tests in " + ((endtime - starttime) / 1000) + " seconds.</p>"
       stats += '<div class="alert alert-success">Won ' + win + ' tests.</div>'
-      
+
       if(lose) stats += '<div class="alert alert-danger">Lost ' + lose + ' tests. (43 expected)</div>'
       if(!lose) stats += '<p>You win!!!</p>'
-      
+
       document.getElementById('stats').innerHTML = stats
       document.getElementById('tests').innerHTML = html
     }
-    
+
   </script>
-  
+
 </head>
 
-<body>  
-  <!-- NAVBAR -->  
+<body>
+  <!-- NAVBAR -->
   <nav class="navbar navbar-fixed-top navbar-inverse" role="navigation">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
@@ -219,7 +219,7 @@
       </ul>
     </div><!-- /.navbar-collapse -->
   </nav>
-    
+
   <div class="container">
     <div class="row">
       <div class="col-xs-12 col-md-6">
@@ -235,20 +235,20 @@
               </div>
             </div>
           </div>
-          
+
           <!-- HELP -->
           <ul class="list-group" id="help">
             <li class="list-group-item">
               <div class="row">
                 <span class="col-md-7">
-                  Click code snippets to copy into the REPL. 
+                  Click code snippets to copy into the REPL.
                 </span>
                 <span class="col-md-5">
                   <span class="pull-right">
                     <code class="docs-style"><pre><span class="glyphicon glyphicon-arrow-left"></span>{1 | add 2}</pre></code>
                   </span>
                 </span>
-              </div>  
+              </div>
             </li>
             <li class="list-group-item">Use <em>Space</em> or <em>Enter</em> or double-click to activate autocompletion.</li>
             <li class="list-group-item">Use <em>Esc</em> to cancel autocomplete, and to toggle its activation.</li>
@@ -258,31 +258,31 @@
           </div>
         </div>
       <div class="col-xs-12 col-md-6">
-        
+
         <!-- INTRO -->
         <div id="intro">
           <img src="../images/daimio_logo.png" alt="" />
           <h3>A system for building programmable applications.</h3>
-          <p class="lead">Web applications are rarely customizable&#8212;you can&#8217;t tailor interfaces, extend functionality, or publish your modifications. Daimio makes bottom-up change possible by expressing every action your application can perform in a dialect of a language, and making execution contexts that speak different subsets of that dialect accessible.</p>          
+          <p class="lead">Web applications are rarely customizable&#8212;you can&#8217;t tailor interfaces, extend functionality, or publish your modifications. Daimio makes bottom-up change possible by expressing every action your application can perform in a dialect of a language, and making execution contexts that speak different subsets of that dialect accessible.</p>
           <p>That means you can send raw code to the server. It means you can build extensions and share them. It means you can send code to other users for direct execution on their machines. <strong>And that means the server is merely one of potentially many trusted resources.</strong> Welcome to the world of programmable applications. Welcome to the world of universal computing. Welcome to Daimio.</p>
           <div class="btn-group text-center">
             <a href="https://groups.google.com/forum/#!forum/daimio" class="btn btn-success">Daimio Google Group</a>
             <a href="https://github.com/dxnn/daimio" class="btn btn-info">Download on Github</a>
           </div>
         </div>
-        
+
         <!-- DOCUMENTATION -->
         <div id="docs">
           <p></p>
           <div id="tests"></div>
-          <div id="stats"></div>  
+          <div id="stats"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
-  
-  
+
+
   <script>
     // NOTE: this has to be set before emmet is loaded
     emmetKeymap = {
@@ -297,7 +297,7 @@
   <script src="../codemirror/addon/hint/daimio-hint.js"></script>
   <script src="../codemirror/addon/display/placeholder.js"></script>
   <script src="../codemirror/addon/emmet/emmet.js"></script>
-    
+
   <script>
     var ge = document.getElementById.bind(document)
       , results = ge('results')
@@ -309,7 +309,7 @@
       , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
       , history_buffer = ''
       , history_cursor = 0
-    
+
     CodeMirror.commands.autocomplete = function(instance) {
       CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
         extraKeys: {'Space': function(instance, hint) {hint.pick()}}
@@ -317,7 +317,7 @@
       , closeCharacters: /[\n|"]/
       })
     }
-    
+
     repl.setOption('lineNumbers', false)
     repl.setOption('matchBrackets', true)
     repl.setOption('extraKeys', {
@@ -333,22 +333,22 @@
       "Up": function(instance) {
         if(!history_cursor)
           history_buffer = instance.getValue()
-        
+
         if(!history_list.length)
           return
-        
+
         // TODO: use history_buffer as a LHS filter to search through history
-        
+
         history_cursor += history_cursor < history_list.length - 1 ? 1 : 0
         instance.setValue(history_list[history_cursor-1])
       },
       "Down": function(instance) {
         if(!history_cursor)
           return false // if we're already all the way down, don't change anything
-        
+
         history_cursor--
         var prev = ''
-        
+
         if(!history_cursor) // we were at 1, so reset from our buffer
           prev = history_buffer
         else
@@ -371,29 +371,29 @@
         change.update(change.from, change.to, [newtext])
         return true
       }
-      
+
       // add space to changes caused by autocomplete
       if(change.from.constructor != CodeMirror.Pos && !change.origin) {
         change.update(change.from, change.to, [change.text[0] + " "])
         return true
       }
     })
-    
+
     repl_display = function(code) {
       D.run(code, function(value) {
         // preprocess history: remove existing copies of this item
         while(history_list.indexOf(code) != -1)
           history_list.splice(history_list.indexOf(code), 1)
-        
+
         // add to history and store it
         history_list.unshift(code)
         localStorage.setItem('repl-history', JSON.stringify(history_list))
-        
+
         // display it
         value = D.stringify(value)
         history_el.innerHTML = history_el.innerHTML
                           + '<div class="cmd"><p class="input">'  + code + '</p>'
-                          + '<p class="result">' + (value || '&nbsp;') + '</p></div>' 
+                          + '<p class="result">' + (value || '&nbsp;') + '</p></div>'
 
         // TODO: select the correct element
         console_el.scrollTop = 1000000
@@ -406,13 +406,13 @@
     document.addEventListener('click', function(ev) {
       if(ev.target.nodeName != 'PRE' || ev.target.parentNode.nodeName != 'CODE')
         return true
-      
+
       var code = ev.target.innerText.replace(/^\s+|\s+$/g, '')
       repl.setValue(code)
       repl.focus()
       repl.setCursor(1, 1000)
     })
-    
+
 //    function tempTooltip(cm, content) {
 //        var where = cm.cursorCoords();
 //        var tip = makeTooltip(where.right + 1, where.bottom, content);
@@ -449,6 +449,6 @@
 
   <script src="../js/jquery.js"></script>
   <script src="../js/bootstrap.min.js"></script>
- 
+
 </body>
 </html>
