@@ -380,7 +380,7 @@
     })
 
     repl_display = function(code) {
-      D.run(code, function(value) {
+      D.run(code, false, false, function(value) {
         // preprocess history: remove existing copies of this item
         while(history_list.indexOf(code) != -1)
           history_list.splice(history_list.indexOf(code), 1)
