@@ -12,7 +12,7 @@ D.import_port_flavour('from-js', {
       type: 'id'
     },
   ],
-  outside_add: function(port) {
+  outside_add: function() {
     this.default_value = this.settings.all.length > 2
                        ? this.settings.thing
                        : 1
