@@ -8,20 +8,20 @@
 <body>
 
   <h1>Simple Solo Solver</h1>
-  
+
   <p>
-    A Daimio system for solving the Collatz sequence. 
+    A Daimio system for solving the Collatz sequence.
   </p>
-  
+
   <p>
-    In the JS console, try this: 
+    In the JS console, try this:
     <code>
       for(i = 2; i < 100000; i++) D.send_value_to_js_port(OuterSpace, 'init', i)
     </code>
   </p>
 
   <div id="display"></div>
-  
+
   <script type="text/daimio" class="spaceseeds">
     outer
       $solved []
@@ -38,7 +38,7 @@
         | run with _new-tuple }
 
       solver2
-        { __ 
+        { __
         | times -1
         | >val
         | less than 0
@@ -61,19 +61,19 @@
 
       solver.done -> {(__.#2 __.#3) | list poke data $solved | >$solved} -> update-display -> @display
 
-  </script> 
+  </script>
 
   <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {      
+    document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
-      
+
       D.send_value_to_js_port(OuterSpace, 'init', 32)
     })
-    
+
     function send_some(num) {
-      for(var i = 2; i <= num; i++) 
+      for(var i = 2; i <= num; i++)
         D.send_value_to_js_port(OuterSpace, 'init', i) }
-    
+
   </script>
 
 </body>

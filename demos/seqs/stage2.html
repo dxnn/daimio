@@ -1,18 +1,18 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Sequences</title>
   <script type="text/javascript" src="../../daimio_composite.js"></script>
 </head>
 <body>
-  
+
   <h2>A family of sequences</h2>
 
   <form id="add1">
     <p><input type="submit" value="Add 1"></p>
   </form>
-  
+
   <form id="addn">
     <p>
       <input type="text" name="val" value="" id="val" size="3">
@@ -22,8 +22,8 @@
 
   <p>Your sequence</p>
   <div id="seq"> &nbsp; </div>
-  
-  
+
+
   <p>The code</p>
   <pre>
 &lt;form id=&quot;addn&quot;&gt;
@@ -32,10 +32,10 @@
     &lt;input type=&quot;submit&quot; value=&quot;add&quot;&gt;
   &lt;/p&gt;
 &lt;/form&gt;
-  
+
 outer
   $seq []
-  
+
   // INIT
   changed {__}
   saver {__ | list poke data $seq | $&gt;seq}
@@ -44,23 +44,23 @@ outer
   // ADD 1
   @add1 dom-on-submit
   @add1 -&gt; {$seq.#-1 | add 1} -&gt; saver
-  
+
   // ADD N
   @addn dom-on-submit
   @addn -&gt; {__.val | add $seq.#-1} -&gt; saver
-  
+
   // SHOW
   @seq dom-set-text
   changed -&gt; {$seq | join on &quot; &quot;} -&gt; @seq
 
 </pre>
-  
-  
+
+
 
   <script type="text/daimio" class="spaceseeds">
     outer
       $seq []
-      
+
       // INIT
       changed {__}
       saver {__ | list poke data $seq | >$seq}
@@ -69,23 +69,23 @@ outer
       // ADD 1
       @add1 dom-on-submit
       @add1 -> {$seq.#-1 | add 1} -> saver
-      
+
       // ADD N
       @addn dom-on-submit
       @addn -> {__.val | add $seq.#-1} -> saver
-      
+
       // SHOW
       @seq dom-set-text
       changed -> {$seq | join on " "} -> @seq
-      
+
   </script>
-   
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

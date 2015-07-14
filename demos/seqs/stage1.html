@@ -1,12 +1,12 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Sequences</title>
   <script type="text/javascript" src="../../daimio_composite.js"></script>
 </head>
 <body>
-  
+
   <h2>Let's make a sequence</h2>
 
   <form id="add1">
@@ -15,12 +15,12 @@
 
   <p>Your sequence</p>
   <div id="seq"> &nbsp; </div>
-  
-  
+
+
   <p>The code</p>
   <pre>
-&lt;html&gt; 
-&lt;head&gt; 
+&lt;html&gt;
+&lt;head&gt;
   &lt;script type=&quot;text/javascript&quot; src=&quot;../../daimio_composite.js&quot;&gt;&lt;/script&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -48,7 +48,7 @@
       changed -&gt; {$seq | join on &quot; &quot;} -&gt; @seq
   &lt;/script&gt;
 
-  &lt;script type=&quot;text/javascript&quot;&gt;    
+  &lt;script type=&quot;text/javascript&quot;&gt;
     document.addEventListener(&#x27;DOMContentLoaded&#x27;, function() {
       var seedlikes = document.getElementById(&#x27;spaceseeds&#x27;).text
       var outerseed = D.make_some_space(seedlikes)
@@ -58,32 +58,32 @@
 &lt;/body&gt;
 &lt;/html&gt;
   </pre>
-  
-  
+
+
 
   <script type="text/daimio" class="spaceseeds">
     outer
       $seq []
-      
+
       // INIT
       changed {__}
 
       // ADD 1
       @add1 dom-on-submit
       @add1 -> {$seq.#-1 | add 1 | list poke data $seq | >$seq} -> changed
-      
+
       // SHOW
       @seq dom-set-text
       changed -> {$seq | join on " "} -> @seq
-      
+
   </script>
-   
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

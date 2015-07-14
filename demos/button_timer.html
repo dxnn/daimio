@@ -1,13 +1,13 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Push My Button! Volume Two</title>
   <!--
   <script type="text/javascript" src="../daimio_composite.js"></script>
   -->
     <script type="text/javascript" src="../get.php?file=daimio"></script>
-  
+
 </head>
 
 <body>
@@ -15,27 +15,27 @@
   <div>
     <p>The button has been pushed <span id="counter">0</span> times!</p>
   </div>
-  
+
   <form id="button">
     <p><input type="submit" value="Start counting"></p>
   </form>
-  
+
   <form id="values">
     <p>
-      <input id="time-in" type="range" value="1000" min="0" max="2000"> 
+      <input id="time-in" type="range" value="1000" min="0" max="2000">
       <span id="time-out">1000</span> (delay, in milliseconds)</p>
     <p>
-      <input id="step-in" type="range" value="1" min="1" max="1000"> 
+      <input id="step-in" type="range" value="1" min="1" max="1000">
       <span id="step-out">1</span> (step size)</p>
   </form>
-  
+
   <h3>The code</h3>
-  
+
   <pre><code>
     outer
       $time 1000
       $step 1
-      
+
       @time-in  dom-on-change
       @time-out dom-set-text
       @time-in -> {__ | >$time} -> @time-out
@@ -43,21 +43,21 @@
       @step-in  dom-on-change
       @step-out dom-set-text
       @step-in -> {__ | >$step} -> @step-out
-      
+
       @counter dom-set-text
       @button  dom-on-submit
 
       inc    {__ | add $count | >$count}
-      block  {$count | then "" else "{1 | >@start}" | run with 1} 
-      
+      block  {$count | then "" else "{1 | >@start}" | run with 1}
+
       @button -> block
       block.start -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
 
   </code></pre>
-  
+
   <h3>The spacial structure</h3>
-  
+
   <pre><code>
     _____________________________________________________________
     |                                                           |
@@ -83,16 +83,16 @@
     o-----------------(  {__ | >$step}   )---------------------o
     |                  \_________________/                      |
     |___________________________________________________________|
-    
+
   </code></pre>
-  
-  
+
+
   <script type="text/daimio" class="spaceseeds">
 
     outer
       $time 1000
       $step 1
-      
+
       @time-in  dom-on-change
       @time-out dom-set-text
       @time-in -> {__ | >$time} -> @time-out
@@ -100,24 +100,24 @@
       @step-in  dom-on-change
       @step-out dom-set-text
       @step-in -> {__ | >$step} -> @step-out
-      
+
       @counter dom-set-text
       @button  dom-on-submit
 
       inc    {__ | add $count | >$count}
-      block  {$count | then "" else "{1 | >@start}" | run with 1} 
-      
+      block  {$count | then "" else "{1 | >@start}" | run with 1}
+
       @button -> block
       block.start -> inc -> @counter
       inc -> {process sleep for $time | $step} -> inc
 
   </script>
-  
-  <script type="text/javascript">    
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

@@ -1,6 +1,6 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Push My Button! Volume Two: Electric Buttonloo (TWO buttons for every counter)</title>
   <!--<script type="text/javascript" src="../get.php?file=daimio"></script>-->
@@ -12,31 +12,31 @@
   <div>
     <p>The button has been pushed <span id="counter">0</span> times!</p>
   </div>
-  
+
   <form id="button1">
     <p><input type="submit" value="add 1"></p>
   </form>
-  
+
   <form id="button2">
     <p><input type="submit" value="add 2"></p>
   </form>
-  
+
   <h3>The code</h3>
-  
+
   <pre><code>
     outer
       @counter dom-set-text
       @button1 dom-on-submit
       @button2 dom-on-submit
-      
+
       inc  {__ | add $count | >$count}
-      
+
       @button1 -> {1} -> inc -> @counter
       @button2 -> {2} -> inc
   </code></pre>
-  
+
   <h3>The spacial structure</h3>
-  
+
   <pre><code>
     _____________________________________________________________
     |                                                           |
@@ -58,29 +58,29 @@
     |     \_____/                                               |
     |                                                           |
     |___________________________________________________________|
-    
+
   </code></pre>
-  
+
   <script type="text/daimio" class="spaceseeds">
 
     outer
       @counter dom-set-text
       @button1 dom-on-submit
       @button2 dom-on-submit
-      
+
       inc  {__ | add $count | >$count}
-      
+
       @button1 -> {1} -> inc -> @counter
       @button2 -> {2} -> inc
 
   </script>
-   
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

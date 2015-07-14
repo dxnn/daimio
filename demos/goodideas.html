@@ -10,7 +10,7 @@
 </head>
 
 <body>
-  
+
   <section id="todoapp">
 		<header id="header">
       <h1>Good Ideas</h1>
@@ -40,21 +40,21 @@
 	<footer id="info">
 		<p>Click to edit a todo</p>
 	</footer>
-  			
+
   <!-- <form id="addidea">
      <label for="desc">Desc</label><input type="text" name="desc" value="" id="desc">
      <p><input type="submit" name="submit_button" value="Add idea"></p>
    </form>
-   
+
    ok. thinking about extensions.
-   
-   
-   --> 
+
+
+   -->
   <script type="text/daimio" class="spaceseeds">
 
     outer
       $ideas []
-      
+
       // INIT
       @ideas-in  from-js
       @ideas-out to-js
@@ -69,94 +69,94 @@
       @addidea   dom-on-submit
       @new-todo  dom-set-value
       add  {* (:title __ :completed 0) | (__) | union $ideas | >$ideas}
-      
+
       @addidea -> {""} -> @new-todo
       @addidea -> {__.desc} -> add -> changed
-      
-      
+
+
       // REMOVE
       @destroy dom-on-click .destroy
       remove   {__ | list remove data $ideas | >$ideas}
       @destroy -> remove -> changed
-      
-      
+
+
       // REMOVE COMPLETED
       @clear-completed dom-on-click
       remove-completed {$ideas | list remove by_value {$ideas | filter block "{__.completed}"} | >$ideas}
       @clear-completed -> remove-completed -> changed
-      
-      
+
+
       // COMPLETE
       @toggle dom-on-click .toggle
       // ugh stupid add list poke dumb dumb dum
       // FIXME: list poke
       // FIXME: map with ()
-      completer 
+      completer
         { __ | >$thekey | $ideas
-        | map block "{ _key | eq $thekey 
-                     | then {* (:title     __in.title 
-                                :completed {1 | subtract __in.completed})} 
-                       else __in}" 
-          with {* (:thekey _thekey)} 
+        | map block "{ _key | eq $thekey
+                     | then {* (:title     __in.title
+                                :completed {1 | subtract __in.completed})}
+                       else __in}"
+          with {* (:thekey _thekey)}
         | >$ideas}
       @toggle -> completer -> changed
-      
-      
+
+
       // AUTOCOMPLETER
       @toggle-all         dom-on-click
       @toggle-all -> {$ideas | filter block "{__.completed | not}" | then 1 else 0 | >$cval | $ideas | map block "{* (:title     __in.title :completed $cval)}" | >$ideas} -> changed
       // FIXME: filter by :completed
-      
-      
+
+
       // EDIT
       @blurme   dom-on-blur   .editme
       @focusme  dom-on-click  .editme
       @changeme dom-on-submit editfudge
-      
+
       @toggle-view dom-set-display
-      
+
       blurred
         { $ideas | tap
-        | map block "{* (:title     __in.title 
+        | map block "{* (:title     __in.title
                          :completed __in.completed)}"
         | >$ideas}
-      
+
       focused
         { __ | >$thekey | $ideas
-        | map block "{ _key | eq $thekey 
-                     | then {* (:title     __in.title 
+        | map block "{ _key | eq $thekey
+                     | then {* (:title     __in.title
                                 :completed __in.completed
                                 :editing   1)}
-                       else __in}" 
-          with {* (:thekey _thekey)} 
+                       else __in}"
+          with {* (:thekey _thekey)}
         | >$ideas}
-      
+
       changer
         { __ | >$theval | $ideas
         | map block "{ __.editing
                      | then {* (:title     $theval
                                 :completed __in.completed)}
-                       else __in}" 
-          with {* (:theval __in)} 
+                       else __in}"
+          with {* (:theval __in)}
         | >$ideas}
-      
+
       @blurme   -> blurred -> changed
       @focusme  -> focused -> changed
       @changeme -> changer -> changed
-      
-      
+
+
       // FILTER
-      
+
       // TODO: pushstate and filters and editing/display-ports.
-      
-      
-      
+
+
+
       // SHOW
       @todo-list  dom-set-html
       @todo-count dom-set-html
       @toggle-wrapper-ugh dom-set-html
       @button-wrapper-ugh dom-set-html
-      
+
       // THINK: would it be better to keep the template together as a single entity?
       show-ideas
         {begin template | map data __in | join}
@@ -171,38 +171,38 @@
 	        </form>
       	</li>
       	{end template}
-      
+
       show-count
         {"<strong>{$ideas | filter block "{__.completed | not}" | count | >inc | _inc}</strong> item{_inc | eq 1 | else :s} left" | run}
       // FIXME: >inc | _inc is unnecessary
-      
+
       show-toggle-all
         {"<input id=toggle-all type=checkbox {$ideas.completed | add | eq {$ideas | count} | then :checked else ""}>" | run}
-      
+
       show-clear-button
         {begin template | if {$ideas.completed | add} | run}
-          <button id="clear-completed">Clear completed ({$ideas.completed | add})</button>  
+          <button id="clear-completed">Clear completed ({$ideas.completed | add})</button>
         {end template}
   		// FIXME: should be $ideas.*.completed
-      
+
       changed -> show
       show -> show-ideas -> @todo-list
       show -> show-toggle-all -> @toggle-wrapper-ugh
       show -> show-clear-button -> @button-wrapper-ugh
       show -> show-count -> @todo-count
-      
+
   </script>
-   
-  
-  <script type="text/javascript">    
-    
+
+
+  <script type="text/javascript">
+
     // HACK THIS IS VERY STUPID
     D.Etc.fun = {
       'ideas-out': function(ship) {
         localStorage.setItem('ideas', JSON.stringify(ship))
       }
     }
-    
+
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
 
@@ -214,6 +214,6 @@
     })
 
   </script>
-  
+
 </body>
 </html>

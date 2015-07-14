@@ -8,11 +8,11 @@
 <body>
 
   <h1>Simple Solver</h1>
-  
+
   <p>
-    This system takes 2 to some exponent. It's very simple. 
+    This system takes 2 to some exponent. It's very simple.
   </p>
-  
+
   <p>
     Open your JS console and try this:
     <pre><code>
@@ -21,15 +21,15 @@ send(1, 2, 3, 4, 5, 6, 7 , 8)
   </p>
 
   <div id="display"></div>
-  
+
   <script type="text/daimio" class="spaceseeds">
     outer
       $solved []
 
       // SOLVER
       solver
-        { __ 
-        | math pow value 2 
+        { __
+        | math pow value 2
         | >@done}
 
       // INIT
@@ -48,17 +48,17 @@ send(1, 2, 3, 4, 5, 6, 7 , 8)
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
-    
+
     function send() {
       [].slice.call(arguments).forEach(function(arg) {
         D.send_value_to_js_port(OuterSpace, 'init', arg) }) }
 
     // You can do this instead:
-    // for(var i = 1; i <= 100; i++) 
+    // for(var i = 1; i <= 100; i++)
     //   D.send_value_to_js_port(OuterSpace, 'init', i)
-    
+
     // Sending a message to a port is the way to turn Daimio on.
-    
+
   </script>
 
 </body>

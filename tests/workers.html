@@ -4,15 +4,15 @@
 
 <script id="workerscript">
   if(!self) self = {}
-  
+
   function collatz(number) {
     if(number == 1) return 1
-    
+
     if(number % 2) return 1 + collatz(number * 3 + 1)                 // blows stack for large numbers
                                                                       // (sure wish we had PTC)
     return 1 + collatz(number / 2)
   }
-  
+
   self.onmessage = function(event) {
     postMessage(collatz(event.data.value))
   }
@@ -25,17 +25,17 @@
              (window.URL.createObjectURL
                (new Blob
                  ([code])))}
-  
+
   code    = document.getElementById('workerscript').textContent
   worker  = buildWorker(code)
-  queue   = [] 
+  queue   = []
   working = false
-  
+
   function enqueue(iterations) {
     queue.push(iterations)
     if(!working)
       dequeue() }
-  
+
   function actualRunWorker(iterations) {
     worker.onmessage = function(event) {
       if(event.data == 1) {
@@ -46,23 +46,23 @@
     for(var i = iterations; i; i--)
       worker.postMessage({ value: i })
   }
-  
+
   function dequeue() {
     if(queue.length) {
       actualRunWorker(queue.shift())
       working = true } }
-      
+
   function runWorker(iterations) {
     enqueue(iterations) }
-  
-  
+
+
   function runNormal(iterations) {
     var start = new Date().getTime()
     for(var i = iterations; i; i--)
       collatz(i)
     display('normal', iterations, start) }
-  
-  
+
+
   function display(el, iter, time) {
     document.getElementById(el + '-' + iter).textContent = new Date().getTime() - time }
 
@@ -70,7 +70,7 @@
     runNormal(1000)
     runNormal(10000)
     runNormal(100000)
-  
+
     runWorker(1000)
     runWorker(10000)
     runWorker(100000)

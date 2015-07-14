@@ -1,47 +1,47 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Sequence Adventures</title>
   <script type="text/javascript" src="../../daimio_composite.js"></script>
 </head>
 
 <body>
-  
+
   <h2>All together now</h2>
-  
+
   <form id="add1">
     <p><input type="submit" value="add 1"></p>
   </form>
-  
+
   <form id="addn">
     <p>
       <input type="text" name="val" value="2" id="val" size="3">
       <input type="submit" value="add">
     </p>
   </form>
-  
+
   <form id="whatever">
     <p>
       <input type="text" name="code" value="{_seq.#-1 | add _seq.#-2 | max 1}" id="code" size="133">
       <input type="submit" value="do whatever">
     </p>
   </form>
-  
+
   <form id="safeway">
     <p>
       <input type="text" name="safecode" value="{_seq | count | >n | add 1 | times _n | divide by 2}" id="safecode" size="133">
       <input type="submit" value="safer twever">
     </p>
   </form>
-  
+
   <form id="everything">
     <p>
       <input type="text" name="everycode" value="{__ | add 1}" id="everycode" size="133">
       <input type="submit" value="everything">
     </p>
   </form>
-  
+
   <p>Try me:</p>
   <pre>
 {_seq.#-1 | add _seq.#-2 | max 1}
@@ -54,7 +54,7 @@
   <div>
     <p>The sequence to date: <span id="seq"></span></p>
   </div>
-  
+
   <script type="text/daimio" class="spaceseeds">
     safespace
       @in
@@ -65,45 +65,45 @@
     outer
       $seq []
       $chartchars ["▁","▂","▃","▅","▆","▇"]
-      
+
       // show seq
       @seq  dom-set-text
       changed {__}
       saver {__ | add 0 | list poke data $seq | >$seq}
       saver -> changed -> {$seq | join on " "} -> @seq
-      
+
       // add 1
       @add1 dom-on-submit
       @add1 -> {1 | add $seq.#-1} -> saver
-      
+
       // add N
       @addn dom-on-submit
       @addn -> {__.val | add $seq.#-1} -> saver
-      
+
       // whatever
       @whatever dom-on-submit
       @whatever -> {__.code | unquote | run with {* (:seq $seq)}} -> saver
-      
+
       // safeway
       @safeway dom-on-submit
       @safeway -> {* (:code __.safecode :seq $seq)} -> safespace.in
       safespace.out -> saver
-      
+
       // everything
       @everything dom-on-submit
       @everything -> {__.everycode | unquote | map data $seq | >$seq} -> changed
-      
+
       // show sparkline
       @sparkline dom-set-text
       changed -> {$seq | max | >max | $seq | each block "{__ | divide by _max | times 5 | math round | >index | $chartchars.{_index}}" with {* (:max _max)} | join} -> @sparkline
 
   </script>
-  
-  <script type="text/javascript">    
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

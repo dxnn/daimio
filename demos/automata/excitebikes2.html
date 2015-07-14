@@ -8,20 +8,20 @@
     <script type="text/javascript" src="../../get.php?file=daimio"></script>
 </head>
 <body>
-  
+
   <div id="house"></div>
-  
+
   <p>
     This version doesn't store the cell structure -- instead it exists only as a ship sailing the system of routes.
   </p>
-  
+
   <script type="text/daimio" class="spaceseeds">
 
     outer
       $colors ["#339", "#66B", "#66F", "#BBF", "#EEF"]
       $time   1000
       // $cells  []
-      
+
       // INIT
       @init   from-js
       changed {__}
@@ -30,45 +30,45 @@
         {20 | range | map block "{20 | range | map block 0}"}
         // {64 | math random | math pow exp 0.1666 | math round}
         // {0 | >$cells.{20 | range}.{range 20}}
-      
+
       @init -> initializer
 
 
       // LOOP
-      process 
+      process
         { __ | map with {* (:cells __in)} block "{
             __ | map with {* (:row _key :cells _cells)} block "{
               __ | switch (
                 0 { _cells.{_row | add -1 | range 3}.{_key | add -1 | range 3}
                   | math max | >max | _max | less than 3 | then 0 else _max}
-                1 0 
-                2 1 
-                3 2 
+                1 0
+                2 1
+                3 2
                 4 3)}"}"
         }
 
       try-change
-        { __ | >cells 
-        | if $change 
-          then "{ "" | >$change | _cells 
+        { __ | >cells
+        | if $change
+          then "{ "" | >$change | _cells
                 | list poke path (_change.row _change.col) value _change.val}"
           else _cells
         | run with {* (:cells _cells :change $change)} }
 
       initializer -> process -> changed
       process -> {__ | process sleep for $time} -> try-change -> process
-      
-      
+
+
       // INPUT
       @touched dom-on-click .touch
       save-change
         {__ | split on "x" | * (:row __.#1 :col __.#2 :val 4) | >$change}
       @touched -> save-change
-      
+
 
       // SHOW
       @house  dom-set-html
-      
+
       show-cells
         <table border="0" cellspacing="0" cellpadding="0">
           {begin row | map data __in | join}
@@ -79,40 +79,40 @@
           	</tr>
         	{end row}
         </table>
-      
+
       changed -> show
       show -> show-cells -> @house
-            
+
   </script>
 
 
-  <script type="text/javascript">        
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       seedlikes = D.get_seedlikes()                   // published for editor
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed)             // published for debug
-    
+
       D.send_value_to_js_port(OuterSpace, 'init', 1)  // activate init
     })
   </script>
-  
-  
+
+
   <!-- CodeMirror -->
-  
-  
+
+
   <form style="width: 99%; position: fixed; top: 0px; margin: 0px">
     <textarea id="code" name="code" rows="1" placeholder="Try me out! Type something up here!"></textarea>
     <div id="history"></div>
   </form>
-  
-  
+
+
   <form id="updateseed" style="width: 99%; position: fixed; bottom: 0px; margin: 0px">
     <textarea id="seedling" name="seedling"></textarea>
     <input type="submit" name="gogogo" value="Go">
   </form>
-  
-  
-  
+
+
+
   <script>
     // NOTE: this has to be set before emmet is loaded
     emmetKeymap = {
@@ -124,17 +124,17 @@
   <link rel="stylesheet" href="../../codemirror/lib/codemirror.css">
   <script src="../../codemirror/lib/codemirror.js"></script>
   <script src="../../codemirror/mode/daimio/daimio.js"></script>
-  
+
   <link rel="stylesheet" href="../../codemirror/addon/hint/show-hint.css">
   <script src="../../codemirror/addon/hint/show-hint.js"></script>
   <script src="../../codemirror/addon/hint/daimio-hint.js"></script>
-  
+
   <script src="../../codemirror/addon/display/placeholder.js"></script>
   <script src="../../codemirror/addon/emmet/emmet.js"></script>
-      
-  <script type="text/javascript">    
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
-    
+
     // GENERAL
 
       var ge = document.getElementById.bind(document)
@@ -146,7 +146,7 @@
         , history_list = JSON.parse(localStorage.getItem('repl-history')) || []
         , history_buffer = ''
         , history_cursor = 0
-    
+
       CodeMirror.commands.autocomplete = function(instance) {
         CodeMirror.showHint(instance, CodeMirror.hint.daimio, {
           extraKeys: {'Space': function(instance, hint) {hint.pick()}}
@@ -155,12 +155,12 @@
         })
       }
 
-    
+
     // EDITOR
-    
+
       var editor = CodeMirror.fromTextArea(ge('seedling'), {})
       editor.setValue(seedlikes)
-    
+
       editor.on("change", function(instance, change) {
         CodeMirror.commands.autocomplete(instance)
       })
@@ -172,29 +172,29 @@
           return true
         }
       })
-      
+
       var updater = ge('updateseed')
       updater.addEventListener('submit', function(e) {
         e.stopPropagation()
         e.preventDefault()
-        
+
         var outerseed = D.make_some_space(editor.getValue())
         OuterSpace.seed = D.SPACESEEDS[outerseed]
-        
+
         // OuterSpace = new D.Space(outerseed) // published for debug
 
         // D.send_value_to_js_port('init', 1) // activate init
-        
+
       })
-    
-      // button for updating seed 
+
+      // button for updating seed
       // highlighting/ac for spacial structure
       // daggrrrrrrrr
-    
-    
-    
+
+
+
     // REPL
-    
+
       repl.setOption('lineNumbers', false)
       repl.setOption('matchBrackets', true)
       repl.setOption('extraKeys', {
@@ -210,22 +210,22 @@
         "Up": function(instance) {
           if(!history_cursor)
             history_buffer = instance.getValue()
-        
+
           if(!history_list.length)
             return
-        
+
           // TODO: use history_buffer as a LHS filter to search through history
-        
+
           history_cursor += history_cursor < history_list.length - 1 ? 1 : 0
           instance.setValue(history_list[history_cursor-1])
         },
         "Down": function(instance) {
           if(!history_cursor)
             return false // if we're already all the way down, don't change anything
-        
+
           history_cursor--
           var prev = ''
-        
+
           if(!history_cursor) // we were at 1, so reset from our buffer
             prev = history_buffer
           else
@@ -248,36 +248,36 @@
           change.update(change.from, change.to, [newtext])
           return true
         }
-      
+
         // add space to changes caused by autocomplete
         if(change.from.constructor != CodeMirror.Pos && !change.origin) {
           change.update(change.from, change.to, [change.text[0] + " "])
           return true
         }
       })
-    
+
       repl_display = function(code) {
         D.run(code, function(value) {
           // preprocess history: remove existing copies of this item
           while(history_list.indexOf(code) != -1)
             history_list.splice(history_list.indexOf(code), 1)
-        
+
           // add to history and store it
           history_list.unshift(code)
           localStorage.setItem('repl-history', JSON.stringify(history_list))
-        
+
           // display it
           history_el.innerHTML = '<p class="input">'  + code + '</p>'
-                            + '<p class="result">' + (value || '&nbsp;') + '</p>' 
+                            + '<p class="result">' + (value || '&nbsp;') + '</p>'
                             + history_el.innerHTML
         }, OuterSpace)
       }
 
       // from http://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
       repl.setSize("100%", repl.defaultTextHeight() + 8) // 8 for font
-    
+
     })
   </script>
-  
+
 </body>
 </html>

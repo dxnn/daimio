@@ -1,6 +1,6 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Station Break</title>
     <script type="text/javascript" src="../get.php?file=daimio"></script>
@@ -16,15 +16,15 @@
     <p>Mod two? <span id="modtwo-yes"></span> <span id="modtwo-no"></span></p>
     <p>FB: <span id="fizz"></span><span id="buzz"></span></p>
   </div>
-  
+
   <form id="button1"><p><input type="submit" value="inc"></p></form>
   <form id="button2"><p><input type="submit" value="dec"></p></form>
-  
+
   <script type="text/daimio" class="spaceseeds">
 
     outer
       $count 11
-      
+
       @fizz       dom-set-text
       @buzz       dom-set-text
       @count      dom-set-text
@@ -33,24 +33,24 @@
 
       @button1 dom-on-submit
       @button2 dom-on-submit
-      
+
       modthree {__ | mod 3 | then "" else :fizz}
       modfive  {__ | mod 5 | then "" else :buzz}
       modtwo   {__ | mod 2 | then "{__ | >@twono}" else "{__ | >@twoyes}" with __}
-      
+
       twono    {""   | >@modtwo-yes | "{:No | >@modtwo-no}" | run}
       twoyes   {:Yes | >@modtwo-yes | ""  | >@modtwo-no}
-      
+
       counter {__ | add $count | >$count}
-      
+
       @button1 -> {1}  -> counter
       @button2 -> {-1} -> counter
-      
+
       counter -> @count
       counter -> modthree -> @fizz
       counter -> modfive  -> @buzz
       counter -> modtwo
-      
+
       modtwo.twono     -> twono
       twono.modtwo-no  -> @modtwo-no
       twono.modtwo-yes -> @modtwo-yes
@@ -58,17 +58,17 @@
       modtwo.twoyes     -> twoyes
       twoyes.modtwo-no  -> @modtwo-no
       twoyes.modtwo-yes -> @modtwo-yes
-      
+
       // the above is super convoluted in order to test various messy port-related things
 
   </script>
-   
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

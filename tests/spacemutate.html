@@ -1,6 +1,6 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Sequences</title>
   <!--
@@ -9,7 +9,7 @@
     <script type="text/javascript" src="../get.php?file=daimio"></script>
 </head>
 <body>
-  
+
   <h2>Let's make a sequence</h2>
 
   <form id="add1">
@@ -18,33 +18,33 @@
 
   <p>Your sequence</p>
   <div id="seq"> &nbsp; </div>
-  
+
 
   <script type="text/daimio" class="spaceseeds">
     outer
       $seq []
-      
+
       // INIT
       changed {__}
 
       // ADD 1
       @add1 dom-on-submit
       @add1 -> {$seq.#-1 | add 1 | list poke data $seq | >$seq} -> changed
-      
+
       // SHOW
       @seq dom-set-text
       changed -> {$seq | join on " "} -> @seq
-      
+
     outer2
       $seq []
-      
+
       // INIT
       changed {__}
 
       // ADD 1
       @add1 dom-on-submit
       @add1 -> {$seq.#-1 | add 5 | list poke data $seq | >$seq} -> changed
-      
+
       // SHOW
       @seq dom-set-text
       changed -> {$seq | join on " "} -> @seq
@@ -52,7 +52,7 @@
     outer3
       {"x":123}
       $seq [1]
-      
+
       // INIT
       changed {__}
 
@@ -60,19 +60,19 @@
       @add1 dom-on-submit
       @foo in
       @add1 -> {$seq.#-1 | add 1 | list poke data $seq | >$seq} -> changed
-      
+
       // SHOW
       @seq dom-set-text
       changed -> {$seq | join on " "} -> {123} -> outer2.add1 -> @seq
-      
+
   </script>
-  
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
     })
   </script>
-  
+
 </body>
 </html>

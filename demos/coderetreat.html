@@ -1,6 +1,6 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Master not mind</title>
   <script type="text/javascript" src="../get.php?file=daimio"></script>
@@ -8,59 +8,59 @@
 <body>
 
   <div id="secret_out"></div>
-  
+
   <form id="guessform">
     <label for="guess">guess</label>
     <input type="text" name="guess" value="" id="guess">
     <input type="submit" value="go">
   </form>
-  
+
   <div id="result"></div>
 
 
   <script type="text/daimio" class="spaceseeds">
     outer
       $secret []
-      
+
       // SECRET
       @init from-js
       @secret-out dom-set-text secret_out
       @init -> {10 | range | map block "{40 | math random}" | >$secret} -> @secret-out
-      
+
       // GUESS
-      
+
       // CHECKER
       @result    dom-set-text
       @guessform dom-on-submit
       checker
-        { __.guess | split on " " 
+        { __.guess | split on " "
         | zip $secret
         | map block "{cond ({_value.#1 | eq _value.#2} :ok
-                            {_value.#1 | add 0 | is in $secret} :in 
+                            {_value.#1 | add 0 | is in $secret} :in
                             :true :out)}"}
-        
+
       @guessform -> checker -> @result
-      
-    
+
+
   </script>
-  
-  <script type="text/javascript">    
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
-      
+
       D.send_value_to_js_port(OuterSpace, 'init', 1) // activate init
     })
   </script>
-  
+
 </body>
 </html>
 
 <!--
 
 
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Master not mind</title>
 </head>
@@ -71,13 +71,13 @@
     <input type="text" name="secret" value="" id="secret">
     <input type="submit" value="go">
   </form>
-  
+
   <form id="guessform">
     <label for="guess">guess</label>
     <input type="text" name="guess" value="" id="guess">
     <input type="submit" value="go">
   </form>
-  
+
   <div id="result"></div>
 
   <script>
@@ -91,10 +91,10 @@
     }
 
     var secret = [ 4, 3, 2, 6, 1, 7, 18, 27, 34, 25 ];
-    function allCorrect(memo, value) { 
+    function allCorrect(memo, value) {
       return memo && (value === "correct");
     }
-    
+
     function mastermind() {
        our_history = [];
        while (true) {
@@ -103,14 +103,14 @@
          if (checker(secret, guess).reduce(allCorrect, true)) {
            return our_history;
          }
-      } 
+      }
     }
-  
+
     function guesser(our_history) {
       var guess= []
         , lastguess = our_history[our_history.length - 1]
         , lastcorrect = lastguess ? checker(secret, lastguess) : []
-        
+
       if (our_history.length < 200000) {
         for(var i=0; i < 9; i++) {
           if(lastcorrect[i] == "correct")
@@ -123,20 +123,20 @@
          return secret;
       }
     }
-  
+
     document.addEventListener('DOMContentLoaded', function() {
       sform = document.getElementById('secretform')
       gform = document.getElementById('guessform')
-        
+
       sform.addEventListener('submit', function(ev) {
         debugger
       })
-      
-      
-      
+
+
+
     })
   </script>
-  
+
 </body>
 </html>
 

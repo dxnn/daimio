@@ -1,6 +1,6 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Push My Button!</title>
   <script type="text/javascript" src="../daimio_composite.js"></script>
@@ -11,55 +11,55 @@
   <div>
     <p>The button has been pushed <span id="counter">0</span> times!</p>
   </div>
-  
+
   <form id="button">
     <p><input type="submit" value="Click me!!"></p>
   </form>
-  
+
   <h3>The code</h3>
-  
+
   <pre><code>
     outer
-    
+
       @counter dom-set-text
       @button  dom-on-submit
-      
+
       @button -> {1 | add $count | >$count} -> @counter
   </code></pre>
-  
+
   <h3>The spacial structure</h3>
-  
+
   <pre><code>
    _______________________________________
-  |                                       |  
-  |     _____________________________     |  
-  |    /                             \    |  
+  |                                       |
+  |     _____________________________     |
+  |    /                             \    |
   o---(  {1 | add $count | >$count}  )---o
-  |    \_____________________________/    |  
-  |                                       |  
-  |_______________________________________|  
+  |    \_____________________________/    |
+  |                                       |
+  |_______________________________________|
   </code></pre>
-  
+
   <script type="text/daimio" class="spaceseeds">
 
     outer
       @counter dom-set-text
       @button  dom-on-submit
-      
+
       @button -> {1 | add $count | >$count} -> @counter
 
   </script>
-   
-  <script type="text/javascript">    
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
-      
+
       // var code = document.getElementById('hello_daimio')
       // D.run(code.text, function() {})
-      
+
       var get_seedlike_positions = function(seed) {
         var inports = {}, outports = {}
-        
+
         // _.each(seed.ports, function(port, portkey) {
         D.to_array(seed.ports).forEach(function(port, portkey) {
           port.dir = D.PortFlavours[port[0]].dir
@@ -68,7 +68,7 @@
           if(port.dir == 'out')
             outports[portkey] = port
         })
-        
+
         seed.routes.forEach(function(route) {
           /*
             we want to... get a data structure? and then draw it. so the structure is like
@@ -80,28 +80,28 @@
             and we need to know how long the station is... i guess str.length + 6
             so x,y for ports and for stations? and subspaces eventually. and sizes for subspaces.
             if we can generate that auxiliary data structure, then we can draw it all pretty easily.
-            
+
             ports: [[12,3],[4,5],...]
             stations: [[3,2],...] <- inport coords?
           */
         })
-        
-        var positions = 
+
+        var positions =
         { ports: [[0,5], [60,5]]
         , stations: [[5,5]]
         }
-        
+
         return positions
-        
+
         // console.log(inports, outports)
       }
-      
+
       var draw_seedlike = function(seedlike, positions) {
         var ports = positions.ports
           , width = ports.reduce(function(acc, port) {return Math.max(port[0], acc)}, 0)
           , height = ports.reduce(function(acc, port) {return Math.max(port[1], acc)}, 0) + 5
           , chart = []
-        
+
         // yuck yuck yuck
         for(var i=0; i < height; i++) {
           var row = []
@@ -110,7 +110,7 @@
           }
           chart.push(row)
         }
-          
+
         // draw bottom
         chart[height-1] = chart[height-1].map(function() {return '_'})
         // chart[height-1][0] = chart[height-1][width-1] = '|'
@@ -132,24 +132,24 @@
         chart[0][0] = chart[0][width-1] = ' '
 
         // add station
-        
-        
+
+
         // add edges
 
         // console.log(chart)
         // x = chart
         // console.log(x.reduce(function(string, row) {return string += "\n" + row.join('')}, ''))
       }
-      
+
       get_blank_box = function(w, h) {
         var blank = Array(w+1).join(' ').split('')
         return Array(h).join('*').split('*').map(function() {return blank})
       }
-      
+
       // TODO: lib me!
       draw_box = function(w, h) {
         // returns an array of strings representing rows
-        
+
         // build blank box
         var box = get_blank_box(w, h)
 
@@ -161,33 +161,33 @@
 
         // draw top
         box[0] = [' '].concat(Array(w-1).join('_').split(''), [' '])
-        
+
         return box
       }
-      
+
       draw_station = function(block) {
         // block is some words
         var limit = 80
           , len = block.length
-        
+
         len = len < limit ? len : limit
         var box = draw_box(len + 6, 4)
-        
+
         // mangle sides
         box[0] = ['',''].concat(box[0].slice(2, -2), ['',''])
         box[1] = ['','/'].concat(box[1].slice(2, -2), ['\\',''])
         box[2] = ['(',' ',' '].concat(block.slice(0, len).split(''), [' ',' ',')'])
         box[3] = ['','\\'].concat(box[3].slice(2, -2), ['/',''])
-        
+
         return box
       }
-      
+
       add_ports = function(box, ports) {
         // ports is an array of {dir: (in|out|up|down), pos: 0..100}
-        
+
         var w = box[0].length - 1
           , h = box.length - 1
-        
+
         ports.forEach(function(port) {
           var relp = port.pos / 100
             , relw = Math.round(relp * (w-1)) + 1 // don't include corners
@@ -203,13 +203,13 @@
           if(port.dir == 'down')
             box[h][relw] = 'o'
         })
-        
+
         return box
       }
-      
+
       add_path = function(box, x1, y1, x2, y2) {
         box = D.clone(box) // merp
-        
+
         // coords are in box position values
         var xdiff = Math.abs(x1 - x2)
           , ydiff = Math.abs(y1 - y2)
@@ -217,10 +217,10 @@
           , yshift = (ydiff - xdiff) / 2
           , xdel = (xshift - Math.floor(xshift)) * 2
           , ydel = (yshift - Math.floor(yshift)) * 2
-        
+
         xshift = Math.floor(xshift)
         yshift = Math.floor(yshift)
-        
+
         // draw the largest diagonal, centered, and then the nubs
         if(xdiff > ydiff) {
           box = add_line(box, x1+xshift+xdel, y1, x2-xshift, y2)
@@ -231,52 +231,52 @@
           box = add_line(box, x1, y1+yshift+ydel, x2, y2-yshift)
           box = add_line(box, x1, y1, x1, y1+yshift+ydel)
           box = add_line(box, x2, y2-yshift, x2, y2)
-        }  
+        }
 
         return box
       }
-      
+
       add_line = function(box, x1, y1, x2, y2) {
         if(y1 == y2)
           return add_hor_line(box, x1, y1, x2, y2)
-          
+
         if(x1 == x2)
           return add_ver_line(box, x1, y1, x2, y2)
-          
+
         return add_dia_line(box, x1, y1, x2, y2)
       }
-      
+
       add_hor_line = function(box, x1, y1, x2, y2) {
         box[y1] = box[y1].map(function(ch, i) {return i >= x1 && i <= x2 ? '-' : ch })
         return box
       }
-      
+
       add_ver_line = function(box, x1, y1, x2, y2) {
         return box.map(function(row, iy) {
           return row.map(function(ch, ix) {
             return ix == x1 && iy >= y1 && iy <= y2 ? '|' : ch })})
       }
-      
+
       add_dia_line = function(box, x1, y1, x2, y2) {
         var xdiff = Math.abs(x1 - x2)
           , ydiff = Math.abs(y1 - y2)
           , xmod = x1 < x2 ? 1 : -1
           , ymod = y1 < y2 ? 1 : -1
           , ch = y1 < y2 ? '\\' : '/'
-        
+
         if(xdiff != ydiff)
           return box // TODO: throw error
-        
+
         for(var i=0; i < xdiff; i++)
           box[y1 + i*ymod][x1 + i*xmod] = ch
-        
+
         return box
       }
-      
+
       composite = function(outer, inner, xoffset, yoffset) {
         // stick the inner box in the outer box
         outer = D.clone(outer)
-        
+
         inner.forEach(function(row, yindex) {
           var yar = yindex + yoffset
           outer[yar] = outer[yar].slice(0, xoffset).concat(row, outer[yar].slice(xoffset+row.length))
@@ -284,7 +284,7 @@
 
         return outer
       }
-      
+
       box_to_string = function(box) {
         var string = ''
         box.forEach(function(row) {
@@ -293,9 +293,9 @@
         })
         return string
       }
-      
-      
-      
+
+
+
       draw_seedlike(seedlikes.outer, get_seedlike_positions(seedlikes.outer))
 
     ports = [{dir:'in', pos:20},{dir:'in', pos:70},{dir:'out', pos:50},{dir:'up', pos:30},{dir:'down', pos:60}]
@@ -303,17 +303,17 @@
     q = add_ports(x, ports)
     w = add_path(q, 1, 3, 79, 7)
     e = add_path(w, 1, 7, 78, 1)
-    
-    
+
+
     z = document.getElementsByTagName('code')[1]
     r = draw_station('{__ | add $count | >$count}')
     x = function() {z.innerHTML = box_to_string(composite(e, r, Math.floor(Math.random() * 30), Math.floor(Math.random()*6)))}
     c = function() {setTimeout(function() {x();i++;if(i<100) c()},0)}
     i = -1000
-    
+
     })
-    
+
   </script>
-  
+
 </body>
 </html>

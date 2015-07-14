@@ -1,13 +1,13 @@
-<!doctype html> 
-<html> 
-<head> 
+<!doctype html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Push My Button debugger</title>
   <script type="text/javascript" src="../get.php?file=daimio"></script>
 </head>
 
 <body>
-  
+
   <p>
     Used to ensure multiple identical stations don't conflict or overlap.
   </p>
@@ -15,18 +15,18 @@
   <div>
     <p>The button has been pushed <span id="counter1">0</span> times!</p>
   </div>
-  
+
   <p>Another counter: <span id="counter2">0</span></p>
-  
+
   <form id="button1">
     <p><input type="submit" value="add to 1"></p>
   </form>
-  
-  
+
+
   <script type="text/daimio" id="spaceseeds">
 
     outer
-          
+
       @button1  dom-on-submit
 
       @counter1 dom-set-text
@@ -34,20 +34,20 @@
 
       inc1  {1 | add $count | >$count}
       inc2  {1 | add $count | >$count}
-      
+
       @button1 -> {1} -> inc1 -> @counter1
       inc2 -> @counter2
 
   </script>
-   
-  
-  <script type="text/javascript">    
+
+
+  <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
       var seedlikes = document.getElementById('spaceseeds').text
       var outerseed = D.make_some_space(seedlikes)
       OuterSpace = new D.Space(outerseed) // published for debug
     })
   </script>
-  
+
 </body>
 </html>
