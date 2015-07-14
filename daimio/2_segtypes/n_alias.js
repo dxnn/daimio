@@ -28,8 +28,8 @@ D.SegmentTypes.Alias = {
         a_token.key = new_key
 
         if(a_token.inputs) {
-          for(var i=0, l=a_token.inputs.length; i < l; i++) {
-            a_token.inputs[i] = keymap[a_token.inputs[i]] || a_token.inputs[i]
+          for(var j=0, k=a_token.inputs.length; j < k; j++) { 
+            a_token.inputs[j] = keymap[a_token.inputs[j]] || a_token.inputs[j]
           }
         }
       }
