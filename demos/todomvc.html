@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en" data-framework="javascript">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<link rel="stylesheet" href="../css/todo.css">
+  <title>Good Ideas</title>
+  <!--<script type="text/javascript" src="../get.php?file=daimio"></script>-->
+  <script type="text/javascript" src="../daimio_composite.js"></script>
+</head>
+
+<body>
+
+  <section id="todoapp">
+		<header id="header">
+      <h1>Good Ideas</h1>
+			<form id="addidea"><input id="new-todo" name="desc" placeholder="What's the idea?" autofocus></form>
+		</header>
+		<section id="main">
+			<span id="toggle-wrapper-ugh"><input id="toggle-all" type="checkbox"></span>
+			<label for="toggle-all">Mark all as complete</label>
+			<ul id="todo-list"></ul>
+		</section>
+		<footer id="footer">
+			<span id="todo-count"></span>
+			<ul id="filters">
+				<li>
+					<a href="#/">All</a>
+				</li>
+				<li>
+					<a href="#/active">Active</a>
+				</li>
+				<li>
+					<a href="#/completed">Completed</a>
+				</li>
+			</ul>
+			<span id="button-wrapper-ugh"></span>
+		</footer>
+	</section>
+	<footer id="info">
+		<p>Click to edit a todo</p>
+	</footer>
+
+  <!-- <form id="addidea">
+     <label for="desc">Desc</label><input type="text" name="desc" value="" id="desc">
+     <p><input type="submit" name="submit_button" value="Add idea"></p>
+   </form>
+
+   ok. thinking about extensions.
+
+
+   -->
+  <script type="text/daimio" class="spaceseeds">
+
+    outer
+      $ideas []
+
+      // INIT
+      @ideas-in  from-js
+      @ideas-out to-js
+      changed {__}
+      show {__}
+      // NOTE: changed and show are just event hangers -- kind of like channels.
+      @ideas-in -> {__ | >$ideas} -> show
+      changed   -> @ideas-out
+
+
+      // ADD
+      @addidea   dom-on-submit
+      @new-todo  dom-set-value
+      add  {* (:title __ :completed 0) | (__) | union $ideas | >$ideas}
+
+      @addidea -> {""} -> @new-todo
+      @addidea -> {__.desc} -> add -> changed
+
+
+      // REMOVE
+      @destroy dom-on-click .destroy
+      remove   {__ | list remove data $ideas | >$ideas}
+      @destroy -> remove -> changed
+
+
+      // REMOVE COMPLETED
+      @clear-completed dom-on-click
+      remove-completed {$ideas | list remove by_value {$ideas | filter block "{__.completed}"} | >$ideas}
+      @clear-completed -> remove-completed -> changed
+
+
+      // COMPLETE
+      @toggle dom-on-click .toggle
+      // ugh stupid add list poke dumb dumb dum
+      // FIXME: list poke
+      // FIXME: map with ()
+      completer
+        { __ | >$thekey | $ideas
+        | map block "{ _key | eq $thekey
+                     | then {* (:title     __in.title
+                                :completed {1 | subtract __in.completed})}
+                       else __in}"
+          with {* (:thekey _thekey)}
+        | >$ideas}
+      @toggle -> completer -> changed
+
+
+      // AUTOCOMPLETER
+      @toggle-all         dom-on-click
+      @toggle-all -> {$ideas | filter block "{__.completed | not}" | then 1 else 0 | >$cval | $ideas | map block "{* (:title     __in.title :completed $cval)}" | >$ideas} -> changed
+      // FIXME: filter by :completed
+
+
+      // EDIT
+      @blurme   dom-on-blur   .editme
+      @focusme  dom-on-click  .editme
+      @changeme dom-on-submit editfudge
+
+      @toggle-view dom-set-display
+
+      blurred
+        { $ideas | tap
+        | map block "{* (:title     __in.title
+                         :completed __in.completed)}"
+        | >$ideas}
+
+      focused
+        { __ | >$thekey | $ideas
+        | map block "{ _key | eq $thekey
+                     | then {* (:title     __in.title
+                                :completed __in.completed
+                                :editing   1)}
+                       else __in}"
+          with {* (:thekey _thekey)}
+        | >$ideas}
+
+      changer
+        { __ | >$theval | $ideas
+        | map block "{ __.editing
+                     | then {* (:title     $theval
+                                :completed __in.completed)}
+                       else __in}"
+          with {* (:theval __in)}
+        | >$ideas}
+
+      @blurme   -> blurred -> changed
+      @focusme  -> focused -> changed
+      @changeme -> changer -> changed
+
+
+      // FILTER
+
+      // TODO: pushstate and filters and editing/display-ports.
+
+
+
+      // SHOW
+      @todo-list  dom-set-html
+      @todo-count dom-set-html
+      @toggle-wrapper-ugh dom-set-html
+      @button-wrapper-ugh dom-set-html
+
+      // THINK: would it be better to keep the template together as a single entity?
+      show-ideas
+        {begin template | map data __in | join}
+        <li class="{__.completed | then "completed" else ""}">
+      	  <div class="view">
+      	    <input class="toggle" type="checkbox" data-value="{_key}" {__.completed | then "checked" else ""}>
+      	    <label class="editme" data-value="{_key}">{__.title}</label>
+      	    <button class="destroy" data-value="{_key}"></button>
+      	  </div>
+	        <form id="editfudge">
+            <input type="text" name="idea" value="{__.title}" class="edit">
+	        </form>
+      	</li>
+      	{end template}
+
+      show-count
+        {"<strong>{$ideas | filter block "{__.completed | not}" | count | >inc | _inc}</strong> item{_inc | eq 1 | else :s} left" | run}
+      // FIXME: >inc | _inc is unnecessary
+
+      show-toggle-all
+        {"<input id=toggle-all type=checkbox {$ideas.completed | add | eq {$ideas | count} | then :checked else ""}>" | run}
+
+      show-clear-button
+        {begin template | if {$ideas.completed | add} | run}
+          <button id="clear-completed">Clear completed ({$ideas.completed | add})</button>
+        {end template}
+  		// FIXME: should be $ideas.*.completed
+
+      changed -> show
+      show -> show-ideas -> @todo-list
+      show -> show-toggle-all -> @toggle-wrapper-ugh
+      show -> show-clear-button -> @button-wrapper-ugh
+      show -> show-count -> @todo-count
+
+  </script>
+
+
+  <script type="text/javascript">
+
+    // HACK THIS IS VERY STUPID
+    D.Etc.fun = {
+      'ideas-out': function(ship) {
+        localStorage.setItem('ideas', JSON.stringify(ship))
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      OuterSpace = D.make_me_a_space_as_fast_as_you_can() // published for debug
+
+      // get ideas
+      ideas = JSON.parse(localStorage.getItem('ideas')) || [] // TODO: var me
+
+      // activate ideas-in port
+      D.send_value_to_js_port(OuterSpace, 'ideas-in', ideas)
+    })
+
+  </script>
+
+</body>
+</html>
