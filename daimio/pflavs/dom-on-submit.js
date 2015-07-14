@@ -14,11 +14,11 @@ D.import_port_flavour('dom-on-submit', {
   ],
   outside_add: function() {
     var self = this
-    
-    var callback = function(value, event) {                     // TODO: buckle down and have this suck out 
-      var ship = {}                                             //       all form values, not just the easy ones. 
+
+    var callback = function(value, event) {                     // TODO: buckle down and have this suck out
+      var ship = {}                                             //       all form values, not just the easy ones.
       var element = event.target                                //       yes, it's ugly. but do it for the kittens.
-        
+
       for(var i=0, l=element.length; i < l; i++) {
         if(element[i].type == 'checkbox') {
           var name = element[i].name
@@ -35,9 +35,9 @@ D.import_port_flavour('dom-on-submit', {
           ship[element[i].name] = element[i].value
         }
       }
-      self.enter(ship) 
+      self.enter(ship)
     }
-        
+
     D.track_event('submit', this.settings.thing, this.settings.parent, callback)
   }
 })

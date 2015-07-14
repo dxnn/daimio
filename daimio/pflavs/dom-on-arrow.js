@@ -33,7 +33,7 @@ D.import_port_flavour('dom-on-arrow', {
 
 so it's like a command, kind of
 
-like: 
+like:
         @arrows is a dom-on-arrow port with target "document" ignore (:form :myfield :myslider)
 
 
@@ -51,11 +51,11 @@ also, why is default state input in json? just do it in daimio code dude
 
 it's probaly a good idea to have that kind of syntax, even if we don't go any further. it's really confusing to read currently because we don't know what the params ARE, and we have to read the code to figure it out. this is bad currently but it's going to get a lot worse as pflavs get more compiclated.
 
-the same thing goes for the port input packets... sometimes sending a ship through to a port with the fields filed in is the right thing to do , but othertimes you really want to [when do they resample after you put it on? ] 
+the same thing goes for the port input packets... sometimes sending a ship through to a port with the fields filed in is the right thing to do , but othertimes you really want to [when do they resample after you put it on? ]
 
-write out longhand the param names and their values like a regular command, with autocomplete and everything. 
+write out longhand the param names and their values like a regular command, with autocomplete and everything.
 
-we talked about 
+we talked about
 
 >@arrows target :document ignore (:myform :myfield)
 

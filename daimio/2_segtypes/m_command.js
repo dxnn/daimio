@@ -1,12 +1,12 @@
 ~function() {
-  
+
   // HELPER FUNS
 
   function build_paramlist(segment, method, inputs) {
     var piped  = false
     var typefun
     var paramlist = []
-      
+
     for(var index in method.params) {                                   // build paramlist from inputs and typefuns
       var method_param = method.params[index]
       // var param_value = undefined
@@ -19,7 +19,7 @@
         // param_value = inputs[name_index]
       }
 
-      if( !piped 
+      if( !piped
        && ( paramlist_obj.key === -1
          || inputs[paramlist_obj.key] === null ) ) {                    // make map of names to inputs
         name_index = segment.value.names.indexOf('__pipe__')
@@ -28,12 +28,12 @@
           paramlist_obj.key = name_index
           // param_value = inputs[name_index]
         }
-      
+
         // ok, so. if the alias has a dangling param, and we snip it, then we map name to a different place.
-        // that's not good, because if we run this again we might have that value the next time, 
+        // that's not good, because if we run this again we might have that value the next time,
         // and we'll need to remap the inputs all over again. yuck yuck stupid stupid.
-        // 
-      
+        //
+
       }
 
       if(method_param.type && D.Types[method_param.type])               // make map of names to types+wrapper
@@ -52,8 +52,8 @@
         else if(method_param.required) {
           if(!segment.errors)
             segment.errors = []
-          var error = 'Missing required parameter "' + method_param.key 
-                    + '" for command "' + segment.value.handler 
+          var error = 'Missing required parameter "' + method_param.key
+                    + '" for command "' + segment.value.handler
                     + " " + segment.value.method + '"'
           segment.errors.push(error)
           // param_value = typefun(undefined)
@@ -68,10 +68,10 @@
       // params.push(param_value)
       paramlist.push(paramlist_obj)
     }
-    
+
     return paramlist
   }
-  
+
   function prep_params(paramlist, inputs) {
     var params = []
     for(var i=0, l=paramlist.length; i < l; i++) {
@@ -84,19 +84,19 @@
     }
     return params
   }
-  
+
   function run_fun(segment, inputs, prior_starter, process) {
     if(segment.errors) {
       segment.errors.forEach(function(error) {D.set_error(error)})
       return ""                                                     // THINK: maybe {} or {noop: true} or something
     }                                                               // so false flows through instead of previous value
-    
+
     var params = prep_params(segment.paramlist, inputs)
     if(segment.port) params.push(segment.port)
     params.push(prior_starter)
     params.push(process)
     return segment.method.fun.apply(
-             segment.handler, 
+             segment.handler,
              params)
   }
 
@@ -112,13 +112,13 @@
   , munge_tokens: function(L, token, R) {
       if(token.done)
         return [L.concat(token), R]
-      
+
       var items = D.Parser.split_on_space(token.value)
         , new_tokens = []
-      
+
       token.names = token.names || []
       token.inputs = token.inputs || []
-    
+
       if(items.length == 1) {                                       // {math}
         token.type = 'Alias'
         token.value = {word: items[0]}
@@ -134,11 +134,11 @@
           token.type = 'Alias'
           token.value = {word: items[0]}
           token.names.push('__alias__')
-        
+
           var value = items[1]
             , some_tokens = D.Parser.strings_to_tokens(value)
             , some_token = some_tokens[some_tokens.length - 1] || {}
-        
+
           token.inputs.push(some_token.key || null)
           new_tokens = new_tokens.concat(some_tokens)
         }
@@ -166,8 +166,8 @@
         var word = items.shift()
 
         if(!/^[a-z]/.test(word) && word != '__alias__') {           // ugh derp
-          D.set_error('Invalid parameter name "' + word 
-                    + '" for "' + JSON.stringify(token.value) 
+          D.set_error('Invalid parameter name "' + word
+                    + '" for "' + JSON.stringify(token.value)
                     + '"')
           if(items.length)
             items.shift()
@@ -183,48 +183,48 @@
         var value = items.shift()
           , some_tokens = D.Parser.strings_to_tokens(value)
           , some_token = some_tokens[some_tokens.length - 1] || {}
-        
+
         token.names.push(word)
         token.inputs.push(some_token.key || null)
         new_tokens = new_tokens.concat(some_tokens)
       }
-    
+
       for(var i=0, l=new_tokens.length; i < l; i++) {
         if(!new_tokens[i].prevkey)
           new_tokens[i].prevkey = token.prevkey
       }
-      
+
       token.done = true
 
-      return [L, new_tokens.concat(token, R)]                       // aliases need to be reconverted even 
+      return [L, new_tokens.concat(token, R)]                       // aliases need to be reconverted even
     }                                                               // if there's no new tokens
   , token_to_segments: function(token) {
       token.value.names = token.names
       return [new D.Segment(token.type, token.value, token)]        // TODO: suck out any remaining null params here
     }
-  , execute: function(segment, inputs, dialect, prior_starter, process) {  
+  , execute: function(segment, inputs, dialect, prior_starter, process) {
       if(segment.paramlist)
         return run_fun(segment, inputs, prior_starter, process)
-    
+
       segment.handler = dialect.get_handler(segment.value.handler)
       segment.method  = dialect.get_method( segment.value.handler   // THINK: caching the method assumes this segment
                                           , segment.value.method )  // will always be invoked within the same dialect
 
       if(!segment.method) {
-        error = 'You have failed to provide an adequate method: ' 
+        error = 'You have failed to provide an adequate method: '
               + segment.value.handler + ' ' + segment.value.method
         D.set_error(error)
         segment.errors = [error]
         return ""                                                   // THINK: maybe {} or {noop: true} or something
       }                                                             // so false flows through instead of previous value
 
-      // if we have to rerun this, cancel the paramlist. 
+      // if we have to rerun this, cancel the paramlist.
       // we'll know we have to rerun it if the 'null' input elements are different.
-    
-      // we need to think more about the differences between 
+
+      // we need to think more about the differences between
       // {9 | range _asdf} and {9 | range $asdf}
       // because if we change that then this problem goes away.
-    
+
       // if(paramlist) {
       //   if(paramlist.length != segment.nulls.length)
       //     paramlist = false
@@ -234,13 +234,13 @@
       //         paramlist = false, break
       //     }
       // }
-    
-    
+
+
       if(segment.method.port)                                       // does this command have a port? take action!
         segment.port = D.filter_ports(process.space.ports, process.station_id, segment.method.port)
-    
+
       segment.paramlist = build_paramlist(segment, segment.method, inputs)
-      
+
       return run_fun(segment, inputs, prior_starter, process)
     }
   }

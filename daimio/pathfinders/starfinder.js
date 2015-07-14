@@ -12,11 +12,11 @@ D.import_pathfinder('star', {
   },
   create: function(value, key) {
     value = D.to_array(value) // TODO: this is wrong, but we need parent to fix it (right?)
-    
+
     for(var i=0, l=value.length; i < l; i++)
       if(typeof value[i] != 'object')
         value[i] = []
-    
+
     return value
   },
   set: function(value, key, new_val) {

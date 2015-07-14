@@ -1,5 +1,5 @@
 
-// NOTE: this is the fallback, and has to be imported last... so if you need to import a custom pathfinder, you'll have to pop this off and push it back on after. 
+// NOTE: this is the fallback, and has to be imported last... so if you need to import a custom pathfinder, you'll have to pop this off and push it back on after.
 // TODO: find a better way to manage importee ordering
 D.import_pathfinder('key', {
   keymatch: function(key) {
@@ -7,14 +7,14 @@ D.import_pathfinder('key', {
       return 'one'
   },
   gather: function(value, key) {
-    return (value && value.hasOwnProperty(key)) 
-           ? [value[key]] 
+    return (value && value.hasOwnProperty(key))
+           ? [value[key]]
            : []
   },
   create: function(value, key) {
     if(value.hasOwnProperty(key) && (typeof value[key] == 'object') )
       return [value[key]]
-      
+
     value[key] = {}   // THINK: this line creates a swack of undefineds...
     return [value[key]]
   },
@@ -32,7 +32,7 @@ D.import_pathfinder('key', {
 
     // if(!value.length && Array.isArray(value))
     //   value = // oh crap we can't convert [] to {} w/o hosing the pointer
-    
+
     value[key] = new_val
   }
 })

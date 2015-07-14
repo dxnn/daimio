@@ -1,7 +1,7 @@
 D.SegmentTypes.String = {
   try_lex: function(string) {
     if(string[0] != '"' || string.slice(-1) != '"')
-      return string    
+      return string
 
     if(string.indexOf(D.Constants.command_open) != -1)
       return string

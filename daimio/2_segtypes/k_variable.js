@@ -7,19 +7,19 @@ D.SegmentTypes.Variable = {
   }
 , munge_segments: function(L, segment, R) {
     if(segment.value.type == 'space')             // space vars have to be collected at runtime
-      return [L.concat(segment), R]               
-                                                  
-    var my_key = segment.key                      
-      , new_key = segment.value.prevkey           
-      , key_index                                 
-                                                  
+      return [L.concat(segment), R]
+
+    var my_key = segment.key
+      , new_key = segment.value.prevkey
+      , key_index
+
     if(!new_key && !R.length)                     // some pipeline vars have to be collected then too
       return [L.concat(segment), R]               //   -> this handles {_value | add 1}
-                                                  
+
     if(!R.length) {                               //   -> this handles {2 | >foo | "" | _foo}
-      segment.inputs = [new_key]                  
-      return [L.concat(segment), R]               
-    }                                             
+      segment.inputs = [new_key]
+      return [L.concat(segment), R]
+    }
 
     if(!new_key)
       new_key = segment.value.name

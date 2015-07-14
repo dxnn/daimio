@@ -10,7 +10,7 @@ D.SegmentTypes.Blockjoin = {
 , execute: function(segment, inputs, dialect, prior_starter, process) {
     var output = ""
       , counter = 0
-    
+
     if(!inputs.length)
       return ""
 

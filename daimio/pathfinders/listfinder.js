@@ -15,7 +15,7 @@ D.import_pathfinder('list', {
         output.push(D.peek(value, [key[i]] ))
       }
     }
-    
+
     return output
   },
   create: function(value, key) {
@@ -29,7 +29,7 @@ D.import_pathfinder('list', {
         output.push(D.poke(value, [key[i]], []))
       }
     }
-    
+
     return output
   },
   set: function(value, key, new_val) {
@@ -44,12 +44,12 @@ D.import_pathfinder('list', {
         output.push(D.poke(value, [key[i]], new_val))
       }
     }
-    
+
     // for(var i=0, l=output.length; i < l; i++) {
     //   if(output[l] == temp)
     //     output[l] = new_val
     // }
-    
+
     return output
   }
 })

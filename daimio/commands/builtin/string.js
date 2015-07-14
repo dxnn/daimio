@@ -4,9 +4,9 @@ D.import_models({
   string: {
     desc: "Commands for string manipulation",
     methods: {
-      
+
       // TODO: a method for string->data, like this: http://laktek.com/2012/10/04/extract-values-from-a-string/
-      
+
       join: {
         desc: "Concatenate an array of strings",
         params: [
@@ -26,7 +26,7 @@ D.import_models({
           var good_string=''
           for(var i=0, l=value.length; i < l; i++) {
             good_string += D.stringify(value[i])
-            if(on && i != l - 1) 
+            if(on && i != l - 1)
               good_string += on
               // good_string += D.stringify(D.defunctionize(on)) // NOTE: defunc runs the blocks before stringify toString()s them, so we need both (even though stringify also defuncs).
           }
@@ -48,7 +48,7 @@ D.import_models({
           // return good_values.join(on);
         },
       },
-      
+
       grep: {
         desc: "Find a string in a haystack",
         params: [
@@ -65,9 +65,9 @@ D.import_models({
         ],
         fun: function(value, on) {
           var output = []
-          
+
           on = D.string_to_regex(on)
-          
+
           if(typeof value == 'string') value = value.split(/\n/)
           for(var key in value) {
             if(on.test(value[key])) output.push(value[key])
@@ -75,7 +75,7 @@ D.import_models({
           return output
         },
       },
-      
+
       split: {
         desc: "Break up a string",
         params: [
@@ -96,7 +96,7 @@ D.import_models({
           if(value.split) return value.split(on)
         },
       },
-      
+
       quote: {
         desc: "Sometimes a string is just a string",
         params: [
@@ -115,7 +115,7 @@ D.import_models({
           return value // redundant on runtime strings, as they're escaped by default
         },
       },
-      
+
       trim: {
         desc: "Whitespace begone",
         params: [
@@ -130,7 +130,7 @@ D.import_models({
           return value.trim()
         },
       },
-      
+
       uppercase: {
         desc: "MAKE IT LOUD",
         params: [
@@ -145,7 +145,7 @@ D.import_models({
           return value.toUpperCase()
         },
       },
-      
+
       lowercase: {
         desc: "make it quiet",
         params: [
@@ -164,9 +164,9 @@ D.import_models({
       "uri-decode": {
 	  desc: "Decode a string containing URI escape sequences to one without them",
 	  params: [
-	      { 
-		  key: 'value', 
-		  desc: 'A URI encoded string', 
+	      {
+		  key: 'value',
+		  desc: 'A URI encoded string',
 		  type: 'string'
 	      }
 	  ],
@@ -174,7 +174,7 @@ D.import_models({
 	      return decodeURIComponent(value)
 	  }
       },
-      
+
       transform: {
         desc: "Convert a string to something new",
         params: [
@@ -197,47 +197,47 @@ D.import_models({
         ],
         fun: function(value, from, to, prior_starter) {
           from = D.string_to_regex(from, true)
-          
+
           if(typeof to != 'function')
             return value.replace(from, to)
-          
+
           var matches = value.match(from)
             // , unmatches = value.split(from)
             , match_starts = !value.search(from)
             , is_global = from.global // global regexes behave differently
-          
+
           if(!matches)
             return value
-          
+
           matches = matches.slice()
-          
+
           if(!is_global)
             matches = [matches[0]]
-          
+
           var processfun = function(item, prior_starter) {
             var scope = {}
             scope["__in"] = item
             return to(function(value) {prior_starter(value)}, scope)
           }
-        
+
           var finalfun = function(processed_matches) {
             var result = ''
               // , string_count
               , index = 0
               , next_index = 0
-            
+
             if(!match_starts) {
               index = value.indexOf(matches[0])
               result += value.slice(0,index)
             }
-            
-            // if(!match_starts) 
+
+            // if(!match_starts)
             //   result += unmatches.shift()
             // else if(unmatches[0] == '')
             //   unmatches.shift()
-            
+
             // string_count = result.length
-            
+
             for(var i=0, l=processed_matches.length; i < l; i++) {
               result += D.stringify(processed_matches[i])
               index += matches[i].length
@@ -249,32 +249,32 @@ D.import_models({
                 result += value.slice(index)
 
               index = next_index
-              
+
               // result += unmatches[i]
               // string_count += matches[i].length + unmatches[i].length
               if(!is_global) break
             }
-            
-            // if we've only matched the first N of T possible matches, then glue the rest of the string back on (because matches.length == N but unmatches.length == T always)            
+
+            // if we've only matched the first N of T possible matches, then glue the rest of the string back on (because matches.length == N but unmatches.length == T always)
             // if(i < unmatches.length)
             //   result += value.slice(string_count)
-            
+
             return result
           }
-          
+
           return D.data_trampoline(matches, processfun, D.list_push, prior_starter, finalfun)
-          
-          
-          
+
+
+
           // TODO: set the execution context (ie __) by first matching from
-          
+
           // to(function(block_value) {
           //   callback(value.replace(from, block_value))
           // }, value.match(from))
-          
+
           // return NaN
-          // 
-          // 
+          //
+          //
           // var to2 = to
           // from = D.string_to_regex(from, true)
           // if(D.is_block(to)) {
@@ -287,7 +287,7 @@ D.import_models({
           // return value.replace(from, to2)
         },
       },
-      
+
       slice: {
         desc: "Slice a string",
         params: [
@@ -315,7 +315,7 @@ D.import_models({
           return value.slice(start, end)
         },
       },
-      
+
       truncate: {
         desc: 'Like slice, but tries to snip at word boundaries',
         help: 'Use this to chop a string down to size without losing your mind. Currently only cuts at spaces.',
@@ -341,15 +341,15 @@ D.import_models({
         fun: function(value, to, add) {
           var length = to
           if(value.length <= length) return value
-          
+
           var lastSpace = value.lastIndexOf(' ', length)
           if(lastSpace == -1) lastSpace = length
-          
+
           return value.slice(0, lastSpace) + (add || '')
         },
       },
-      
-      
+
+
     }
   }
 })

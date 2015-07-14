@@ -35,13 +35,13 @@ D.import_port_flavour('down', {
   exit: function(ship, process) {
     // go down, then return back up...
     // THINK: is the callback param the right way to do this?? it's definitely going to complicate things...
-    
+
     var self = this
-    D.setImmediate(function() { 
-      // self.outs.forEach(function(port) { 
-      //   port.enter(ship) 
-      // }) 
-      
+    D.setImmediate(function() {
+      // self.outs.forEach(function(port) {
+      //   port.enter(ship)
+      // })
+
       // THINK: whether we can pass multiple ships or have to queue them depends on our routes: if they're all bidirectional we can chain the callbacks, otherwise we have to send them one at a time.
 
       // THINK: ideally there's only ONE route from a downport. can we formalize that?
@@ -58,10 +58,10 @@ D.import_port_flavour('down', {
 
 D.import_port_flavour('exec', {
   dir: 'in',
-  exit: function(ship) { 
+  exit: function(ship) {
     if(!this.space)
       return false
-    
+
     // this.space.secret = ship
     this.space.execute(D.Parser.string_to_block_segment(ship.code), {secret: ship}) // TODO: ensure this is a block, not a string
   }

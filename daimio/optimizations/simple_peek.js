@@ -1,20 +1,20 @@
 D.import_optimizer('simple_peek', 0.4, function(block) {
   if(!D.Etc.OPT_simple_peek)                            // oh hai have some fun
-    D.Etc.OPT_simple_peek = 
+    D.Etc.OPT_simple_peek =
       { pos : D.Pathfinders.filter(function(pf) {return pf.name == "position"})[0].gather
       , key : D.Pathfinders.filter(function(pf) {return pf.name == "key"})[0].gather }
-  
+
   var changed  = false
   var segments = block.segments
   var wiring   = block.wiring
   var new_segments = []
   var new_wiring   = {}
-  
+
   for(var i=0, l=segments.length; i < l; i++) {
     var temp = []
     var places = []
     var this_segment = segments[i]
-    
+
     new_segments.push(this_segment)
 
     if(!wiring[i]) continue
@@ -25,14 +25,14 @@ D.import_optimizer('simple_peek', 0.4, function(block) {
      || this_segment.value.method   != 'peek'
      || this_segment.value.names[1] != 'path' )         // THINK: we could still opt in this case...
         continue
-    
+
     var pathwire = wiring[i][1]
     var listseg = segments[pathwire]
-    
+
     if( !wiring[pathwire]                               // only one item
      ||  wiring[pathwire].length != 1 )
          continue
-    
+
     var wire = wiring[pathwire][0]
     var wireseg = segments[wire]
 
@@ -64,7 +64,7 @@ D.SegmentTypes.OPT_simple_peek = {
           return data[data.length + position]
         else
           return data[position - 1]
-      
+
       return D.Etc.OPT_simple_peek.pos(inputs[0], segment.value)[0]
     }
 

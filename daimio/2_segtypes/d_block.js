@@ -1,7 +1,7 @@
 D.SegmentTypes.Block = {
   try_lex: function(string) {
     if(string[0] != '"' || string.slice(-1) != '"')
-      return string    
+      return string
 
     if(string.indexOf(D.Constants.command_open) == -1)
       return string
@@ -16,11 +16,11 @@ D.SegmentTypes.Block = {
 , toJSON: function(segment) {
     var block_id = segment.value.id
       , decorators = D.get_decorators(block_id, 'OriginalString')
-      
+
     if(decorators) {
       return decorators[0].value
     }
-    
+
     return ""
   }
 , execute: function(segment, inputs, dialect, prior_starter) {

@@ -22,7 +22,7 @@ D.SegmentTypes.Terminator = {
       var new_token = new D.Token('Command', 'channel bind')
       new_token.names = ['from', 'to']
       new_token.inputs = [prev.key, next.key]
-      
+
       return [L, [next, new_token].concat(R.slice(1))]
     }
 
@@ -61,16 +61,16 @@ D.SegmentTypes.Terminator = {
         // if(next.value.params) {
         //   next.value.params['__pipe__'] = prev.key
         // }
-        
+
         if(next.type == 'Command') {
           next.names = next.names || [] // TODO: fix me this is horrible
           next.inputs = next.inputs || []
           next.names.push('__pipe__')
           next.inputs.push(prev.key)
-          // next.params['__pipe__'] = new D.Segment('Input', prev.key)      
+          // next.params['__pipe__'] = new D.Segment('Input', prev.key)
           // return [L, R]
         }
-        
+
       }
     }
 
@@ -79,7 +79,7 @@ D.SegmentTypes.Terminator = {
 , token_to_segments: function(token) {
     return []
     // this shouldn't happen
-  } 
+  }
 , execute: function(segment) {
     // nor this
   }

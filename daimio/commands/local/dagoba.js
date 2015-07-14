@@ -19,13 +19,13 @@ D.import_models({
         ],
         fun: function(id) {
           var graph = Dagoba.new_graph(id);
-          
+
           // add graph action bindings
           topics = ['node/add','node/remove','port/add','port/remove','edge/add','edge/remove'];
           for(var i=0, l=topics.length; i < l; i++) {
             D.Etc.dagoba.set_actions(graph, topics[i]);
           }
-          
+
           return graph.id;
         },
       },
@@ -55,10 +55,10 @@ D.import_models({
         fun: function(graph, id, data) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           data = data || {};
           data.id = id;
-          
+
           var node = graph.add_node(data);
           return node ? node.id : false;
         },
@@ -92,16 +92,16 @@ D.import_models({
         ],
         fun: function(graph, node, id, data) {
           // THINK: is there a way to not have to require both graph and node?
-          
+
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           node = graph.nodes[node];
           if(!node) return D.on_error('Invalid node id');
-          
+
           data = data || {};
           data.id = id;
-          
+
           var port = graph.add_port(node, data);
           return port ? port.id : false;
         },
@@ -141,19 +141,19 @@ D.import_models({
         ],
         fun: function(graph, startport, endport, id, data) {
           // THINK: is there a way to not have to require both graph and ports?
-          
+
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           startport = graph.ports[startport];
           if(!startport) return D.on_error('Invalid startport id');
-          
+
           endport = graph.ports[endport];
           if(!endport) return D.on_error('Invalid endport id');
-          
+
           data = data || {};
           data.id = id;
-          
+
           var edge = graph.add_edge(startport, endport, data);
           return edge ? edge.id : false;
         },
@@ -179,11 +179,11 @@ D.import_models({
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var node, nodes = {};
-          
+
           if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.nodes);
-          
+
           for(var i=0, l=by_ids.length; i < l; i++) {
             node = graph.nodes[by_ids[i]];
             if(node) nodes[node.id] = node;
@@ -211,11 +211,11 @@ D.import_models({
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var port, ports = {};
-          
+
           if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.ports);
-          
+
           for(var i=0, l=by_ids.length; i < l; i++) {
             port = graph.ports[by_ids[i]];
             if(port) ports[port.id] = port;
@@ -243,11 +243,11 @@ D.import_models({
         fun: function(graph, by_ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var edge, edges = {};
-          
+
           if(!by_ids.length) return D.Etc.dagoba.scrubber(graph.edges);
-          
+
           for(var i=0, l=by_ids.length; i < l; i++) {
             edge = graph.edges[by_ids[i]];
             if(edge) edges[edge.id] = edge;
@@ -281,23 +281,23 @@ D.import_models({
           },
         ],
         fun: function(graph, by, options) {
-          // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove)) 
-          
+          // TODO: allow 'by' to be a block, which is used to sort the nodes (-1, 0, 1 and ... 'x' (for remove))
+
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var sorter = Dagoba.sort[by];
           if(!sorter) {
             D.on_error('Invalid sort function id, falling back to natural');
             sorter = Dagoba.sort['natural'];
           }
-          
+
           return D.Etc.dagoba.scrubber(sorter(graph, options));
         },
       },
 
       // REMOVING THINGS
-      
+
       remove_nodes: {
         desc: "Remove some nodes",
         params: [
@@ -317,9 +317,9 @@ D.import_models({
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var node;
-          
+
           for(var i=0, l=ids.length; i < l; i++) {
             node = graph.nodes[ids[i]];
             if(node) node.remove();
@@ -328,7 +328,7 @@ D.import_models({
           return graph.id;
         },
       },
-      
+
       remove_ports: {
         desc: "Remove some ports",
         params: [
@@ -348,9 +348,9 @@ D.import_models({
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var port;
-          
+
           for(var i=0, l=ids.length; i < l; i++) {
             port = graph.ports[ids[i]];
             if(port) port.remove();
@@ -359,7 +359,7 @@ D.import_models({
           return graph.id;
         },
       },
-      
+
       remove_edges: {
         desc: "Remove some edges",
         params: [
@@ -379,9 +379,9 @@ D.import_models({
         fun: function(graph, ids) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           var edge;
-          
+
           for(var i=0, l=ids.length; i < l; i++) {
             edge = graph.edges[ids[i]];
             if(edge) edge.remove();
@@ -390,9 +390,9 @@ D.import_models({
           return graph.id;
         },
       },
-      
+
       // METADATA
-      
+
       set_data: {
         desc: "Set a piece of data in the thing",
         help: "The path can't start with a restricted key value. Existing references in Daimio variables are unaffected, so you'll need to e.g. {dagoba find_nodes} again.",
@@ -430,21 +430,21 @@ D.import_models({
         fun: function(graph, id, type, path, value) {
           graph = Dagoba.graphs[graph];
           if(!graph) return D.on_error('Invalid graph id');
-          
+
           if(['nodes', 'paths', 'edges'].indexOf(type) == -1) return D.on_error('Invalid type');
-          
+
           var thing = graph[type][id];
           if(!thing) D.on_error('Invalid id');
-          
+
           // TODO: scrub bad paths, like 'startport'
-          
+
           // maybe instead D.recursive_extend(thing, path.split('.'), value);
           // D.recursive_insert(thing, path.split('.'), value);
-          
+
           return graph.id;
         },
       },
-      
+
 
     }
   }
@@ -452,17 +452,17 @@ D.import_models({
 
 D.Etc.dagoba = {};
 D.Etc.dagoba.scrubber = function(things) {
-  var ports = {}, edges = {}, clean_things = [], 
+  var ports = {}, edges = {}, clean_things = [],
       id_keys = ['ports', 'edges', 'startnodes', 'endnodes', 'startnode', 'endnode', 'startports', 'endports', 'startport', 'endport', 'startedges', 'endedges', 'node'],
       bad_keys = ['graph', 'init', 'remove'];
-      
+
   for(var thing_key in things) {
     var clean_thing = {}, thing = things[thing_key];
-    
+
     for(var key in thing) {
       if(id_keys.indexOf(key) != -1) {
         clean_thing[key] = D.Etc.dagoba.extract_ids(thing[key]);
-      } 
+      }
       else if(bad_keys.indexOf(key) == -1) { // (not) born under a bad key
         if(D.is_block(thing[key])) {
           clean_thing[key] = thing[key];
@@ -471,21 +471,21 @@ D.Etc.dagoba.scrubber = function(things) {
         }
       }
     }
-    
+
     clean_things.push(clean_thing);
   }
-  
+
   return clean_things;
 };
 
 D.Etc.dagoba.extract_ids = function(things) {
   var ids = [];
   if(things.id) return [things.id];
-  
+
   for(var key in things) {
     ids.push(things[key].id);
   }
-  
+
   return ids;
 }
 

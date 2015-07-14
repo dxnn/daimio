@@ -4,12 +4,12 @@ D.import_optimizer('simple_math', 0.5, function(block) {
   var wiring   = block.wiring
   var new_segments = []
   var new_wiring   = {}
-  
+
   for(var i=0, l=segments.length; i < l; i++) {
     var temp = []
     var places = []
     var this_segment = segments[i]
-    
+
     new_segments.push(this_segment)
 
     if(!wiring[i]) continue
@@ -18,12 +18,12 @@ D.import_optimizer('simple_math', 0.5, function(block) {
     if( this_segment.type != 'Command'
      || this_segment.value.handler  != 'math'
      || this_segment.value.method   != 'multiply'       // && binds tighter than ||
-     && this_segment.value.method   != 'add' )          
+     && this_segment.value.method   != 'add' )
         continue
-    
+
     if(wiring[i].length != 2)                           // THINK: we could still opt in this case...
       continue
-    
+
     var wire = wiring[i][0]
     var wireseg = segments[wire]
 
@@ -46,7 +46,7 @@ D.SegmentTypes.OPT_simple_math = {
     var val  = inputs[0]
     var sval = segment.value.value
     var svop = segment.value.op
-    
+
     if(typeof val == 'number')
       return svop == 'add'
            ? sval + val

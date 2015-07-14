@@ -23,10 +23,10 @@ D.import_port_flavour('dom-set-text', {
   },
   outside_add: function() {
     this.element = document.getElementById(this.settings.thing)
-    
+
     if(!this.element)
       return D.set_error('That dom thing ("' + this.settings.thing + '") is not present')
-    
+
     if(this.element.textContent == undefined)
       return D.set_error('That dom thing has no text')
   }

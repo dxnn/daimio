@@ -6,7 +6,7 @@ D.import_models({
   math: {
     desc: "Commands for math",
     methods: {
-      
+
       add: {
         desc: "What kind of snake is good at math?",
         help: [
@@ -152,7 +152,7 @@ D.import_models({
         ],
         fun: function(value, by) {
           return D.Etc.Math.solver(value, by, function(a, b) {
-            if(!b) 
+            if(!b)
               return D.set_error('Division by zero is a crime against nature') || 0
             return a / b
           });
@@ -184,9 +184,9 @@ D.import_models({
         fun: function(value, by) {
           // NOTE: the default JS '%' operator is the remainder. we fiddle with negatives to make this a true modulo operation.
           return D.Etc.Math.solver(value, by, function(a, b) {
-            if(!b) 
+            if(!b)
               return D.set_error('Modulation by zero is a crime against nature') || 0
-            
+
             return a >= 0 == b > 0 ? a % b : a % b + b
             // return a > 0 ^ b > 0 ? -a % b : a % b // so pretty, but so wrong
           })
@@ -221,7 +221,7 @@ D.import_models({
           // THINK: can we solver this?
           if(value < 0 && exp % 1)
             return D.set_error('Roots of negatives are not real') || 0
-            
+
           return Math.pow(value, exp) || 0
         },
       },
@@ -330,9 +330,9 @@ D.import_models({
         ],
         fun: function(value, to) {
           // THINK: can we accept an array to round?
-          
+
           if(!to) return Math.round(value)
-          
+
           var power = Math.pow(10, to)
           return Math.round(value * power) / power
         },
@@ -359,7 +359,7 @@ D.import_models({
 
           if(also != undefined)
             value.push(also)
-          
+
           return Math.min.apply(null, value) || 0
         },
       },
@@ -385,7 +385,7 @@ D.import_models({
 
           if(also != undefined)
             value.push(also)
-          
+
           return Math.max.apply(null, value) || 0
         },
       },
@@ -405,7 +405,7 @@ D.Etc.Math.solver = function(value, to, fun) {
 
   // are these arrays or numbers?
   var arrays = Array.isArray(value) + Array.isArray(to)
-  
+
   // THINK: maybe wrap these with D.to_numeric to keep out NaNs
   if(arrays == 2) return D.Etc.Math.doubleArray(value, to, fun);
   if(arrays == 1) return D.Etc.Math.singleArray(value, to, fun);
@@ -423,7 +423,7 @@ D.Etc.Math.singleArray = function(value, to, fun) {
   if(typeof value != 'object') {
     var temp = to; to = value; value = temp;
   }
-  
+
   // one array, one number
   if(D.is_numeric(to)) {
     return value.map(function(val) {
@@ -452,5 +452,5 @@ D.Etc.Math.naryanArray = function(value, to, fun) {
     // D.to_numeric(value)
     to = 0
   }
-  return fun(D.to_numeric(value), D.to_numeric(to));        
+  return fun(D.to_numeric(value), D.to_numeric(to));
 };
